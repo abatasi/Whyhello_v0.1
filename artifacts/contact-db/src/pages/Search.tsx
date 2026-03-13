@@ -72,7 +72,11 @@ export default function Search() {
     search: debouncedSearch || undefined,
     page,
     limit: 20,
-    ...filters,
+    industry: filters.industry || undefined,
+    department: filters.department || undefined,
+    seniority: filters.seniority || undefined,
+    companySize: filters.companySize || undefined,
+    location: filters.location || undefined,
   }, { query: { enabled: activeTab === "contacts" }});
 
   const { data: companiesData, isLoading: isCompaniesLoading } = useListCompanies({
@@ -333,9 +337,10 @@ export default function Search() {
 }
 
 function FilterSection({ title, options, selected, onChange }: { title: string, options: string[], selected: string, onChange: (v: string) => void }) {
+  const [showAll, setShowAll] = useState(false);
   if (!options || options.length === 0) return null;
   
-  const displayOptions = options.slice(0, 6);
+  const displayOptions = showAll ? options : options.slice(0, 6);
   const hasMore = options.length > 6;
 
   return (
@@ -343,9 +348,13 @@ function FilterSection({ title, options, selected, onChange }: { title: string, 
       <h3 className="text-sm font-semibold text-foreground mb-3">{title}</h3>
       <div className="space-y-2">
         {displayOptions.map((opt) => (
-          <label key={opt} className="flex items-center gap-2 cursor-pointer group">
+          <label
+            key={opt}
+            className="flex items-center gap-2 cursor-pointer group"
+            onClick={() => onChange(opt)}
+          >
             <div className={cn(
-              "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+              "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
               selected === opt ? "bg-primary border-primary" : "border-input bg-background group-hover:border-primary/50"
             )}>
               {selected === opt && <div className="w-2 h-2 bg-white rounded-sm" />}
@@ -353,7 +362,14 @@ function FilterSection({ title, options, selected, onChange }: { title: string, 
             <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{opt}</span>
           </label>
         ))}
-        {hasMore && <button className="text-xs text-primary font-medium mt-2 hover:underline">Show more</button>}
+        {hasMore && (
+          <button
+            className="text-xs text-primary font-medium mt-2 hover:underline"
+            onClick={() => setShowAll(v => !v)}
+          >
+            {showAll ? "Show less" : `Show ${options.length - 6} more`}
+          </button>
+        )}
       </div>
     </div>
   );
