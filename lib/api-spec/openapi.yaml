@@ -13,6 +13,8 @@ tags:
     description: Contact operations
   - name: companies
     description: Company operations
+  - name: Auth
+    description: Browser and mobile authentication endpoints.
 paths:
   /healthz:
     get:
