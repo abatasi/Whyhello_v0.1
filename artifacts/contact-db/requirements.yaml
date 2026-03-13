@@ -1,0 +1,14 @@
+packages:
+  "framer-motion": "For smooth page transitions, list animations, and interactive polish"
+  "clsx": "For conditional class merging in UI components"
+  "tailwind-merge": "For resolving Tailwind class conflicts in UI components"
+  "use-debounce": "For handling search input debouncing"
+
+images:
+  - path: "artifacts/contact-db/public/images/profile-bg.png"
+    description: "Subtle abstract gradient mesh background in cool slate and indigo colors, very clean and corporate, low contrast, suitable for a header background"
+    aspect_ratio: "16:9"
+
+notes:
+  - The API hooks are imported from @workspace/api-client-react
+  - URL search params are used for filter state to allow deep linking

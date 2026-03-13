@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Contact Database"
+version = "1.0.0"
+id = "artifacts/contact-db"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 19839
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/contact-db run dev"
+
+[services.env]
+PORT = "19839"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/contact-db", "run", "build"]
+publicDir = "artifacts/contact-db/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

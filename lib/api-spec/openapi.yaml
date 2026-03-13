@@ -1,15 +1,18 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Contact Database API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: contacts
+    description: Contact operations
+  - name: companies
+    description: Company operations
 paths:
   /healthz:
     get:
@@ -24,6 +27,174 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /contacts:
+    get:
+      operationId: listContacts
+      tags: [contacts]
+      summary: List contacts with filters
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: jobTitle
+          in: query
+          schema:
+            type: string
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: seniority
+          in: query
+          schema:
+            type: string
+        - name: industry
+          in: query
+          schema:
+            type: string
+        - name: companySize
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: country
+          in: query
+          schema:
+            type: string
+        - name: companyId
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of contacts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactListResponse"
+
+  /contacts/{id}:
+    get:
+      operationId: getContact
+      tags: [contacts]
+      summary: Get a contact by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contact detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /companies:
+    get:
+      operationId: listCompanies
+      tags: [companies]
+      summary: List companies with filters
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: industry
+          in: query
+          schema:
+            type: string
+        - name: size
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: country
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of companies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyListResponse"
+
+  /companies/{id}:
+    get:
+      operationId: getCompany
+      tags: [companies]
+      summary: Get a company by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Company detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /filters/options:
+    get:
+      operationId: getFilterOptions
+      tags: [contacts]
+      summary: Get available filter option values
+      responses:
+        "200":
+          description: Filter options
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FilterOptions"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +205,223 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    ContactSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        jobTitle:
+          type: string
+        department:
+          type: string
+        seniority:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        location:
+          type: string
+        country:
+          type: string
+        linkedinUrl:
+          type: string
+        companyId:
+          type: integer
+        companyName:
+          type: string
+        companyIndustry:
+          type: string
+        companySize:
+          type: string
+      required:
+        - id
+        - firstName
+        - lastName
+
+    ContactDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        jobTitle:
+          type: string
+        department:
+          type: string
+        seniority:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        location:
+          type: string
+        country:
+          type: string
+        linkedinUrl:
+          type: string
+        twitterHandle:
+          type: string
+        bio:
+          type: string
+        company:
+          $ref: "#/components/schemas/CompanySummary"
+      required:
+        - id
+        - firstName
+        - lastName
+
+    CompanySummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        industry:
+          type: string
+        size:
+          type: string
+        location:
+          type: string
+        country:
+          type: string
+        website:
+          type: string
+        description:
+          type: string
+        employeeCount:
+          type: integer
+        foundedYear:
+          type: integer
+      required:
+        - id
+        - name
+
+    CompanyDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        industry:
+          type: string
+        size:
+          type: string
+        location:
+          type: string
+        country:
+          type: string
+        website:
+          type: string
+        description:
+          type: string
+        employeeCount:
+          type: integer
+        foundedYear:
+          type: integer
+        linkedinUrl:
+          type: string
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContactSummary"
+      required:
+        - id
+        - name
+
+    ContactListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContactSummary"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - totalPages
+
+    CompanyListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompanySummary"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - totalPages
+
+    FilterOptions:
+      type: object
+      properties:
+        industries:
+          type: array
+          items:
+            type: string
+        departments:
+          type: array
+          items:
+            type: string
+        seniorities:
+          type: array
+          items:
+            type: string
+        companySizes:
+          type: array
+          items:
+            type: string
+        countries:
+          type: array
+          items:
+            type: string
+        locations:
+          type: array
+          items:
+            type: string
+      required:
+        - industries
+        - departments
+        - seniorities
+        - companySizes
+        - countries
+        - locations
