@@ -1,52 +1,59 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { contactsTable, companiesTable } from "@workspace/db/schema";
-import { ListCompaniesQueryParams, GetCompanyParams } from "@workspace/api-zod";
-import { eq, ilike, and, sql, SQL } from "drizzle-orm";
+import { GetCompanyParams } from "@workspace/api-zod";
+import { eq, ilike, and, inArray, or, sql, SQL } from "drizzle-orm";
 
 const router: IRouter = Router();
 
+function splitParam(v: unknown): string[] {
+  if (!v || typeof v !== "string") return [];
+  return v.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 router.get("/", async (req, res) => {
   try {
-    const query = ListCompaniesQueryParams.parse(req.query);
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
+    const raw = req.query as Record<string, string>;
+    const page = Math.max(1, parseInt(raw.page ?? "1") || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(raw.limit ?? "20") || 20));
     const offset = (page - 1) * limit;
+
+    const industries = splitParam(raw.industry);
+    const sizes = splitParam(raw.size);
+    const locations = splitParam(raw.location);
 
     const conditions: SQL[] = [];
 
-    if (query.search) {
-      const s = `%${query.search}%`;
+    if (raw.search) {
+      const s = `%${raw.search}%`;
       conditions.push(
         sql`(${companiesTable.name} ilike ${s} OR ${companiesTable.description} ilike ${s})`
       );
     }
-    if (query.industry) {
-      conditions.push(eq(companiesTable.industry, query.industry));
+    if (industries.length === 1) {
+      conditions.push(eq(companiesTable.industry, industries[0]));
+    } else if (industries.length > 1) {
+      conditions.push(inArray(companiesTable.industry, industries));
     }
-    if (query.size) {
-      conditions.push(eq(companiesTable.size, query.size));
+    if (sizes.length === 1) {
+      conditions.push(eq(companiesTable.size, sizes[0]));
+    } else if (sizes.length > 1) {
+      conditions.push(inArray(companiesTable.size, sizes));
     }
-    if (query.location) {
-      conditions.push(ilike(companiesTable.location, `%${query.location}%`));
+    if (locations.length === 1) {
+      conditions.push(ilike(companiesTable.location, `%${locations[0]}%`));
+    } else if (locations.length > 1) {
+      conditions.push(or(...locations.map((l) => ilike(companiesTable.location, `%${l}%`)))!);
     }
-    if (query.country) {
-      conditions.push(eq(companiesTable.country, query.country));
+    if (raw.country) {
+      conditions.push(eq(companiesTable.country, raw.country));
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
     const [rows, [{ count }]] = await Promise.all([
-      db
-        .select()
-        .from(companiesTable)
-        .where(where)
-        .limit(limit)
-        .offset(offset),
-      db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(companiesTable)
-        .where(where),
+      db.select().from(companiesTable).where(where).limit(limit).offset(offset),
+      db.select({ count: sql<number>`count(*)::int` }).from(companiesTable).where(where),
     ]);
 
     res.json({

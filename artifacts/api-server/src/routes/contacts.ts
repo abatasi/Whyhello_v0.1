@@ -1,49 +1,70 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { contactsTable, companiesTable } from "@workspace/db/schema";
-import { ListContactsQueryParams, GetContactParams } from "@workspace/api-zod";
-import { eq, ilike, and, sql, SQL } from "drizzle-orm";
+import { GetContactParams } from "@workspace/api-zod";
+import { eq, ilike, and, inArray, or, sql, SQL } from "drizzle-orm";
 
 const router: IRouter = Router();
 
+function splitParam(v: unknown): string[] {
+  if (!v || typeof v !== "string") return [];
+  return v.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 router.get("/", async (req, res) => {
   try {
-    const query = ListContactsQueryParams.parse(req.query);
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
+    const raw = req.query as Record<string, string>;
+    const page = Math.max(1, parseInt(raw.page ?? "1") || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(raw.limit ?? "20") || 20));
     const offset = (page - 1) * limit;
+
+    const industries = splitParam(raw.industry);
+    const departments = splitParam(raw.department);
+    const seniorities = splitParam(raw.seniority);
+    const companySizes = splitParam(raw.companySize);
+    const locations = splitParam(raw.location);
 
     const conditions: SQL[] = [];
 
-    if (query.search) {
-      const s = `%${query.search}%`;
+    if (raw.search) {
+      const s = `%${raw.search}%`;
       conditions.push(
         sql`(${contactsTable.firstName} ilike ${s} OR ${contactsTable.lastName} ilike ${s} OR ${contactsTable.email} ilike ${s} OR ${contactsTable.jobTitle} ilike ${s} OR ${companiesTable.name} ilike ${s})`
       );
     }
-    if (query.jobTitle) {
-      conditions.push(ilike(contactsTable.jobTitle, `%${query.jobTitle}%`));
+    if (raw.jobTitle) {
+      conditions.push(ilike(contactsTable.jobTitle, `%${raw.jobTitle}%`));
     }
-    if (query.department) {
-      conditions.push(eq(contactsTable.department, query.department));
+    if (departments.length === 1) {
+      conditions.push(eq(contactsTable.department, departments[0]));
+    } else if (departments.length > 1) {
+      conditions.push(inArray(contactsTable.department, departments));
     }
-    if (query.seniority) {
-      conditions.push(eq(contactsTable.seniority, query.seniority));
+    if (seniorities.length === 1) {
+      conditions.push(eq(contactsTable.seniority, seniorities[0]));
+    } else if (seniorities.length > 1) {
+      conditions.push(inArray(contactsTable.seniority, seniorities));
     }
-    if (query.industry) {
-      conditions.push(eq(companiesTable.industry, query.industry));
+    if (industries.length === 1) {
+      conditions.push(eq(companiesTable.industry, industries[0]));
+    } else if (industries.length > 1) {
+      conditions.push(inArray(companiesTable.industry, industries));
     }
-    if (query.companySize) {
-      conditions.push(eq(companiesTable.size, query.companySize));
+    if (companySizes.length === 1) {
+      conditions.push(eq(companiesTable.size, companySizes[0]));
+    } else if (companySizes.length > 1) {
+      conditions.push(inArray(companiesTable.size, companySizes));
     }
-    if (query.location) {
-      conditions.push(ilike(contactsTable.location, `%${query.location}%`));
+    if (locations.length === 1) {
+      conditions.push(ilike(contactsTable.location, `%${locations[0]}%`));
+    } else if (locations.length > 1) {
+      conditions.push(or(...locations.map((l) => ilike(contactsTable.location, `%${l}%`)))!);
     }
-    if (query.country) {
-      conditions.push(eq(contactsTable.country, query.country));
+    if (raw.country) {
+      conditions.push(eq(contactsTable.country, raw.country));
     }
-    if (query.companyId) {
-      conditions.push(eq(contactsTable.companyId, query.companyId));
+    if (raw.companyId) {
+      conditions.push(eq(contactsTable.companyId, parseInt(raw.companyId)));
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;

@@ -20,48 +20,65 @@ import { getInitials, formatNumber, cn } from "@/lib/utils";
 
 type Tab = "contacts" | "companies";
 
+type Filters = {
+  industry: string[];
+  department: string[];
+  seniority: string[];
+  companySize: string[];
+  location: string[];
+};
+
+const EMPTY_FILTERS: Filters = {
+  industry: [],
+  department: [],
+  seniority: [],
+  companySize: [],
+  location: [],
+};
+
+function parseArrayParam(val: string | null): string[] {
+  if (!val) return [];
+  return val.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+function joinParam(arr: string[]): string | undefined {
+  return arr.length > 0 ? arr.join(",") : undefined;
+}
+
 export default function Search() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   
   const [activeTab, setActiveTab] = useState<Tab>((searchParams.get("tab") as Tab) || "contacts");
   
-  // Search state
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [debouncedSearch] = useDebounce(searchTerm, 400);
 
-  // Pagination state
   const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
   
-  // Filter states
-  const [filters, setFilters] = useState({
-    industry: searchParams.get("industry") || "",
-    department: searchParams.get("department") || "",
-    seniority: searchParams.get("seniority") || "",
-    companySize: searchParams.get("companySize") || "",
-    location: searchParams.get("location") || "",
+  const [filters, setFilters] = useState<Filters>({
+    industry: parseArrayParam(searchParams.get("industry")),
+    department: parseArrayParam(searchParams.get("department")),
+    seniority: parseArrayParam(searchParams.get("seniority")),
+    companySize: parseArrayParam(searchParams.get("companySize")),
+    location: parseArrayParam(searchParams.get("location")),
   });
 
-  // Sync state to URL
   useEffect(() => {
     const params = new URLSearchParams();
     params.set("tab", activeTab);
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (page > 1) params.set("page", page.toString());
-    
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value);
+    Object.entries(filters).forEach(([key, arr]) => {
+      if (arr.length > 0) params.set(key, arr.join(","));
     });
-    
     const newSearch = params.toString();
     const newUrl = newSearch ? `?${newSearch}` : window.location.pathname;
-    
     if (window.location.search !== `?${newSearch}` && newSearch !== "") {
-       window.history.replaceState(null, "", newUrl);
+      window.history.replaceState(null, "", newUrl);
     }
   }, [activeTab, debouncedSearch, page, filters]);
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, filters, activeTab]);
@@ -72,38 +89,38 @@ export default function Search() {
     search: debouncedSearch || undefined,
     page,
     limit: 20,
-    industry: filters.industry || undefined,
-    department: filters.department || undefined,
-    seniority: filters.seniority || undefined,
-    companySize: filters.companySize || undefined,
-    location: filters.location || undefined,
-  }, { query: { enabled: activeTab === "contacts" }});
+    industry: joinParam(filters.industry),
+    department: joinParam(filters.department),
+    seniority: joinParam(filters.seniority),
+    companySize: joinParam(filters.companySize),
+    location: joinParam(filters.location),
+  }, { query: { enabled: activeTab === "contacts" } });
 
   const { data: companiesData, isLoading: isCompaniesLoading } = useListCompanies({
     search: debouncedSearch || undefined,
     page,
     limit: 20,
-    industry: filters.industry || undefined,
-    size: filters.companySize || undefined,
-    location: filters.location || undefined,
-  }, { query: { enabled: activeTab === "companies" }});
+    industry: joinParam(filters.industry),
+    size: joinParam(filters.companySize),
+    location: joinParam(filters.location),
+  }, { query: { enabled: activeTab === "companies" } });
 
-  const handleFilterChange = (key: keyof typeof filters, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: prev[key] === value ? "" : value }));
+  const handleFilterChange = (key: keyof Filters, value: string) => {
+    setFilters(prev => {
+      const current = prev[key];
+      const updated = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, [key]: updated };
+    });
   };
 
   const clearFilters = () => {
-    setFilters({
-      industry: "",
-      department: "",
-      seniority: "",
-      companySize: "",
-      location: "",
-    });
+    setFilters(EMPTY_FILTERS);
     setSearchTerm("");
   };
 
-  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const activeFilterCount = Object.values(filters).reduce((acc, arr) => acc + arr.length, 0);
 
   return (
     <Shell>
@@ -114,6 +131,9 @@ export default function Search() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold flex items-center gap-2">
                 <Filter className="h-4 w-4" /> Filters
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1.5 text-xs">{activeFilterCount}</Badge>
+                )}
               </h2>
               {activeFilterCount > 0 && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
@@ -336,10 +356,15 @@ export default function Search() {
   );
 }
 
-function FilterSection({ title, options, selected, onChange }: { title: string, options: string[], selected: string, onChange: (v: string) => void }) {
+function FilterSection({ title, options, selected, onChange }: {
+  title: string;
+  options: string[];
+  selected: string[];
+  onChange: (v: string) => void;
+}) {
   const [showAll, setShowAll] = useState(false);
   if (!options || options.length === 0) return null;
-  
+
   const displayOptions = showAll ? options : options.slice(0, 6);
   const hasMore = options.length > 6;
 
@@ -347,21 +372,27 @@ function FilterSection({ title, options, selected, onChange }: { title: string, 
     <div>
       <h3 className="text-sm font-semibold text-foreground mb-3">{title}</h3>
       <div className="space-y-2">
-        {displayOptions.map((opt) => (
-          <label
-            key={opt}
-            className="flex items-center gap-2 cursor-pointer group"
-            onClick={() => onChange(opt)}
-          >
-            <div className={cn(
-              "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
-              selected === opt ? "bg-primary border-primary" : "border-input bg-background group-hover:border-primary/50"
-            )}>
-              {selected === opt && <div className="w-2 h-2 bg-white rounded-sm" />}
-            </div>
-            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{opt}</span>
-          </label>
-        ))}
+        {displayOptions.map((opt) => {
+          const isSelected = selected.includes(opt);
+          return (
+            <label
+              key={opt}
+              className="flex items-center gap-2 cursor-pointer group"
+              onClick={() => onChange(opt)}
+            >
+              <div className={cn(
+                "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
+                isSelected ? "bg-primary border-primary" : "border-input bg-background group-hover:border-primary/50"
+              )}>
+                {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
+              </div>
+              <span className={cn(
+                "text-sm transition-colors",
+                isSelected ? "text-foreground font-medium" : "text-muted-foreground group-hover:text-foreground"
+              )}>{opt}</span>
+            </label>
+          );
+        })}
         {hasMore && (
           <button
             className="text-xs text-primary font-medium mt-2 hover:underline"
@@ -375,7 +406,7 @@ function FilterSection({ title, options, selected, onChange }: { title: string, 
   );
 }
 
-function LoadingSkeletons({ type, count }: { type: 'contact'|'company', count: number }) {
+function LoadingSkeletons({ type, count }: { type: 'contact' | 'company'; count: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
@@ -409,7 +440,11 @@ function EmptyState() {
   );
 }
 
-function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: number, totalPages: number, onPageChange: (p: number) => void }) {
+function Pagination({ currentPage, totalPages, onPageChange }: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (p: number) => void;
+}) {
   return (
     <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
       <p className="text-sm text-muted-foreground">
