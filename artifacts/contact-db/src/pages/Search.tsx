@@ -5,7 +5,7 @@ import { useDebounce } from "use-debounce";
 import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown,
-  ExternalLink, Bookmark, Trash2, BookmarkPlus,
+  ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus,
 } from "lucide-react";
 import {
   useListContacts,
@@ -14,6 +14,9 @@ import {
   useListSavedSearches,
   useCreateSavedSearch,
   useDeleteSavedSearch,
+  useListLists,
+  useCreateList,
+  useAddMembersToList,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { Input } from "@/components/ui/Input";
@@ -127,6 +130,12 @@ export default function Search() {
   const [contactSort, setContactSort] = useState<SortConfig | null>(null);
   const [companySort, setCompanySort] = useState<SortConfig | null>(null);
 
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [addToListOpen, setAddToListOpen] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [addListError, setAddListError] = useState("");
+  const [addSuccess, setAddSuccess] = useState("");
+
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [saveError, setSaveError] = useState("");
@@ -134,6 +143,10 @@ export default function Search() {
   const { data: savedSearches = [] } = useListSavedSearches();
   const createSearch = useCreateSavedSearch();
   const deleteSearch = useDeleteSavedSearch();
+
+  const { data: allLists = [] } = useListLists();
+  const createList = useCreateList();
+  const addMembers = useAddMembersToList();
 
   const handleSaveSearch = () => {
     if (!saveName.trim()) { setSaveError("Please enter a name."); return; }
@@ -159,6 +172,65 @@ export default function Search() {
     );
   };
 
+  const toggleId = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllContacts = () => {
+    const ids = contacts.map((c) => c.id);
+    const allSelected = ids.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const toggleSelectAllCompanies = () => {
+    const ids = companies.map((c) => c.id);
+    const allSelected = ids.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const doAddToList = (listId: number) => {
+    addMembers.mutate(
+      { listId, ids: Array.from(selectedIds) },
+      {
+        onSuccess: (res) => {
+          setAddToListOpen(false);
+          setNewListName("");
+          setAddListError("");
+          setAddSuccess(`Added ${res.added} ${activeTab} to list.`);
+          setSelectedIds(new Set());
+          setTimeout(() => setAddSuccess(""), 3000);
+        },
+        onError: () => setAddListError("Failed to add to list. Try again."),
+      },
+    );
+  };
+
+  const handleAddToNewList = () => {
+    if (!newListName.trim()) { setAddListError("Please enter a list name."); return; }
+    createList.mutate(
+      { name: newListName.trim(), type: activeTab },
+      {
+        onSuccess: (list) => doAddToList(list.id),
+        onError: () => setAddListError("Failed to create list. Try again."),
+      },
+    );
+  };
+
   const handleLoadSearch = (s: (typeof savedSearches)[number]) => {
     setActiveTab(s.tab as Tab);
     setSearchTerm(s.search ?? "");
@@ -171,6 +243,10 @@ export default function Search() {
     });
     setPage(1);
   };
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [activeTab]);
 
   useEffect(() => {
     setPage(1);
@@ -262,6 +338,12 @@ export default function Search() {
 
   const contacts = contactsData?.data ?? [];
   const companies = companiesData?.data ?? [];
+
+  const filteredLists = allLists.filter((l) => l.type === activeTab);
+  const allContactsSelected = contacts.length > 0 && contacts.every((c) => selectedIds.has(c.id));
+  const someContactsSelected = contacts.some((c) => selectedIds.has(c.id));
+  const allCompaniesSelected = companies.length > 0 && companies.every((c) => selectedIds.has(c.id));
+  const someCompaniesSelected = companies.some((c) => selectedIds.has(c.id));
 
   return (
     <Shell>
@@ -424,7 +506,7 @@ export default function Search() {
                   transition={{ duration: 0.2 }}
                 >
                   {isContactsLoading ? (
-                    <TableSkeleton cols={7} rows={8} />
+                    <TableSkeleton cols={8} rows={8} />
                   ) : !contactsData?.data.length ? (
                     <EmptyState />
                   ) : (
@@ -433,7 +515,17 @@ export default function Search() {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-border bg-muted/40">
-                              <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} className="pl-5 min-w-[180px]" />
+                              <th className="px-4 py-3 w-10">
+                                <input
+                                  type="checkbox"
+                                  checked={allContactsSelected}
+                                  ref={(el) => { if (el) el.indeterminate = someContactsSelected && !allContactsSelected; }}
+                                  onChange={toggleSelectAllContacts}
+                                  className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </th>
+                              <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[180px]" />
                               <SortableTh column="jobTitle" label="Title" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[160px]" />
                               <SortableTh column="companyName" label="Company" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
                               <SortableTh column="location" label="Location" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
@@ -446,16 +538,25 @@ export default function Search() {
                             {contacts.map((contact, idx) => {
                               const insightCount = contact.insightCount ?? 0;
                               const insightLevel = getInsightLevel(insightCount);
+                              const isSelected = selectedIds.has(contact.id);
                               return (
                                 <tr
                                   key={contact.id}
                                   className={cn(
                                     "border-b border-border/50 hover:bg-primary/5 transition-colors group cursor-pointer",
-                                    idx % 2 === 0 ? "bg-card" : "bg-muted/20",
+                                    isSelected ? "bg-primary/5" : idx % 2 === 0 ? "bg-card" : "bg-muted/20",
                                   )}
                                   onClick={() => setLocation(`/contacts/${contact.id}`)}
                                 >
-                                  <td className="px-4 py-3 pl-5">
+                                  <td className="px-4 py-3" onClick={(e) => toggleId(contact.id, e)}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => {}}
+                                      className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                                    />
+                                  </td>
+                                  <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
                                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
                                         {getInitials(`${contact.firstName} ${contact.lastName}`)}
@@ -515,7 +616,7 @@ export default function Search() {
                   transition={{ duration: 0.2 }}
                 >
                   {isCompaniesLoading ? (
-                    <TableSkeleton cols={5} rows={8} />
+                    <TableSkeleton cols={6} rows={8} />
                   ) : !companiesData?.data.length ? (
                     <EmptyState />
                   ) : (
@@ -524,7 +625,17 @@ export default function Search() {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-border bg-muted/40">
-                              <SortableTh column="name" label="Company Name" sortConfig={companySort} onSort={handleCompanySort} className="pl-5 min-w-[180px]" />
+                              <th className="px-4 py-3 w-10">
+                                <input
+                                  type="checkbox"
+                                  checked={allCompaniesSelected}
+                                  ref={(el) => { if (el) el.indeterminate = someCompaniesSelected && !allCompaniesSelected; }}
+                                  onChange={toggleSelectAllCompanies}
+                                  className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </th>
+                              <SortableTh column="name" label="Company Name" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px]" />
                               <SortableTh column="industry" label="Industry" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[140px]" />
                               <SortableTh column="website" label="Website" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px]" />
                               <SortableTh column="location" label="Location" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[140px]" />
@@ -532,16 +643,26 @@ export default function Search() {
                             </tr>
                           </thead>
                           <tbody>
-                            {companies.map((company, idx) => (
+                            {companies.map((company, idx) => {
+                              const isSelected = selectedIds.has(company.id);
+                              return (
                               <tr
                                 key={company.id}
                                 className={cn(
                                   "border-b border-border/50 hover:bg-primary/5 transition-colors group cursor-pointer",
-                                  idx % 2 === 0 ? "bg-card" : "bg-muted/20",
+                                  isSelected ? "bg-primary/5" : idx % 2 === 0 ? "bg-card" : "bg-muted/20",
                                 )}
                                 onClick={() => setLocation(`/companies/${company.id}`)}
                               >
-                                <td className="px-4 py-3 pl-5">
+                                <td className="px-4 py-3" onClick={(e) => toggleId(company.id, e)}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => {}}
+                                    className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
                                   <div className="flex items-center gap-3">
                                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center flex-shrink-0">
                                       <Building2 className="h-4 w-4 text-slate-500" />
@@ -571,7 +692,8 @@ export default function Search() {
                                 <td className="px-4 py-3 text-muted-foreground">{company.location ?? "—"}</td>
                                 <td className="px-4 py-3 text-muted-foreground">{company.size ?? "—"}</td>
                               </tr>
-                            ))}
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -590,6 +712,109 @@ export default function Search() {
           </div>
         </div>
       </div>
+
+      {/* Floating Selection Action Bar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-foreground text-background rounded-2xl shadow-2xl px-5 py-3"
+          >
+            <span className="text-sm font-medium">
+              {selectedIds.size} {activeTab === "contacts" ? "contact" : "company"}{selectedIds.size !== 1 ? "s" : ""} selected
+            </span>
+            <div className="h-4 w-px bg-background/20" />
+            <button
+              onClick={() => { setNewListName(""); setAddListError(""); setAddToListOpen(true); }}
+              className="flex items-center gap-1.5 text-sm font-semibold text-primary bg-background rounded-lg px-3 py-1.5 hover:bg-primary hover:text-background transition-colors"
+            >
+              <ListPlus className="h-4 w-4" /> Add to List
+            </button>
+            <button
+              aria-label="Clear selection"
+              onClick={() => setSelectedIds(new Set())}
+              className="text-background/60 hover:text-background text-sm transition-colors ml-1"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Toast */}
+      <AnimatePresence>
+        {addSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-emerald-600 text-white rounded-xl shadow-lg px-4 py-2.5 text-sm font-medium"
+          >
+            <Check className="h-4 w-4" /> {addSuccess}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add to List Dialog */}
+      <Dialog open={addToListOpen} onOpenChange={(o) => { setAddToListOpen(o); if (!o) { setNewListName(""); setAddListError(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListPlus className="h-5 w-5 text-primary" />
+              Add {selectedIds.size} {activeTab === "contacts" ? "contact" : "company"}{selectedIds.size !== 1 ? "s" : ""} to a List
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-1 space-y-5">
+            {/* Existing lists */}
+            {filteredLists.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Your {activeTab} lists</p>
+                <ul className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {filteredLists.map((list) => (
+                    <li key={list.id}>
+                      <button
+                        onClick={() => doAddToList(list.id)}
+                        disabled={addMembers.isPending}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-colors text-sm group"
+                      >
+                        <span className="font-medium group-hover:text-primary">{list.name}</span>
+                        <span className="text-muted-foreground text-xs">{list.memberCount} members</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground">{filteredLists.length > 0 ? "or create new" : "create a new list"}</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            {/* Create new */}
+            <div className="flex gap-2">
+              <input
+                autoFocus={filteredLists.length === 0}
+                type="text"
+                placeholder="New list name…"
+                value={newListName}
+                onChange={(e) => { setNewListName(e.target.value); setAddListError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAddToNewList(); }}
+                className="flex-1 px-3 py-2 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <Button onClick={handleAddToNewList} disabled={createList.isPending || addMembers.isPending} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Create & Add
+              </Button>
+            </div>
+            {addListError && <p className="text-xs text-destructive">{addListError}</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Save Search Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={(open) => { setSaveDialogOpen(open); if (!open) { setSaveName(""); setSaveError(""); } }}>

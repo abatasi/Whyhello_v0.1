@@ -16,17 +16,21 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AddListMembersBody,
   CompanyDetail,
   CompanyListResponse,
   ContactDetail,
   ContactInsight,
   ContactListResponse,
+  CreateListBody,
   CreateSavedSearchBody,
   ErrorResponse,
   FilterOptions,
   HealthStatus,
   ListCompaniesParams,
   ListContactsParams,
+  ListMembersResponse,
+  ListRecord,
   SavedSearch,
 } from "./api.schemas";
 
@@ -712,6 +716,187 @@ export const deleteSavedSearch = async (
     method: "DELETE",
   });
 };
+
+// ---------------------------------------------------------------------------
+// Lists
+// ---------------------------------------------------------------------------
+
+export const getListsQueryKey = () => [`/api/lists`] as const;
+export const getListQueryKey = (id: number) => [`/api/lists/${id}`] as const;
+export const getListMembersQueryKey = (id: number, params?: Record<string, unknown>) =>
+  [`/api/lists/${id}/members`, params] as const;
+
+export const fetchLists = async (options?: RequestInit): Promise<ListRecord[]> =>
+  customFetch<ListRecord[]>(`/api/lists`, { ...options, method: "GET" });
+
+export const fetchList = async (id: number, options?: RequestInit): Promise<ListRecord> =>
+  customFetch<ListRecord>(`/api/lists/${id}`, { ...options, method: "GET" });
+
+export const fetchListMembers = async (
+  id: number,
+  params?: { page?: number; limit?: number },
+  options?: RequestInit,
+): Promise<ListMembersResponse> => {
+  const qs = new URLSearchParams();
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.limit) qs.set("limit", String(params.limit));
+  return customFetch<ListMembersResponse>(`/api/lists/${id}/members?${qs}`, { ...options, method: "GET" });
+};
+
+export function useListLists<TData = Awaited<ReturnType<typeof fetchLists>>, TError = ErrorType<unknown>>(
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof fetchLists>>, TError, TData> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryKey = options?.query?.queryKey ?? getListsQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof fetchLists>>> = ({ signal }) => fetchLists({ signal });
+  const q = useQuery({ queryKey, queryFn, ...options?.query }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...q, queryKey };
+}
+
+export function useGetList<TData = Awaited<ReturnType<typeof fetchList>>, TError = ErrorType<unknown>>(
+  id: number,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof fetchList>>, TError, TData> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryKey = options?.query?.queryKey ?? getListQueryKey(id);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof fetchList>>> = ({ signal }) => fetchList(id, { signal });
+  const q = useQuery({ queryKey, queryFn, enabled: !!id, ...options?.query }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...q, queryKey };
+}
+
+export function useGetListMembers<TData = Awaited<ReturnType<typeof fetchListMembers>>, TError = ErrorType<unknown>>(
+  id: number,
+  params?: { page?: number; limit?: number },
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof fetchListMembers>>, TError, TData> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryKey = options?.query?.queryKey ?? getListMembersQueryKey(id, params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof fetchListMembers>>> = ({ signal }) =>
+    fetchListMembers(id, params, { signal });
+  const q = useQuery({ queryKey, queryFn, enabled: !!id, ...options?.query }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...q, queryKey };
+}
+
+export function useCreateList<TError = ErrorType<unknown>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<Awaited<ReturnType<typeof createList>>, TError, CreateListBody, TContext>;
+}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateListBody) => createList(body),
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
+      options?.mutation?.onSuccess?.(...args);
+    },
+    ...options?.mutation,
+  });
+}
+
+export const createList = async (body: CreateListBody, options?: RequestInit): Promise<ListRecord> =>
+  customFetch<ListRecord>(`/api/lists`, {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+export const deleteList = async (id: number, options?: RequestInit): Promise<{ ok: boolean }> =>
+  customFetch<{ ok: boolean }>(`/api/lists/${id}`, { ...options, method: "DELETE" });
+
+export function useDeleteList<TError = ErrorType<unknown>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteList>>, TError, number, TContext>;
+}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteList(id),
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
+      options?.mutation?.onSuccess?.(...args);
+    },
+    ...options?.mutation,
+  });
+}
+
+export const addListMembers = async (
+  id: number,
+  body: AddListMembersBody,
+  options?: RequestInit,
+): Promise<{ ok: boolean; added: number }> =>
+  customFetch<{ ok: boolean; added: number }>(`/api/lists/${id}/members`, {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+export function useAddListMembers<TError = ErrorType<unknown>, TContext = unknown>(
+  listId: number,
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof addListMembers>>,
+      TError,
+      AddListMembersBody,
+      TContext
+    >;
+  }
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: AddListMembersBody) => addListMembers(listId, body),
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(listId) });
+      options?.mutation?.onSuccess?.(...args);
+    },
+    ...options?.mutation,
+  });
+}
+
+export const removeListMember = async (
+  listId: number,
+  memberId: number,
+  options?: RequestInit,
+): Promise<{ ok: boolean }> =>
+  customFetch<{ ok: boolean }>(`/api/lists/${listId}/members/${memberId}`, { ...options, method: "DELETE" });
+
+export function useRemoveListMember<TError = ErrorType<unknown>, TContext = unknown>(
+  listId: number,
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof removeListMember>>,
+      TError,
+      number,
+      TContext
+    >;
+  }
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (memberId: number) => removeListMember(listId, memberId),
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(listId) });
+      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
+      options?.mutation?.onSuccess?.(...args);
+    },
+    ...options?.mutation,
+  });
+}
+
+export function useAddMembersToList<TError = ErrorType<unknown>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addListMembers>>,
+    TError,
+    { listId: number; ids: number[] },
+    TContext
+  >;
+}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listId, ids }: { listId: number; ids: number[] }) => addListMembers(listId, { ids }),
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(variables.listId) });
+      options?.mutation?.onSuccess?.(data, variables, ...rest);
+    },
+    ...options?.mutation,
+  });
+}
 
 export function useDeleteSavedSearch<TError = ErrorType<unknown>, TContext = unknown>(options?: {
   mutation?: UseMutationOptions<

@@ -1,8 +1,9 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Search, Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@workspace/replit-auth-web";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
+import { cn } from "@/lib/utils";
 
 function getInitials(firstName?: string | null, lastName?: string | null): string {
   const f = firstName?.[0] ?? "";
@@ -12,6 +13,12 @@ function getInitials(firstName?: string | null, lastName?: string | null): strin
 
 export function Navbar() {
   const { user, logout } = useAuth();
+  const [location] = useLocation();
+
+  const navItems = [
+    { label: "Directory", href: "/" },
+    { label: "Lists", href: "/lists" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -20,12 +27,27 @@ export function Navbar() {
           <Link href="/" className="flex items-center">
             <img src={whyhelloLogo} alt="Whyhello" className="h-8 w-auto" />
           </Link>
-          
+
           <nav className="hidden md:flex items-center gap-1 text-sm font-medium text-muted-foreground">
-            <Link href="/" className="px-4 py-2 rounded-lg bg-secondary/50 text-foreground">
-              Directory
-            </Link>
-            <Button variant="ghost" className="px-4 py-2 rounded-lg">Lists</Button>
+            {navItems.map((item) => {
+              const isActive = item.href === "/"
+                ? location === "/" || location === ""
+                : location.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "px-4 py-2 rounded-lg transition-colors",
+                    isActive
+                      ? "bg-secondary/50 text-foreground"
+                      : "hover:bg-secondary/30 hover:text-foreground",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
             <Button variant="ghost" className="px-4 py-2 rounded-lg">Enrichment</Button>
           </nav>
         </div>

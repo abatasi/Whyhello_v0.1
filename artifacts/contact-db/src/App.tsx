@@ -7,6 +7,8 @@ import { useAuth } from "@workspace/replit-auth-web";
 import Search from "@/pages/Search";
 import ContactProfile from "@/pages/ContactProfile";
 import CompanyProfile from "@/pages/CompanyProfile";
+import Lists from "@/pages/Lists";
+import ListDetail from "@/pages/ListDetail";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
@@ -45,6 +47,8 @@ function Router() {
       <Route path="/" component={() => <ProtectedRoute component={Search} />} />
       <Route path="/contacts/:id" component={() => <ProtectedRoute component={ContactProfile} />} />
       <Route path="/companies/:id" component={() => <ProtectedRoute component={CompanyProfile} />} />
+      <Route path="/lists" component={() => <ProtectedRoute component={Lists} />} />
+      <Route path="/lists/:id" component={() => <ProtectedRoute component={ListDetail} />} />
       <Route component={NotFound} />
     </Switch>
   );

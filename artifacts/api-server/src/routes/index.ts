@@ -6,6 +6,7 @@ import companiesRouter from "./companies";
 import filtersRouter from "./filters";
 import insightsRouter from "./insights";
 import savedSearchesRouter from "./saved-searches";
+import listsRouter from "./lists";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use("/contacts/:contactId/insights", insightsRouter);
 router.use("/companies", companiesRouter);
 router.use("/filters", filtersRouter);
 router.use("/saved-searches", savedSearchesRouter);
+router.use("/lists", listsRouter);
 
 export default router;

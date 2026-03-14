@@ -164,3 +164,28 @@ export interface CreateSavedSearchBody {
   search?: string | null;
   filters: SavedSearchFilters;
 }
+
+export interface ListRecord {
+  id: number;
+  name: string;
+  type: string;
+  createdAt: string;
+  memberCount: number;
+}
+
+export interface CreateListBody {
+  name: string;
+  type: string;
+}
+
+export interface AddListMembersBody {
+  ids: number[];
+}
+
+export interface ListMembersResponse {
+  data: (ContactSummary | CompanySummary)[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
