@@ -900,46 +900,75 @@ function FilterSection({
   selected: string[];
   onChange: (v: string) => void;
 }) {
+  const [expanded, setExpanded] = useState(true);
   const [showAll, setShowAll] = useState(false);
   if (!options || options.length === 0) return null;
 
   const displayOptions = showAll ? options : options.slice(0, 6);
   const hasMore = options.length > 6;
+  const activeCount = selected.length;
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-foreground mb-3">{title}</h3>
-      <div className="space-y-2">
-        {displayOptions.map((opt) => {
-          const isSelected = selected.includes(opt);
-          return (
-            <label
-              key={opt}
-              className="flex items-center gap-2 cursor-pointer group"
-              onClick={() => onChange(opt)}
-            >
-              <div className={cn(
-                "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
-                isSelected ? "bg-primary border-primary" : "border-input bg-background group-hover:border-primary/50",
-              )}>
-                {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
-              </div>
-              <span className={cn(
-                "text-sm transition-colors",
-                isSelected ? "text-foreground font-medium" : "text-muted-foreground group-hover:text-foreground",
-              )}>{opt}</span>
-            </label>
-          );
-        })}
-        {hasMore && (
-          <button
-            className="text-xs text-primary font-medium mt-2 hover:underline"
-            onClick={() => setShowAll((v) => !v)}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between group mb-1"
+      >
+        <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+          {title}
+          {activeCount > 0 && (
+            <span className="inline-flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+              {activeCount}
+            </span>
+          )}
+        </span>
+        {expanded
+          ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+          : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />}
+      </button>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
           >
-            {showAll ? "Show less" : `Show ${options.length - 6} more`}
-          </button>
+            <div className="pt-2 space-y-2">
+              {displayOptions.map((opt) => {
+                const isSelected = selected.includes(opt);
+                return (
+                  <label
+                    key={opt}
+                    className="flex items-center gap-2 cursor-pointer group"
+                    onClick={() => onChange(opt)}
+                  >
+                    <div className={cn(
+                      "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
+                      isSelected ? "bg-primary border-primary" : "border-input bg-background group-hover:border-primary/50",
+                    )}>
+                      {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
+                    </div>
+                    <span className={cn(
+                      "text-sm transition-colors",
+                      isSelected ? "text-foreground font-medium" : "text-muted-foreground group-hover:text-foreground",
+                    )}>{opt}</span>
+                  </label>
+                );
+              })}
+              {hasMore && (
+                <button
+                  className="text-xs text-primary font-medium mt-2 hover:underline"
+                  onClick={() => setShowAll((v) => !v)}
+                >
+                  {showAll ? "Show less" : `Show ${options.length - 6} more`}
+                </button>
+              )}
+            </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }
