@@ -13,6 +13,17 @@ export interface ErrorResponse {
   error: string;
 }
 
+export interface ContactInsight {
+  id: number;
+  contactId: number;
+  title: string;
+  url: string;
+  source: string;
+  mediaType: string;
+  description?: string | null;
+  publishedDate?: string | null;
+}
+
 export interface ContactSummary {
   id: number;
   firstName: string;

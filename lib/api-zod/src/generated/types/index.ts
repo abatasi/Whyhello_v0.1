@@ -10,6 +10,7 @@ export * from "./companyDetail";
 export * from "./companyListResponse";
 export * from "./companySummary";
 export * from "./contactDetail";
+export * from "./contactInsight";
 export * from "./contactListResponse";
 export * from "./contactSummary";
 export * from "./errorResponse";

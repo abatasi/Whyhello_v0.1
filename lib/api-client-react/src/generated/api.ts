@@ -17,6 +17,7 @@ import type {
   CompanyDetail,
   CompanyListResponse,
   ContactDetail,
+  ContactInsight,
   ContactListResponse,
   ErrorResponse,
   FilterOptions,
@@ -283,6 +284,93 @@ export function useGetContact<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetContactQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get personal insights for a contact
+ */
+export const getGetContactInsightsUrl = (id: number) => {
+  return `/api/contacts/${id}/insights`;
+};
+
+export const getContactInsights = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ContactInsight[]> => {
+  return customFetch<ContactInsight[]>(getGetContactInsightsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetContactInsightsQueryKey = (id: number) => {
+  return [`/api/contacts/${id}/insights`] as const;
+};
+
+export const getGetContactInsightsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getContactInsights>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetContactInsightsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContactInsights>>
+  > = ({ signal }) => getContactInsights(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContactInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetContactInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContactInsights>>
+>;
+export type GetContactInsightsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get personal insights for a contact
+ */
+
+export function useGetContactInsights<
+  TData = Awaited<ReturnType<typeof getContactInsights>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetContactInsightsQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

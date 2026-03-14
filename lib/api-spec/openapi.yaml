@@ -115,6 +115,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /contacts/{id}/insights:
+    get:
+      operationId: getContactInsights
+      tags: [contacts]
+      summary: Get personal insights for a contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContactInsight"
+
   /companies:
     get:
       operationId: listCompanies
@@ -214,6 +235,35 @@ components:
           type: string
       required:
         - error
+
+    ContactInsight:
+      type: object
+      properties:
+        id:
+          type: integer
+        contactId:
+          type: integer
+        title:
+          type: string
+        url:
+          type: string
+        source:
+          type: string
+        mediaType:
+          type: string
+        description:
+          type: string
+          nullable: true
+        publishedDate:
+          type: string
+          nullable: true
+      required:
+        - id
+        - contactId
+        - title
+        - url
+        - source
+        - mediaType
 
     ContactSummary:
       type: object

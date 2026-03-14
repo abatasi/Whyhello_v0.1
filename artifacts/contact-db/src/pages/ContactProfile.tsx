@@ -1,10 +1,27 @@
 import { useRoute, Link } from "wouter";
-import { useGetContact } from "@workspace/api-client-react";
+import { useGetContact, useGetContactInsights } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
-import { ArrowLeft, Mail, Phone, MapPin, Building, Briefcase, Linkedin, Twitter, Globe } from "lucide-react";
+import {
+  ArrowLeft, Mail, Phone, MapPin, Building, Briefcase,
+  Linkedin, Twitter, ExternalLink, Newspaper, Tv2,
+  Mic2, FileText, Share2, Megaphone, ChevronRight
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { getInitials } from "@/lib/utils";
+import { getInitials, cn } from "@/lib/utils";
+
+const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
+  article:        { label: "Article",        icon: Newspaper,  color: "text-blue-600",   bg: "bg-blue-50 border-blue-100" },
+  blog_post:      { label: "Blog Post",      icon: FileText,   color: "text-violet-600", bg: "bg-violet-50 border-violet-100" },
+  video:          { label: "Video",          icon: Tv2,        color: "text-red-600",    bg: "bg-red-50 border-red-100" },
+  podcast:        { label: "Podcast",        icon: Mic2,       color: "text-green-600",  bg: "bg-green-50 border-green-100" },
+  linkedin_post:  { label: "LinkedIn Post",  icon: Share2,     color: "text-sky-600",    bg: "bg-sky-50 border-sky-100" },
+  press_release:  { label: "Press Release",  icon: Megaphone,  color: "text-amber-600",  bg: "bg-amber-50 border-amber-100" },
+};
+
+function getMediaConfig(type: string) {
+  return MEDIA_CONFIG[type] ?? { label: type, icon: ExternalLink, color: "text-muted-foreground", bg: "bg-secondary border-border" };
+}
 
 export default function ContactProfile() {
   const [, params] = useRoute("/contacts/:id");
@@ -13,17 +30,20 @@ export default function ContactProfile() {
   const { data: contact, isLoading, isError } = useGetContact(id, {
     query: { enabled: !!id }
   });
+  const { data: insights = [] } = useGetContactInsights(id, {
+    query: { enabled: !!id }
+  });
 
   if (isLoading) {
     return (
       <Shell>
-        <div className="p-8 max-w-4xl mx-auto animate-pulse space-y-8">
-          <div className="h-10 w-24 bg-muted rounded" />
-          <div className="bg-card border rounded-2xl p-8 flex items-start gap-8">
-            <div className="w-32 h-32 bg-muted rounded-full" />
-            <div className="space-y-4 flex-1">
-              <div className="h-8 bg-muted rounded w-1/3" />
-              <div className="h-4 bg-muted rounded w-1/2" />
+        <div className="p-8 max-w-5xl mx-auto animate-pulse space-y-6">
+          <div className="h-8 w-28 bg-muted rounded" />
+          <div className="bg-card border rounded-2xl p-8 flex items-start gap-6">
+            <div className="w-28 h-28 bg-muted rounded-full flex-shrink-0" />
+            <div className="space-y-3 flex-1">
+              <div className="h-7 bg-muted rounded w-2/5" />
+              <div className="h-4 bg-muted rounded w-1/3" />
               <div className="h-4 bg-muted rounded w-1/4" />
             </div>
           </div>
@@ -43,147 +63,275 @@ export default function ContactProfile() {
     );
   }
 
+  // Group insights by media type
+  const groupedInsights = insights.reduce<Record<string, typeof insights>>((acc, insight) => {
+    const key = insight.mediaType;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(insight);
+    return acc;
+  }, {});
+
+  const mediaOrder = ["article", "press_release", "video", "podcast", "blog_post", "linkedin_post"];
+  const sortedGroups = Object.entries(groupedInsights).sort(([a], [b]) => {
+    const ai = mediaOrder.indexOf(a);
+    const bi = mediaOrder.indexOf(b);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
   return (
     <Shell>
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Directory
-        </Link>
+      <div className="bg-[#F8FAFC] min-h-full">
+        <div className="max-w-5xl mx-auto px-6 py-8">
+          <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors gap-1.5">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Directory
+          </Link>
 
-        <div className="bg-card rounded-3xl shadow-sm border border-border/60 overflow-hidden relative">
-          {/* Header Background */}
-          <div className="h-32 bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/20 border-b border-border/50 relative overflow-hidden">
-             {/* Using abstract image if requested, else gradient fallback */}
-             <img src={`${import.meta.env.BASE_URL}images/profile-bg.png`} className="w-full h-full object-cover mix-blend-overlay opacity-50" alt="" />
-          </div>
-          
-          <div className="px-8 pb-8">
-            <div className="flex flex-col md:flex-row gap-8 items-start">
-              {/* Avatar - overlapping header */}
-              <div className="-mt-16 relative">
-                <div className="h-32 w-32 rounded-full border-4 border-card bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-4xl font-display font-bold text-primary shadow-lg">
-                  {getInitials(`${contact.firstName} ${contact.lastName}`)}
+          {/* ── Hero Card ───────────────────────────────────── */}
+          <div className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden mb-6">
+            <div className="h-28 bg-gradient-to-r from-primary/15 via-indigo-100/60 to-violet-100/40" />
+            <div className="px-8 pb-7">
+              <div className="flex flex-col sm:flex-row gap-6 items-start">
+                {/* Avatar */}
+                <div className="-mt-14 flex-shrink-0">
+                  <div className="h-28 w-28 rounded-full border-4 border-card bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-3xl font-bold text-primary shadow-md">
+                    {getInitials(`${contact.firstName} ${contact.lastName}`)}
+                  </div>
                 </div>
-                {contact.seniority && (
-                  <div className="absolute -bottom-2 -right-2 bg-background rounded-full p-1 shadow-sm">
-                    <Badge variant="success" className="shadow-sm">{contact.seniority}</Badge>
-                  </div>
-                )}
-              </div>
 
-              {/* Core Info */}
-              <div className="flex-1 pt-4">
-                <div className="flex justify-between items-start">
+                {/* Name + title */}
+                <div className="flex-1 pt-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div>
-                    <h1 className="text-3xl font-display font-bold text-foreground">
-                      {contact.firstName} {contact.lastName}
-                    </h1>
-                    <div className="text-lg text-muted-foreground mt-1 flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" />
-                      {contact.jobTitle}
-                      {contact.department && <span className="text-sm opacity-70">• {contact.department}</span>}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h1 className="text-2xl font-bold text-foreground">
+                        {contact.firstName} {contact.lastName}
+                      </h1>
+                      {contact.seniority && (
+                        <Badge variant="success" className="text-xs">{contact.seniority}</Badge>
+                      )}
                     </div>
+                    <div className="flex items-center gap-2 text-muted-foreground mt-1 text-sm flex-wrap">
+                      <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>{contact.jobTitle}</span>
+                      {contact.department && <><span className="opacity-40">·</span><span>{contact.department}</span></>}
+                      {contact.company && (
+                        <>
+                          <span className="opacity-40">at</span>
+                          <Link href={`/companies/${contact.company.id}`} className="text-primary font-medium hover:underline">
+                            {contact.company.name}
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                    {contact.bio && (
+                      <p className="text-sm text-muted-foreground mt-3 max-w-xl leading-relaxed line-clamp-2">
+                        {contact.bio}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Mail className="h-4 w-4" /> Email
-                    </Button>
+
+                  {/* CTA buttons */}
+                  <div className="flex gap-2 flex-shrink-0">
+                    {contact.email && (
+                      <a href={`mailto:${contact.email}`}>
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <Mail className="h-4 w-4" /> Email
+                        </Button>
+                      </a>
+                    )}
                     {contact.linkedinUrl && (
-                      <Button variant="outline" size="sm" className="gap-2 text-[#0A66C2] border-[#0A66C2]/20 hover:bg-[#0A66C2]/10">
-                        <Linkedin className="h-4 w-4" /> Connect
-                      </Button>
+                      <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm" className="gap-2 text-[#0A66C2] border-[#0A66C2]/30 hover:bg-[#0A66C2]/10">
+                          <Linkedin className="h-4 w-4" /> Connect
+                        </Button>
+                      </a>
                     )}
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Grid details */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
-              {/* Left Column: Contact details */}
-              <div className="col-span-1 space-y-6">
-                <div className="bg-secondary/30 rounded-2xl p-5 border border-border/50">
-                  <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Contact Info</h3>
-                  <div className="space-y-4">
-                    {contact.email && (
-                      <div className="flex items-start gap-3">
-                        <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium">Email Address</p>
-                          <a href={`mailto:${contact.email}`} className="text-sm text-primary hover:underline">{contact.email}</a>
-                        </div>
-                      </div>
-                    )}
-                    {contact.phone && (
-                      <div className="flex items-start gap-3">
-                        <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium">Phone</p>
-                          <a href={`tel:${contact.phone}`} className="text-sm text-muted-foreground hover:text-foreground">{contact.phone}</a>
-                        </div>
-                      </div>
-                    )}
-                    {(contact.location || contact.country) && (
-                      <div className="flex items-start gap-3">
-                        <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium">Location</p>
-                          <p className="text-sm text-muted-foreground">
-                            {[contact.location, contact.country].filter(Boolean).join(", ")}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    {contact.twitterHandle && (
-                      <div className="flex items-start gap-3">
-                        <Twitter className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium">Twitter</p>
-                          <a href={`https://twitter.com/${contact.twitterHandle.replace('@', '')}`} className="text-sm text-primary hover:underline">
-                            {contact.twitterHandle}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+          {/* ── Two-column layout ──────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left column */}
+            <div className="space-y-6">
+              {/* ── 1. Contact Info ─────────────────────────── */}
+              <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-5">
+                  Contact Info
+                </h2>
+                <div className="space-y-4">
+                  {contact.email && (
+                    <ContactInfoRow icon={Mail} label="Email">
+                      <a href={`mailto:${contact.email}`} className="text-primary hover:underline break-all">
+                        {contact.email}
+                      </a>
+                    </ContactInfoRow>
+                  )}
+                  {contact.phone && (
+                    <ContactInfoRow icon={Phone} label="Phone">
+                      <a href={`tel:${contact.phone}`} className="text-foreground hover:text-primary transition-colors">
+                        {contact.phone}
+                      </a>
+                    </ContactInfoRow>
+                  )}
+                  {(contact.location || contact.country) && (
+                    <ContactInfoRow icon={MapPin} label="Location">
+                      <span>{[contact.location, contact.country].filter(Boolean).join(", ")}</span>
+                    </ContactInfoRow>
+                  )}
+                  {contact.linkedinUrl && (
+                    <ContactInfoRow icon={Linkedin} label="LinkedIn">
+                      <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer"
+                        className="text-[#0A66C2] hover:underline flex items-center gap-1">
+                        View Profile <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </ContactInfoRow>
+                  )}
+                  {contact.twitterHandle && (
+                    <ContactInfoRow icon={Twitter} label="Twitter">
+                      <a href={`https://twitter.com/${contact.twitterHandle.replace("@", "")}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="text-primary hover:underline">
+                        {contact.twitterHandle}
+                      </a>
+                    </ContactInfoRow>
+                  )}
                 </div>
-              </div>
+              </section>
 
-              {/* Right Column: Bio & Company */}
-              <div className="col-span-1 lg:col-span-2 space-y-6">
-                {contact.bio && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">About {contact.firstName}</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {contact.bio}
-                    </p>
-                  </div>
-                )}
-
-                {contact.company && (
-                  <div className="mt-8">
-                    <h3 className="text-lg font-semibold mb-4">Current Company</h3>
-                    <Link href={`/companies/${contact.company.id}`} className="block group">
-                      <div className="bg-card border border-border rounded-xl p-5 shadow-sm hover:shadow-md hover:border-primary/30 transition-all">
-                        <div className="flex items-center gap-4">
-                          <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground">
-                            <Building className="h-7 w-7" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-lg group-hover:text-primary transition-colors">{contact.company.name}</h4>
-                            <div className="text-sm text-muted-foreground flex gap-3 mt-1">
-                              {contact.company.industry && <span>{contact.company.industry}</span>}
-                              {contact.company.size && <span>• {contact.company.size} employees</span>}
-                            </div>
-                          </div>
-                          <ChevronRightIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                        </div>
+              {/* Current Company */}
+              {contact.company && (
+                <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+                    Current Company
+                  </h2>
+                  <Link href={`/companies/${contact.company.id}`} className="block group">
+                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-colors -mx-1">
+                      <div className="h-11 w-11 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground flex-shrink-0">
+                        <Building className="h-5 w-5" />
                       </div>
-                    </Link>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm group-hover:text-primary transition-colors truncate">
+                          {contact.company.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {[contact.company.industry, contact.company.size ? `${contact.company.size} emp.` : null].filter(Boolean).join(" · ")}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                    </div>
+                  </Link>
+                </section>
+              )}
+            </div>
+
+            {/* Right column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* About */}
+              {contact.bio && (
+                <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+                    About {contact.firstName}
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{contact.bio}</p>
+                </section>
+              )}
+
+              {/* ── 2. Personal Insights ───────────────────── */}
+              {sortedGroups.length > 0 && (
+                <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                        Personal Insights
+                      </h2>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5">
+                        Online presence — articles, videos, podcasts & more
+                      </p>
+                    </div>
+                    <span className="text-xs bg-secondary px-2.5 py-1 rounded-full font-medium text-muted-foreground">
+                      {insights.length} {insights.length === 1 ? "result" : "results"}
+                    </span>
                   </div>
-                )}
-              </div>
+
+                  <div className="space-y-8">
+                    {sortedGroups.map(([type, items]) => {
+                      const cfg = getMediaConfig(type);
+                      const Icon = cfg.icon;
+                      return (
+                        <div key={type}>
+                          {/* Category header */}
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className={cn("w-6 h-6 rounded-md flex items-center justify-center border", cfg.bg)}>
+                              <Icon className={cn("h-3.5 w-3.5", cfg.color)} />
+                            </div>
+                            <span className={cn("text-xs font-semibold uppercase tracking-wider", cfg.color)}>
+                              {cfg.label}
+                            </span>
+                            <span className="text-xs text-muted-foreground/50 font-medium">
+                              {items.length}
+                            </span>
+                          </div>
+
+                          {/* Insight cards */}
+                          <div className="space-y-3">
+                            {items.map((insight) => (
+                              <a
+                                key={insight.id}
+                                href={insight.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block group"
+                              >
+                                <div className="flex gap-4 p-4 rounded-xl border border-border/50 hover:border-primary/25 hover:shadow-sm hover:bg-secondary/30 transition-all duration-200">
+                                  {/* Source favicon area */}
+                                  <div className={cn(
+                                    "w-9 h-9 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5",
+                                    cfg.bg
+                                  )}>
+                                    <Icon className={cn("h-4 w-4", cfg.color)} />
+                                  </div>
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">
+                                        {insight.title}
+                                      </p>
+                                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5" />
+                                    </div>
+
+                                    {insight.description && (
+                                      <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
+                                        {insight.description}
+                                      </p>
+                                    )}
+
+                                    <div className="flex items-center gap-3 mt-2.5">
+                                      <span className="text-xs font-medium text-muted-foreground/70">
+                                        {insight.source}
+                                      </span>
+                                      {insight.publishedDate && (
+                                        <>
+                                          <span className="text-muted-foreground/30 text-xs">·</span>
+                                          <span className="text-xs text-muted-foreground/60">
+                                            {insight.publishedDate}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
         </div>
@@ -192,10 +340,24 @@ export default function ContactProfile() {
   );
 }
 
-function ChevronRightIcon(props: React.SVGProps<SVGSVGElement>) {
+function ContactInfoRow({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: React.ElementType;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="m9 18 6-6-6-6"/>
-    </svg>
-  )
+    <div className="flex items-start gap-3">
+      <div className="w-8 h-8 rounded-lg bg-secondary/70 flex items-center justify-center flex-shrink-0">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
+        <div className="text-sm text-foreground">{children}</div>
+      </div>
+    </div>
+  );
 }

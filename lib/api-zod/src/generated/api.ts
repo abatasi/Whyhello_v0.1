@@ -99,6 +99,27 @@ export const GetContactResponse = zod.object({
 });
 
 /**
+ * @summary Get personal insights for a contact
+ */
+export const GetContactInsightsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetContactInsightsResponseItem = zod.object({
+  id: zod.number(),
+  contactId: zod.number(),
+  title: zod.string(),
+  url: zod.string(),
+  source: zod.string(),
+  mediaType: zod.string(),
+  description: zod.string().nullish(),
+  publishedDate: zod.string().nullish(),
+});
+export const GetContactInsightsResponse = zod.array(
+  GetContactInsightsResponseItem,
+);
+
+/**
  * @summary List companies with filters
  */
 export const listCompaniesQueryPageDefault = 1;
