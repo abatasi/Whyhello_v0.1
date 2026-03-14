@@ -384,6 +384,409 @@ const INSIGHTS_BY_NAME: Array<{
       { title: "CFO Thought Leader — Ep. 441: Capital Allocation in Retail: Playing Offense When Margins Are Tight", url: "https://open.spotify.com/episode/9tVqQrWvJsRmGb1P5ZgJpQ", source: "Spotify", mediaType: "podcast", description: "Ahmed joins the CFO Thought Leader podcast to discuss how Nexus approaches capital allocation decisions during margin compression — the hurdle rates, the portfolio approach to innovation investment, and the one bet he's most proud of.", publishedDate: "Jan 2024" },
     ],
   },
+  {
+    firstName: "Jordan", lastName: "Bates",
+    insights: [
+      { title: "Patient Experience Is a Business Strategy, Not a Soft Metric", url: "https://www.healthaffairs.org/patient-experience-strategy-jordan-bates", source: "Health Affairs", mediaType: "article", description: "Jordan Bates makes the financial case for patient experience investment, drawing on Meridian's data showing a direct correlation between HCAHPS scores and 30-day readmission rates — and what that means for reimbursement.", publishedDate: "Feb 2024" },
+      { title: "How we redesigned the patient journey from referral to discharge — and what we learned", url: "https://www.linkedin.com/pulse/patient-journey-redesign-jordan-bates", source: "LinkedIn", mediaType: "linkedin_post", description: "Jordan's detailed walkthrough of Meridian's 18-month patient journey mapping project — the service design methods, the staff co-creation sessions, and the three moments of truth that changed everything.", publishedDate: "Nov 2023" },
+      { title: "SHSMD Connections 2023 — Co-Designing Care: Putting Patients on the Design Team", url: "https://www.youtube.com/watch?v=yB2vRwZbFoW", source: "YouTube", mediaType: "video", description: "Jordan's SHSMD presentation on Meridian's patient advisory council model — how they recruit, structure sessions, and translate patient input into operational and facility design decisions.", publishedDate: "Oct 2023" },
+    ],
+  },
+  {
+    firstName: "Maya", lastName: "Singh",
+    insights: [
+      { title: "What Netflix Gets Wrong About Content Strategy (And What Streamers Should Do Instead)", url: "https://variety.com/2024/streaming-content-strategy-maya-singh", source: "Variety", mediaType: "article", description: "Maya Singh argues that platform-wide algorithmic optimization is cannibalizing the bold, distinct storytelling that built streaming audiences — and outlines the editorial strategy Orbital uses to resist the pull toward sameness.", publishedDate: "Jan 2024" },
+      { title: "The Streamer's Dilemma: Volume vs. Distinction", url: "https://medium.com/@maya-singh-content/streamers-dilemma", source: "Medium", mediaType: "blog_post", description: "Maya's widely shared essay on the structural incentives pushing streaming platforms toward content volume over creative differentiation — and how a programming philosophy anchored in distinct voices can break the cycle.", publishedDate: "Sep 2023" },
+      { title: "We passed on this show three times. Here's why we finally greenlit it — and what happened next.", url: "https://www.linkedin.com/posts/maya-singh-orbital", source: "LinkedIn", mediaType: "linkedin_post", description: "Maya's candid post on Orbital's most-streamed original — the pitch that failed twice, the development note that unlocked it, and what the show's breakout success taught the acquisitions team about trusting unconventional voices.", publishedDate: "Dec 2023" },
+    ],
+  },
+  {
+    firstName: "Oliver", lastName: "Whitmore",
+    insights: [
+      { title: "Decentralized Trial Design: The Regulatory and Operational Reality", url: "https://www.appliedclinicaltrialsonline.com/dct-reality-oliver-whitmore", source: "Applied Clinical Trials", mediaType: "article", description: "Oliver Whitmore provides a practitioner's view of decentralized clinical trials after leading three DCT programs at Spectrum — covering patient retention, data quality, and the regulatory conversations no vendor will have with you.", publishedDate: "Feb 2024" },
+      { title: "DIA Global Annual Meeting 2023 — Adaptive Trial Design: Lessons from the Field", url: "https://www.youtube.com/watch?v=zC3sSxZbGoX", source: "YouTube", mediaType: "video", description: "Oliver's DIA session on the adaptive design decisions behind Spectrum's Phase II oncology trial — the interim analysis triggers, the sample size re-estimation, and the one modification the FDA pushed back on.", publishedDate: "Jun 2023" },
+      { title: "The Clinical Leader Podcast — Ep. 63: What Sponsors Get Wrong About Site Relationships", url: "https://open.spotify.com/episode/1qNrPrWvKsRnFb1P6ZhJpR", source: "Spotify", mediaType: "podcast", description: "Oliver joins The Clinical Leader to discuss the underappreciated role of site relationships in trial performance — the engagement practices Spectrum uses that have reduced screen failure rates and improved protocol adherence.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Derek", lastName: "Huang",
+    insights: [
+      { title: "Cloud Penetration Testing in 2024: What's Changed and What's Still Broken", url: "https://www.darkreading.com/cloud-pen-testing-derek-huang", source: "Dark Reading", mediaType: "article", description: "Derek Huang surveys the current cloud attack surface — misconfigured IAM policies, lateral movement via SSRF, and the one finding that shows up in 80% of Cobalt's cloud engagements.", publishedDate: "Jan 2024" },
+      { title: "I spent 48 hours trying to break into a \"secure\" cloud environment. Here's what I found.", url: "https://www.linkedin.com/posts/derek-huang-security", source: "LinkedIn", mediaType: "linkedin_post", description: "Derek's most-shared post — a sanitized walkthrough of a Cobalt red team engagement where a single overpermissioned service account led to full environment compromise in under two days.", publishedDate: "Oct 2023" },
+      { title: "DEF CON 31 — Weaponizing Forgotten Cloud Resources: An Attacker's Toolkit", url: "https://www.youtube.com/watch?v=aC4tTwZbHoY", source: "YouTube", mediaType: "video", description: "Derek's DEF CON talk on the class of cloud vulnerabilities hiding in forgotten resources — abandoned Lambda functions, orphaned S3 buckets, and dormant IAM roles that red teams consistently exploit.", publishedDate: "Aug 2023" },
+    ],
+  },
+  {
+    firstName: "Natalie", lastName: "Brooks",
+    insights: [
+      { title: "How I Sold My First SaaS Company and What I'd Do Differently the Second Time", url: "https://techcrunch.com/2024/01/natalie-brooks-saas-exit-lessons", source: "TechCrunch", mediaType: "article", description: "Natalie Brooks reflects on her first acquisition — the due diligence surprises, the negotiation dynamics, and the founder mistakes she's seen repeated in every deal she's looked at since.", publishedDate: "Jan 2024" },
+      { title: "SaaStr Annual 2023 — Building a Company You'd Want to Acquire: Lessons from Two Exits", url: "https://www.youtube.com/watch?v=bD5uSwZbIoZ", source: "YouTube", mediaType: "video", description: "Natalie's SaaStr keynote drawing on her two acquisition experiences to outline what buyers actually look for beyond ARR — the operational maturity, customer concentration, and team depth that determine deal multiples.", publishedDate: "Sep 2023" },
+      { title: "The First-Time CEO's Playbook: What No One Tells You About the Role", url: "https://open.spotify.com/episode/2sOrQrWvLsRoGb2P7ZiKpS", source: "Spotify", mediaType: "podcast", description: "Natalie joins the Operators podcast for a wide-ranging conversation on the CEO role — board management, the loneliness of the job, how she thinks about her own coaching and development, and what she looks for when hiring executives.", publishedDate: "Nov 2023" },
+      { title: "Founders: your sales team is not the problem. Your ICP is.", url: "https://www.linkedin.com/pulse/icp-sales-problem-natalie-brooks", source: "LinkedIn", mediaType: "linkedin_post", description: "Natalie's direct post to early-stage founders on the root cause of most B2B sales struggles — and why the answer is almost never hiring a better VP of Sales.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Ethan", lastName: "Rivera",
+    insights: [
+      { title: "Scaling an Engineering Org Without Losing Engineering Culture", url: "https://medium.com/@ethan-rivera-eng/scaling-engineering-culture", source: "Medium", mediaType: "blog_post", description: "Ethan documents the intentional practices Pinnacle put in place as the engineering team grew from 12 to 65 — the guild structure, the architecture review process, and the rituals that kept technical excellence from eroding under delivery pressure.", publishedDate: "Dec 2023" },
+      { title: "QCon San Francisco 2023 — Distributed Systems Patterns for Mid-Scale SaaS", url: "https://www.youtube.com/watch?v=cE6vTwZbJoA", source: "YouTube", mediaType: "video", description: "Ethan's QCon talk on the distributed systems patterns Pinnacle uses at their scale — event sourcing decisions, the CQRS trade-offs that didn't pan out, and the architecture choices they'd change with hindsight.", publishedDate: "Oct 2023" },
+      { title: "We cut our p99 API latency by 60% without rewriting anything. Here's how.", url: "https://www.linkedin.com/posts/ethan-rivera-pinnacle", source: "LinkedIn", mediaType: "linkedin_post", description: "Ethan's step-by-step breakdown of Pinnacle's latency investigation — the profiling tools, the surprising bottleneck they found, and the targeted optimizations that delivered outsized gains.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Grace", lastName: "Liu",
+    insights: [
+      { title: "Designing for Power Users Without Alienating Beginners", url: "https://uxdesign.cc/power-users-beginners-grace-liu", source: "UX Collective", mediaType: "article", description: "Grace Liu shares Pinnacle's design system philosophy for enterprise software — the progressive disclosure patterns, keyboard shortcut strategies, and contextual help approaches that serve both casual and expert users.", publishedDate: "Jan 2024" },
+      { title: "I user-tested our onboarding flow with 20 new customers. Here's what I found.", url: "https://www.linkedin.com/pulse/onboarding-user-test-grace-liu", source: "LinkedIn", mediaType: "linkedin_post", description: "Grace's transparent account of a brutal onboarding usability study — the moments where users got lost, the assumptions the team had wrong, and the redesign that cut time-to-value by 40%.", publishedDate: "Nov 2023" },
+    ],
+  },
+  {
+    firstName: "Victor", lastName: "Zhao",
+    insights: [
+      { title: "Why B2B SaaS Multiples Are Resetting — and What That Means for Founders Raising in 2024", url: "https://fortune.com/2024/02/b2b-saas-multiples-victor-zhao", source: "Fortune", mediaType: "article", description: "Victor Zhao of Cascade Capital analyzes the recalibration in B2B SaaS valuations, what sustainable growth metrics look like in the current environment, and how founders should frame their narratives for investors.", publishedDate: "Feb 2024" },
+      { title: "20 Minutes VC — Ep. 2,140: Building Conviction on Pre-Traction B2B Companies", url: "https://open.spotify.com/episode/3tPqRrWvMsRpHc3P8ZjLpT", source: "Spotify", mediaType: "podcast", description: "Victor joins Harry Stebbings to discuss how Cascade evaluates pre-traction B2B opportunities — the market structure signals, founder reference patterns, and competitive dynamics that inform early conviction.", publishedDate: "Jan 2024" },
+      { title: "The frameworks that got me to Partner and the ones I had to unlearn", url: "https://www.linkedin.com/pulse/frameworks-partner-victor-zhao", source: "LinkedIn", mediaType: "linkedin_post", description: "Victor's reflective post on the mental models from consulting that transferred well to venture investing — and the ones that created blind spots he had to consciously break.", publishedDate: "Oct 2023" },
+    ],
+  },
+  {
+    firstName: "Simone", lastName: "Dupont",
+    insights: [
+      { title: "Operator-Turned-Investor: What Two Years at a VC Firm Has Taught Me", url: "https://medium.com/@simone-dupont-vc/operator-investor-lessons", source: "Medium", mediaType: "blog_post", description: "Simone reflects on the mindset shifts required going from operator to investor — the pattern recognition that transferred, the instincts that led her astray, and what she now understands about founder decision-making that she couldn't see from inside a company.", publishedDate: "Nov 2023" },
+      { title: "Fintech's Next Wave: Where the Real Opportunities Are After the Correction", url: "https://www.linkedin.com/pulse/fintech-next-wave-simone-dupont", source: "LinkedIn", mediaType: "linkedin_post", description: "Simone's sector analysis of where Cascade is finding compelling fintech opportunities post-2021 — the verticals that survived the reset, the infrastructure layers getting rebuilt, and the customer segments still underserved.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Andre", lastName: "Jefferson",
+    insights: [
+      { title: "The Energy Transition From an Operator's Perspective: What the Headlines Miss", url: "https://hbr.org/2024/01/energy-transition-operator-andre-jefferson", source: "Harvard Business Review", mediaType: "article", description: "Andre Jefferson moves past the policy debate to examine the operational realities of energy transition — grid reliability constraints, workforce retraining challenges, and the project development bottlenecks that will determine how fast the shift actually happens.", publishedDate: "Jan 2024" },
+      { title: "CERAWeek 2023 — Building the Renewable Energy Workforce: Lessons from the Oil Patch", url: "https://www.youtube.com/watch?v=dF7tSwZbKoB", source: "YouTube", mediaType: "video", description: "Andre's CERAWeek panel session on what the oil and gas industry's workforce development playbook can teach the renewables sector — craft training programs, safety culture, and the institutional knowledge being lost in the transition.", publishedDate: "Mar 2023" },
+      { title: "Solaris Energy Closes $1.2B Financing for Three Solar + Storage Projects", url: "https://www.businesswire.com/solaris-energy-financing-close", source: "Business Wire", mediaType: "press_release", description: "Solaris Energy announces the financial close of its largest project portfolio to date, with COO Andre Jefferson overseeing the construction ramp-up across sites in Texas, Nevada, and Arizona.", publishedDate: "Feb 2024" },
+      { title: "The 3 biggest operational mistakes I see in renewable energy project development", url: "https://www.linkedin.com/posts/andre-jefferson-solaris", source: "LinkedIn", mediaType: "linkedin_post", description: "Andre's direct post cataloguing the project development errors he has seen repeated across the industry — from interconnection queue mismanagement to contractor selection mistakes that blow timelines.", publishedDate: "Dec 2023" },
+    ],
+  },
+  {
+    firstName: "Mei", lastName: "Zhang",
+    insights: [
+      { title: "Project Finance for Renewables: The Lender's Checklist Every Developer Needs to Know", url: "https://www.infrastructureinvestor.com/project-finance-renewables-mei-zhang", source: "Infrastructure Investor", mediaType: "article", description: "Mei Zhang demystifies the lender due diligence process for utility-scale renewable projects — from resource assessment requirements to offtake contract structures and the common deal-killers that developers should address before going to market.", publishedDate: "Mar 2024" },
+      { title: "How we structured a $400M tax equity deal for a merchant solar project in a volatile rate environment", url: "https://www.linkedin.com/pulse/tax-equity-merchant-solar-mei-zhang", source: "LinkedIn", mediaType: "linkedin_post", description: "Mei breaks down the financing structure behind one of Solaris's most complex transactions — the tax equity partnership mechanics, the merchant risk mitigation strategies, and the negotiation dynamics with an institutional investor.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Leo", lastName: "Moretti",
+    insights: [
+      { title: "Brand Is Not What You Say. It's What You Do When No One Is Watching.", url: "https://adage.com/article/brand-identity-leo-moretti", source: "Ad Age", mediaType: "article", description: "Leo Moretti's perspective on the gap between brand strategy and brand reality — why most brand campaigns underdeliver and the Brightwave framework for making sure creative work reflects how clients actually behave.", publishedDate: "Feb 2024" },
+      { title: "Cannes Lions 2023 — The Creativity Paradox: How Data Made Us Safer and Less Surprising", url: "https://www.youtube.com/watch?v=eH8uTwZbLoC", source: "YouTube", mediaType: "video", description: "Leo's Cannes Lions talk on the tension between data-driven creative optimization and genuinely breakthrough work — and the case for preserving creative risk-taking in an era of A/B-tested everything.", publishedDate: "Jun 2023" },
+      { title: "Brightwave Named Agency of the Year by The Drum", url: "https://www.prnewswire.com/brightwave-agency-of-year-drum", source: "PR Newswire", mediaType: "press_release", description: "The Drum recognizes Brightwave Marketing as Agency of the Year for its work on three campaigns that won Grand Prix awards, with CCO Leo Moretti accepting on behalf of a 140-person creative team.", publishedDate: "Dec 2023" },
+      { title: "What I've learned from 40+ brand campaigns that completely flopped", url: "https://www.linkedin.com/pulse/brand-campaigns-flopped-leo-moretti", source: "LinkedIn", mediaType: "linkedin_post", description: "Leo's rare and refreshingly honest post on the failure patterns he has seen across two decades of brand work — the client approval dynamics, the research misinterpretations, and the creative committee decisions that produce forgettable work.", publishedDate: "Nov 2023" },
+    ],
+  },
+  {
+    firstName: "Zara", lastName: "Ahmed",
+    insights: [
+      { title: "The Death of the Performance Marketing Playbook (And What's Replacing It)", url: "https://marketingweek.com/performance-marketing-evolution-zara-ahmed", source: "Marketing Week", mediaType: "article", description: "Zara Ahmed argues that the core performance marketing playbook — pixel targeting, last-click attribution, scaled creative testing — is breaking down under privacy changes and market saturation, and outlines the hybrid approaches that are working now.", publishedDate: "Jan 2024" },
+      { title: "Our Meta ROAS dropped 40%. Here's what we did about it.", url: "https://medium.com/@zara-ahmed-mktg/meta-roas-recovery", source: "Medium", mediaType: "blog_post", description: "Zara's transparent case study on Brightwave's response to a significant client's Meta performance collapse — the diagnostic process, the channel mix recalibration, and the creative strategy shift that rebuilt returns over 90 days.", publishedDate: "Oct 2023" },
+      { title: "Stop optimizing for clicks. Start optimizing for customers.", url: "https://www.linkedin.com/posts/zara-ahmed-performance", source: "LinkedIn", mediaType: "linkedin_post", description: "Zara's post on the proxy metric trap in performance marketing — why optimizing for CTR and low CPCs can systematically attract the wrong customers, with data from three client accounts to back it up.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Patricia", lastName: "Monroe",
+    insights: [
+      { title: "M&A Due Diligence in the Age of AI: What Acquirers Are Missing", url: "https://www.law.com/ma-due-diligence-ai-patricia-monroe", source: "Law.com", mediaType: "article", description: "Patricia Monroe argues that standard M&A due diligence frameworks are not equipped to evaluate AI-dependent businesses — and lays out the IP, liability, and regulatory questions that counsel must add to the standard playbook.", publishedDate: "Mar 2024" },
+      { title: "The Deal — Navigating Material Adverse Change Clauses After COVID: Lessons That Apply Now", url: "https://open.spotify.com/episode/4uQrSrWvNsRqIc4P9ZkMpU", source: "Spotify", mediaType: "podcast", description: "Patricia joins The Deal podcast to discuss how MAC clause interpretation has evolved after the pandemic litigation wave — what buyers and sellers should negotiate today, and the provisions that are now standard in every Titan deal.", publishedDate: "Nov 2023" },
+      { title: "Titan Legal Group Advises on $2.3B Acquisition of Midwest Manufacturing Conglomerate", url: "https://www.businesswire.com/titan-legal-manufacturing-acquisition", source: "Business Wire", mediaType: "press_release", description: "Titan Legal Group announces its role as lead counsel on the $2.3B acquisition of a Midwest manufacturing group, with Managing Partner Patricia Monroe leading the M&A and regulatory teams through a complex antitrust review.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Joshua", lastName: "Stern",
+    insights: [
+      { title: "Patent Strategy for AI Companies: The Questions Founders Should Be Asking Now", url: "https://techcrunch.com/2024/02/patent-strategy-ai-joshua-stern", source: "TechCrunch", mediaType: "article", description: "Joshua Stern walks AI founders through the IP questions that determine whether their technology moat is defensible — from patentable AI architecture choices to the trade secret protections that may matter more than patents.", publishedDate: "Feb 2024" },
+      { title: "Why your AI startup's IP strategy is probably wrong", url: "https://www.linkedin.com/posts/joshua-stern-ip", source: "LinkedIn", mediaType: "linkedin_post", description: "Joshua's direct post on the three IP mistakes he sees most consistently in AI company formation — and the early decisions that are much harder to fix retroactively once a company has investors and customers.", publishedDate: "Jan 2024" },
+      { title: "The Tech IP Podcast — Trade Secrets vs. Patents: When to Choose What", url: "https://open.spotify.com/episode/5vRrTrWvOsRrJd5P0ZlNpV", source: "Spotify", mediaType: "podcast", description: "Joshua joins the Tech IP podcast for a practical breakdown of the trade-off between patent protection and trade secret strategy for software companies — covering disclosure timing, international considerations, and the employee departure risk.", publishedDate: "Oct 2023" },
+    ],
+  },
+  {
+    firstName: "Ren", lastName: "Tanaka",
+    insights: [
+      { title: "The Infrastructure Layer AI Is Missing — and Why We're Building It", url: "https://techcrunch.com/2024/01/ai-infrastructure-ren-tanaka", source: "TechCrunch", mediaType: "article", description: "Ren Tanaka explains the infrastructure gap that motivated the founding of NeuroLink AI — the training orchestration, checkpoint management, and compute efficiency problems that every frontier lab is solving in-house and none of the cloud providers have productized.", publishedDate: "Jan 2024" },
+      { title: "NeurIPS 2023 — Efficient Large Model Training: Systems Lessons from the Research-to-Production Gap", url: "https://www.youtube.com/watch?v=fI9vTxZbMoD", source: "YouTube", mediaType: "video", description: "Ren's NeurIPS systems workshop on the engineering realities of large model training — the failure modes, the checkpoint strategies, and the distributed training optimizations that separate research experiments from production runs.", publishedDate: "Dec 2023" },
+      { title: "AI Infrastructure Podcast — Ep. 29: The Hidden Cost of Model Training", url: "https://open.spotify.com/episode/6wSsTrWvPsRsKe6P1ZmOpW", source: "Spotify", mediaType: "podcast", description: "Ren discusses the compute economics behind frontier model training, the utilization rates that make or break unit economics, and why he believes the infrastructure layer will consolidate around a small number of purpose-built platforms.", publishedDate: "Nov 2023" },
+      { title: "NeuroLink AI Raises $47M Series A to Build the AWS for Model Training", url: "https://www.businesswire.com/neurolink-ai-series-a", source: "Business Wire", mediaType: "press_release", description: "NeuroLink AI announces a $47M Series A led by Sequoia, with CTO and Co-Founder Ren Tanaka outlining the company's vision to become the infrastructure backbone for the next generation of AI labs.", publishedDate: "Feb 2024" },
+      { title: "Every AI lab is solving the same infrastructure problems. That's a market.", url: "https://www.linkedin.com/pulse/ai-infrastructure-market-ren-tanaka", source: "LinkedIn", mediaType: "linkedin_post", description: "Ren's founding thesis post — why the fragmented, bespoke training infrastructure at every AI lab is not a sign of differentiation but of a tooling market waiting to be standardized.", publishedDate: "Oct 2023" },
+    ],
+  },
+  {
+    firstName: "Chloe", lastName: "Park",
+    insights: [
+      { title: "Attention Mechanism Efficiency: A Practitioner's Guide to What Actually Works", url: "https://towardsdatascience.com/attention-efficiency-chloe-park", source: "Towards Data Science", mediaType: "article", description: "Chloe Park cuts through the attention efficiency literature to assess what techniques are practically deployable at production scale — flash attention variants, sparse attention trade-offs, and the benchmarking methodology her team uses.", publishedDate: "Mar 2024" },
+      { title: "ICLR 2024 — Adaptive Compute Allocation for Mixture-of-Experts Models", url: "https://www.youtube.com/watch?v=gJ0uUyZbNoE", source: "YouTube", mediaType: "video", description: "Chloe's ICLR presentation on NeuroLink's research into dynamic compute routing for MoE architectures — the training stability challenges, the routing collapse mitigation strategies, and benchmark results against dense baseline models.", publishedDate: "May 2024" },
+      { title: "My reading list for ML engineers who want to understand inference optimization", url: "https://www.linkedin.com/posts/chloe-park-ml", source: "LinkedIn", mediaType: "linkedin_post", description: "Chloe's curated thread of papers, blog posts, and systems resources for ML engineers wanting to go deeper on inference optimization — organized by topic and annotated with her own notes on what's worth prioritizing.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Gregory", lastName: "Hall",
+    insights: [
+      { title: "The Digitization of Commercial Lines Underwriting: Where Are We Really?", url: "https://www.insurancejournal.com/digitization-commercial-lines-gregory-hall", source: "Insurance Journal", mediaType: "article", description: "Gregory Hall provides an unvarnished assessment of where commercial lines digitization actually stands — the workflow automation that is delivering, the AI-assisted underwriting that still needs human oversight, and the data quality problems nobody wants to talk about.", publishedDate: "Jan 2024" },
+      { title: "RIMS 2023 — Climate Risk and Commercial Property: How Underwriters Are Adapting", url: "https://www.youtube.com/watch?v=hK1wVwZbOoF", source: "YouTube", mediaType: "video", description: "Gregory's RIMS panel on how commercial property underwriting is evolving in response to climate risk — the cat model limitations, the secondary peril challenge, and the underwriting guideline changes Ironclad has implemented.", publishedDate: "Apr 2023" },
+      { title: "The Insurance Podcast — Ep. 119: Building a Digital Underwriting Platform on Legacy Infrastructure", url: "https://open.spotify.com/episode/7xTtUrWvQsRtLf7P2ZnPpX", source: "Spotify", mediaType: "podcast", description: "Gregory joins The Insurance Podcast to discuss the multi-year effort to modernize Ironclad's underwriting platform — the build vs. buy decisions, the change management with tenured underwriters, and the measurable efficiency gains.", publishedDate: "Oct 2023" },
+    ],
+  },
+  {
+    firstName: "Tina", lastName: "Kowalski",
+    insights: [
+      { title: "Claims Automation in P&C: What's Working and What's Creating New Problems", url: "https://www.claims-journal.com/automation-pc-tina-kowalski", source: "Claims Journal", mediaType: "article", description: "Tina Kowalski provides a frank assessment of automation in P&C claims — where straight-through processing is delivering on its promise, where it's creating customer experience problems, and the human oversight model Ironclad uses to catch edge cases.", publishedDate: "Feb 2024" },
+      { title: "We handle 3,000 claims a day across 12 offices. Here's how we keep quality consistent.", url: "https://www.linkedin.com/pulse/claims-quality-scale-tina-kowalski", source: "LinkedIn", mediaType: "linkedin_post", description: "Tina's operational breakdown of Ironclad's claims quality management system — the calibration process, the adjuster scorecard methodology, and the coaching program that reduced variance in settlement outcomes across offices.", publishedDate: "Nov 2023" },
+    ],
+  },
+  {
+    firstName: "Sam", lastName: "Adeyemi",
+    insights: [
+      { title: "The Case for Radical Simplicity in Enterprise UX", url: "https://uxdesign.cc/radical-simplicity-enterprise-sam-adeyemi", source: "UX Collective", mediaType: "article", description: "Sam Adeyemi argues that enterprise software is chronically over-featured and under-designed — and shares the design principles Vivid Studio uses to push back against feature bloat in client work, even when stakeholders push the other way.", publishedDate: "Feb 2024" },
+      { title: "Config 2023 — Designing for Complexity Without Creating It", url: "https://www.youtube.com/watch?v=iL2xXwZbPoG", source: "YouTube", mediaType: "video", description: "Sam's Figma Config talk on the design process Vivid uses for complex enterprise products — stakeholder alignment techniques, design system governance, and the research methods that surface the real user problem beneath the stated feature request.", publishedDate: "Jun 2023" },
+      { title: "Vivid Design Studio Named to Fast Company's Most Innovative Design Firms", url: "https://www.fastcompany.com/most-innovative-design-vivid-studio", source: "Fast Company", mediaType: "press_release", description: "Fast Company recognizes Vivid Design Studio as one of the most innovative design firms of 2024, citing its signature approach to enterprise UX and its work redesigning three products that collectively serve 2M+ daily active users.", publishedDate: "Mar 2024" },
+      { title: "Design critique culture: how we give feedback that actually makes the work better", url: "https://medium.com/@sam-adeyemi-design/design-critique-culture", source: "Medium", mediaType: "blog_post", description: "Sam's guide to running design critiques that improve work without crushing designers — the facilitation structure, the feedback frameworks, and the culture norms Vivid has built over seven years of studio practice.", publishedDate: "Jan 2024" },
+      { title: "Hot take: most design systems are solving the wrong problem", url: "https://www.linkedin.com/posts/sam-adeyemi-ux", source: "LinkedIn", mediaType: "linkedin_post", description: "Sam's provocative take on design system investment — why most organizations build systems optimized for design consistency when the actual bottleneck is the handoff to engineering, not the component library itself.", publishedDate: "Dec 2023" },
+    ],
+  },
+  {
+    firstName: "Diana", lastName: "Santos",
+    insights: [
+      { title: "The Sun Belt Real Estate Correction: What the Data Actually Shows", url: "https://fortune.com/2024/02/sun-belt-real-estate-diana-santos", source: "Fortune", mediaType: "article", description: "Diana Santos provides a data-driven assessment of Sun Belt commercial real estate after the rate-driven repricing — which submarkets have overcorrected, where fundamentals remain strong, and the asset classes HarbourView is actively acquiring.", publishedDate: "Feb 2024" },
+      { title: "ULI Fall Meeting 2023 — Capital Markets in a Higher-for-Longer World", url: "https://www.youtube.com/watch?v=jM3yYwZbQoH", source: "YouTube", mediaType: "video", description: "Diana's ULI panel on how real estate investors are repositioning for a sustained higher-rate environment — the capitalization rate adjustments, the capital stack reconfigurations, and the asset types holding value.", publishedDate: "Oct 2023" },
+      { title: "HarbourView Real Estate Closes $340M Value-Add Office-to-Residential Conversion Fund", url: "https://www.businesswire.com/harbourview-conversion-fund-close", source: "Business Wire", mediaType: "press_release", description: "HarbourView Real Estate closes its targeted office-to-residential conversion fund, with CIO Diana Santos identifying the regulatory momentum and structural housing shortage as the thesis behind the strategy.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Marco", lastName: "Reyes",
+    insights: [
+      { title: "What 10 Years of Construction Project Failures Taught Me About Risk", url: "https://www.linkedin.com/pulse/construction-risk-lessons-marco-reyes", source: "LinkedIn", mediaType: "linkedin_post", description: "Marco's candid post cataloguing the project risk patterns he has observed across $400M+ in construction — schedule slippage root causes, subcontractor management mistakes, and the due diligence steps that would have caught most of them.", publishedDate: "Nov 2023" },
+      { title: "Data Center Construction: The Developer's Guide to a Specialized Asset Class", url: "https://www.constructiondive.com/data-center-construction-marco-reyes", source: "Construction Dive", mediaType: "article", description: "Marco walks through the unique construction management challenges for data center builds — power infrastructure coordination, critical system commissioning, and the schedule compression realities that developers underestimate.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Fiona", lastName: "Gallagher",
+    insights: [
+      { title: "HR Tech's Consolidation Era: What It Means for Buyers and Builders", url: "https://techcrunch.com/2024/01/hr-tech-consolidation-fiona-gallagher", source: "TechCrunch", mediaType: "article", description: "Fiona Gallagher analyzes the wave of HR tech M&A and platform consolidation — the buyer logic, the integration challenges that keep derailing them, and what the consolidation era means for mid-market buyers evaluating HRIS vendors.", publishedDate: "Jan 2024" },
+      { title: "HR Tech Conference 2023 — Compliance as a Product Feature, Not an Afterthought", url: "https://www.youtube.com/watch?v=kN4zZwZbRoI", source: "YouTube", mediaType: "video", description: "Fiona's HR Tech keynote on CloudNine's philosophy of treating compliance automation as a first-class product capability — the engineering investment required, the customer ROI, and why most HR platforms still treat compliance as bolt-on.", publishedDate: "Oct 2023" },
+      { title: "The Modern People Ops Podcast — Building HR Tech in a Category with 1,000 Vendors", url: "https://open.spotify.com/episode/8yUuVrWvRsRuMe8P3ZoPpY", source: "Spotify", mediaType: "podcast", description: "Fiona joins the Modern People Ops podcast to discuss how CloudNine differentiates in a crowded HR tech market — the ICP discipline, the product bets that proved right, and the competitor she respects most.", publishedDate: "Nov 2023" },
+      { title: "The best thing we ever did was fire a customer. Here's why.", url: "https://www.linkedin.com/posts/fiona-gallagher-cloudnine", source: "LinkedIn", mediaType: "linkedin_post", description: "Fiona's honest post on the decision to exit a large enterprise customer whose requirements were pulling CloudNine's product away from its core market — and how the decision changed the team's thinking about ICP discipline.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Theo", lastName: "Anderson",
+    insights: [
+      { title: "The Customer Success Operating Model Most SaaS Companies Are Missing", url: "https://medium.com/@theo-anderson-cs/customer-success-operating-model", source: "Medium", mediaType: "blog_post", description: "Theo Anderson outlines the three CS operating model gaps he has seen across multiple HR SaaS companies — how coverage ratios, handoff processes, and success plan ownership are typically misconfigured, and what high-performing CS orgs do differently.", publishedDate: "Dec 2023" },
+      { title: "We went from 60% to 92% net revenue retention in 18 months. Here's the full playbook.", url: "https://www.linkedin.com/pulse/nrr-turnaround-theo-anderson", source: "LinkedIn", mediaType: "linkedin_post", description: "Theo's detailed account of CloudNine's CS transformation — the segmentation model, the health score redesign, the QBR process overhaul, and the two initiatives that accounted for 70% of the NRR improvement.", publishedDate: "Jan 2024" },
+      { title: "Gainsight Pulse 2023 — Digital CS at Scale: When to Use Tech and When to Use Humans", url: "https://www.youtube.com/watch?v=lO5aAxZbSoJ", source: "YouTube", mediaType: "video", description: "Theo's Pulse conference session on CloudNine's blended CS model — the digital programs that serve the long tail of smaller customers, the human-led coverage model for enterprise, and the signals that trigger human escalation.", publishedDate: "May 2023" },
+    ],
+  },
+  {
+    firstName: "Ivan", lastName: "Petrov",
+    insights: [
+      { title: "Building a Security-First Engineering Culture Without Slowing Down Shipping", url: "https://medium.com/@ivan-petrov-eng/security-first-culture", source: "Medium", mediaType: "blog_post", description: "Ivan documents the DevSecOps transformation at Ember Security — the shift-left practices, the developer security training program, and the tooling integrations that put security feedback directly in the PR review workflow.", publishedDate: "Jan 2024" },
+      { title: "KubeCon 2023 — Container Security at Runtime: Beyond Static Scanning", url: "https://www.youtube.com/watch?v=mP6bBwZbToK", source: "YouTube", mediaType: "video", description: "Ivan's KubeCon talk on the limitations of static container image scanning and the runtime security approach Ember built — behavioral anomaly detection, eBPF-based visibility, and the alert tuning required to make runtime protection operationally viable.", publishedDate: "Nov 2023" },
+      { title: "We acquired a startup. Here's what the security audit found.", url: "https://www.linkedin.com/posts/ivan-petrov-security", source: "LinkedIn", mediaType: "linkedin_post", description: "Ivan's post-acquisition security review lessons — the infrastructure debt patterns that showed up, the credential hygiene issues that were endemic, and the 90-day remediation playbook Ember runs on every acquired codebase.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Laura", lastName: "Chen",
+    insights: [
+      { title: "Precision Agriculture's Productivity Promise: What the Field Trials Actually Show", url: "https://www.farmprogress.com/precision-ag-trials-laura-chen", source: "Farm Progress", mediaType: "article", description: "Laura Chen presents multi-year field trial data on Verdant's precision farming platform — yield impacts across corn and soybean across soil types, the sensor configurations that matter most, and the on-farm conditions that limit technology adoption.", publishedDate: "Feb 2024" },
+      { title: "Agricultural Data Science: The Messy Middle Between Research and Farm Practice", url: "https://medium.com/@laura-chen-agronomy/ag-data-science-messy-middle", source: "Medium", mediaType: "blog_post", description: "Laura's frank account of the gap between academic precision agriculture research and real farm deployment — the data quality issues, the connectivity constraints, and the agronomic knowledge required to make ML models that farmers actually trust.", publishedDate: "Nov 2023" },
+      { title: "The one thing every agtech company underestimates about farmer adoption", url: "https://www.linkedin.com/posts/laura-chen-verdant", source: "LinkedIn", mediaType: "linkedin_post", description: "Laura's post on the trust and relationship dynamics that determine whether farmers actually use precision farming technology — and why the best technical solution frequently loses to the one with better agronomic support.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Felix", lastName: "Nguyen",
+    insights: [
+      { title: "BAFTA-Nominated Game Director Felix Nguyen on Why Narrative Games Are Having a Moment", url: "https://variety.com/2024/games-narrative-felix-nguyen", source: "Variety", mediaType: "article", description: "Felix discusses the cultural and technical factors converging to make narrative games a breakout category — longer play sessions, the solo play resurgence, and why Starlight's design philosophy of emotional resonance over replayability is paying off.", publishedDate: "Jan 2024" },
+      { title: "GDC 2023 — Writing for Games: The Unique Grammar of Interactive Narrative", url: "https://www.youtube.com/watch?v=nQ7cCwZbUoL", source: "YouTube", mediaType: "video", description: "Felix's GDC session on the craft of interactive narrative writing — the branching structures that feel meaningful versus arbitrary, the player agency illusions that actually work, and the design of Starlight's most critically discussed story beat.", publishedDate: "Mar 2023" },
+      { title: "The Game Dev Unchained Podcast — Staying Indie When the Acquisition Offers Come In", url: "https://open.spotify.com/episode/9zWwXrWvSsRvNf9P4ZqQpZ", source: "Spotify", mediaType: "podcast", description: "Felix joins Game Dev Unchained for an honest conversation about the acquisition approaches Starlight has fielded, how the team thinks about independence, and why he believes creative control is a business strategy as much as an artistic one.", publishedDate: "Sep 2023" },
+    ],
+  },
+  {
+    firstName: "Amber", lastName: "Collins",
+    insights: [
+      { title: "Procedural Generation That Doesn't Feel Procedural: Lessons from Starlight's World-Building", url: "https://www.gamedeveloper.com/procedural-generation-amber-collins", source: "Game Developer", mediaType: "article", description: "Amber Collins shares the technical and design approach behind Starlight's acclaimed world-building system — the authored rules that constrain procedural generation, the artist override layers, and the QA process for catching worlds that break narrative coherence.", publishedDate: "Feb 2024" },
+      { title: "The code that almost shipped our game six months late (and what we did about it)", url: "https://www.linkedin.com/posts/amber-collins-gamedev", source: "LinkedIn", mediaType: "linkedin_post", description: "Amber's candid post on the engine architecture decision that created a performance crisis late in Starlight's last production cycle — how the team diagnosed it, the optimization sprint that resolved it, and the engineering post-mortem lessons.", publishedDate: "Dec 2023" },
+    ],
+  },
+  {
+    firstName: "Dr. Richard", lastName: "Nakamura",
+    insights: [
+      { title: "Rapid Diagnostics at the Point of Care: The Market Opportunity After COVID", url: "https://techcrunch.com/2024/02/rapid-diagnostics-market-richard-nakamura", source: "TechCrunch", mediaType: "article", description: "Dr. Nakamura maps the post-pandemic landscape for point-of-care diagnostics — where COVID expanded the market, where reimbursement is normalizing, and the clinical use cases Quantum is prioritizing for the next generation of rapid test platforms.", publishedDate: "Feb 2024" },
+      { title: "J.P. Morgan Healthcare Conference 2024 — Quantum Diagnostics: Investor Presentation", url: "https://www.youtube.com/watch?v=oR8dDwZbVoM", source: "YouTube", mediaType: "video", description: "Dr. Nakamura presents Quantum's clinical pipeline and commercial strategy at the J.P. Morgan Healthcare Conference — the regulatory pathway for two pipeline products, the partnership model with hospital systems, and the 2024 revenue outlook.", publishedDate: "Jan 2024" },
+      { title: "Quantum Diagnostics Receives FDA Clearance for Rapid Sepsis Biomarker Panel", url: "https://www.businesswire.com/quantum-diagnostics-fda-clearance", source: "Business Wire", mediaType: "press_release", description: "Quantum Diagnostics announces FDA 510(k) clearance for its rapid sepsis biomarker panel, enabling results in under 20 minutes at the point of care. CEO Dr. Richard Nakamura calls it the company's most consequential regulatory milestone.", publishedDate: "Mar 2024" },
+      { title: "Physician scientists make the best diagnostics entrepreneurs. Here's my case.", url: "https://www.linkedin.com/pulse/physician-scientist-diagnostics-richard-nakamura", source: "LinkedIn", mediaType: "linkedin_post", description: "Dr. Nakamura's argument for why clinical training creates unique advantages in diagnostics company-building — the unmet need pattern recognition, the clinical validation instincts, and the physician network access that accelerates adoption.", publishedDate: "Nov 2023" },
+    ],
+  },
+  {
+    firstName: "Jasmine", lastName: "Ford",
+    insights: [
+      { title: "Embedded Analytics: The Engineering Trade-Offs No One Writes About", url: "https://medium.com/@jasmine-ford-eng/embedded-analytics-tradeoffs", source: "Medium", mediaType: "blog_post", description: "Jasmine Ford documents the architecture decisions behind Redwood's embedded analytics platform — the multi-tenancy isolation approaches, the query performance trade-offs at scale, and the customer customization requirements that create the most engineering complexity.", publishedDate: "Jan 2024" },
+      { title: "Scaling from 5 to 60 Engineers: The Organizational Design That Actually Worked", url: "https://www.linkedin.com/pulse/engineering-org-scaling-jasmine-ford", source: "LinkedIn", mediaType: "linkedin_post", description: "Jasmine's retrospective on Redwood's engineering org growth — the team topology experiments, the squad model that didn't fit, the platform team investment that paid dividends, and what she would do differently.", publishedDate: "Nov 2023" },
+      { title: "QCon London 2024 — Multi-Tenant Architecture at Scale: Lessons from Embedded Analytics", url: "https://www.youtube.com/watch?v=pS9eEwZbWoN", source: "YouTube", mediaType: "video", description: "Jasmine's QCon presentation on the multi-tenant architecture decisions that define Redwood's platform — the tenant isolation models, the noisy neighbor mitigations, and the schema-per-tenant approach that has aged better than expected.", publishedDate: "Mar 2024" },
+    ],
+  },
+  {
+    firstName: "Patrick", lastName: "O'Connor",
+    insights: [
+      { title: "The Sales Engineer's Playbook for Technical Evaluation Cycles", url: "https://www.linkedin.com/pulse/sales-engineer-playbook-patrick-oconnor", source: "LinkedIn", mediaType: "linkedin_post", description: "Patrick's detailed guide to running technical evaluations that close — how to structure POCs, manage evaluation criteria, and navigate the internal champion relationship that determines whether a technically successful POC converts to a deal.", publishedDate: "Feb 2024" },
+      { title: "Why most software demos are a waste of everyone's time (and how to fix yours)", url: "https://medium.com/@patrick-oconnor-se/better-software-demos", source: "Medium", mediaType: "blog_post", description: "Patrick's critique of the standard SaaS product demo and a practical framework for discovery-led demonstrations that speak to the customer's actual use case rather than the product's feature set.", publishedDate: "Oct 2023" },
+    ],
+  },
+  {
+    firstName: "Danielle", lastName: "Wright",
+    insights: [
+      { title: "Digital Transformation Still Fails 70% of the Time. Here's Why.", url: "https://hbr.org/2024/01/digital-transformation-failure-danielle-wright", source: "Harvard Business Review", mediaType: "article", description: "Danielle Wright's analysis of persistent digital transformation failure rates — the organizational factors that outweigh technology choices, the governance structures that predict success, and the interventions Atlas uses to diagnose root causes before beginning engagements.", publishedDate: "Jan 2024" },
+      { title: "Management Consulted Podcast — Life After Partner: Building a Boutique Consulting Firm", url: "https://open.spotify.com/episode/0aTaYrWvTsRwOf0P5ZrRpA", source: "Spotify", mediaType: "podcast", description: "Danielle discusses her transition from Deloitte partner to building Atlas Consulting — the client base she prioritized, the talent model she built differently, and the engagements she now turns away that she would have taken at a large firm.", publishedDate: "Nov 2023" },
+      { title: "The AI Transformation Blueprint: What Leaders Get Wrong and How to Get It Right", url: "https://medium.com/@danielle-wright-consulting/ai-transformation-blueprint", source: "Medium", mediaType: "blog_post", description: "Danielle's practical framework for enterprise AI adoption — the capability assessment, the pilot design principles, and the organizational change management elements that determine whether AI initiatives deliver business value or become expensive experiments.", publishedDate: "Feb 2024" },
+      { title: "The client who fired us midway through the engagement — and what we learned", url: "https://www.linkedin.com/posts/danielle-wright-atlas", source: "LinkedIn", mediaType: "linkedin_post", description: "Danielle's rare and candid post on a failed consulting engagement — the diagnostic misalignment, the stakeholder dynamics that derailed progress, and the process changes Atlas made to identify engagement-threatening conditions earlier.", publishedDate: "Dec 2023" },
+    ],
+  },
+  {
+    firstName: "Connor", lastName: "Burke",
+    insights: [
+      { title: "Cloud Migration Without the Chaos: An Operator's Guide", url: "https://medium.com/@connor-burke-consulting/cloud-migration-guide", source: "Medium", mediaType: "blog_post", description: "Connor Burke's practical guide to enterprise cloud migration, written for the program managers and IT leaders managing the actual execution — covering wave planning, dependency mapping, and the runbook structures that prevent common go-live failures.", publishedDate: "Dec 2023" },
+      { title: "I've been on 8 cloud migrations. Here's the one thing that determines success.", url: "https://www.linkedin.com/posts/connor-burke-atlas", source: "LinkedIn", mediaType: "linkedin_post", description: "Connor's post on the single organizational factor he has seen determine cloud migration outcomes more than any technical choice — and the early engagement questions he asks clients to assess it.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Helen", lastName: "Morrison",
+    insights: [
+      { title: "Supply Chain Visibility as a Product: The Architecture and Business Case", url: "https://www.productled.com/supply-chain-visibility-helen-morrison", source: "Product-Led Alliance", mediaType: "article", description: "Helen Morrison outlines the product decisions behind Meridian Systems' supply chain visibility platform — the data model for multi-tier visibility, the customer integration patterns, and the business case framework that has become the standard for their enterprise sales cycle.", publishedDate: "Feb 2024" },
+      { title: "Mind the Product — Building Vertical SaaS for Industries That Don't Speak Tech", url: "https://www.youtube.com/watch?v=qT0fFwZbXoO", source: "YouTube", mediaType: "video", description: "Helen's Mind the Product talk on the product management challenges specific to deep vertical SaaS — domain expertise requirements, the customer advisory board model Meridian uses, and the product discovery techniques that work with supply chain practitioners.", publishedDate: "Oct 2023" },
+      { title: "The CPO's journey: from generalist PM to executive product leader", url: "https://open.spotify.com/episode/1bBaZrWvUsRxPg1P6ZsSpB", source: "Spotify", mediaType: "podcast", description: "Helen joins the Product Leadership podcast to discuss the transition from senior IC product manager to CPO — the skills that transferred, the ones she had to develop, and how she thinks about building product teams that can operate autonomously.", publishedDate: "Jan 2024" },
+      { title: "We cut our product roadmap in half. Revenue went up.", url: "https://www.linkedin.com/pulse/roadmap-reduction-helen-morrison", source: "LinkedIn", mediaType: "linkedin_post", description: "Helen's post on Meridian's radical roadmap simplification initiative — the process for identifying low-value features, the customer communication strategy, and why focus improved both engineering velocity and customer satisfaction simultaneously.", publishedDate: "Nov 2023" },
+    ],
+  },
+  {
+    firstName: "Captain Thomas", lastName: "Reid",
+    insights: [
+      { title: "Human Factors in Aviation Operations: What 28 Years in the Cockpit Taught Me About Managing Risk", url: "https://www.aviationweek.com/human-factors-operations-thomas-reid", source: "Aviation Week", mediaType: "article", description: "Thomas Reid applies Crew Resource Management principles to airline operations management — how the mindsets that prevent accidents in the cockpit translate to ground operations, maintenance planning, and the organizational decisions that create systemic risk.", publishedDate: "Jan 2024" },
+      { title: "ATCA Annual — Integrating AI Dispatch Tools While Keeping Humans in Command", url: "https://www.youtube.com/watch?v=rU1gGwZbYoP", source: "YouTube", mediaType: "video", description: "Thomas's ATCA panel on BlueSky's experience deploying AI-assisted flight dispatch tools — the human-machine interface design decisions, the training program for dispatchers, and the non-normal scenario testing that revealed automation bias risks.", publishedDate: "Oct 2023" },
+      { title: "What airline operations can teach any complex organization about resilience", url: "https://www.linkedin.com/posts/thomas-reid-aviation", source: "LinkedIn", mediaType: "linkedin_post", description: "Thomas's post drawing out the operational resilience principles from commercial aviation that apply broadly — the pre-mortem culture, the standard operating procedure discipline, and the readback-hearback communication norm that prevents the majority of errors.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Sandra", lastName: "Miles",
+    insights: [
+      { title: "The Airline CX Playbook: Why the Industry Keeps Getting It Wrong", url: "https://www.linkedin.com/pulse/airline-cx-playbook-sandra-miles", source: "LinkedIn", mediaType: "linkedin_post", description: "Sandra's pointed analysis of why airline customer experience consistently underdelivers — the structural incentives, the IT legacy constraints, and the staff empowerment failures that create the moments passengers remember for the wrong reasons.", publishedDate: "Jan 2024" },
+      { title: "The Disruptors Podcast — Redesigning the Airport Experience from the Inside Out", url: "https://open.spotify.com/episode/2cCbArWvVsRyQh2P7ZtTpC", source: "Spotify", mediaType: "podcast", description: "Sandra joins The Disruptors to discuss BlueSky's airport experience redesign program — the journey mapping methodology, the cross-functional change management, and the two initiatives that moved NPS more than anything else they tried.", publishedDate: "Nov 2023" },
+    ],
+  },
+  {
+    firstName: "Dr. Ananya", lastName: "Krishnan",
+    insights: [
+      { title: "RNA Therapeutics: From Academic Promise to Clinical Reality", url: "https://www.statnews.com/2024/01/rna-therapeutics-clinical-ananya-krishnan", source: "STAT News", mediaType: "article", description: "Dr. Krishnan traces the scientific and regulatory arc of RNA therapeutics from the first approved siRNA to Helix's current clinical programs — the delivery vehicle breakthroughs, the manufacturing challenges, and the patient populations being prioritized.", publishedDate: "Jan 2024" },
+      { title: "Helix Biotech Presents Positive Phase I Data at ASHG Annual Meeting", url: "https://www.businesswire.com/helix-biotech-ashg-phase-1-data", source: "Business Wire", mediaType: "press_release", description: "Helix Biotech presents encouraging Phase I safety and PK data for its lead RNA therapeutic candidate targeting a rare genetic liver disorder, with CEO Dr. Ananya Krishnan citing the tolerability profile as exceeding pre-clinical predictions.", publishedDate: "Nov 2023" },
+      { title: "The Long Run — From MIT PI to Biotech CEO: The Unexpected Lessons", url: "https://open.spotify.com/episode/3dDcBrWvWsRzRi3P8ZuUpD", source: "Spotify", mediaType: "podcast", description: "Dr. Krishnan joins The Long Run for a wide-ranging conversation about founding Helix from her MIT lab — the principal investigator-to-CEO transition, the capital-raising journey from a non-traditional background, and her framework for scientific risk-taking.", publishedDate: "Sep 2023" },
+      { title: "The science is the easy part. Here's what they don't teach you about building a biotech.", url: "https://www.linkedin.com/posts/ananya-krishnan-helix", source: "LinkedIn", mediaType: "linkedin_post", description: "Dr. Krishnan's honest post on the operational and leadership challenges of early-stage biotech that no PhD program prepares you for — fundraising psychology, board dynamics, and the hardest people decision she has had to make.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Marcus", lastName: "Webb",
+    insights: [
+      { title: "Negotiating Pharma Partnerships When You Have No Leverage: The Biotech BD Playbook", url: "https://medium.com/@marcus-webb-bd/pharma-partnership-playbook", source: "Medium", mediaType: "blog_post", description: "Marcus Webb lays out the framework for biotech companies negotiating their first big pharma partnership — how to establish leverage from data quality, the term sheet provisions that matter most, and the collaboration governance structures that protect scientific autonomy.", publishedDate: "Feb 2024" },
+      { title: "Helix Biotech Enters Global License Agreement with Takeda for RNA Delivery Platform", url: "https://www.businesswire.com/helix-biotech-takeda-license", source: "Business Wire", mediaType: "press_release", description: "Helix Biotech announces a global license agreement with Takeda Pharmaceutical for rights to Helix's novel lipid nanoparticle delivery technology, with VP of Business Development Marcus Webb leading a deal that includes $45M upfront and up to $380M in milestones.", publishedDate: "Mar 2024" },
+      { title: "Every biotech BD deal I've closed has had this in common", url: "https://www.linkedin.com/posts/marcus-webb-helix", source: "LinkedIn", mediaType: "linkedin_post", description: "Marcus's post on the one consistent factor across every successful pharma partnership he has negotiated — and the deal that almost failed because this element was missing until the final week.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Calvin", lastName: "Reeves",
+    insights: [
+      { title: "The Real Cost of Network Debt: A Telecom CTO's Reckoning", url: "https://www.lightreading.com/network-debt-calvin-reeves", source: "Light Reading", mediaType: "article", description: "Calvin Reeves quantifies the operational and strategic cost of legacy network infrastructure debt at Clearwave — the maintenance burden, the service limitation constraints, and the competitive disadvantage that drove the $800M fiber investment program.", publishedDate: "Jan 2024" },
+      { title: "Fiber Broadband Association Annual 2023 — Network Slicing for Enterprise: Ready or Not?", url: "https://www.youtube.com/watch?v=sV2hHwZbZoQ", source: "YouTube", mediaType: "video", description: "Calvin's FBA panel on the readiness of network slicing capabilities for enterprise managed services deployment — the standards maturity, the operational tooling gaps, and how Clearwave is positioning its network architecture to capitalize on enterprise demand.", publishedDate: "Sep 2023" },
+      { title: "Clearwave Telecom Completes Statewide Fiber Expansion, Reaches 500,000 Enterprise Passings", url: "https://www.prnewswire.com/clearwave-fiber-expansion-complete", source: "PR Newswire", mediaType: "press_release", description: "Clearwave Telecom announces the completion of its five-year fiber expansion program under CTO Calvin Reeves, reaching 500,000 enterprise-ready passings across Georgia, Alabama, and South Carolina.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Angela", lastName: "Moss",
+    insights: [
+      { title: "Selling Managed Services in a Price-Sensitive Market: The Value-Led Approach That Works", url: "https://www.linkedin.com/pulse/managed-services-value-selling-angela-moss", source: "LinkedIn", mediaType: "linkedin_post", description: "Angela's sales methodology post on shifting enterprise conversations from price comparison to TCO analysis — the business case framework Clearwave uses to quantify the value of fiber over alternatives and the stakeholder map that shapes the outreach strategy.", publishedDate: "Jan 2024" },
+      { title: "SD-WAN Is Over. What Comes Next for Enterprise Connectivity.", url: "https://www.networkworld.com/enterprise-connectivity-next-angela-moss", source: "Network World", mediaType: "article", description: "Angela Moss asserts that SD-WAN's enterprise adoption cycle has peaked and maps the emerging connectivity priorities — SASE integration, deterministic latency for AI workloads, and the enterprise requirements that are driving Clearwave's product roadmap.", publishedDate: "Feb 2024" },
+      { title: "The deal that taught me everything about enterprise sales", url: "https://medium.com/@angela-moss-sales/enterprise-sales-lesson", source: "Medium", mediaType: "blog_post", description: "Angela's detailed account of an 18-month enterprise deal that nearly collapsed four times — the multi-threaded relationship map that saved it, the procurement dynamics she hadn't encountered before, and the close sequence that got it over the line.", publishedDate: "Nov 2023" },
+    ],
+  },
+  {
+    firstName: "Richard", lastName: "Chandler",
+    insights: [
+      { title: "Community Banking's Competitive Playbook Against the Megabanks", url: "https://www.americanbanker.com/community-banking-playbook-richard-chandler", source: "American Banker", mediaType: "article", description: "Richard Chandler argues that regional banks have structural advantages over megabanks that are systematically underexploited — relationship depth, local decision-making, and the community investment positioning that builds durable deposit loyalty.", publishedDate: "Feb 2024" },
+      { title: "ABA Annual Convention 2023 — Leading Through Two Recessions: What the Patterns Reveal", url: "https://www.youtube.com/watch?v=tW3iIwZbAoR", source: "YouTube", mediaType: "video", description: "Richard's ABA keynote drawing on 35 years of banking leadership through multiple credit cycles — the early warning indicators he monitors, the portfolio management disciplines that preserved capital, and the cultural factors that determined which banks recovered fastest.", publishedDate: "Oct 2023" },
+      { title: "EastBridge Bank Completes Merger with First Colonial Financial, Creating $18B Regional Bank", url: "https://www.businesswire.com/eastbridge-first-colonial-merger", source: "Business Wire", mediaType: "press_release", description: "EastBridge Bank announces the completion of its strategic merger with First Colonial Financial, creating a combined institution with $18B in assets. Chairman and CEO Richard Chandler will lead the integration as part of a 36-month executive succession plan.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Christine", lastName: "Park",
+    insights: [
+      { title: "Model Risk Management in the Age of AI: What Bank Regulators Are Asking", url: "https://www.risk.net/model-risk-ai-christine-park", source: "Risk.net", mediaType: "article", description: "Christine Park surveys the evolving regulatory expectations for AI model risk management at banks — SR 11-7's limitations as a framework for LLMs, the documentation requirements examiners are adding, and the governance structures EastBridge has built.", publishedDate: "Mar 2024" },
+      { title: "Risk Management Association Annual — Credit Risk in a Commercial Real Estate Correction", url: "https://www.youtube.com/watch?v=uX4jJwZbBoS", source: "YouTube", mediaType: "video", description: "Christine's RMA session on EastBridge's CRE exposure management strategy — the stress testing methodology, the office concentration limits the bank implemented ahead of the market turn, and the portfolio actions that reduced tail risk.", publishedDate: "Nov 2023" },
+      { title: "The risk I worry about that no one else in banking is talking about", url: "https://www.linkedin.com/posts/christine-park-crm", source: "LinkedIn", mediaType: "linkedin_post", description: "Christine's post flagging an emerging risk category she sees growing in the banking sector — not the obvious credit or rate risk, but the concentration of operational dependency on a small number of critical technology providers.", publishedDate: "Feb 2024" },
+    ],
+  },
+  {
+    firstName: "Alexei", lastName: "Sorokin",
+    insights: [
+      { title: "Real-Time Payment Infrastructure: The Engineering Decisions That Determine Who Wins", url: "https://medium.com/@alexei-sorokin-payments/rtp-infrastructure", source: "Medium", mediaType: "blog_post", description: "Alexei Sorokin documents the distributed systems architecture behind Volga's real-time settlement engine — the consistency models, the idempotency guarantees, and the failure recovery patterns required to handle $5B in daily payment volume with sub-second finality.", publishedDate: "Jan 2024" },
+      { title: "Money 20/20 Europe 2023 — PSD3 and the Open Banking Opportunity for Infrastructure Players", url: "https://www.youtube.com/watch?v=vY5kKwZbCoT", source: "YouTube", mediaType: "video", description: "Alexei's Money 20/20 talk on how PSD3's evolution reshapes the opportunity landscape for payments infrastructure companies — the API standardization implications, the new liability framework, and Volga's positioning for the next regulatory cycle.", publishedDate: "Jun 2023" },
+      { title: "We process 2M transactions a day with 99.999% uptime. Here's the stack.", url: "https://www.linkedin.com/posts/alexei-sorokin-volga", source: "LinkedIn", mediaType: "linkedin_post", description: "Alexei's technical transparency post on Volga's infrastructure stack — the databases, the message brokers, the deployment model, and the incident that forced the architectural change that made the five-nines target achievable.", publishedDate: "Nov 2023" },
+    ],
+  },
+  {
+    firstName: "Lena", lastName: "Fischer",
+    insights: [
+      { title: "PSD2's Unfinished Business: What PSD3 Must Fix for Open Banking to Reach Its Potential", url: "https://techcrunch.com/2024/01/psd3-open-banking-lena-fischer", source: "TechCrunch", mediaType: "article", description: "Lena Fischer assesses PSD2's implementation gaps and makes the case for the PSD3 provisions that would actually deliver on open banking's promise — better SCA consistency, liability clarity, and the API performance standards that have been left to national interpretation.", publishedDate: "Jan 2024" },
+      { title: "RegTech Summit London 2023 — GDPR Meets PSD2: Managing the Intersection for Fintech Compliance", url: "https://www.youtube.com/watch?v=wZ6lLwZbDoU", source: "YouTube", mediaType: "video", description: "Lena's RegTech Summit presentation on the compliance architecture Volga built to satisfy GDPR, PSD2, and AML requirements simultaneously — where the frameworks conflict, the legal basis decisions that matter most, and the governance model for ongoing regulatory change.", publishedDate: "Oct 2023" },
+    ],
+  },
+  {
+    firstName: "James", lastName: "Harper",
+    insights: [
+      { title: "Documentary in the Streaming Era: What the Business Model Change Means for the Art Form", url: "https://variety.com/2024/documentary-streaming-james-harper", source: "Variety", mediaType: "article", description: "James Harper examines how streaming platforms' appetite for documentary content has reshaped production — the commission dynamics, the editorial independence trade-offs, and why he believes the form is in a golden era despite the business pressures.", publishedDate: "Feb 2024" },
+      { title: "BAFTA Television Craft Awards — Accepting the Best Documentary Series Award", url: "https://www.youtube.com/watch?v=xA7mMwZbEoV", source: "YouTube", mediaType: "video", description: "James accepts ArcLight's BAFTA for Best Documentary Series, delivering a short speech about the access journalism and the four-year production journey behind the film — and the subject who almost pulled out on day 300.", publishedDate: "Apr 2023" },
+      { title: "The pitch that changed how I think about documentary storytelling", url: "https://www.linkedin.com/posts/james-harper-arclight", source: "LinkedIn", mediaType: "linkedin_post", description: "James's reflective post on a commission pitch that failed — and how the feedback reshaped his approach to structuring documentary proposals, particularly around the narrative arc and the access plan.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Colonel Michael", lastName: "Barnes",
+    insights: [
+      { title: "The Defense Industry's AI Readiness Gap: A Practitioner's Assessment", url: "https://www.defenseone.com/ai-readiness-defense-michael-barnes", source: "Defense One", mediaType: "article", description: "Michael Barnes surveys the gap between AI capability and operational readiness across defense programs — the data infrastructure bottlenecks, the acquisition model limitations, and the cultural barriers to deploying AI in mission-critical contexts.", publishedDate: "Feb 2024" },
+      { title: "AUSA Annual Meeting 2023 — Autonomous Systems in Multi-Domain Operations: Policy and Reality", url: "https://www.youtube.com/watch?v=yB8nNwZbFoW", source: "YouTube", mediaType: "video", description: "Michael's AUSA panel on the policy frameworks governing autonomous systems in military operations — the Rules of Engagement compatibility questions, the verification and validation requirements, and the acquisition pathways that are accelerating fielding.", publishedDate: "Oct 2023" },
+      { title: "SkyForge Defense Awarded $180M DoD Contract for Autonomous Systems Integration", url: "https://www.businesswire.com/skyforge-defense-dod-contract", source: "Business Wire", mediaType: "press_release", description: "SkyForge Defense announces a $180M Department of Defense contract for autonomous systems integration services, led by VP of Defense Programs Colonel (ret.) Michael Barnes and involving SkyForge's proprietary sensor fusion and command-and-control architecture.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Alicia", lastName: "Kim",
+    insights: [
+      { title: "Checkout Conversion in the Headless Commerce Era: What the Data Shows", url: "https://www.emarketer.com/checkout-conversion-headless-alicia-kim", source: "eMarketer", mediaType: "article", description: "Alicia Kim analyzes checkout conversion benchmarks across Neon Commerce's client base, identifying the headless implementation decisions that correlate with higher completion rates and the common pitfalls that introduce unexpected friction.", publishedDate: "Jan 2024" },
+      { title: "ShopTalk 2024 — The Future of Fulfillment: When Customer Expectations Meet Operational Reality", url: "https://www.youtube.com/watch?v=zA9oOwZbGoX", source: "YouTube", mediaType: "video", description: "Alicia's ShopTalk session on the fulfillment experience gap — the customer expectations set by Amazon, the unit economics reality most DTC brands face, and the fulfillment promise strategies that deliver satisfaction without destroying margins.", publishedDate: "Mar 2024" },
+      { title: "The DTC feature that looked great in testing and bombed in production", url: "https://www.linkedin.com/posts/alicia-kim-neon", source: "LinkedIn", mediaType: "linkedin_post", description: "Alicia's honest post on a product launch that didn't land despite strong usability testing — the gap between test conditions and actual customer behavior, and the discovery process that revealed what was really happening.", publishedDate: "Dec 2023" },
+    ],
+  },
+  {
+    firstName: "Raj", lastName: "Pillai",
+    insights: [
+      { title: "Order Management at 50K Orders Per Day: The Architecture That Got Us There", url: "https://medium.com/@raj-pillai-eng/order-management-architecture", source: "Medium", mediaType: "blog_post", description: "Raj documents the evolution of Neon Commerce's order management system from a simple Shopify integration to a distributed, event-driven architecture handling peak-day loads — including the production incident that exposed the original design's limits.", publishedDate: "Nov 2023" },
+      { title: "Event-Driven Architecture for E-commerce: When It's Worth the Complexity", url: "https://www.youtube.com/watch?v=aB0pPwZbHoY", source: "YouTube", mediaType: "video", description: "Raj's engineering conference talk on the e-commerce use cases where event-driven architecture delivers genuine value versus where it introduces unnecessary complexity — with concrete examples from Neon's production system.", publishedDate: "Sep 2023" },
+      { title: "The on-call incident that changed how our team thinks about observability", url: "https://www.linkedin.com/posts/raj-pillai-neon", source: "LinkedIn", mediaType: "linkedin_post", description: "Raj's post on a production incident that took 6 hours to resolve because the team was flying blind — the observability investments Neon made afterward and the incident review process that turned it into a system improvement.", publishedDate: "Jan 2024" },
+    ],
+  },
+  {
+    firstName: "Vivienne", lastName: "Laurent",
+    insights: [
+      { title: "Luxury Brand in a Digital World: Why Heritage and Innovation Aren't Opposites", url: "https://skift.com/2024/02/luxury-brand-digital-vivienne-laurent", source: "Skift", mediaType: "article", description: "Vivienne Laurent makes the case that digital transformation and luxury brand equity are complementary rather than in tension — tracing how Terrace Hotels has used digital personalization to amplify its service philosophy rather than commoditize it.", publishedDate: "Feb 2024" },
+      { title: "NYU Hospitality Investment Conference 2023 — Rebranding Boutique Hotels: The Art of Not Overcomplicating It", url: "https://www.youtube.com/watch?v=bC1qQwZbIoZ", source: "YouTube", mediaType: "video", description: "Vivienne's NYUHIC talk on the rebranding methodology behind Terrace's most successful repositioning — the research process, the visual identity evolution, and the staff culture components of brand that most hotel rebrands ignore.", publishedDate: "Jun 2023" },
+      { title: "Terrace Hotels Named to Condé Nast Traveler's Gold List for the Third Consecutive Year", url: "https://www.prnewswire.com/terrace-hotels-gold-list-2024", source: "PR Newswire", mediaType: "press_release", description: "Terrace Hotels earns its third consecutive Gold List recognition from Condé Nast Traveler, with Chief Brand Officer Vivienne Laurent crediting a brand-led culture initiative that embedded service design principles into every guest touchpoint.", publishedDate: "Jan 2024" },
+      { title: "The worst rebranding mistake I've made — and what I'd do differently", url: "https://www.linkedin.com/pulse/rebranding-mistake-vivienne-laurent", source: "LinkedIn", mediaType: "linkedin_post", description: "Vivienne's candid post on a hotel repositioning that overcorrected — the market research misread, the visual identity that alienated the core guest, and the pivot process that recovered the property's performance.", publishedDate: "Nov 2023" },
+    ],
+  },
+  {
+    firstName: "Samuel", lastName: "Knight",
+    insights: [
+      { title: "Dynamic Pricing in Hospitality: The Revenue Manager's Framework for Getting It Right", url: "https://www.hotelmanagement.net/dynamic-pricing-samuel-knight", source: "Hotel Management", mediaType: "article", description: "Samuel Knight shares the revenue optimization philosophy behind Terrace's 23% RevPAR increase — the pricing algorithm governance model, the demand signal weighting, and the rate parity disciplines that prevent the channel conflicts that undermine most dynamic pricing programs.", publishedDate: "Mar 2024" },
+      { title: "HSMAI Revenue Optimization Conference 2023 — Total Revenue Management: Moving Beyond Room Rate", url: "https://www.youtube.com/watch?v=cD2rRwZbJoA", source: "YouTube", mediaType: "video", description: "Samuel's HSMAI keynote on Terrace's total revenue management approach — how the team applies yield management discipline to F&B, spa, and meeting space in addition to rooms, and the data infrastructure that makes cross-department optimization possible.", publishedDate: "Oct 2023" },
+      { title: "The pricing decision that cost us $2M (and the framework we built because of it)", url: "https://www.linkedin.com/pulse/pricing-decision-lesson-samuel-knight", source: "LinkedIn", mediaType: "linkedin_post", description: "Samuel's transparent post on a rate strategy miscalculation during a high-demand period — the competitive intelligence failure, the forecast model assumption that was wrong, and the revenue management governance changes Terrace implemented afterward.", publishedDate: "Jan 2024" },
+    ],
+  },
 ];
 
 export async function seedInsightsIfEmpty() {
@@ -405,32 +808,22 @@ export async function seedInsightsIfEmpty() {
     client.release();
   }
 
-  const [{ count }] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(contactInsightsTable);
-
-  if (count > 0) {
-    console.log(`Insights already seeded (${count} records). Skipping.`);
-    return;
-  }
-
-  console.log("Seeding contact insights...");
+  let totalSeeded = 0;
   for (const { firstName, lastName, insights } of INSIGHTS_BY_NAME) {
     const [contact] = await db
       .select({ id: contactsTable.id })
       .from(contactsTable)
-      .where(
-        and(
-          eq(contactsTable.firstName, firstName),
-          eq(contactsTable.lastName, lastName),
-        ),
-      )
+      .where(and(eq(contactsTable.firstName, firstName), eq(contactsTable.lastName, lastName)))
       .limit(1);
 
-    if (!contact) {
-      console.warn(`Contact not found: ${firstName} ${lastName} — skipping insights.`);
-      continue;
-    }
+    if (!contact) continue;
+
+    const [{ existing }] = await db
+      .select({ existing: sql<number>`count(*)::int` })
+      .from(contactInsightsTable)
+      .where(eq(contactInsightsTable.contactId, contact.id));
+
+    if (existing > 0) continue;
 
     await db.insert(contactInsightsTable).values(
       insights.map((i) => ({
@@ -443,7 +836,12 @@ export async function seedInsightsIfEmpty() {
         publishedDate: i.publishedDate,
       })),
     );
-    console.log(`Seeded ${insights.length} insights for ${firstName} ${lastName}.`);
+    totalSeeded += insights.length;
+  }
+  if (totalSeeded > 0) {
+    console.log(`Seeded ${totalSeeded} new insights.`);
+  } else {
+    console.log("Insights already up to date.");
   }
 }
 
