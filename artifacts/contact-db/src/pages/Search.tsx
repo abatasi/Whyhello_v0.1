@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDebounce } from "use-debounce";
-import { 
-  Building2, Users, Search as SearchIcon, Filter, 
-  MapPin, Briefcase, Building, ChevronLeft, ChevronRight,
-  Mail, Phone
+import {
+  Building2, Users, Search as SearchIcon, Filter,
+  ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown,
+  ExternalLink,
 } from "lucide-react";
-import { 
-  useListContacts, 
-  useListCompanies, 
-  useGetFilterOptions 
+import {
+  useListContacts,
+  useListCompanies,
+  useGetFilterOptions,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { Input } from "@/components/ui/Input";
@@ -36,6 +36,11 @@ const EMPTY_FILTERS: Filters = {
   location: [],
 };
 
+type SortConfig = {
+  column: string;
+  direction: "asc" | "desc";
+};
+
 function parseArrayParam(val: string | null): string[] {
   if (!val) return [];
   return val.split(",").map((s) => s.trim()).filter(Boolean);
@@ -45,17 +50,62 @@ function joinParam(arr: string[]): string | undefined {
   return arr.length > 0 ? arr.join(",") : undefined;
 }
 
+function getInsightLevel(count: number): { label: string; className: string } | null {
+  if (count >= 7) return { label: "High", className: "bg-emerald-100 text-emerald-700 border-emerald-200" };
+  if (count > 3 && count < 7) return { label: "Medium", className: "bg-amber-100 text-amber-700 border-amber-200" };
+  if (count > 1 && count < 3) return { label: "Low", className: "bg-slate-100 text-slate-600 border-slate-200" };
+  return null;
+}
+
+function SortIcon({ column, sortConfig }: { column: string; sortConfig: SortConfig | null }) {
+  if (!sortConfig || sortConfig.column !== column) {
+    return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50 ml-1 flex-shrink-0" />;
+  }
+  return sortConfig.direction === "asc"
+    ? <ChevronUp className="h-3.5 w-3.5 text-primary ml-1 flex-shrink-0" />
+    : <ChevronDown className="h-3.5 w-3.5 text-primary ml-1 flex-shrink-0" />;
+}
+
+function SortableTh({
+  column,
+  label,
+  sortConfig,
+  onSort,
+  className,
+}: {
+  column: string;
+  label: string;
+  sortConfig: SortConfig | null;
+  onSort: (col: string) => void;
+  className?: string;
+}) {
+  const isActive = sortConfig?.column === column;
+  return (
+    <th
+      onClick={() => onSort(column)}
+      className={cn(
+        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide cursor-pointer select-none whitespace-nowrap",
+        isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+        className,
+      )}
+    >
+      <div className="flex items-center">
+        {label}
+        <SortIcon column={column} sortConfig={sortConfig} />
+      </div>
+    </th>
+  );
+}
+
 export default function Search() {
   const [, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
-  
+
   const [activeTab, setActiveTab] = useState<Tab>((searchParams.get("tab") as Tab) || "contacts");
-  
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [debouncedSearch] = useDebounce(searchTerm, 400);
-
   const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
-  
+
   const [filters, setFilters] = useState<Filters>({
     industry: parseArrayParam(searchParams.get("industry")),
     department: parseArrayParam(searchParams.get("department")),
@@ -63,6 +113,9 @@ export default function Search() {
     companySize: parseArrayParam(searchParams.get("companySize")),
     location: parseArrayParam(searchParams.get("location")),
   });
+
+  const [contactSort, setContactSort] = useState<SortConfig | null>(null);
+  const [companySort, setCompanySort] = useState<SortConfig | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -85,28 +138,34 @@ export default function Search() {
 
   const { data: filterOptions } = useGetFilterOptions();
 
-  const { data: contactsData, isLoading: isContactsLoading } = useListContacts({
-    search: debouncedSearch || undefined,
-    page,
-    limit: 20,
-    industry: joinParam(filters.industry),
-    department: joinParam(filters.department),
-    seniority: joinParam(filters.seniority),
-    companySize: joinParam(filters.companySize),
-    location: joinParam(filters.location),
-  }, { query: { enabled: activeTab === "contacts" } });
+  const { data: contactsData, isLoading: isContactsLoading } = useListContacts(
+    {
+      search: debouncedSearch || undefined,
+      page,
+      limit: 20,
+      industry: joinParam(filters.industry),
+      department: joinParam(filters.department),
+      seniority: joinParam(filters.seniority),
+      companySize: joinParam(filters.companySize),
+      location: joinParam(filters.location),
+    },
+    { query: { enabled: activeTab === "contacts" } },
+  );
 
-  const { data: companiesData, isLoading: isCompaniesLoading } = useListCompanies({
-    search: debouncedSearch || undefined,
-    page,
-    limit: 20,
-    industry: joinParam(filters.industry),
-    size: joinParam(filters.companySize),
-    location: joinParam(filters.location),
-  }, { query: { enabled: activeTab === "companies" } });
+  const { data: companiesData, isLoading: isCompaniesLoading } = useListCompanies(
+    {
+      search: debouncedSearch || undefined,
+      page,
+      limit: 20,
+      industry: joinParam(filters.industry),
+      size: joinParam(filters.companySize),
+      location: joinParam(filters.location),
+    },
+    { query: { enabled: activeTab === "companies" } },
+  );
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
-    setFilters(prev => {
+    setFilters((prev) => {
       const current = prev[key];
       const updated = current.includes(value)
         ? current.filter((v) => v !== value)
@@ -122,6 +181,66 @@ export default function Search() {
 
   const activeFilterCount = Object.values(filters).reduce((acc, arr) => acc + arr.length, 0);
 
+  const handleContactSort = (col: string) => {
+    setContactSort((prev) =>
+      prev?.column === col
+        ? { column: col, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { column: col, direction: "asc" },
+    );
+  };
+
+  const handleCompanySort = (col: string) => {
+    setCompanySort((prev) =>
+      prev?.column === col
+        ? { column: col, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { column: col, direction: "asc" },
+    );
+  };
+
+  const sortedContacts = useMemo(() => {
+    const rows = contactsData?.data ?? [];
+    if (!contactSort) return rows;
+    const { column, direction } = contactSort;
+    return [...rows].sort((a, b) => {
+      let aVal: string | number | null | undefined;
+      let bVal: string | number | null | undefined;
+      if (column === "name") { aVal = `${a.firstName} ${a.lastName}`; bVal = `${b.firstName} ${b.lastName}`; }
+      else if (column === "jobTitle") { aVal = a.jobTitle; bVal = b.jobTitle; }
+      else if (column === "companyName") { aVal = a.companyName; bVal = b.companyName; }
+      else if (column === "location") { aVal = a.location; bVal = b.location; }
+      else if (column === "department") { aVal = a.department; bVal = b.department; }
+      else if (column === "seniority") { aVal = a.seniority; bVal = b.seniority; }
+      else if (column === "insightCount") { aVal = (a as any).insightCount ?? 0; bVal = (b as any).insightCount ?? 0; }
+      if (aVal == null) aVal = "";
+      if (bVal == null) bVal = "";
+      const cmp = typeof aVal === "number" && typeof bVal === "number"
+        ? aVal - bVal
+        : String(aVal).localeCompare(String(bVal));
+      return direction === "asc" ? cmp : -cmp;
+    });
+  }, [contactsData, contactSort]);
+
+  const sortedCompanies = useMemo(() => {
+    const rows = companiesData?.data ?? [];
+    if (!companySort) return rows;
+    const { column, direction } = companySort;
+    return [...rows].sort((a, b) => {
+      let aVal: string | number | null | undefined;
+      let bVal: string | number | null | undefined;
+      if (column === "name") { aVal = a.name; bVal = b.name; }
+      else if (column === "industry") { aVal = a.industry; bVal = b.industry; }
+      else if (column === "website") { aVal = a.website; bVal = b.website; }
+      else if (column === "location") { aVal = a.location; bVal = b.location; }
+      else if (column === "size") { aVal = a.size; bVal = b.size; }
+      if (aVal == null) aVal = "";
+      if (bVal == null) bVal = "";
+      const cmp = typeof aVal === "number" && typeof bVal === "number"
+        ? aVal - bVal
+        : String(aVal).localeCompare(String(bVal));
+      return direction === "asc" ? cmp : -cmp;
+    });
+  }, [companiesData, companySort]);
+
   return (
     <Shell>
       <div className="flex h-[calc(100vh-4rem)]">
@@ -136,13 +255,18 @@ export default function Search() {
                 )}
               </h2>
               {activeFilterCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
                   Clear All
                 </Button>
               )}
             </div>
-            <Input 
-              placeholder="Search names, companies..." 
+            <Input
+              placeholder="Search names, companies..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               icon={<SearchIcon className="h-4 w-4" />}
@@ -150,37 +274,37 @@ export default function Search() {
           </div>
 
           <div className="p-5 space-y-8">
-            <FilterSection 
-              title="Industry" 
-              options={filterOptions?.industries || []} 
+            <FilterSection
+              title="Industry"
+              options={filterOptions?.industries || []}
               selected={filters.industry}
               onChange={(v) => handleFilterChange("industry", v)}
             />
             {activeTab === "contacts" && (
               <>
-                <FilterSection 
-                  title="Department" 
-                  options={filterOptions?.departments || []} 
+                <FilterSection
+                  title="Department"
+                  options={filterOptions?.departments || []}
                   selected={filters.department}
                   onChange={(v) => handleFilterChange("department", v)}
                 />
-                <FilterSection 
-                  title="Seniority" 
-                  options={filterOptions?.seniorities || []} 
+                <FilterSection
+                  title="Seniority"
+                  options={filterOptions?.seniorities || []}
                   selected={filters.seniority}
                   onChange={(v) => handleFilterChange("seniority", v)}
                 />
               </>
             )}
-            <FilterSection 
-              title="Company Size" 
-              options={filterOptions?.companySizes || []} 
+            <FilterSection
+              title="Company Size"
+              options={filterOptions?.companySizes || []}
               selected={filters.companySize}
               onChange={(v) => handleFilterChange("companySize", v)}
             />
-            <FilterSection 
-              title="Location" 
-              options={filterOptions?.locations || []} 
+            <FilterSection
+              title="Location"
+              options={filterOptions?.locations || []}
               selected={filters.location}
               onChange={(v) => handleFilterChange("location", v)}
             />
@@ -192,18 +316,17 @@ export default function Search() {
           {/* Header & Tabs */}
           <div className="px-8 pt-8 pb-4">
             <h1 className="text-3xl font-display font-bold mb-6">Directory Search</h1>
-            
             <div className="flex space-x-1 border-b border-border">
               <button
                 onClick={() => setActiveTab("contacts")}
                 className={cn(
                   "pb-3 px-4 font-medium text-sm transition-all relative",
-                  activeTab === "contacts" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  activeTab === "contacts" ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Contacts {contactsData && <Badge variant="secondary" className="ml-1 px-1.5">{formatNumber(contactsData.total)}</Badge>}
+                  Contacts{contactsData && <Badge variant="secondary" className="ml-1 px-1.5">{formatNumber(contactsData.total)}</Badge>}
                 </div>
                 {activeTab === "contacts" && (
                   <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
@@ -213,12 +336,12 @@ export default function Search() {
                 onClick={() => setActiveTab("companies")}
                 className={cn(
                   "pb-3 px-4 font-medium text-sm transition-all relative",
-                  activeTab === "companies" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  activeTab === "companies" ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
-                  Companies {companiesData && <Badge variant="secondary" className="ml-1 px-1.5">{formatNumber(companiesData.total)}</Badge>}
+                  Companies{companiesData && <Badge variant="secondary" className="ml-1 px-1.5">{formatNumber(companiesData.total)}</Badge>}
                 </div>
                 {activeTab === "companies" && (
                   <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
@@ -228,122 +351,175 @@ export default function Search() {
           </div>
 
           {/* Results Area */}
-          <div className="flex-1 overflow-y-auto px-8 pb-8">
+          <div className="flex-1 overflow-auto px-8 pb-8">
             <AnimatePresence mode="wait">
               {activeTab === "contacts" ? (
-                <motion.div 
+                <motion.div
                   key="contacts"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-3"
                 >
                   {isContactsLoading ? (
-                    <LoadingSkeletons type="contact" count={5} />
-                  ) : contactsData?.data.length === 0 ? (
+                    <TableSkeleton cols={7} rows={8} />
+                  ) : !contactsData?.data.length ? (
                     <EmptyState />
                   ) : (
-                    contactsData?.data.map((contact) => (
-                      <Link key={contact.id} href={`/contacts/${contact.id}`} className="block group">
-                        <div className="bg-card border border-border/50 rounded-xl p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-lg flex-shrink-0 group-hover:scale-105 transition-transform">
-                                {getInitials(`${contact.firstName} ${contact.lastName}`)}
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                                  {contact.firstName} {contact.lastName}
-                                </h3>
-                                <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
-                                  <span className="font-medium text-foreground/80">{contact.jobTitle}</span>
-                                  <span>at</span>
-                                  <span className="text-primary font-medium">{contact.companyName}</span>
-                                </div>
-                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                                  {contact.location && (
-                                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {contact.location}</span>
+                    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border bg-muted/40">
+                              <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} className="pl-5 min-w-[180px]" />
+                              <SortableTh column="jobTitle" label="Title" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[160px]" />
+                              <SortableTh column="companyName" label="Company" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
+                              <SortableTh column="location" label="Location" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
+                              <SortableTh column="department" label="Department" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[130px]" />
+                              <SortableTh column="seniority" label="Seniority" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[120px]" />
+                              <SortableTh column="insightCount" label="Insights" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[100px]" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortedContacts.map((contact, idx) => {
+                              const insightCount = contact.insightCount ?? 0;
+                              const insightLevel = getInsightLevel(insightCount);
+                              return (
+                                <tr
+                                  key={contact.id}
+                                  className={cn(
+                                    "border-b border-border/50 hover:bg-primary/5 transition-colors group cursor-pointer",
+                                    idx % 2 === 0 ? "bg-card" : "bg-muted/20",
                                   )}
-                                  {contact.department && (
-                                    <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> {contact.department}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end gap-2">
-                              {contact.seniority && (
-                                <Badge variant="outline" className="bg-secondary/50">{contact.seniority}</Badge>
-                              )}
-                              <div className="flex items-center gap-2 text-muted-foreground mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Mail className="h-4 w-4" />
-                                <Phone className="h-4 w-4" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    ))
+                                  onClick={() => setLocation(`/contacts/${contact.id}`)}
+                                >
+                                  <td className="px-4 py-3 pl-5">
+                                    <div className="flex items-center gap-3">
+                                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                                        {getInitials(`${contact.firstName} ${contact.lastName}`)}
+                                      </div>
+                                      <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                                        {contact.firstName} {contact.lastName}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-muted-foreground">{contact.jobTitle ?? "—"}</td>
+                                  <td className="px-4 py-3">
+                                    {contact.companyName
+                                      ? <span className="text-primary font-medium">{contact.companyName}</span>
+                                      : <span className="text-muted-foreground">—</span>
+                                    }
+                                  </td>
+                                  <td className="px-4 py-3 text-muted-foreground">{contact.location ?? "—"}</td>
+                                  <td className="px-4 py-3 text-muted-foreground">{contact.department ?? "—"}</td>
+                                  <td className="px-4 py-3">
+                                    {contact.seniority
+                                      ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-secondary/50 text-foreground/80 border-border">{contact.seniority}</span>
+                                      : <span className="text-muted-foreground">—</span>
+                                    }
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    {insightLevel
+                                      ? (
+                                        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border", insightLevel.className)}>
+                                          {insightLevel.label}
+                                        </span>
+                                      )
+                                      : <span className="text-muted-foreground text-xs">—</span>
+                                    }
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   )}
                   {contactsData && contactsData.totalPages > 1 && (
-                    <Pagination 
-                      currentPage={page} 
-                      totalPages={contactsData.totalPages} 
-                      onPageChange={setPage} 
+                    <Pagination
+                      currentPage={page}
+                      totalPages={contactsData.totalPages}
+                      onPageChange={setPage}
                     />
                   )}
                 </motion.div>
               ) : (
-                <motion.div 
+                <motion.div
                   key="companies"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-3"
                 >
                   {isCompaniesLoading ? (
-                    <LoadingSkeletons type="company" count={5} />
-                  ) : companiesData?.data.length === 0 ? (
+                    <TableSkeleton cols={5} rows={8} />
+                  ) : !companiesData?.data.length ? (
                     <EmptyState />
                   ) : (
-                    companiesData?.data.map((company) => (
-                      <Link key={company.id} href={`/companies/${company.id}`} className="block group">
-                        <div className="bg-card border border-border/50 rounded-xl p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center text-slate-500 font-bold flex-shrink-0 group-hover:scale-105 transition-transform">
-                                <Building className="h-6 w-6" />
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                                  {company.name}
-                                </h3>
-                                <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-3">
-                                  {company.industry && <span className="font-medium text-foreground/80">{company.industry}</span>}
-                                  {company.industry && <span>•</span>}
-                                  {company.website && <span className="text-primary hover:underline">{company.website}</span>}
-                                </div>
-                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                                  {company.location && (
-                                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {company.location}</span>
+                    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border bg-muted/40">
+                              <SortableTh column="name" label="Company Name" sortConfig={companySort} onSort={handleCompanySort} className="pl-5 min-w-[180px]" />
+                              <SortableTh column="industry" label="Industry" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[140px]" />
+                              <SortableTh column="website" label="Website" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px]" />
+                              <SortableTh column="location" label="Location" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[140px]" />
+                              <SortableTh column="size" label="Employee Size" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[130px]" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortedCompanies.map((company, idx) => (
+                              <tr
+                                key={company.id}
+                                className={cn(
+                                  "border-b border-border/50 hover:bg-primary/5 transition-colors group cursor-pointer",
+                                  idx % 2 === 0 ? "bg-card" : "bg-muted/20",
+                                )}
+                                onClick={() => setLocation(`/companies/${company.id}`)}
+                              >
+                                <td className="px-4 py-3 pl-5">
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center flex-shrink-0">
+                                      <Building2 className="h-4 w-4 text-slate-500" />
+                                    </div>
+                                    <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                                      {company.name}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground">{company.industry ?? "—"}</td>
+                                <td className="px-4 py-3">
+                                  {company.website ? (
+                                    <a
+                                      href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-primary hover:underline flex items-center gap-1 max-w-[200px] truncate"
+                                    >
+                                      {company.website}
+                                      <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                    </a>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
                                   )}
-                                  {company.size && (
-                                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {company.size} employees</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    ))
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground">{company.location ?? "—"}</td>
+                                <td className="px-4 py-3 text-muted-foreground">{company.size ?? "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   )}
                   {companiesData && companiesData.totalPages > 1 && (
-                    <Pagination 
-                      currentPage={page} 
-                      totalPages={companiesData.totalPages} 
-                      onPageChange={setPage} 
+                    <Pagination
+                      currentPage={page}
+                      totalPages={companiesData.totalPages}
+                      onPageChange={setPage}
                     />
                   )}
                 </motion.div>
@@ -356,7 +532,9 @@ export default function Search() {
   );
 }
 
-function FilterSection({ title, options, selected, onChange }: {
+function FilterSection({
+  title, options, selected, onChange,
+}: {
   title: string;
   options: string[];
   selected: string[];
@@ -382,13 +560,13 @@ function FilterSection({ title, options, selected, onChange }: {
             >
               <div className={cn(
                 "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
-                isSelected ? "bg-primary border-primary" : "border-input bg-background group-hover:border-primary/50"
+                isSelected ? "bg-primary border-primary" : "border-input bg-background group-hover:border-primary/50",
               )}>
                 {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
               </div>
               <span className={cn(
                 "text-sm transition-colors",
-                isSelected ? "text-foreground font-medium" : "text-muted-foreground group-hover:text-foreground"
+                isSelected ? "text-foreground font-medium" : "text-muted-foreground group-hover:text-foreground",
               )}>{opt}</span>
             </label>
           );
@@ -396,7 +574,7 @@ function FilterSection({ title, options, selected, onChange }: {
         {hasMore && (
           <button
             className="text-xs text-primary font-medium mt-2 hover:underline"
-            onClick={() => setShowAll(v => !v)}
+            onClick={() => setShowAll((v) => !v)}
           >
             {showAll ? "Show less" : `Show ${options.length - 6} more`}
           </button>
@@ -406,23 +584,19 @@ function FilterSection({ title, options, selected, onChange }: {
   );
 }
 
-function LoadingSkeletons({ type, count }: { type: 'contact' | 'company'; count: number }) {
+function TableSkeleton({ cols, rows }: { cols: number; rows: number }) {
   return (
-    <>
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-card border border-border/50 rounded-xl p-4 shadow-sm flex items-center gap-4 animate-pulse">
-          <div className={cn("bg-muted flex-shrink-0", type === 'contact' ? "h-12 w-12 rounded-full" : "h-12 w-12 rounded-xl")} />
-          <div className="space-y-2 flex-1">
-            <div className="h-5 bg-muted rounded w-1/4" />
-            <div className="h-4 bg-muted rounded w-1/3" />
-            <div className="flex gap-4 mt-2">
-              <div className="h-3 bg-muted rounded w-16" />
-              <div className="h-3 bg-muted rounded w-24" />
-            </div>
-          </div>
+    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden animate-pulse">
+      <div className="h-10 bg-muted/40 border-b border-border" />
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex gap-4 px-5 py-3 border-b border-border/50">
+          <div className="h-8 w-8 rounded-full bg-muted flex-shrink-0" />
+          {Array.from({ length: cols - 1 }).map((_, j) => (
+            <div key={j} className="h-4 bg-muted rounded flex-1" style={{ maxWidth: `${80 + j * 20}px` }} />
+          ))}
         </div>
       ))}
-    </>
+    </div>
   );
 }
 
@@ -446,22 +620,22 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
   onPageChange: (p: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+    <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
       <p className="text-sm text-muted-foreground">
-        Showing page <span className="font-medium text-foreground">{currentPage}</span> of <span className="font-medium text-foreground">{totalPages}</span>
+        Page <span className="font-medium text-foreground">{currentPage}</span> of <span className="font-medium text-foreground">{totalPages}</span>
       </p>
       <div className="flex items-center gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
         >
           <ChevronLeft className="h-4 w-4 mr-1" /> Previous
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
         >

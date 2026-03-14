@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { contactsTable, companiesTable } from "@workspace/db/schema";
+import { contactsTable, companiesTable, contactInsightsTable } from "@workspace/db/schema";
 import { GetContactParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL } from "drizzle-orm";
 
@@ -87,6 +87,7 @@ router.get("/", async (req, res) => {
           companyName: companiesTable.name,
           companyIndustry: companiesTable.industry,
           companySize: companiesTable.size,
+          insightCount: sql<number>`(SELECT count(*)::int FROM contact_insights WHERE contact_id = ${contactsTable.id})`,
         })
         .from(contactsTable)
         .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))

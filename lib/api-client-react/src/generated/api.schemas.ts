@@ -40,6 +40,7 @@ export interface ContactSummary {
   companyName?: string;
   companyIndustry?: string;
   companySize?: string;
+  insightCount?: number;
 }
 
 export interface CompanySummary {

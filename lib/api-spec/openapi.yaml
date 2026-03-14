@@ -298,6 +298,8 @@ components:
           type: string
         companySize:
           type: string
+        insightCount:
+          type: integer
       required:
         - id
         - firstName
