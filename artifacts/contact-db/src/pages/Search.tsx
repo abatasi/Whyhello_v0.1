@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDebounce } from "use-debounce";
@@ -118,6 +118,10 @@ export default function Search() {
   const [companySort, setCompanySort] = useState<SortConfig | null>(null);
 
   useEffect(() => {
+    setPage(1);
+  }, [contactSort, companySort]);
+
+  useEffect(() => {
     const params = new URLSearchParams();
     params.set("tab", activeTab);
     if (debouncedSearch) params.set("search", debouncedSearch);
@@ -148,6 +152,8 @@ export default function Search() {
       seniority: joinParam(filters.seniority),
       companySize: joinParam(filters.companySize),
       location: joinParam(filters.location),
+      sortBy: contactSort?.column,
+      sortOrder: contactSort?.direction,
     },
     { query: { enabled: activeTab === "contacts" } },
   );
@@ -160,6 +166,8 @@ export default function Search() {
       industry: joinParam(filters.industry),
       size: joinParam(filters.companySize),
       location: joinParam(filters.location),
+      sortBy: companySort?.column,
+      sortOrder: companySort?.direction,
     },
     { query: { enabled: activeTab === "companies" } },
   );
@@ -197,49 +205,8 @@ export default function Search() {
     );
   };
 
-  const sortedContacts = useMemo(() => {
-    const rows = contactsData?.data ?? [];
-    if (!contactSort) return rows;
-    const { column, direction } = contactSort;
-    return [...rows].sort((a, b) => {
-      let aVal: string | number | null | undefined;
-      let bVal: string | number | null | undefined;
-      if (column === "name") { aVal = `${a.firstName} ${a.lastName}`; bVal = `${b.firstName} ${b.lastName}`; }
-      else if (column === "jobTitle") { aVal = a.jobTitle; bVal = b.jobTitle; }
-      else if (column === "companyName") { aVal = a.companyName; bVal = b.companyName; }
-      else if (column === "location") { aVal = a.location; bVal = b.location; }
-      else if (column === "department") { aVal = a.department; bVal = b.department; }
-      else if (column === "seniority") { aVal = a.seniority; bVal = b.seniority; }
-      else if (column === "insightCount") { aVal = (a as any).insightCount ?? 0; bVal = (b as any).insightCount ?? 0; }
-      if (aVal == null) aVal = "";
-      if (bVal == null) bVal = "";
-      const cmp = typeof aVal === "number" && typeof bVal === "number"
-        ? aVal - bVal
-        : String(aVal).localeCompare(String(bVal));
-      return direction === "asc" ? cmp : -cmp;
-    });
-  }, [contactsData, contactSort]);
-
-  const sortedCompanies = useMemo(() => {
-    const rows = companiesData?.data ?? [];
-    if (!companySort) return rows;
-    const { column, direction } = companySort;
-    return [...rows].sort((a, b) => {
-      let aVal: string | number | null | undefined;
-      let bVal: string | number | null | undefined;
-      if (column === "name") { aVal = a.name; bVal = b.name; }
-      else if (column === "industry") { aVal = a.industry; bVal = b.industry; }
-      else if (column === "website") { aVal = a.website; bVal = b.website; }
-      else if (column === "location") { aVal = a.location; bVal = b.location; }
-      else if (column === "size") { aVal = a.size; bVal = b.size; }
-      if (aVal == null) aVal = "";
-      if (bVal == null) bVal = "";
-      const cmp = typeof aVal === "number" && typeof bVal === "number"
-        ? aVal - bVal
-        : String(aVal).localeCompare(String(bVal));
-      return direction === "asc" ? cmp : -cmp;
-    });
-  }, [companiesData, companySort]);
+  const contacts = contactsData?.data ?? [];
+  const companies = companiesData?.data ?? [];
 
   return (
     <Shell>
@@ -381,7 +348,7 @@ export default function Search() {
                             </tr>
                           </thead>
                           <tbody>
-                            {sortedContacts.map((contact, idx) => {
+                            {contacts.map((contact, idx) => {
                               const insightCount = contact.insightCount ?? 0;
                               const insightLevel = getInsightLevel(insightCount);
                               return (
@@ -470,7 +437,7 @@ export default function Search() {
                             </tr>
                           </thead>
                           <tbody>
-                            {sortedCompanies.map((company, idx) => (
+                            {companies.map((company, idx) => (
                               <tr
                                 key={company.id}
                                 className={cn(

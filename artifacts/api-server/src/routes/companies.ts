@@ -51,8 +51,30 @@ router.get("/", async (req, res) => {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
+    const sortDir = raw.sortOrder === "desc" ? "DESC" : "ASC";
+    const orderByClause: SQL[] = [];
+    switch (raw.sortBy) {
+      case "name":
+        orderByClause.push(sql`${companiesTable.name} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "industry":
+        orderByClause.push(sql`${companiesTable.industry} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "website":
+        orderByClause.push(sql`${companiesTable.website} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "location":
+        orderByClause.push(sql`${companiesTable.location} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "size":
+        orderByClause.push(sql`${companiesTable.size} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      default:
+        orderByClause.push(sql`${companiesTable.name} ASC NULLS LAST`);
+    }
+
     const [rows, [{ count }]] = await Promise.all([
-      db.select().from(companiesTable).where(where).limit(limit).offset(offset),
+      db.select().from(companiesTable).where(where).orderBy(...orderByClause).limit(limit).offset(offset),
       db.select({ count: sql<number>`count(*)::int` }).from(companiesTable).where(where),
     ]);
 

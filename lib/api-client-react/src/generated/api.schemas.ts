@@ -125,6 +125,8 @@ export type ListContactsParams = {
   companyId?: number;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 };
 
 export type ListCompaniesParams = {
@@ -135,4 +137,6 @@ export type ListCompaniesParams = {
   country?: string;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 };

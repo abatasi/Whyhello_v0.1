@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { contactsTable, companiesTable, contactInsightsTable } from "@workspace/db/schema";
 import { GetContactParams } from "@workspace/api-zod";
-import { eq, ilike, and, inArray, or, sql, SQL } from "drizzle-orm";
+import { eq, ilike, and, inArray, or, sql, SQL, asc, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -69,6 +69,38 @@ router.get("/", async (req, res) => {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
+    const sortDir = raw.sortOrder === "desc" ? "DESC" : "ASC";
+    const insightCountExpr = sql`(SELECT count(*)::int FROM contact_insights WHERE contact_id = ${contactsTable.id})`;
+
+    const orderByClause: SQL[] = [];
+    switch (raw.sortBy) {
+      case "name":
+        orderByClause.push(sql`${contactsTable.firstName} ${sql.raw(sortDir)} NULLS LAST`);
+        orderByClause.push(sql`${contactsTable.lastName} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "jobTitle":
+        orderByClause.push(sql`${contactsTable.jobTitle} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "companyName":
+        orderByClause.push(sql`${companiesTable.name} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "location":
+        orderByClause.push(sql`${contactsTable.location} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "department":
+        orderByClause.push(sql`${contactsTable.department} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "seniority":
+        orderByClause.push(sql`${contactsTable.seniority} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "insightCount":
+        orderByClause.push(sql`${insightCountExpr} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      default:
+        orderByClause.push(sql`${contactsTable.firstName} ASC NULLS LAST`);
+        orderByClause.push(sql`${contactsTable.lastName} ASC NULLS LAST`);
+    }
+
     const [rows, [{ count }]] = await Promise.all([
       db
         .select({
@@ -92,6 +124,7 @@ router.get("/", async (req, res) => {
         .from(contactsTable)
         .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
         .where(where)
+        .orderBy(...orderByClause)
         .limit(limit)
         .offset(offset),
       db
