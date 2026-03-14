@@ -4,8 +4,9 @@ import {
   listExportsTable, listsTable,
   listContactsTable, listCompaniesTable,
   contactsTable, companiesTable,
+  contactInsightsTable,
 } from "@workspace/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 
 type AuthedReq = Request & { user: { id: string } };
 
@@ -28,6 +29,7 @@ async function buildCSV(listId: number, listType: string): Promise<{ csv: string
   if (listType === "contacts") {
     const rows = await db
       .select({
+        contactId: contactsTable.id,
         firstName: contactsTable.firstName,
         lastName: contactsTable.lastName,
         email: contactsTable.email,
@@ -52,18 +54,58 @@ async function buildCSV(listId: number, listType: string): Promise<{ csv: string
       .where(eq(listContactsTable.listId, listId))
       .orderBy(contactsTable.firstName, contactsTable.lastName);
 
+    const contactIds = rows.map((r) => r.contactId);
+    const insights = contactIds.length > 0
+      ? await db
+          .select({
+            contactId: contactInsightsTable.contactId,
+            mediaType: contactInsightsTable.mediaType,
+            title: contactInsightsTable.title,
+            description: contactInsightsTable.description,
+            publishedDate: contactInsightsTable.publishedDate,
+            source: contactInsightsTable.source,
+            url: contactInsightsTable.url,
+          })
+          .from(contactInsightsTable)
+          .where(inArray(contactInsightsTable.contactId, contactIds))
+      : [];
+
+    const insightsByContact = new Map<number, typeof insights>();
+    for (const insight of insights) {
+      if (!insightsByContact.has(insight.contactId)) {
+        insightsByContact.set(insight.contactId, []);
+      }
+      insightsByContact.get(insight.contactId)!.push(insight);
+    }
+
     const headers = [
       "First Name", "Last Name", "Email", "Phone", "Job Title", "Department", "Seniority",
       "Location", "Country", "LinkedIn URL", "Twitter Handle", "Bio",
       "Company", "Company Industry", "Company Size", "Company Website", "Company Location",
+      "Insight Type", "Insight Title", "Insight Description", "Insight Date", "Insight Source", "Insight URL",
     ];
-    const dataRows = rows.map((r) =>
-      [
+
+    const dataRows: string[] = [];
+    for (const r of rows) {
+      const contactInsights = insightsByContact.get(r.contactId) ?? [];
+      const contactFields = [
         r.firstName, r.lastName, r.email, r.phone, r.jobTitle, r.department, r.seniority,
         r.location, r.country, r.linkedinUrl, r.twitterHandle, r.bio,
         r.companyName, r.companyIndustry, r.companySize, r.companyWebsite, r.companyLocation,
-      ].map(escapeCSV).join(","),
-    );
+      ].map(escapeCSV);
+
+      if (contactInsights.length === 0) {
+        dataRows.push([...contactFields, "", "", "", "", "", ""].join(","));
+      } else {
+        for (const ins of contactInsights) {
+          const insightFields = [
+            ins.mediaType, ins.title, ins.description, ins.publishedDate, ins.source, ins.url,
+          ].map(escapeCSV);
+          dataRows.push([...contactFields, ...insightFields].join(","));
+        }
+      }
+    }
+
     return { csv: [headers.join(","), ...dataRows].join("\n"), memberCount: rows.length };
   } else {
     const rows = await db

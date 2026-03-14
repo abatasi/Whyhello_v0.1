@@ -24,7 +24,7 @@ Contact Database SaaS application built on a pnpm workspace monorepo using TypeS
 - **Company profile** (`/companies/:id`) — Company details with employee list and linked contacts.
 - **Lists** (`/lists`, `/lists/:id`) — Curated lists of contacts or companies. Create/delete lists. Add members from the directory via floating action bar. List detail shows all members in a paginated table with Insights badges. Export CSV button in the header.
 - **Saved Searches** — Save a named set of filters for quick recall.
-- **CSV Export** — From any List detail page, export all members to CSV (contacts: 17 columns; companies: 9 columns). Export records are stored in DB per user.
+- **CSV Export** — From any List detail page, export all members to CSV. Contacts: 23 columns (17 profile fields + 6 insight fields) with one row per insight — contact data is repeated for each insight. Contacts without insights get one row with blank insight columns. Companies: 9 columns. Export records are stored in DB per user.
 - **Profile page** (`/profile`) — User info card + Export History table (all past exports with Download button).
 - **Notifications** (Bell icon in Navbar) — Dropdown showing 5 most recent exports with inline download; unread indicator dot when exports exist.
 
