@@ -485,19 +485,21 @@ export default function Search() {
               selected={filters.industry}
               onChange={(v) => handleFilterChange("industry", v)}
             />
-            <MultiSelectFilter
-              title="Department"
-              options={filterOptions?.departments || []}
-              selected={filters.department}
-              onChange={(v) => handleFilterChange("department", v)}
-            />
             {activeTab === "contacts" && (
-              <FilterSection
-                title="Seniority"
-                options={filterOptions?.seniorities || []}
-                selected={filters.seniority}
-                onChange={(v) => handleFilterChange("seniority", v)}
-              />
+              <>
+                <MultiSelectFilter
+                  title="Department"
+                  options={filterOptions?.departments || []}
+                  selected={filters.department}
+                  onChange={(v) => handleFilterChange("department", v)}
+                />
+                <FilterSection
+                  title="Seniority"
+                  options={filterOptions?.seniorities || []}
+                  selected={filters.seniority}
+                  onChange={(v) => handleFilterChange("seniority", v)}
+                />
+              </>
             )}
             <FilterSection
               title="Company Size"
