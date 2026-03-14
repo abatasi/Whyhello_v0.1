@@ -402,6 +402,8 @@ export function Navbar() {
               );
             })}
             <Button variant="ghost" className="px-4 py-2 rounded-lg">Market Research</Button>
+            <Button variant="ghost" className="px-4 py-2 rounded-lg">Multi-threading</Button>
+            <Button variant="ghost" className="px-4 py-2 rounded-lg">Message Center</Button>
           </nav>
         </div>
 
