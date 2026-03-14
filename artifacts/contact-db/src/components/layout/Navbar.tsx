@@ -138,7 +138,7 @@ export function Navbar() {
                 </Link>
               );
             })}
-            <Button variant="ghost" className="px-4 py-2 rounded-lg">Enrichment</Button>
+            <Button variant="ghost" className="px-4 py-2 rounded-lg">Market Research</Button>
           </nav>
         </div>
 
