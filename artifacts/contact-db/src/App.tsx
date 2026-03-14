@@ -1,11 +1,13 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from "@workspace/replit-auth-web";
 
 import Search from "@/pages/Search";
 import ContactProfile from "@/pages/ContactProfile";
 import CompanyProfile from "@/pages/CompanyProfile";
+import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -18,12 +20,31 @@ const queryClient = new QueryClient({
   },
 });
 
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect to="/login" />;
+  }
+
+  return <Component />;
+}
+
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Search} />
-      <Route path="/contacts/:id" component={ContactProfile} />
-      <Route path="/companies/:id" component={CompanyProfile} />
+      <Route path="/login" component={Login} />
+      <Route path="/" component={() => <ProtectedRoute component={Search} />} />
+      <Route path="/contacts/:id" component={() => <ProtectedRoute component={ContactProfile} />} />
+      <Route path="/companies/:id" component={() => <ProtectedRoute component={CompanyProfile} />} />
       <Route component={NotFound} />
     </Switch>
   );
