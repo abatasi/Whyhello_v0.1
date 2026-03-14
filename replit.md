@@ -19,7 +19,7 @@ Contact Database SaaS application built on a pnpm workspace monorepo using TypeS
 
 ## Features
 
-- **Directory / Search** (`/`) — Multi-filter search for contacts and companies. Filters: industry, department, seniority, company size, location, country, and curated List membership. Paginated + sortable tables. Checkboxes for bulk "Add to List" actions with floating action bar.
+- **Directory / Search** (`/`) — Multi-filter search for contacts and companies. Filters: industry, department, seniority, company size, location, country, and curated List membership. Paginated + sortable tables. Checkboxes for bulk "Add to List" actions with floating action bar. Collapsible filter sidebar — ChevronLeft button in the Filters header collapses the sidebar (AnimatePresence + framer-motion width animation 320→0); a "Filters" pill button with ChevronRight appears inline next to the h1 to re-expand; when collapsed the main content uses `max-w-5xl mx-auto` for a centered single-column layout.
 - **Contact profile** (`/contacts/:id`) — Full profile with bio, contact info, social links, company card, and Personal Insights section.
 - **Company profile** (`/companies/:id`) — Company details with employee list and linked contacts.
 - **Lists** (`/lists`, `/lists/:id`) — Curated lists of contacts or companies. Create/delete lists. Add members from the directory via floating action bar. List detail shows all members in a paginated table with Insights badges. Export CSV button in the header.

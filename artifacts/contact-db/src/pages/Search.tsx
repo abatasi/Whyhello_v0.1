@@ -131,6 +131,7 @@ export default function Search() {
   const [companySort, setCompanySort] = useState<SortConfig | null>(null);
 
   const [selectedListId, setSelectedListId] = useState<number | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [addToListOpen, setAddToListOpen] = useState(false);
@@ -355,7 +356,17 @@ export default function Search() {
     <Shell>
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Left Sidebar Filters */}
-        <div className="w-80 border-r border-border bg-card overflow-y-auto flex-shrink-0">
+        <AnimatePresence initial={false}>
+          {sidebarOpen && (
+            <motion.div
+              key="sidebar"
+              initial={{ width: 0 }}
+              animate={{ width: 320 }}
+              exit={{ width: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="border-r border-border bg-card flex-shrink-0 overflow-hidden"
+            >
+        <div className="w-80 h-full overflow-y-auto flex flex-col">
           <div className="p-5 border-b border-border sticky top-0 bg-card z-10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold flex items-center gap-2">
@@ -383,6 +394,15 @@ export default function Search() {
                   title="Save current search"
                 >
                   <BookmarkPlus className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarOpen(false)}
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                  title="Collapse filters"
+                >
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -495,12 +515,31 @@ export default function Search() {
             />
           </div>
         </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#F8FAFC]">
+        <div className={cn("flex-1 flex flex-col min-w-0", !sidebarOpen && "max-w-5xl mx-auto")}>
           {/* Header & Tabs */}
           <div className="px-8 pt-8 pb-4">
-            <h1 className="text-3xl font-display font-bold mb-6">Directory Search</h1>
+            <div className="flex items-center gap-4 mb-6">
+              {!sidebarOpen && (
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground bg-card border border-border rounded-lg shadow-sm hover:bg-secondary/50 transition-colors flex-shrink-0"
+                  title="Show filters"
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  <span>Filters</span>
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-0.5 px-1.5 text-xs">{activeFilterCount}</Badge>
+                  )}
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <h1 className="text-3xl font-display font-bold">Directory Search</h1>
+            </div>
             <div className="flex space-x-1 border-b border-border">
               <button
                 onClick={() => setActiveTab("contacts")}
