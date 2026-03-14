@@ -1,5 +1,5 @@
 import app from "./app";
-import { seedIfEmpty } from "./lib/seed";
+import { seedIfEmpty, seedInsightsIfEmpty } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -17,7 +17,9 @@ if (Number.isNaN(port) || port <= 0) {
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
-  seedIfEmpty().catch((err) => {
-    console.error("Seed failed:", err);
-  });
+  seedIfEmpty()
+    .then(() => seedInsightsIfEmpty())
+    .catch((err) => {
+      console.error("Seed failed:", err);
+    });
 });

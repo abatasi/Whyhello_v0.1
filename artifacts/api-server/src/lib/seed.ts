@@ -1,6 +1,6 @@
-import { db } from "@workspace/db";
-import { companiesTable, contactsTable } from "@workspace/db/schema";
-import { sql } from "drizzle-orm";
+import { db, pool } from "@workspace/db";
+import { companiesTable, contactsTable, contactInsightsTable } from "@workspace/db/schema";
+import { sql, eq, and } from "drizzle-orm";
 
 const COMPANIES = [
   { name: "Acme Corp", industry: "Technology", size: "201-500", location: "San Francisco, CA", country: "United States", website: "https://acme.example.com", description: "A leading technology company specializing in cloud infrastructure and developer tools.", employeeCount: 350, foundedYear: 2012, linkedinUrl: "https://linkedin.com/company/acme-corp" },
@@ -161,6 +161,107 @@ const CONTACTS = [
   { firstName: "Vivienne", lastName: "Laurent", jobTitle: "Chief Brand Officer", department: "Marketing", seniority: "C-Suite", email: "v.laurent@terracehotels.example.com", phone: "+1 702-555-4201", location: "Las Vegas, NV", country: "United States", linkedinUrl: "https://linkedin.com/in/vivienne-laurent", bio: "Luxury hospitality marketing executive. Rebranded 3 boutique hotel groups.", companyName: "Terrace Hotels" },
   { firstName: "Samuel", lastName: "Knight", jobTitle: "VP of Revenue Management", department: "Revenue", seniority: "VP", email: "s.knight@terracehotels.example.com", phone: "+1 702-555-4202", location: "Las Vegas, NV", country: "United States", linkedinUrl: "https://linkedin.com/in/samuel-knight", bio: "Hospitality revenue strategist who increased RevPAR by 23% across the portfolio.", companyName: "Terrace Hotels" },
 ];
+
+const INSIGHTS_BY_NAME: Array<{
+  firstName: string;
+  lastName: string;
+  insights: Array<{
+    title: string;
+    url: string;
+    source: string;
+    mediaType: string;
+    description: string;
+    publishedDate: string;
+  }>;
+}> = [
+  {
+    firstName: "Sarah",
+    lastName: "Chen",
+    insights: [
+      { title: "Women in Tech Leadership: Sarah Chen on Building Scalable Engineering Teams", url: "https://techcrunch.com/2024/03/15/women-in-tech-leadership-engineering-teams", source: "TechCrunch", mediaType: "article", description: "Sarah Chen, CTO of Acme Corp, shares how she grew her engineering organization from 12 to 80 engineers in under two years while maintaining a culture of psychological safety and continuous delivery.", publishedDate: "Mar 2024" },
+      { title: "Why We Moved to a Platform Team Model (And What We Learned)", url: "https://medium.com/@sarah-chen-cto/platform-team-model-lessons", source: "Medium", mediaType: "blog_post", description: "A candid post-mortem on Acme's shift to a platform team structure — what worked, what didn't, and the three things Sarah wishes she had known before starting the transformation.", publishedDate: "Aug 2023" },
+      { title: "AI-Assisted Code Review: My Team's 6-Month Experiment", url: "https://www.linkedin.com/pulse/ai-assisted-code-review-sarah-chen", source: "LinkedIn", mediaType: "linkedin_post", description: "Sarah's viral LinkedIn article documenting Acme's experiment with AI code review tools, covering productivity gains, false positives, and the surprising impact on junior developer growth.", publishedDate: "Dec 2023" },
+      { title: "Engineering Leadership Podcast — Ep. 214: From IC to CTO in 8 Years", url: "https://open.spotify.com/episode/2x7KqLmVgRpFzX8N3YdWqA", source: "Spotify", mediaType: "podcast", description: "Sarah joins host Charity Majors to discuss her path from individual contributor to CTO, how she thinks about technical debt, and why she believes empathy is the most underrated engineering skill.", publishedDate: "Jan 2024" },
+      { title: "The Stack Overflow Podcast — Building for Developers, Not Just Users", url: "https://stackoverflow.blog/podcast/building-for-developers", source: "Stack Overflow Blog", mediaType: "podcast", description: "In this episode, Sarah discusses developer experience as a first-class product concern, internal tooling investment strategies, and why she prioritizes documentation as a leadership signal.", publishedDate: "Sep 2023" },
+      { title: "Forbes 30 Under 40: Technology Leaders Shaping the Future", url: "https://www.forbes.com/lists/technology-leaders-under-40/", source: "Forbes", mediaType: "press_release", description: "Sarah Chen was named to Forbes' inaugural 30 Under 40 list in the Technology category, recognized for her technical vision and for championing diversity initiatives across Acme's engineering organization.", publishedDate: "Feb 2024" },
+      { title: "The Future of Platform Engineering — Keynote at QCon San Francisco", url: "https://www.youtube.com/watch?v=xK9mJ8qPlE4", source: "YouTube", mediaType: "video", description: "Sarah's keynote at QCon San Francisco where she walks through Acme's platform evolution, microservices migration, and the developer experience initiatives that cut deployment time by 70%.", publishedDate: "Oct 2023" },
+      { title: "SREcon Americas 2023 — Panel: Reliability at Scale Without Burning Out Your Team", url: "https://www.youtube.com/watch?v=rP2mNqX7vTs", source: "YouTube", mediaType: "video", description: "Sarah joins a panel of senior SREs to debate on-call culture, incident response best practices, and how to maintain reliability without sacrificing engineer wellbeing.", publishedDate: "Mar 2023" },
+    ],
+  },
+  {
+    firstName: "Priya",
+    lastName: "Patel",
+    insights: [
+      { title: "How I Scaled Acme's Infrastructure to Handle 10x Traffic Without Downtime", url: "https://techcrunch.com/2024/01/22/acme-infrastructure-scale-priya-patel", source: "TechCrunch", mediaType: "article", description: "Priya Patel details the architectural decisions and engineering trade-offs that enabled Acme Corp to absorb a 10x traffic spike during their biggest product launch — including the late-night incident that almost derailed everything.", publishedDate: "Jan 2024" },
+      { title: "Rust in Production: Lessons from Rewriting Our Core API", url: "https://medium.com/@priya-patel-eng/rust-in-production-core-api-rewrite", source: "Medium", mediaType: "blog_post", description: "After 18 months of gradual migration, Priya shares what the team learned rewriting Acme's core API in Rust — performance wins, memory safety surprises, and the cultural shift required to get a team of Go engineers to embrace a new language.", publishedDate: "Nov 2023" },
+      { title: "The hidden cost of \"good enough\" observability — a $200k wake-up call", url: "https://www.linkedin.com/pulse/hidden-cost-observability-priya-patel", source: "LinkedIn", mediaType: "linkedin_post", description: "Priya's most-shared LinkedIn post, recounting how an under-instrumented service led to a prolonged outage and quantifying exactly what the team learned — and changed — as a result. 4,200 reactions and counting.", publishedDate: "Oct 2023" },
+      { title: "Software Engineering Daily — Building Reliable Systems with Priya Patel", url: "https://open.spotify.com/episode/4kNpXqRmVgTfYz2N8WdBqC", source: "Spotify", mediaType: "podcast", description: "Priya joins the Software Engineering Daily podcast to talk about chaos engineering, on-call culture, and why she believes every engineer should spend time in production support before moving to greenfield work.", publishedDate: "Mar 2024" },
+      { title: "Acme Corp Names Priya Patel as Engineering Innovator of the Year", url: "https://www.businesswire.com/news/acme-corp-engineering-innovator-2024", source: "Business Wire", mediaType: "press_release", description: "Acme Corp announces Priya Patel as its inaugural Engineering Innovator of the Year, recognizing her contributions to platform reliability, developer tooling, and her open-source work on the team's distributed tracing library.", publishedDate: "Feb 2024" },
+      { title: "Strange Loop 2023 — Distributed Systems at the Edge: Lessons from the Field", url: "https://www.youtube.com/watch?v=hT4qR9mKzLw", source: "YouTube", mediaType: "video", description: "Priya's talk at Strange Loop walks through real-world distributed systems failures at Acme, the debugging techniques that uncovered them, and the observability stack her team built to prevent recurrence.", publishedDate: "Sep 2023" },
+    ],
+  },
+];
+
+export async function seedInsightsIfEmpty() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS contact_insights (
+        id SERIAL PRIMARY KEY,
+        contact_id INTEGER NOT NULL REFERENCES contacts(id),
+        title VARCHAR(500) NOT NULL,
+        url VARCHAR(1000) NOT NULL,
+        source VARCHAR(200) NOT NULL,
+        media_type VARCHAR(50) NOT NULL,
+        description TEXT,
+        published_date VARCHAR(50)
+      )
+    `);
+  } finally {
+    client.release();
+  }
+
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(contactInsightsTable);
+
+  if (count > 0) {
+    console.log(`Insights already seeded (${count} records). Skipping.`);
+    return;
+  }
+
+  console.log("Seeding contact insights...");
+  for (const { firstName, lastName, insights } of INSIGHTS_BY_NAME) {
+    const [contact] = await db
+      .select({ id: contactsTable.id })
+      .from(contactsTable)
+      .where(
+        and(
+          eq(contactsTable.firstName, firstName),
+          eq(contactsTable.lastName, lastName),
+        ),
+      )
+      .limit(1);
+
+    if (!contact) {
+      console.warn(`Contact not found: ${firstName} ${lastName} — skipping insights.`);
+      continue;
+    }
+
+    await db.insert(contactInsightsTable).values(
+      insights.map((i) => ({
+        contactId: contact.id,
+        title: i.title,
+        url: i.url,
+        source: i.source,
+        mediaType: i.mediaType,
+        description: i.description,
+        publishedDate: i.publishedDate,
+      })),
+    );
+    console.log(`Seeded ${insights.length} insights for ${firstName} ${lastName}.`);
+  }
+}
 
 export async function seedIfEmpty() {
   const [{ count }] = await db
