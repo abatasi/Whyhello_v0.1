@@ -591,10 +591,10 @@ export default function Search() {
                     <EmptyState />
                   ) : (
                     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                      <div className="overflow-x-auto">
+                      <div className="overflow-auto max-h-[calc(100vh-22rem)]">
                         <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-border bg-muted/40">
+                          <thead className="sticky top-0 z-10">
+                            <tr className="border-b border-border bg-muted">
                               <th className="px-4 py-3 w-10">
                                 <input
                                   type="checkbox"
@@ -701,10 +701,10 @@ export default function Search() {
                     <EmptyState />
                   ) : (
                     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                      <div className="overflow-x-auto">
+                      <div className="overflow-auto max-h-[calc(100vh-22rem)]">
                         <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-border bg-muted/40">
+                          <thead className="sticky top-0 z-10">
+                            <tr className="border-b border-border bg-muted">
                               <th className="px-4 py-3 w-10">
                                 <input
                                   type="checkbox"
