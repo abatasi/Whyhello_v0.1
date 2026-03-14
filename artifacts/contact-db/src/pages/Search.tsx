@@ -520,7 +520,7 @@ export default function Search() {
         </AnimatePresence>
 
         {/* Main Content Area */}
-        <div className={cn("flex-1 flex flex-col min-w-0", !sidebarOpen && "max-w-5xl mx-auto")}>
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Header & Tabs */}
           <div className="px-8 pt-8 pb-4">
             <div className="flex items-center gap-4 mb-6">
