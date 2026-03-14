@@ -123,6 +123,7 @@ export type ListContactsParams = {
   location?: string;
   country?: string;
   companyId?: number;
+  listId?: number;
   page?: number;
   limit?: number;
   sortBy?: string;
@@ -135,6 +136,7 @@ export type ListCompaniesParams = {
   size?: string;
   location?: string;
   country?: string;
+  listId?: number;
   page?: number;
   limit?: number;
   sortBy?: string;

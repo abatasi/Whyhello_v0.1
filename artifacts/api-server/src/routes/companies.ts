@@ -48,6 +48,14 @@ router.get("/", async (req, res) => {
     if (raw.country) {
       conditions.push(eq(companiesTable.country, raw.country));
     }
+    if (raw.listId) {
+      const listIdVal = parseInt(raw.listId);
+      if (!isNaN(listIdVal)) {
+        conditions.push(
+          sql`${companiesTable.id} IN (SELECT company_id FROM list_companies WHERE list_id = ${listIdVal})`
+        );
+      }
+    }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 

@@ -5,7 +5,7 @@ import { useDebounce } from "use-debounce";
 import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown,
-  ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus,
+  ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList,
 } from "lucide-react";
 import {
   useListContacts,
@@ -130,6 +130,8 @@ export default function Search() {
   const [contactSort, setContactSort] = useState<SortConfig | null>(null);
   const [companySort, setCompanySort] = useState<SortConfig | null>(null);
 
+  const [selectedListId, setSelectedListId] = useState<number | null>(null);
+
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -246,6 +248,7 @@ export default function Search() {
 
   useEffect(() => {
     setSelectedIds(new Set());
+    setSelectedListId(null);
   }, [activeTab]);
 
   useEffect(() => {
@@ -269,7 +272,7 @@ export default function Search() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, filters, activeTab]);
+  }, [debouncedSearch, filters, activeTab, selectedListId]);
 
   const { data: filterOptions } = useGetFilterOptions();
 
@@ -283,6 +286,7 @@ export default function Search() {
       seniority: joinParam(filters.seniority),
       companySize: joinParam(filters.companySize),
       location: joinParam(filters.location),
+      listId: selectedListId ?? undefined,
       sortBy: contactSort?.column,
       sortOrder: contactSort?.direction,
     },
@@ -297,6 +301,7 @@ export default function Search() {
       industry: joinParam(filters.industry),
       size: joinParam(filters.companySize),
       location: joinParam(filters.location),
+      listId: selectedListId ?? undefined,
       sortBy: companySort?.column,
       sortOrder: companySort?.direction,
     },
@@ -316,9 +321,10 @@ export default function Search() {
   const clearFilters = () => {
     setFilters(EMPTY_FILTERS);
     setSearchTerm("");
+    setSelectedListId(null);
   };
 
-  const activeFilterCount = Object.values(filters).reduce((acc, arr) => acc + arr.length, 0);
+  const activeFilterCount = Object.values(filters).reduce((acc, arr) => acc + arr.length, 0) + (selectedListId ? 1 : 0);
 
   const handleContactSort = (col: string) => {
     setContactSort((prev) =>
@@ -413,6 +419,41 @@ export default function Search() {
                     </button>
                   </li>
                 ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Lists Filter */}
+          {filteredLists.length > 0 && (
+            <div className="px-5 pt-5 pb-4 border-b border-border">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
+                <LayoutList className="h-3.5 w-3.5" /> Lists
+              </h3>
+              <ul className="space-y-1">
+                {filteredLists.map((list) => {
+                  const isActive = selectedListId === list.id;
+                  return (
+                    <li key={list.id}>
+                      <button
+                        onClick={() => setSelectedListId(isActive ? null : list.id)}
+                        className={cn(
+                          "w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors text-left",
+                          isActive
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        )}
+                      >
+                        <span className="truncate">{list.name}</span>
+                        <span className={cn(
+                          "text-xs ml-2 flex-shrink-0 tabular-nums",
+                          isActive ? "text-primary/70" : "text-muted-foreground/70",
+                        )}>
+                          {list.memberCount}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

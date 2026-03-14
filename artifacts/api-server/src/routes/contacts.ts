@@ -66,6 +66,14 @@ router.get("/", async (req, res) => {
     if (raw.companyId) {
       conditions.push(eq(contactsTable.companyId, parseInt(raw.companyId)));
     }
+    if (raw.listId) {
+      const listIdVal = parseInt(raw.listId);
+      if (!isNaN(listIdVal)) {
+        conditions.push(
+          sql`${contactsTable.id} IN (SELECT contact_id FROM list_contacts WHERE list_id = ${listIdVal})`
+        );
+      }
+    }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
