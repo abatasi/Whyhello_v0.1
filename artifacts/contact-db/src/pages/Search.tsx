@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDebounce } from "use-debounce";
 import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown,
-  ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList,
+  ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList, X,
 } from "lucide-react";
 import {
   useListContacts,
@@ -479,7 +479,7 @@ export default function Search() {
           )}
 
           <div className="p-5 space-y-8">
-            <FilterSection
+            <MultiSelectFilter
               title="Industry"
               options={filterOptions?.industries || []}
               selected={filters.industry}
@@ -487,7 +487,7 @@ export default function Search() {
             />
             {activeTab === "contacts" && (
               <>
-                <FilterSection
+                <MultiSelectFilter
                   title="Department"
                   options={filterOptions?.departments || []}
                   selected={filters.department}
@@ -507,7 +507,7 @@ export default function Search() {
               selected={filters.companySize}
               onChange={(v) => handleFilterChange("companySize", v)}
             />
-            <FilterSection
+            <MultiSelectFilter
               title="Location"
               options={filterOptions?.locations || []}
               selected={filters.location}
@@ -1004,6 +1004,135 @@ function FilterSection({
                   {showAll ? "Show less" : `Show ${options.length - 6} more`}
                 </button>
               )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MultiSelectFilter({
+  title,
+  options,
+  selected,
+  onChange,
+}: {
+  title: string;
+  options: string[];
+  selected: string[];
+  onChange: (v: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const [search, setSearch] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  if (!options || options.length === 0) return null;
+
+  const filtered = options.filter((opt) =>
+    opt.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const activeCount = selected.length;
+
+  return (
+    <div>
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between group mb-1"
+      >
+        <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+          {title}
+          {activeCount > 0 && (
+            <span className="inline-flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+              {activeCount}
+            </span>
+          )}
+        </span>
+        {expanded
+          ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+          : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />}
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="pt-2 space-y-2">
+              {selected.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {selected.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => onChange(s)}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                    >
+                      <span className="max-w-[120px] truncate">{s}</span>
+                      <X className="h-3 w-3 flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="relative">
+                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Search…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-8 pr-7 py-1.5 text-xs rounded-md border border-input bg-background outline-none focus:border-primary/60 placeholder:text-muted-foreground transition-colors"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+
+              <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                {filtered.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-2 text-center">No options found</p>
+                ) : (
+                  filtered.map((opt) => {
+                    const isSelected = selected.includes(opt);
+                    return (
+                      <label
+                        key={opt}
+                        className="flex items-center gap-2 cursor-pointer group"
+                        onClick={() => onChange(opt)}
+                      >
+                        <div className={cn(
+                          "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
+                          isSelected
+                            ? "bg-primary border-primary"
+                            : "border-input bg-background group-hover:border-primary/50",
+                        )}>
+                          {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
+                        </div>
+                        <span className={cn(
+                          "text-sm transition-colors",
+                          isSelected
+                            ? "text-foreground font-medium"
+                            : "text-muted-foreground group-hover:text-foreground",
+                        )}>
+                          {opt}
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </motion.div>
         )}
