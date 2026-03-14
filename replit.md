@@ -27,6 +27,7 @@ Contact Database SaaS application built on a pnpm workspace monorepo using TypeS
 - **CSV Export** — From any List detail page, export all members to CSV. Contacts: 23 columns (17 profile fields + 6 insight fields) with one row per insight — contact data is repeated for each insight. Contacts without insights get one row with blank insight columns. Companies: 9 columns. Export records are stored in DB per user.
 - **Profile page** (`/profile`) — User info card + Export History table (all past exports with Download button).
 - **Notifications** (Bell icon in Navbar) — Dropdown showing 5 most recent exports with inline download; unread indicator dot when exports exist.
+- **Credit System** — Contact info (email, phone, LinkedIn, Twitter) and Personal Insights are gated behind credits. One credit = permanently reveal one contact for the current user. Tiers: Freemium (25 credits/month), Professional (10,000/month), Enterprise (unlimited). Monthly credit counter resets each calendar month; previously revealed contacts stay revealed at no additional cost. Credit tracker pill (Zap icon + "X / Y · Plan") in the navbar — green when credits available, amber at 70% usage, red at 90%. `contact_reveals` table tracks per-user reveals with a unique constraint. `tier` column added to users table (default: freemium). API: GET /api/credits/status, GET /api/credits/reveal-status/:contactId, POST /api/credits/reveal/:contactId.
 
 ## API Routes (Express, prefix `/api`)
 

@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Bell, LogOut, Download, Users, Building2 } from "lucide-react";
+import { Search, Bell, LogOut, Download, Users, Building2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@workspace/replit-auth-web";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
 import { cn, getInitials } from "@/lib/utils";
-import { useListExports, downloadExportFile } from "@workspace/api-client-react";
+import { useListExports, downloadExportFile, useCreditsStatus } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
 function formatRelative(iso: string): string {
@@ -16,6 +16,49 @@ function formatRelative(iso: string): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function CreditTracker() {
+  const { data: status } = useCreditsStatus();
+  if (!status) return null;
+
+  const { tier, creditsUsed, creditsTotal, isUnlimited } = status;
+  const remaining = isUnlimited ? null : (creditsTotal ?? 0) - creditsUsed;
+  const pct = isUnlimited ? 0 : creditsUsed / (creditsTotal ?? 1);
+
+  const tierLabel =
+    tier === "enterprise" ? "Enterprise" : tier === "professional" ? "Pro" : "Free";
+
+  const colorClass =
+    isUnlimited
+      ? "text-primary bg-primary/10 border-primary/20"
+      : pct >= 0.9
+      ? "text-destructive bg-destructive/10 border-destructive/20"
+      : pct >= 0.7
+      ? "text-amber-600 bg-amber-50 border-amber-200"
+      : "text-emerald-700 bg-emerald-50 border-emerald-200";
+
+  const usageText = isUnlimited
+    ? "∞"
+    : `${creditsUsed.toLocaleString()} / ${(creditsTotal ?? 0).toLocaleString()}`;
+
+  const title = isUnlimited
+    ? "Unlimited credits (Enterprise)"
+    : `${remaining?.toLocaleString()} credits remaining this month`;
+
+  return (
+    <div
+      title={title}
+      className={cn(
+        "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold select-none",
+        colorClass,
+      )}
+    >
+      <Zap className="h-3 w-3 flex-shrink-0" />
+      <span>{usageText}</span>
+      <span className="hidden sm:inline opacity-60 font-normal">· {tierLabel}</span>
+    </div>
+  );
 }
 
 function NotificationsDropdown({ onClose }: { onClose: () => void }) {
@@ -143,6 +186,8 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <CreditTracker />
+
           <Button variant="ghost" size="icon" className="rounded-full">
             <Search className="h-5 w-5" />
           </Button>

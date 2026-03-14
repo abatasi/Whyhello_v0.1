@@ -8,6 +8,7 @@ import insightsRouter from "./insights";
 import savedSearchesRouter from "./saved-searches";
 import listsRouter from "./lists";
 import exportsRouter from "./exports";
+import creditsRouter from "./credits";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use("/filters", filtersRouter);
 router.use("/saved-searches", savedSearchesRouter);
 router.use("/lists", listsRouter);
 router.use("/exports", exportsRouter);
+router.use("/credits", creditsRouter);
 
 export default router;
