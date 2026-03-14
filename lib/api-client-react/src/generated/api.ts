@@ -22,9 +22,11 @@ import type {
   ContactDetail,
   ContactInsight,
   ContactListResponse,
+  CreateExportBody,
   CreateListBody,
   CreateSavedSearchBody,
   ErrorResponse,
+  ExportRecord,
   FilterOptions,
   HealthStatus,
   ListCompaniesParams,
@@ -897,6 +899,66 @@ export function useAddMembersToList<TError = ErrorType<unknown>, TContext = unkn
     ...options?.mutation,
   });
 }
+
+export const createExport = (
+  body: CreateExportBody,
+  options?: RequestInit,
+): Promise<ExportRecord & { csvData: string }> =>
+  customFetch<ExportRecord & { csvData: string }>("/api/exports", {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+export const listExports = (options?: RequestInit): Promise<ExportRecord[]> =>
+  customFetch<ExportRecord[]>("/api/exports", options);
+
+export const getExportsQueryKey = () => ["exports"] as const;
+
+export function useListExports<TData = ExportRecord[], TError = ErrorType<unknown>>(options?: {
+  query?: UseQueryOptions<ExportRecord[], TError, TData, readonly ["exports"]>;
+}): UseQueryResult<TData, TError> {
+  const { query: queryOptions } = options ?? {};
+  return useQuery({
+    queryKey: getExportsQueryKey(),
+    queryFn: () => listExports(),
+    ...queryOptions,
+  } as UseQueryOptions<ExportRecord[], TError, TData, readonly ["exports"]>) as UseQueryResult<TData, TError>;
+}
+
+export function useCreateExport<TError = ErrorType<unknown>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    ExportRecord & { csvData: string },
+    TError,
+    CreateExportBody,
+    TContext
+  >;
+}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateExportBody) => createExport(body),
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: getExportsQueryKey() });
+      options?.mutation?.onSuccess?.(...args);
+    },
+    ...options?.mutation,
+  });
+}
+
+export const downloadExportFile = async (id: number, filename: string): Promise<void> => {
+  const response = await fetch(`/api/exports/${id}/download`);
+  if (!response.ok) throw new Error("Download failed");
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 
 export function useDeleteSavedSearch<TError = ErrorType<unknown>, TContext = unknown>(options?: {
   mutation?: UseMutationOptions<

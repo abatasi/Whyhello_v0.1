@@ -2,7 +2,7 @@
 
 ## Overview
 
-Contact Database SaaS application built on a pnpm workspace monorepo using TypeScript.
+Contact Database SaaS application built on a pnpm workspace monorepo using TypeScript. Whyhello-branded.
 
 ## Stack
 
@@ -15,70 +15,113 @@ Contact Database SaaS application built on a pnpm workspace monorepo using TypeS
 - **Database**: PostgreSQL + Drizzle ORM
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Auth**: Replit OIDC/PKCE (`@workspace/replit-auth-web`)
 
 ## Features
 
-- **Search page** (`/`) — Filter contacts and companies by industry, department, seniority, company size, location, and country with full-text search
-- **Contact profile page** (`/contacts/:id`) — Full profile with bio, contact info, social links, and company card
-- **Company profile page** (`/companies/:id`) — Company details with employee list
+- **Directory / Search** (`/`) — Multi-filter search for contacts and companies. Filters: industry, department, seniority, company size, location, country, and curated List membership. Paginated + sortable tables. Checkboxes for bulk "Add to List" actions with floating action bar.
+- **Contact profile** (`/contacts/:id`) — Full profile with bio, contact info, social links, company card, and Personal Insights section.
+- **Company profile** (`/companies/:id`) — Company details with employee list and linked contacts.
+- **Lists** (`/lists`, `/lists/:id`) — Curated lists of contacts or companies. Create/delete lists. Add members from the directory via floating action bar. List detail shows all members in a paginated table with Insights badges. Export CSV button in the header.
+- **Saved Searches** — Save a named set of filters for quick recall.
+- **CSV Export** — From any List detail page, export all members to CSV (contacts: 17 columns; companies: 9 columns). Export records are stored in DB per user.
+- **Profile page** (`/profile`) — User info card + Export History table (all past exports with Download button).
+- **Notifications** (Bell icon in Navbar) — Dropdown showing 5 most recent exports with inline download; unread indicator dot when exports exist.
+
+## API Routes (Express, prefix `/api`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /health | Server health |
+| GET | /contacts | Paginated contact list (filters, search, listId) |
+| GET | /contacts/:id | Contact detail |
+| GET | /contacts/:id/insights | Insights for a contact |
+| GET | /companies | Paginated company list (filters, search, listId) |
+| GET | /companies/:id | Company detail |
+| GET | /filters/options | Filter dropdown values |
+| GET | /saved-searches | List all saved searches |
+| POST | /saved-searches | Create saved search |
+| DELETE | /saved-searches/:id | Delete saved search |
+| GET | /lists | List all lists |
+| POST | /lists | Create a list |
+| DELETE | /lists/:id | Delete a list |
+| GET | /lists/:id | Get single list |
+| GET | /lists/:id/members | Paginated list members |
+| POST | /lists/:id/members | Add members to list |
+| DELETE | /lists/:id/members/:memberId | Remove member |
+| POST | /exports | Generate + store CSV export for a list |
+| GET | /exports | List current user's exports (no csvData) |
+| GET | /exports/:id/download | Download CSV file attachment |
+| GET/POST | /auth/* | Replit OIDC authentication |
+
+## Database Schema (`lib/db/src/schema/`)
+
+| Table | Key Columns |
+|-------|-------------|
+| `users` | id (varchar), firstName, lastName, email, profileImageUrl |
+| `contacts` | id, firstName, lastName, email, phone, jobTitle, department, seniority, location, country, linkedinUrl, twitterHandle, bio, companyId |
+| `companies` | id, name, industry, website, location, country, size, employeeCount, foundedYear, description |
+| `contact_insights` | id, contactId, category, content |
+| `saved_searches` | id, name, tab, search, filters (jsonb) |
+| `lists` | id, name, type (contacts|companies), createdAt |
+| `list_contacts` | listId, contactId |
+| `list_companies` | listId, companyId |
+| `list_exports` | id, userId, listId, listName, listType, filename, csvData, memberCount, requestedAt |
 
 ## Structure
 
 ```text
-artifacts-monorepo/
-├── artifacts/
-│   ├── api-server/         # Express API server
-│   │   └── src/routes/
-│   │       ├── contacts.ts   # GET /api/contacts, GET /api/contacts/:id
-│   │       ├── companies.ts  # GET /api/companies, GET /api/companies/:id
-│   │       └── filters.ts    # GET /api/filters/options
-│   └── contact-db/         # React frontend (Vite)
-│       └── src/
-│           ├── pages/
-│           │   ├── Search.tsx
-│           │   ├── ContactProfile.tsx
-│           │   └── CompanyProfile.tsx
-│           └── components/
-├── lib/
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/
-│       └── src/schema/
-│           ├── companies.ts  # companies table
-│           └── contacts.ts   # contacts table
-├── scripts/                # Utility scripts
-├── pnpm-workspace.yaml
-├── tsconfig.base.json
-├── tsconfig.json
-└── package.json
+artifacts/
+├── api-server/              # Express API server
+│   └── src/
+│       ├── routes/
+│       │   ├── contacts.ts
+│       │   ├── companies.ts
+│       │   ├── filters.ts
+│       │   ├── insights.ts
+│       │   ├── saved-searches.ts
+│       │   ├── lists.ts
+│       │   └── exports.ts
+│       ├── middlewares/authMiddleware.ts
+│       └── lib/auth.ts, seed.ts
+└── contact-db/              # React frontend (Vite)
+    └── src/
+        ├── pages/
+        │   ├── Search.tsx
+        │   ├── ContactProfile.tsx
+        │   ├── CompanyProfile.tsx
+        │   ├── Lists.tsx
+        │   ├── ListDetail.tsx
+        │   ├── Profile.tsx
+        │   └── Login.tsx
+        └── components/layout/
+            ├── Navbar.tsx   (bell notifications + profile link)
+            └── Shell.tsx
+lib/
+├── api-client-react/        # React Query hooks (manually extended)
+│   └── src/generated/
+│       ├── api.ts           # All API functions + hooks incl. exports
+│       └── api.schemas.ts   # TypeScript interfaces incl. ExportRecord
+├── db/src/schema/           # Drizzle ORM schema tables
+└── replit-auth-web/         # Replit OIDC client (React hook)
 ```
 
 ## TypeScript & Composite Projects
 
 Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references.
 
-- **Always typecheck from the root** — run `pnpm run typecheck`
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array
+**Known pre-existing TS issue**: `replit-auth-web` is missing `composite: true` in its tsconfig — this shows as a TS6306 warning in the contact-db tsc check but does not affect runtime.
 
-## API Routes
+## DB Push
 
-- `GET /api/contacts` — list contacts with filters: search, jobTitle, department, seniority, industry, companySize, location, country, companyId, page, limit
-- `GET /api/contacts/:id` — get contact detail
-- `GET /api/companies` — list companies with filters: search, industry, size, location, country, page, limit
-- `GET /api/companies/:id` — get company detail with contacts list
-- `GET /api/filters/options` — get distinct filter values from the DB
+```bash
+pnpm --filter @workspace/db run push
+```
 
-## Database Schema
+## Key Design Notes
 
-- `companies` — id, name, industry, size, location, country, website, description, employee_count, founded_year, linkedin_url
-- `contacts` — id, first_name, last_name, job_title, department, seniority, email, phone, location, country, linkedin_url, twitter_handle, bio, company_id
-
-## Root Scripts
-
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
-- `pnpm --filter @workspace/api-spec run codegen` — re-generate React Query hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — sync DB schema
+- Lists filter in Search sidebar filters the directory to members of a specific list (SQL subquery via `listId` param).
+- CSV export for contacts joins contacts + companies for full context (17 columns).
+- Export history is per-user (userId FK to users table).
+- Notifications dropdown shows up to 5 most recent exports with inline download; Bell icon shows a red dot when any exports exist.
+- Download is via `GET /api/exports/:id/download` (cookie auth, returns `Content-Disposition: attachment`).

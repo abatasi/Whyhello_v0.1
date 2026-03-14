@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
-import { ArrowLeft, Users, Building2, Trash2, ExternalLink } from "lucide-react";
-import { useGetList, useGetListMembers, useRemoveListMember } from "@workspace/api-client-react";
+import { ArrowLeft, Users, Building2, Trash2, ExternalLink, Download } from "lucide-react";
+import { useGetList, useGetListMembers, useRemoveListMember, useCreateExport } from "@workspace/api-client-react";
 import type { ContactSummary, CompanySummary } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn, getInitials } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 function getInsightLevel(count: number): { label: string; className: string } | null {
   if (count >= 7) return { label: "High", className: "bg-emerald-100 text-emerald-700 border-emerald-200" };
@@ -37,11 +38,31 @@ export default function ListDetail() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/lists/:id");
   const listId = parseInt(params?.id ?? "0");
+  const { toast } = useToast();
 
   const [page, setPage] = useState(1);
   const { data: list, isLoading: listLoading } = useGetList(listId);
   const { data: members, isLoading: membersLoading } = useGetListMembers(listId, { page, limit: 20 });
   const removeContact = useRemoveListMember(listId);
+  const exportCSV = useCreateExport();
+
+  const handleExport = async () => {
+    try {
+      const result = await exportCSV.mutateAsync({ listId });
+      const blob = new Blob([result.csvData], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Export ready", description: `${result.memberCount} records exported.` });
+    } catch {
+      toast({ title: "Export failed", description: "Could not generate export.", variant: "destructive" });
+    }
+  };
 
   if (listLoading) {
     return (
@@ -93,6 +114,18 @@ export default function ListDetail() {
               <Badge variant="secondary" className="capitalize">{list.type}</Badge>
               <span className="text-sm text-muted-foreground">{list.memberCount} member{list.memberCount !== 1 ? "s" : ""}</span>
             </div>
+          </div>
+          <div className="ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={exportCSV.isPending || list.memberCount === 0}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {exportCSV.isPending ? "Exporting…" : "Export CSV"}
+            </Button>
           </div>
         </div>
 

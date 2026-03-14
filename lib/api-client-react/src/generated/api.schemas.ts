@@ -191,3 +191,18 @@ export interface ListMembersResponse {
   limit: number;
   totalPages: number;
 }
+
+export interface ExportRecord {
+  id: number;
+  userId: string;
+  listId: number | null;
+  listName: string;
+  listType: string;
+  filename: string;
+  memberCount: number;
+  requestedAt: string;
+}
+
+export interface CreateExportBody {
+  listId: number;
+}
