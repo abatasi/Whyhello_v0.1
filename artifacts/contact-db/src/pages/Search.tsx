@@ -5,17 +5,27 @@ import { useDebounce } from "use-debounce";
 import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown,
-  ExternalLink,
+  ExternalLink, Bookmark, Trash2, BookmarkPlus,
 } from "lucide-react";
 import {
   useListContacts,
   useListCompanies,
   useGetFilterOptions,
+  useListSavedSearches,
+  useCreateSavedSearch,
+  useDeleteSavedSearch,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { getInitials, formatNumber, cn } from "@/lib/utils";
 
 type Tab = "contacts" | "companies";
@@ -116,6 +126,51 @@ export default function Search() {
 
   const [contactSort, setContactSort] = useState<SortConfig | null>(null);
   const [companySort, setCompanySort] = useState<SortConfig | null>(null);
+
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saveError, setSaveError] = useState("");
+
+  const { data: savedSearches = [] } = useListSavedSearches();
+  const createSearch = useCreateSavedSearch();
+  const deleteSearch = useDeleteSavedSearch();
+
+  const handleSaveSearch = () => {
+    if (!saveName.trim()) { setSaveError("Please enter a name."); return; }
+    createSearch.mutate(
+      {
+        name: saveName.trim(),
+        tab: activeTab,
+        search: debouncedSearch || null,
+        filters: {
+          industry: filters.industry,
+          department: filters.department,
+          seniority: filters.seniority,
+          companySize: filters.companySize,
+          location: filters.location,
+        },
+      },
+      {
+        onSuccess: () => { setSaveDialogOpen(false); setSaveName(""); setSaveError(""); },
+        onError: (err: any) => {
+          setSaveError(err?.message?.includes("409") ? "A saved search with that name already exists." : "Failed to save. Try again.");
+        },
+      },
+    );
+  };
+
+  const handleLoadSearch = (s: (typeof savedSearches)[number]) => {
+    setActiveTab(s.tab as Tab);
+    setSearchTerm(s.search ?? "");
+    setFilters({
+      industry: s.filters.industry ?? [],
+      department: s.filters.department ?? [],
+      seniority: s.filters.seniority ?? [],
+      companySize: s.filters.companySize ?? [],
+      location: s.filters.location ?? [],
+    });
+    setPage(1);
+  };
 
   useEffect(() => {
     setPage(1);
@@ -221,16 +276,27 @@ export default function Search() {
                   <Badge variant="secondary" className="ml-1 px-1.5 text-xs">{activeFilterCount}</Badge>
                 )}
               </h2>
-              {activeFilterCount > 0 && (
+              <div className="flex items-center gap-1">
+                {activeFilterCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Clear All
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={clearFilters}
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => { setSaveName(""); setSaveError(""); setSaveDialogOpen(true); }}
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-primary"
+                  title="Save current search"
                 >
-                  Clear All
+                  <BookmarkPlus className="h-3.5 w-3.5" />
                 </Button>
-              )}
+              </div>
             </div>
             <Input
               placeholder="Search names, companies..."
@@ -239,6 +305,35 @@ export default function Search() {
               icon={<SearchIcon className="h-4 w-4" />}
             />
           </div>
+
+          {/* Saved Searches */}
+          {savedSearches.length > 0 && (
+            <div className="px-5 pt-5 pb-2 border-b border-border">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Bookmark className="h-3.5 w-3.5" /> Saved Searches
+              </h3>
+              <ul className="space-y-1">
+                {savedSearches.map((s) => (
+                  <li key={s.id} className="flex items-center gap-1 group">
+                    <button
+                      onClick={() => handleLoadSearch(s)}
+                      className="flex-1 text-left text-sm py-1.5 px-2 rounded-md hover:bg-primary/10 hover:text-primary transition-colors truncate"
+                    >
+                      {s.name}
+                      <span className="ml-1.5 text-[10px] text-muted-foreground font-normal capitalize">{s.tab}</span>
+                    </button>
+                    <button
+                      onClick={() => deleteSearch.mutate(s.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
+                      title="Delete saved search"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="p-5 space-y-8">
             <FilterSection
@@ -495,6 +590,38 @@ export default function Search() {
           </div>
         </div>
       </div>
+
+      {/* Save Search Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={(open) => { setSaveDialogOpen(open); if (!open) { setSaveName(""); setSaveError(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookmarkPlus className="h-5 w-5 text-primary" /> Save This Search
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm text-muted-foreground mb-4">
+              Give this search a name so you can quickly recall it later.
+            </p>
+            <input
+              autoFocus
+              type="text"
+              placeholder="e.g. Senior Engineers in NYC"
+              value={saveName}
+              onChange={(e) => { setSaveName(e.target.value); setSaveError(""); }}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSaveSearch(); }}
+              className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            {saveError && <p className="mt-2 text-xs text-destructive">{saveError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveSearch} disabled={createSearch.isPending}>
+              {createSearch.isPending ? "Saving…" : "Save Search"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Shell>
   );
 }

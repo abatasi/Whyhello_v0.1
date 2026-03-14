@@ -5,10 +5,12 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
@@ -19,11 +21,13 @@ import type {
   ContactDetail,
   ContactInsight,
   ContactListResponse,
+  CreateSavedSearchBody,
   ErrorResponse,
   FilterOptions,
   HealthStatus,
   ListCompaniesParams,
   ListContactsParams,
+  SavedSearch,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -633,4 +637,100 @@ export function useGetFilterOptions<
   };
 
   return { ...query, queryKey: queryOptions.queryKey };
+}
+
+// ---------------------------------------------------------------------------
+// Saved Searches
+// ---------------------------------------------------------------------------
+
+export const getSavedSearchesQueryKey = () => [`/api/saved-searches`] as const;
+
+export const listSavedSearches = async (
+  options?: RequestInit,
+): Promise<SavedSearch[]> => {
+  return customFetch<SavedSearch[]>(`/api/saved-searches`, {
+    ...options,
+    method: "GET",
+  });
+};
+
+export function useListSavedSearches<
+  TData = Awaited<ReturnType<typeof listSavedSearches>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listSavedSearches>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getSavedSearchesQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSavedSearches>>> = ({ signal }) =>
+    listSavedSearches({ signal, ...requestOptions });
+  const q = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...q, queryKey };
+}
+
+export const createSavedSearch = async (
+  body: CreateSavedSearchBody,
+  options?: RequestInit,
+): Promise<SavedSearch> => {
+  return customFetch<SavedSearch>(`/api/saved-searches`, {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+};
+
+export function useCreateSavedSearch<TError = ErrorType<unknown>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSavedSearch>>,
+    TError,
+    CreateSavedSearchBody,
+    TContext
+  >;
+}) {
+  const queryClient = useQueryClient();
+  const { mutation: mutationOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSavedSearch>>, CreateSavedSearchBody> = (body) =>
+    createSavedSearch(body);
+  return useMutation({
+    mutationFn,
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: getSavedSearchesQueryKey() });
+      mutationOptions?.onSuccess?.(...args);
+    },
+    ...mutationOptions,
+  });
+}
+
+export const deleteSavedSearch = async (
+  id: number,
+  options?: RequestInit,
+): Promise<{ ok: boolean }> => {
+  return customFetch<{ ok: boolean }>(`/api/saved-searches/${id}`, {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export function useDeleteSavedSearch<TError = ErrorType<unknown>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSavedSearch>>,
+    TError,
+    number,
+    TContext
+  >;
+}) {
+  const queryClient = useQueryClient();
+  const { mutation: mutationOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSavedSearch>>, number> = (id) =>
+    deleteSavedSearch(id);
+  return useMutation({
+    mutationFn,
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: getSavedSearchesQueryKey() });
+      mutationOptions?.onSuccess?.(...args);
+    },
+    ...mutationOptions,
+  });
 }

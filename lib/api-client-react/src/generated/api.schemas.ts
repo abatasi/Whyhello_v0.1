@@ -140,3 +140,27 @@ export type ListCompaniesParams = {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 };
+
+export interface SavedSearchFilters {
+  industry?: string[];
+  department?: string[];
+  seniority?: string[];
+  companySize?: string[];
+  location?: string[];
+}
+
+export interface SavedSearch {
+  id: number;
+  name: string;
+  tab: string;
+  search?: string | null;
+  filters: SavedSearchFilters;
+  createdAt: string;
+}
+
+export interface CreateSavedSearchBody {
+  name: string;
+  tab: string;
+  search?: string | null;
+  filters: SavedSearchFilters;
+}
