@@ -443,6 +443,36 @@ export default function Search() {
             </div>
           )}
 
+          {/* Tab Toggle */}
+          <div className="px-5 pt-4 pb-3 border-b border-border">
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setActiveTab("contacts")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors",
+                  activeTab === "contacts"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Contacts
+              </button>
+              <button
+                onClick={() => setActiveTab("companies")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors border-l border-border",
+                  activeTab === "companies"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <Building2 className="h-3.5 w-3.5" />
+                Companies
+              </button>
+            </div>
+          </div>
+
           {/* Lists Filter */}
           {filteredLists.length > 0 && (
             <div className="px-5 pt-5 pb-4 border-b border-border">
