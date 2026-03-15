@@ -46,3 +46,23 @@ export function useRevealContact() {
     },
   });
 }
+
+export function useCompanyRevealStatus(companyId: number) {
+  return useQuery<RevealStatus>({
+    queryKey: ["credits", "company-reveal-status", companyId],
+    queryFn: () => customFetch<RevealStatus>(`/api/credits/company-reveal-status/${companyId}`),
+    enabled: !!companyId,
+  });
+}
+
+export function useRevealCompany() {
+  const queryClient = useQueryClient();
+  return useMutation<RevealResult, Error, number>({
+    mutationFn: (companyId: number) =>
+      customFetch<RevealResult>(`/api/credits/reveal-company/${companyId}`, { method: "POST" }),
+    onSuccess: (_, companyId) => {
+      queryClient.invalidateQueries({ queryKey: ["credits", "company-reveal-status", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["credits", "status"] });
+    },
+  });
+}

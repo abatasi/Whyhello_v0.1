@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request } from "express";
 import { db } from "@workspace/db";
-import { usersTable, contactRevealsTable } from "@workspace/db/schema";
-import { and, count, eq, gte } from "drizzle-orm";
+import { usersTable, contactRevealsTable, companyRevealsTable } from "@workspace/db/schema";
+import { and, count, eq, gte, sql } from "drizzle-orm";
 
 type AuthedReq = Request & { user: { id: string } };
 
@@ -28,12 +28,21 @@ async function getCreditStatus(userId: string) {
   const creditsTotal = TIER_LIMITS[tier] ?? null;
   const isUnlimited = creditsTotal === null;
 
-  const [{ creditsUsed }] = await db
-    .select({ creditsUsed: count() })
-    .from(contactRevealsTable)
-    .where(and(eq(contactRevealsTable.userId, userId), gte(contactRevealsTable.revealedAt, monthStart())));
+  const start = monthStart();
 
-  return { tier, creditsUsed: Number(creditsUsed), creditsTotal, isUnlimited };
+  const [contactCount] = await db
+    .select({ n: count() })
+    .from(contactRevealsTable)
+    .where(and(eq(contactRevealsTable.userId, userId), gte(contactRevealsTable.revealedAt, start)));
+
+  const [companyCount] = await db
+    .select({ n: count() })
+    .from(companyRevealsTable)
+    .where(and(eq(companyRevealsTable.userId, userId), gte(companyRevealsTable.revealedAt, start)));
+
+  const creditsUsed = Number(contactCount.n) + Number(companyCount.n);
+
+  return { tier, creditsUsed, creditsTotal, isUnlimited };
 }
 
 const router: IRouter = Router();
@@ -48,6 +57,8 @@ router.get("/status", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch credit status" });
   }
 });
+
+// ── Contact reveal ──────────────────────────────────────────
 
 router.get("/reveal-status/:contactId", async (req, res) => {
   const userId = getUserId(req);
@@ -88,23 +99,72 @@ router.post("/reveal/:contactId", async (req, res) => {
 
     const status = await getCreditStatus(userId);
     if (!status.isUnlimited && status.creditsUsed >= (status.creditsTotal ?? 0)) {
-      res.status(402).json({
-        error: "Insufficient credits",
-        ...status,
-      });
+      res.status(402).json({ error: "Insufficient credits", ...status });
       return;
     }
 
-    await db
-      .insert(contactRevealsTable)
-      .values({ userId, contactId })
-      .onConflictDoNothing();
+    await db.insert(contactRevealsTable).values({ userId, contactId }).onConflictDoNothing();
 
     const updated = await getCreditStatus(userId);
     res.json({ revealed: true, alreadyRevealed: false, ...updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to reveal contact" });
+  }
+});
+
+// ── Company reveal ──────────────────────────────────────────
+
+router.get("/company-reveal-status/:companyId", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  try {
+    const companyId = parseInt(req.params.companyId);
+    if (isNaN(companyId)) { res.status(400).json({ error: "Invalid companyId" }); return; }
+
+    const [existing] = await db
+      .select()
+      .from(companyRevealsTable)
+      .where(and(eq(companyRevealsTable.userId, userId), eq(companyRevealsTable.companyId, companyId)));
+
+    res.json({ isRevealed: !!existing });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch company reveal status" });
+  }
+});
+
+router.post("/reveal-company/:companyId", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  try {
+    const companyId = parseInt(req.params.companyId);
+    if (isNaN(companyId)) { res.status(400).json({ error: "Invalid companyId" }); return; }
+
+    const [existing] = await db
+      .select()
+      .from(companyRevealsTable)
+      .where(and(eq(companyRevealsTable.userId, userId), eq(companyRevealsTable.companyId, companyId)));
+
+    if (existing) {
+      const status = await getCreditStatus(userId);
+      res.json({ revealed: true, alreadyRevealed: true, ...status });
+      return;
+    }
+
+    const status = await getCreditStatus(userId);
+    if (!status.isUnlimited && status.creditsUsed >= (status.creditsTotal ?? 0)) {
+      res.status(402).json({ error: "Insufficient credits", ...status });
+      return;
+    }
+
+    await db.insert(companyRevealsTable).values({ userId, companyId }).onConflictDoNothing();
+
+    const updated = await getCreditStatus(userId);
+    res.json({ revealed: true, alreadyRevealed: false, ...updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to reveal company" });
   }
 });
 
