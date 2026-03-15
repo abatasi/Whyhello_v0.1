@@ -1,4 +1,5 @@
 import { useRoute, Link } from "wouter";
+import { useEffect } from "react";
 import {
   useGetContact,
   useGetContactInsights,
@@ -53,6 +54,13 @@ export default function ContactProfile() {
     if (revealMutation.isPending) return;
     revealMutation.mutate(id);
   };
+
+  useEffect(() => {
+    if (contact) {
+      document.title = `${contact.firstName} ${contact.lastName} on Whyhello`;
+    }
+    return () => { document.title = "Whyhello"; };
+  }, [contact]);
 
   if (isLoading) {
     return (

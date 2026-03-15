@@ -1,4 +1,5 @@
 import { useRoute, Link } from "wouter";
+import { useEffect } from "react";
 import {
   useGetCompany,
   useGetCompanyInsights,
@@ -126,6 +127,13 @@ export default function CompanyProfile() {
     if (revealMutation.isPending) return;
     revealMutation.mutate(id);
   };
+
+  useEffect(() => {
+    if (company) {
+      document.title = `${company.name} on Whyhello`;
+    }
+    return () => { document.title = "Whyhello"; };
+  }, [company]);
 
   const groupedInsights = insights.reduce<Record<string, typeof insights>>((acc, insight) => {
     const key = insight.mediaType;
