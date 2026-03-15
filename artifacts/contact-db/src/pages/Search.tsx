@@ -750,11 +750,14 @@ export default function Search() {
                               <SortableTh column="website" label="Website" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px]" />
                               <SortableTh column="location" label="Location" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[140px]" />
                               <SortableTh column="size" label="Employee Size" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[130px]" />
+                              <SortableTh column="insightCount" label="Insights" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[100px]" />
                             </tr>
                           </thead>
                           <tbody>
                             {companies.map((company, idx) => {
                               const isSelected = selectedIds.has(company.id);
+                              const companyInsightCount = (company as typeof company & { insightCount?: number }).insightCount ?? 0;
+                              const companyInsightLevel = getInsightLevel(companyInsightCount);
                               return (
                               <tr
                                 key={company.id}
@@ -801,6 +804,15 @@ export default function Search() {
                                 </td>
                                 <td className="px-4 py-3 text-muted-foreground">{company.location ?? "—"}</td>
                                 <td className="px-4 py-3 text-muted-foreground">{company.size ?? "—"}</td>
+                                <td className="px-4 py-3">
+                                  {companyInsightLevel ? (
+                                    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", companyInsightLevel.className)}>
+                                      {companyInsightLevel.label}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </td>
                               </tr>
                               );
                             })}

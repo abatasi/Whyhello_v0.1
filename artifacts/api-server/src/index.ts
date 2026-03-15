@@ -1,5 +1,5 @@
 import app from "./app";
-import { seedIfEmpty, seedInsightsIfEmpty } from "./lib/seed";
+import { seedIfEmpty, seedInsightsIfEmpty, seedCompanyInsightsIfEmpty } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -19,6 +19,7 @@ app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
   seedIfEmpty()
     .then(() => seedInsightsIfEmpty())
+    .then(() => seedCompanyInsightsIfEmpty())
     .catch((err) => {
       console.error("Seed failed:", err);
     });

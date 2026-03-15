@@ -6,3 +6,4 @@ export * from "./saved-searches";
 export * from "./lists";
 export * from "./exports";
 export * from "./credits";
+export * from "./company-insights";

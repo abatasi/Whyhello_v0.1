@@ -24,6 +24,17 @@ export interface ContactInsight {
   publishedDate?: string | null;
 }
 
+export interface CompanyInsight {
+  id: number;
+  companyId: number;
+  title: string;
+  url: string;
+  source: string;
+  mediaType: string;
+  description?: string | null;
+  publishedDate?: string | null;
+}
+
 export interface ContactSummary {
   id: number;
   firstName: string;
@@ -73,6 +84,10 @@ export interface ContactDetail {
   company?: CompanySummary;
 }
 
+export type CompanySummaryWithInsights = CompanySummary & {
+  insightCount?: number;
+};
+
 export interface CompanyDetail {
   id: number;
   name: string;
@@ -97,7 +112,7 @@ export interface ContactListResponse {
 }
 
 export interface CompanyListResponse {
-  data: CompanySummary[];
+  data: CompanySummaryWithInsights[];
   total: number;
   page: number;
   limit: number;
@@ -123,11 +138,8 @@ export type ListContactsParams = {
   location?: string;
   country?: string;
   companyId?: number;
-  listId?: number;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
 };
 
 export type ListCompaniesParams = {
@@ -136,73 +148,6 @@ export type ListCompaniesParams = {
   size?: string;
   location?: string;
   country?: string;
-  listId?: number;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
 };
-
-export interface SavedSearchFilters {
-  industry?: string[];
-  department?: string[];
-  seniority?: string[];
-  companySize?: string[];
-  location?: string[];
-}
-
-export interface SavedSearch {
-  id: number;
-  name: string;
-  tab: string;
-  search?: string | null;
-  filters: SavedSearchFilters;
-  createdAt: string;
-}
-
-export interface CreateSavedSearchBody {
-  name: string;
-  tab: string;
-  search?: string | null;
-  filters: SavedSearchFilters;
-}
-
-export interface ListRecord {
-  id: number;
-  name: string;
-  type: string;
-  createdAt: string;
-  memberCount: number;
-}
-
-export interface CreateListBody {
-  name: string;
-  type: string;
-}
-
-export interface AddListMembersBody {
-  ids: number[];
-}
-
-export interface ListMembersResponse {
-  data: (ContactSummary | CompanySummary)[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface ExportRecord {
-  id: number;
-  userId: string;
-  listId: number | null;
-  listName: string;
-  listType: string;
-  filename: string;
-  memberCount: number;
-  requestedAt: string;
-}
-
-export interface CreateExportBody {
-  listId: number;
-}

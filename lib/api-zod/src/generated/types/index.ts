@@ -7,8 +7,10 @@
  */
 
 export * from "./companyDetail";
+export * from "./companyInsight";
 export * from "./companyListResponse";
 export * from "./companySummary";
+export * from "./companySummaryWithInsights";
 export * from "./contactDetail";
 export * from "./contactInsight";
 export * from "./contactListResponse";

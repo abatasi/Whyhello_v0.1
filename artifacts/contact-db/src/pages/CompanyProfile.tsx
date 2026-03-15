@@ -1,10 +1,28 @@
 import { useRoute, Link } from "wouter";
-import { useGetCompany } from "@workspace/api-client-react";
+import { useGetCompany, useGetCompanyInsights } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
-import { ArrowLeft, Building2, MapPin, Users, Globe, ExternalLink, Linkedin, Calendar } from "lucide-react";
+import {
+  ArrowLeft, Building2, MapPin, Users, Globe, ExternalLink, Linkedin, Calendar,
+  Newspaper, Tv2, Mic2, FileText, Share2, Megaphone,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { getInitials, formatNumber } from "@/lib/utils";
+import { getInitials, formatNumber, cn } from "@/lib/utils";
+
+const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
+  article:        { label: "Article",        icon: Newspaper,  color: "text-blue-600",   bg: "bg-blue-50 border-blue-100" },
+  blog_post:      { label: "Blog Post",      icon: FileText,   color: "text-violet-600", bg: "bg-violet-50 border-violet-100" },
+  video:          { label: "Video",          icon: Tv2,        color: "text-red-600",    bg: "bg-red-50 border-red-100" },
+  podcast:        { label: "Podcast",        icon: Mic2,       color: "text-green-600",  bg: "bg-green-50 border-green-100" },
+  linkedin_post:  { label: "LinkedIn Post",  icon: Share2,     color: "text-sky-600",    bg: "bg-sky-50 border-sky-100" },
+  press_release:  { label: "Press Release",  icon: Megaphone,  color: "text-amber-600",  bg: "bg-amber-50 border-amber-100" },
+};
+
+function getMediaConfig(type: string) {
+  return MEDIA_CONFIG[type] ?? { label: type, icon: ExternalLink, color: "text-muted-foreground", bg: "bg-secondary border-border" };
+}
+
+const MEDIA_ORDER = ["video", "podcast", "article", "blog_post", "linkedin_post", "press_release"];
 
 export default function CompanyProfile() {
   const [, params] = useRoute("/companies/:id");
@@ -12,6 +30,22 @@ export default function CompanyProfile() {
 
   const { data: company, isLoading, isError } = useGetCompany(id, {
     query: { enabled: !!id }
+  });
+  const { data: insights = [] } = useGetCompanyInsights(id, {
+    query: { enabled: !!id }
+  });
+
+  const groupedInsights = insights.reduce<Record<string, typeof insights>>((acc, insight) => {
+    const key = insight.mediaType;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(insight);
+    return acc;
+  }, {});
+
+  const sortedGroups = Object.entries(groupedInsights).sort(([a], [b]) => {
+    const ai = MEDIA_ORDER.indexOf(a);
+    const bi = MEDIA_ORDER.indexOf(b);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
 
   if (isLoading) {
@@ -99,7 +133,7 @@ export default function CompanyProfile() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-           {/* Left Col: Description */}
+           {/* Left Col: Description + Insights + Contacts */}
            <div className="col-span-1 lg:col-span-2 space-y-8">
               {company.description && (
                 <section>
@@ -109,6 +143,97 @@ export default function CompanyProfile() {
                   </div>
                 </section>
               )}
+
+              {/* Company Insights */}
+              <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      Company Insights
+                    </h2>
+                    <p className="text-xs text-muted-foreground/70 mt-0.5">
+                      Press coverage, videos, podcasts & announcements
+                    </p>
+                  </div>
+                  {sortedGroups.length > 0 && (
+                    <span className="text-xs bg-secondary px-2.5 py-1 rounded-full font-medium text-muted-foreground">
+                      {insights.length} {insights.length === 1 ? "result" : "results"}
+                    </span>
+                  )}
+                </div>
+
+                {sortedGroups.length > 0 ? (
+                  <div className="space-y-8">
+                    {sortedGroups.map(([type, items]) => {
+                      const cfg = getMediaConfig(type);
+                      const Icon = cfg.icon;
+                      return (
+                        <div key={type}>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className={cn("w-6 h-6 rounded-md flex items-center justify-center border", cfg.bg)}>
+                              <Icon className={cn("h-3.5 w-3.5", cfg.color)} />
+                            </div>
+                            <span className={cn("text-xs font-semibold uppercase tracking-wider", cfg.color)}>
+                              {cfg.label}
+                            </span>
+                            <span className="text-xs text-muted-foreground/50 font-medium">
+                              {items.length}
+                            </span>
+                          </div>
+                          <div className="space-y-3">
+                            {items.map((insight) => (
+                              <a
+                                key={insight.id}
+                                href={insight.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block group"
+                              >
+                                <div className="flex gap-4 p-4 rounded-xl border border-border/50 hover:border-primary/25 hover:shadow-sm hover:bg-secondary/30 transition-all duration-200">
+                                  <div className={cn(
+                                    "w-9 h-9 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5",
+                                    cfg.bg
+                                  )}>
+                                    <Icon className={cn("h-4 w-4", cfg.color)} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">
+                                        {insight.title}
+                                      </p>
+                                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5" />
+                                    </div>
+                                    {insight.description && (
+                                      <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
+                                        {insight.description}
+                                      </p>
+                                    )}
+                                    <div className="flex items-center gap-3 mt-2.5">
+                                      <span className="text-xs font-medium text-muted-foreground/70">
+                                        {insight.source}
+                                      </span>
+                                      {insight.publishedDate && (
+                                        <>
+                                          <span className="text-muted-foreground/30 text-xs">·</span>
+                                          <span className="text-xs text-muted-foreground/60">
+                                            {insight.publishedDate}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No insights found for this company.</p>
+                )}
+              </section>
 
               {/* Contacts Table */}
               <section>

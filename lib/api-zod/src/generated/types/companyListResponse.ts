@@ -5,10 +5,10 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
-import type { CompanySummary } from "./companySummary";
+import type { CompanySummaryWithInsights } from "./companySummaryWithInsights";
 
 export interface CompanyListResponse {
-  data: CompanySummary[];
+  data: CompanySummaryWithInsights[];
   total: number;
   page: number;
   limit: number;

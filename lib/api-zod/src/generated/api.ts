@@ -53,6 +53,7 @@ export const ListContactsResponse = zod.object({
       companyName: zod.string().optional(),
       companyIndustry: zod.string().optional(),
       companySize: zod.string().optional(),
+      insightCount: zod.number().optional(),
     }),
   ),
   total: zod.number(),
@@ -137,24 +138,51 @@ export const ListCompaniesQueryParams = zod.object({
 
 export const ListCompaniesResponse = zod.object({
   data: zod.array(
-    zod.object({
-      id: zod.number(),
-      name: zod.string(),
-      industry: zod.string().optional(),
-      size: zod.string().optional(),
-      location: zod.string().optional(),
-      country: zod.string().optional(),
-      website: zod.string().optional(),
-      description: zod.string().optional(),
-      employeeCount: zod.number().optional(),
-      foundedYear: zod.number().optional(),
-    }),
+    zod
+      .object({
+        id: zod.number(),
+        name: zod.string(),
+        industry: zod.string().optional(),
+        size: zod.string().optional(),
+        location: zod.string().optional(),
+        country: zod.string().optional(),
+        website: zod.string().optional(),
+        description: zod.string().optional(),
+        employeeCount: zod.number().optional(),
+        foundedYear: zod.number().optional(),
+      })
+      .and(
+        zod.object({
+          insightCount: zod.number().optional(),
+        }),
+      ),
   ),
   total: zod.number(),
   page: zod.number(),
   limit: zod.number(),
   totalPages: zod.number(),
 });
+
+/**
+ * @summary Get insights for a company
+ */
+export const GetCompanyInsightsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCompanyInsightsResponseItem = zod.object({
+  id: zod.number(),
+  companyId: zod.number(),
+  title: zod.string(),
+  url: zod.string(),
+  source: zod.string(),
+  mediaType: zod.string(),
+  description: zod.string().nullish(),
+  publishedDate: zod.string().nullish(),
+});
+export const GetCompanyInsightsResponse = zod.array(
+  GetCompanyInsightsResponseItem,
+);
 
 /**
  * @summary Get a company by ID
@@ -193,6 +221,7 @@ export const GetCompanyResponse = zod.object({
         companyName: zod.string().optional(),
         companyIndustry: zod.string().optional(),
         companySize: zod.string().optional(),
+        insightCount: zod.number().optional(),
       }),
     )
     .optional(),

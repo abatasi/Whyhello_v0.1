@@ -180,6 +180,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/CompanyListResponse"
 
+  /companies/{id}/insights:
+    get:
+      operationId: getCompanyInsights
+      tags: [companies]
+      summary: Get insights for a company
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of company insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CompanyInsight"
+
   /companies/{id}:
     get:
       operationId: getCompany
@@ -260,6 +281,35 @@ components:
       required:
         - id
         - contactId
+        - title
+        - url
+        - source
+        - mediaType
+
+    CompanyInsight:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        title:
+          type: string
+        url:
+          type: string
+        source:
+          type: string
+        mediaType:
+          type: string
+        description:
+          type: string
+          nullable: true
+        publishedDate:
+          type: string
+          nullable: true
+      required:
+        - id
+        - companyId
         - title
         - url
         - source
@@ -368,6 +418,14 @@ components:
         - id
         - name
 
+    CompanySummaryWithInsights:
+      allOf:
+        - $ref: "#/components/schemas/CompanySummary"
+        - type: object
+          properties:
+            insightCount:
+              type: integer
+
     CompanyDetail:
       type: object
       properties:
@@ -429,7 +487,7 @@ components:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/CompanySummary"
+            $ref: "#/components/schemas/CompanySummaryWithInsights"
         total:
           type: integer
         page:

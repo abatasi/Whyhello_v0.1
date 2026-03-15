@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { contactsTable, companiesTable } from "@workspace/db/schema";
 import { GetCompanyParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL } from "drizzle-orm";
+import { companyInsightsTable } from "@workspace/db/schema";
 
 const router: IRouter = Router();
 
@@ -82,7 +83,19 @@ router.get("/", async (req, res) => {
     }
 
     const [rows, [{ count }]] = await Promise.all([
-      db.select().from(companiesTable).where(where).orderBy(...orderByClause).limit(limit).offset(offset),
+      db.select({
+        id: companiesTable.id,
+        name: companiesTable.name,
+        industry: companiesTable.industry,
+        size: companiesTable.size,
+        location: companiesTable.location,
+        country: companiesTable.country,
+        website: companiesTable.website,
+        description: companiesTable.description,
+        employeeCount: companiesTable.employeeCount,
+        foundedYear: companiesTable.foundedYear,
+        insightCount: sql<number>`(SELECT COUNT(*)::int FROM company_insights WHERE company_insights.company_id = companies.id)`,
+      }).from(companiesTable).where(where).orderBy(...orderByClause).limit(limit).offset(offset),
       db.select({ count: sql<number>`count(*)::int` }).from(companiesTable).where(where),
     ]);
 

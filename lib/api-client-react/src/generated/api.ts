@@ -5,35 +5,26 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type {
-  MutationFunction,
   QueryFunction,
   QueryKey,
-  UseMutationOptions,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
 import type {
-  AddListMembersBody,
   CompanyDetail,
+  CompanyInsight,
   CompanyListResponse,
   ContactDetail,
   ContactInsight,
   ContactListResponse,
-  CreateExportBody,
-  CreateListBody,
-  CreateSavedSearchBody,
   ErrorResponse,
-  ExportRecord,
   FilterOptions,
   HealthStatus,
   ListCompaniesParams,
   ListContactsParams,
-  ListMembersResponse,
-  ListRecord,
-  SavedSearch,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -484,6 +475,93 @@ export function useListCompanies<
 }
 
 /**
+ * @summary Get insights for a company
+ */
+export const getGetCompanyInsightsUrl = (id: number) => {
+  return `/api/companies/${id}/insights`;
+};
+
+export const getCompanyInsights = async (
+  id: number,
+  options?: RequestInit,
+): Promise<CompanyInsight[]> => {
+  return customFetch<CompanyInsight[]>(getGetCompanyInsightsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCompanyInsightsQueryKey = (id: number) => {
+  return [`/api/companies/${id}/insights`] as const;
+};
+
+export const getGetCompanyInsightsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCompanyInsights>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCompanyInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCompanyInsightsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCompanyInsights>>
+  > = ({ signal }) => getCompanyInsights(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCompanyInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCompanyInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCompanyInsights>>
+>;
+export type GetCompanyInsightsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get insights for a company
+ */
+
+export function useGetCompanyInsights<
+  TData = Awaited<ReturnType<typeof getCompanyInsights>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCompanyInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCompanyInsightsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get a company by ID
  */
 export const getGetCompanyUrl = (id: number) => {
@@ -643,341 +721,4 @@ export function useGetFilterOptions<
   };
 
   return { ...query, queryKey: queryOptions.queryKey };
-}
-
-// ---------------------------------------------------------------------------
-// Saved Searches
-// ---------------------------------------------------------------------------
-
-export const getSavedSearchesQueryKey = () => [`/api/saved-searches`] as const;
-
-export const listSavedSearches = async (
-  options?: RequestInit,
-): Promise<SavedSearch[]> => {
-  return customFetch<SavedSearch[]>(`/api/saved-searches`, {
-    ...options,
-    method: "GET",
-  });
-};
-
-export function useListSavedSearches<
-  TData = Awaited<ReturnType<typeof listSavedSearches>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof listSavedSearches>>, TError, TData>;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getSavedSearchesQueryKey();
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSavedSearches>>> = ({ signal }) =>
-    listSavedSearches({ signal, ...requestOptions });
-  const q = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  return { ...q, queryKey };
-}
-
-export const createSavedSearch = async (
-  body: CreateSavedSearchBody,
-  options?: RequestInit,
-): Promise<SavedSearch> => {
-  return customFetch<SavedSearch>(`/api/saved-searches`, {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-};
-
-export function useCreateSavedSearch<TError = ErrorType<unknown>, TContext = unknown>(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createSavedSearch>>,
-    TError,
-    CreateSavedSearchBody,
-    TContext
-  >;
-}) {
-  const queryClient = useQueryClient();
-  const { mutation: mutationOptions } = options ?? {};
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSavedSearch>>, CreateSavedSearchBody> = (body) =>
-    createSavedSearch(body);
-  return useMutation({
-    mutationFn,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: getSavedSearchesQueryKey() });
-      mutationOptions?.onSuccess?.(...args);
-    },
-    ...mutationOptions,
-  });
-}
-
-export const deleteSavedSearch = async (
-  id: number,
-  options?: RequestInit,
-): Promise<{ ok: boolean }> => {
-  return customFetch<{ ok: boolean }>(`/api/saved-searches/${id}`, {
-    ...options,
-    method: "DELETE",
-  });
-};
-
-// ---------------------------------------------------------------------------
-// Lists
-// ---------------------------------------------------------------------------
-
-export const getListsQueryKey = () => [`/api/lists`] as const;
-export const getListQueryKey = (id: number) => [`/api/lists/${id}`] as const;
-export const getListMembersQueryKey = (id: number, params?: Record<string, unknown>) =>
-  [`/api/lists/${id}/members`, params] as const;
-
-export const fetchLists = async (options?: RequestInit): Promise<ListRecord[]> =>
-  customFetch<ListRecord[]>(`/api/lists`, { ...options, method: "GET" });
-
-export const fetchList = async (id: number, options?: RequestInit): Promise<ListRecord> =>
-  customFetch<ListRecord>(`/api/lists/${id}`, { ...options, method: "GET" });
-
-export const fetchListMembers = async (
-  id: number,
-  params?: { page?: number; limit?: number },
-  options?: RequestInit,
-): Promise<ListMembersResponse> => {
-  const qs = new URLSearchParams();
-  if (params?.page) qs.set("page", String(params.page));
-  if (params?.limit) qs.set("limit", String(params.limit));
-  return customFetch<ListMembersResponse>(`/api/lists/${id}/members?${qs}`, { ...options, method: "GET" });
-};
-
-export function useListLists<TData = Awaited<ReturnType<typeof fetchLists>>, TError = ErrorType<unknown>>(
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof fetchLists>>, TError, TData> }
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryKey = options?.query?.queryKey ?? getListsQueryKey();
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof fetchLists>>> = ({ signal }) => fetchLists({ signal });
-  const q = useQuery({ queryKey, queryFn, ...options?.query }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  return { ...q, queryKey };
-}
-
-export function useGetList<TData = Awaited<ReturnType<typeof fetchList>>, TError = ErrorType<unknown>>(
-  id: number,
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof fetchList>>, TError, TData> }
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryKey = options?.query?.queryKey ?? getListQueryKey(id);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof fetchList>>> = ({ signal }) => fetchList(id, { signal });
-  const q = useQuery({ queryKey, queryFn, enabled: !!id, ...options?.query }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  return { ...q, queryKey };
-}
-
-export function useGetListMembers<TData = Awaited<ReturnType<typeof fetchListMembers>>, TError = ErrorType<unknown>>(
-  id: number,
-  params?: { page?: number; limit?: number },
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof fetchListMembers>>, TError, TData> }
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryKey = options?.query?.queryKey ?? getListMembersQueryKey(id, params);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof fetchListMembers>>> = ({ signal }) =>
-    fetchListMembers(id, params, { signal });
-  const q = useQuery({ queryKey, queryFn, enabled: !!id, ...options?.query }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  return { ...q, queryKey };
-}
-
-export function useCreateList<TError = ErrorType<unknown>, TContext = unknown>(options?: {
-  mutation?: UseMutationOptions<Awaited<ReturnType<typeof createList>>, TError, CreateListBody, TContext>;
-}) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (body: CreateListBody) => createList(body),
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
-      options?.mutation?.onSuccess?.(...args);
-    },
-    ...options?.mutation,
-  });
-}
-
-export const createList = async (body: CreateListBody, options?: RequestInit): Promise<ListRecord> =>
-  customFetch<ListRecord>(`/api/lists`, {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-export const deleteList = async (id: number, options?: RequestInit): Promise<{ ok: boolean }> =>
-  customFetch<{ ok: boolean }>(`/api/lists/${id}`, { ...options, method: "DELETE" });
-
-export function useDeleteList<TError = ErrorType<unknown>, TContext = unknown>(options?: {
-  mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteList>>, TError, number, TContext>;
-}) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => deleteList(id),
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
-      options?.mutation?.onSuccess?.(...args);
-    },
-    ...options?.mutation,
-  });
-}
-
-export const addListMembers = async (
-  id: number,
-  body: AddListMembersBody,
-  options?: RequestInit,
-): Promise<{ ok: boolean; added: number }> =>
-  customFetch<{ ok: boolean; added: number }>(`/api/lists/${id}/members`, {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-export function useAddListMembers<TError = ErrorType<unknown>, TContext = unknown>(
-  listId: number,
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof addListMembers>>,
-      TError,
-      AddListMembersBody,
-      TContext
-    >;
-  }
-) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (body: AddListMembersBody) => addListMembers(listId, body),
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
-      queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(listId) });
-      options?.mutation?.onSuccess?.(...args);
-    },
-    ...options?.mutation,
-  });
-}
-
-export const removeListMember = async (
-  listId: number,
-  memberId: number,
-  options?: RequestInit,
-): Promise<{ ok: boolean }> =>
-  customFetch<{ ok: boolean }>(`/api/lists/${listId}/members/${memberId}`, { ...options, method: "DELETE" });
-
-export function useRemoveListMember<TError = ErrorType<unknown>, TContext = unknown>(
-  listId: number,
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof removeListMember>>,
-      TError,
-      number,
-      TContext
-    >;
-  }
-) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (memberId: number) => removeListMember(listId, memberId),
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(listId) });
-      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
-      options?.mutation?.onSuccess?.(...args);
-    },
-    ...options?.mutation,
-  });
-}
-
-export function useAddMembersToList<TError = ErrorType<unknown>, TContext = unknown>(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof addListMembers>>,
-    TError,
-    { listId: number; ids: number[] },
-    TContext
-  >;
-}) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ listId, ids }: { listId: number; ids: number[] }) => addListMembers(listId, { ids }),
-    onSuccess: (data, variables, ...rest) => {
-      queryClient.invalidateQueries({ queryKey: getListsQueryKey() });
-      queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(variables.listId) });
-      options?.mutation?.onSuccess?.(data, variables, ...rest);
-    },
-    ...options?.mutation,
-  });
-}
-
-export const createExport = (
-  body: CreateExportBody,
-  options?: RequestInit,
-): Promise<ExportRecord & { csvData: string }> =>
-  customFetch<ExportRecord & { csvData: string }>("/api/exports", {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-export const listExports = (options?: RequestInit): Promise<ExportRecord[]> =>
-  customFetch<ExportRecord[]>("/api/exports", options);
-
-export const getExportsQueryKey = () => ["exports"] as const;
-
-export function useListExports<TData = ExportRecord[], TError = ErrorType<unknown>>(options?: {
-  query?: UseQueryOptions<ExportRecord[], TError, TData, readonly ["exports"]>;
-}): UseQueryResult<TData, TError> {
-  const { query: queryOptions } = options ?? {};
-  return useQuery({
-    queryKey: getExportsQueryKey(),
-    queryFn: () => listExports(),
-    ...queryOptions,
-  } as UseQueryOptions<ExportRecord[], TError, TData, readonly ["exports"]>) as UseQueryResult<TData, TError>;
-}
-
-export function useCreateExport<TError = ErrorType<unknown>, TContext = unknown>(options?: {
-  mutation?: UseMutationOptions<
-    ExportRecord & { csvData: string },
-    TError,
-    CreateExportBody,
-    TContext
-  >;
-}) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (body: CreateExportBody) => createExport(body),
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: getExportsQueryKey() });
-      options?.mutation?.onSuccess?.(...args);
-    },
-    ...options?.mutation,
-  });
-}
-
-export const downloadExportFile = async (id: number, filename: string): Promise<void> => {
-  const response = await fetch(`/api/exports/${id}/download`);
-  if (!response.ok) throw new Error("Download failed");
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
-
-export function useDeleteSavedSearch<TError = ErrorType<unknown>, TContext = unknown>(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteSavedSearch>>,
-    TError,
-    number,
-    TContext
-  >;
-}) {
-  const queryClient = useQueryClient();
-  const { mutation: mutationOptions } = options ?? {};
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSavedSearch>>, number> = (id) =>
-    deleteSavedSearch(id);
-  return useMutation({
-    mutationFn,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: getSavedSearchesQueryKey() });
-      mutationOptions?.onSuccess?.(...args);
-    },
-    ...mutationOptions,
-  });
 }
