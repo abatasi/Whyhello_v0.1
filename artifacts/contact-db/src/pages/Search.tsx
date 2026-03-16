@@ -625,7 +625,7 @@ export default function Search() {
                         <table className="w-full text-sm">
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-4 py-3 w-10">
+                              <th className="px-4 py-3 w-10 sticky left-0 z-30 bg-muted">
                                 <input
                                   type="checkbox"
                                   checked={allContactsSelected}
@@ -635,7 +635,7 @@ export default function Search() {
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </th>
-                              <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[180px]" />
+                              <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[180px] sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
                               <SortableTh column="jobTitle" label="Title" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[160px]" />
                               <SortableTh column="companyName" label="Company" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
                               <SortableTh column="location" label="Location" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
@@ -658,7 +658,7 @@ export default function Search() {
                                   )}
                                   onClick={() => setLocation(`/contacts/${contact.id}`)}
                                 >
-                                  <td className="px-4 py-3" onClick={(e) => toggleId(contact.id, e)}>
+                                  <td className="px-4 py-3 sticky left-0 z-10 bg-inherit" onClick={(e) => toggleId(contact.id, e)}>
                                     <input
                                       type="checkbox"
                                       checked={isSelected}
@@ -666,7 +666,7 @@ export default function Search() {
                                       className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
                                     />
                                   </td>
-                                  <td className="px-4 py-3">
+                                  <td className="px-4 py-3 sticky left-10 z-[1] bg-inherit border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]">
                                     <div className="flex items-center gap-3">
                                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
                                         {getInitials(`${contact.firstName} ${contact.lastName}`)}
@@ -735,7 +735,7 @@ export default function Search() {
                         <table className="w-full text-sm">
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-4 py-3 w-10">
+                              <th className="px-4 py-3 w-10 sticky left-0 z-30 bg-muted">
                                 <input
                                   type="checkbox"
                                   checked={allCompaniesSelected}
@@ -745,7 +745,7 @@ export default function Search() {
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </th>
-                              <SortableTh column="name" label="Company Name" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px]" />
+                              <SortableTh column="name" label="Company Name" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px] sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
                               <SortableTh column="industry" label="Industry" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[140px]" />
                               <SortableTh column="website" label="Website" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px]" />
                               <SortableTh column="location" label="Location" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[140px]" />
@@ -767,7 +767,7 @@ export default function Search() {
                                 )}
                                 onClick={() => setLocation(`/companies/${company.id}`)}
                               >
-                                <td className="px-4 py-3" onClick={(e) => toggleId(company.id, e)}>
+                                <td className="px-4 py-3 sticky left-0 z-10 bg-inherit" onClick={(e) => toggleId(company.id, e)}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -775,7 +775,7 @@ export default function Search() {
                                     className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
                                   />
                                 </td>
-                                <td className="px-4 py-3">
+                                <td className="px-4 py-3 sticky left-10 z-[1] bg-inherit border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]">
                                   <div className="flex items-center gap-3">
                                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center flex-shrink-0">
                                       <Building2 className="h-4 w-4 text-slate-500" />
