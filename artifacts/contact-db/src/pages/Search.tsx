@@ -6,6 +6,7 @@ import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown,
   ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList, X,
+  Mail, Phone,
 } from "lucide-react";
 import {
   useListContacts,
@@ -17,6 +18,8 @@ import {
   useListLists,
   useCreateList,
   useAddMembersToList,
+  useBatchRevealStatuses,
+  useRevealContact,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { Input } from "@/components/ui/Input";
@@ -346,6 +349,11 @@ export default function Search() {
   const contacts = contactsData?.data ?? [];
   const companies = companiesData?.data ?? [];
 
+  const contactIds = contacts.map((c) => c.id);
+  const { data: revealStatusData } = useBatchRevealStatuses(contactIds);
+  const revealedSet = new Set(revealStatusData?.revealedIds ?? []);
+  const revealMutation = useRevealContact();
+
   const filteredLists = allLists.filter((l) => l.type === activeTab);
   const allContactsSelected = contacts.length > 0 && contacts.every((c) => selectedIds.has(c.id));
   const someContactsSelected = contacts.some((c) => selectedIds.has(c.id));
@@ -636,6 +644,8 @@ export default function Search() {
                                 />
                               </th>
                               <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[180px] sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
+                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap min-w-[200px]">Email</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap min-w-[160px]">Mobile</th>
                               <SortableTh column="jobTitle" label="Title" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[160px]" />
                               <SortableTh column="companyName" label="Company" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
                               <SortableTh column="location" label="Location" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
@@ -675,6 +685,48 @@ export default function Search() {
                                         {contact.firstName} {contact.lastName}
                                       </span>
                                     </div>
+                                  </td>
+                                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                    {revealedSet.has(contact.id) ? (
+                                      contact.email ? (
+                                        <a href={`mailto:${contact.email}`} className="text-sm text-primary hover:underline truncate block max-w-[190px]">
+                                          {contact.email}
+                                        </a>
+                                      ) : <span className="text-muted-foreground text-sm">—</span>
+                                    ) : (
+                                      <button
+                                        onClick={() => revealMutation.mutate(contact.id)}
+                                        disabled={revealMutation.isPending && revealMutation.variables === contact.id}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 whitespace-nowrap"
+                                      >
+                                        {revealMutation.isPending && revealMutation.variables === contact.id
+                                          ? <div className="h-3 w-3 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                                          : <Mail className="h-3 w-3" />
+                                        }
+                                        Get Email
+                                      </button>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                    {revealedSet.has(contact.id) ? (
+                                      contact.phone ? (
+                                        <a href={`tel:${contact.phone}`} className="text-sm text-foreground hover:text-primary transition-colors whitespace-nowrap">
+                                          {contact.phone}
+                                        </a>
+                                      ) : <span className="text-muted-foreground text-sm">—</span>
+                                    ) : (
+                                      <button
+                                        onClick={() => revealMutation.mutate(contact.id)}
+                                        disabled={revealMutation.isPending && revealMutation.variables === contact.id}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 whitespace-nowrap"
+                                      >
+                                        {revealMutation.isPending && revealMutation.variables === contact.id
+                                          ? <div className="h-3 w-3 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                                          : <Phone className="h-3 w-3" />
+                                        }
+                                        Get Mobile
+                                      </button>
+                                    )}
                                   </td>
                                   <td className="px-4 py-3 text-muted-foreground">{contact.jobTitle ?? "—"}</td>
                                   <td className="px-4 py-3">

@@ -43,7 +43,18 @@ export function useRevealContact() {
     onSuccess: (_, contactId) => {
       queryClient.invalidateQueries({ queryKey: ["credits", "reveal-status", contactId] });
       queryClient.invalidateQueries({ queryKey: ["credits", "status"] });
+      queryClient.invalidateQueries({ queryKey: ["credits", "reveal-statuses-batch"] });
     },
+  });
+}
+
+export function useBatchRevealStatuses(ids: number[]) {
+  const key = ids.slice().sort((a, b) => a - b).join(",");
+  return useQuery<{ revealedIds: number[] }>({
+    queryKey: ["credits", "reveal-statuses-batch", key],
+    queryFn: () => customFetch<{ revealedIds: number[] }>(`/api/credits/reveal-statuses?ids=${key}`),
+    enabled: ids.length > 0,
+    staleTime: 30_000,
   });
 }
 

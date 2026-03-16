@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request } from "express";
 import { db } from "@workspace/db";
 import { usersTable, contactRevealsTable, companyRevealsTable } from "@workspace/db/schema";
-import { and, count, eq, gte, sql } from "drizzle-orm";
+import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
 
 type AuthedReq = Request & { user: { id: string } };
 
@@ -55,6 +55,27 @@ router.get("/status", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch credit status" });
+  }
+});
+
+// ── Batch reveal status ────────────────────────────────────
+
+router.get("/reveal-statuses", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  try {
+    const idsParam = req.query.ids as string;
+    if (!idsParam) { res.json({ revealedIds: [] }); return; }
+    const ids = idsParam.split(",").map(Number).filter((n) => !isNaN(n) && n > 0);
+    if (ids.length === 0) { res.json({ revealedIds: [] }); return; }
+    const rows = await db
+      .select({ contactId: contactRevealsTable.contactId })
+      .from(contactRevealsTable)
+      .where(and(eq(contactRevealsTable.userId, userId), inArray(contactRevealsTable.contactId, ids)));
+    res.json({ revealedIds: rows.map((r) => r.contactId) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch reveal statuses" });
   }
 });
 
