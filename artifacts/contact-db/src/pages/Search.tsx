@@ -668,7 +668,7 @@ export default function Search() {
                                   )}
                                   onClick={() => setLocation(`/contacts/${contact.id}`)}
                                 >
-                                  <td className={cn("px-4 py-3 sticky left-0 z-20 group-hover:bg-primary/5", isSelected ? "bg-primary/5" : idx % 2 === 0 ? "bg-card" : "bg-muted/20")} onClick={(e) => toggleId(contact.id, e)}>
+                                  <td className={cn("px-4 py-3 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(contact.id, e)}>
                                     <input
                                       type="checkbox"
                                       checked={isSelected}
@@ -676,7 +676,7 @@ export default function Search() {
                                       className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
                                     />
                                   </td>
-                                  <td className={cn("px-4 py-3 sticky left-10 z-20 group-hover:bg-primary/5 border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]", isSelected ? "bg-primary/5" : idx % 2 === 0 ? "bg-card" : "bg-muted/20")}>
+                                  <td className={cn("px-4 py-3 sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]", isSelected && "bg-primary/5")}>
                                     <div className="flex items-center gap-3">
                                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
                                         {getInitials(`${contact.firstName} ${contact.lastName}`)}
@@ -819,7 +819,7 @@ export default function Search() {
                                 )}
                                 onClick={() => setLocation(`/companies/${company.id}`)}
                               >
-                                <td className={cn("px-4 py-3 sticky left-0 z-20 group-hover:bg-primary/5", isSelected ? "bg-primary/5" : idx % 2 === 0 ? "bg-card" : "bg-muted/20")} onClick={(e) => toggleId(company.id, e)}>
+                                <td className={cn("px-4 py-3 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(company.id, e)}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -827,7 +827,7 @@ export default function Search() {
                                     className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
                                   />
                                 </td>
-                                <td className={cn("px-4 py-3 sticky left-10 z-20 group-hover:bg-primary/5 border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]", isSelected ? "bg-primary/5" : idx % 2 === 0 ? "bg-card" : "bg-muted/20")}>
+                                <td className={cn("px-4 py-3 sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]", isSelected && "bg-primary/5")}>
                                   <div className="flex items-center gap-3">
                                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center flex-shrink-0">
                                       <Building2 className="h-4 w-4 text-slate-500" />
