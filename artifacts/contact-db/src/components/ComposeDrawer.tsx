@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   X, Send, FileText, ExternalLink,
   Newspaper, Tv2, Mic2, Share2, Megaphone, ChevronDown, ChevronUp,
-  Mail, Building,
+  Mail, Building, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn, getInitials } from "@/lib/utils";
@@ -77,31 +77,31 @@ function InsightsPanel({
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/60 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/60 transition-colors"
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className={cn("h-5 w-5 rounded-md flex items-center justify-center flex-shrink-0", iconBgClass)}>
             <HeaderIcon className={cn("h-3 w-3", iconColorClass)} />
           </div>
-          <span className="text-xs font-semibold text-foreground">{label}</span>
-          <span className="text-xs text-muted-foreground bg-white/80 border border-border/50 rounded-full px-1.5 py-0.5 leading-none">
+          <span className="text-xs font-semibold text-foreground truncate">{label}</span>
+          <span className="text-[10px] text-muted-foreground bg-white/80 border border-border/50 rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">
             {insights.length}
           </span>
         </div>
         {expanded
-          ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-          : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />}
+          ? <ChevronUp className="h-3 w-3 text-muted-foreground flex-shrink-0 ml-1" />
+          : <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0 ml-1" />}
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 max-h-56 overflow-y-auto">
+        <div className="px-3 pb-3 space-y-2">
           {sortedGroups.map(([type, items]) => {
             const cfg = getMediaConfig(type);
             const Icon = cfg.icon;
             return (
               <div key={type}>
                 <div className="flex items-center gap-1.5 mb-1.5">
-                  <Icon className={cn("h-3 w-3", cfg.color)} />
+                  <Icon className={cn("h-2.5 w-2.5", cfg.color)} />
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     {cfg.label}s ({items.length})
                   </span>
@@ -114,23 +114,23 @@ function InsightsPanel({
                       target="_blank"
                       rel="noopener noreferrer"
                       className={cn(
-                        "flex items-start gap-2 p-2.5 rounded-lg border text-left group/ins hover:shadow-sm transition-all",
+                        "flex items-start gap-2 p-2 rounded-lg border text-left group/ins hover:shadow-sm transition-all",
                         cfg.bg,
                       )}
                     >
-                      <Icon className={cn("h-3 w-3 flex-shrink-0 mt-0.5", cfg.color)} />
+                      <Icon className={cn("h-2.5 w-2.5 flex-shrink-0 mt-0.5", cfg.color)} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-foreground line-clamp-2 group-hover/ins:text-primary transition-colors leading-snug">
+                        <p className="text-[11px] font-medium text-foreground line-clamp-2 group-hover/ins:text-primary transition-colors leading-snug">
                           {ins.title}
                         </p>
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                           <span className="text-[10px] text-muted-foreground">{ins.source}</span>
                           {ins.publishedDate && (
                             <span className="text-[10px] text-muted-foreground">· {ins.publishedDate}</span>
                           )}
                         </div>
                       </div>
-                      <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40 group-hover/ins:text-muted-foreground mt-0.5" />
+                      <ExternalLink className="h-2 w-2 flex-shrink-0 text-muted-foreground/40 group-hover/ins:text-muted-foreground mt-0.5" />
                     </a>
                   ))}
                 </div>
@@ -159,12 +159,13 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const contactName = `${contact.firstName} ${contact.lastName}`;
+  const hasInsights = insights.length > 0 || companyInsights.length > 0;
 
   useEffect(() => {
     if (isOpen) {
       setSubject("");
       setBody("");
-      setTimeout(() => bodyRef.current?.focus(), 300);
+      setTimeout(() => bodyRef.current?.focus(), 320);
     }
   }, [isOpen, contact.id]);
 
@@ -202,38 +203,48 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* Backdrop — only top half darkened */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-40"
+            className="fixed inset-0 bg-black/25 backdrop-blur-[1px] z-40"
             onClick={onClose}
           />
 
+          {/* Drawer — bottom half of viewport */}
           <motion.div
             key="drawer"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-[520px] bg-card shadow-2xl z-50 flex flex-col border-l border-border/60"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 32, stiffness: 320 }}
+            className="fixed bottom-0 left-0 right-0 h-[50vh] bg-card z-50 flex flex-col border-t border-border/70 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border/60 flex-shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
+            {/* ── Header ─────────────────────────────────── */}
+            <div className="flex items-center justify-between pl-4 pr-4 py-2.5 border-b border-border/60 flex-shrink-0 bg-card">
+              {/* Drag handle hint */}
+              <div className="absolute left-1/2 -translate-x-1/2 top-1.5 w-8 h-1 rounded-full bg-border/60" />
+
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
                   {getInitials(contactName)}
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground leading-tight">{contactName}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {contact.email}
-                    {contact.jobTitle && ` · ${contact.jobTitle}`}
-                  </p>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-sm font-semibold text-foreground truncate">{contactName}</span>
+                  <span className="text-muted-foreground/40 text-xs">·</span>
+                  <span className="text-xs text-muted-foreground truncate">{contact.email}</span>
+                  {contact.jobTitle && (
+                    <>
+                      <span className="text-muted-foreground/40 text-xs hidden sm:inline">·</span>
+                      <span className="text-xs text-muted-foreground truncate hidden sm:inline">{contact.jobTitle}</span>
+                    </>
+                  )}
                 </div>
               </div>
+
               <button
                 onClick={onClose}
                 className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 ml-3"
@@ -243,90 +254,97 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
               </button>
             </div>
 
-            {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
-              {/* Subject */}
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
-                  Subject
-                </label>
-                <input
-                  type="text"
-                  placeholder="Email subject…"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground transition-colors"
-                />
-              </div>
+            {/* ── Two-column body ─────────────────────────── */}
+            <div className="flex-1 flex overflow-hidden">
 
-              {/* Personal Insights */}
-              <InsightsPanel
-                insights={insights}
-                label={`Personal Insights — ${contactName}`}
-                HeaderIcon={Mail}
-                borderClass="border-indigo-100"
-                gradientClass="bg-gradient-to-br from-indigo-50/60 to-primary/5"
-                iconBgClass="bg-primary/10"
-                iconColorClass="text-primary"
-              />
+              {/* Left column: Insights */}
+              {hasInsights ? (
+                <div className="w-[38%] border-r border-border/60 flex flex-col overflow-hidden">
+                  <div className="px-3 pt-2.5 pb-1.5 border-b border-border/40 flex-shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="h-3 w-3 text-primary/70" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Insights</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+                    <InsightsPanel
+                      insights={insights}
+                      label={`Personal — ${contact.firstName} ${contact.lastName}`}
+                      HeaderIcon={Mail}
+                      borderClass="border-indigo-100"
+                      gradientClass="bg-gradient-to-br from-indigo-50/60 to-primary/5"
+                      iconBgClass="bg-primary/10"
+                      iconColorClass="text-primary"
+                    />
+                    {contact.companyName && companyInsights.length > 0 && (
+                      <InsightsPanel
+                        insights={companyInsights}
+                        label={`Company — ${contact.companyName}`}
+                        HeaderIcon={Building}
+                        borderClass="border-amber-100"
+                        gradientClass="bg-gradient-to-br from-amber-50/60 to-orange-50/30"
+                        iconBgClass="bg-amber-100"
+                        iconColorClass="text-amber-600"
+                      />
+                    )}
+                  </div>
+                </div>
+              ) : null}
 
-              {/* Company Insights */}
-              {contact.companyName && companyInsights.length > 0 && (
-                <InsightsPanel
-                  insights={companyInsights}
-                  label={`Company Insights — ${contact.companyName}`}
-                  HeaderIcon={Building}
-                  borderClass="border-amber-100"
-                  gradientClass="bg-gradient-to-br from-amber-50/60 to-orange-50/30"
-                  iconBgClass="bg-amber-100"
-                  iconColorClass="text-amber-600"
-                />
-              )}
+              {/* Right column (or full-width): Compose */}
+              <div className={cn("flex flex-col overflow-hidden", hasInsights ? "flex-1" : "w-full")}>
+                {/* Subject */}
+                <div className="px-4 pt-3 pb-2.5 border-b border-border/40 flex-shrink-0">
+                  <input
+                    type="text"
+                    placeholder="Subject…"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="w-full text-sm bg-transparent outline-none placeholder:text-muted-foreground/60 text-foreground font-medium"
+                  />
+                </div>
 
-              {/* Message body */}
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
-                  Message
-                </label>
-                <textarea
-                  ref={bodyRef}
-                  placeholder={`Write your message to ${contact.firstName}…`}
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  rows={10}
-                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm bg-background outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground transition-colors resize-none"
-                />
-              </div>
-            </div>
+                {/* Body textarea — fills remaining height */}
+                <div className="flex-1 overflow-hidden px-4 pt-3">
+                  <textarea
+                    ref={bodyRef}
+                    placeholder={`Write your message to ${contact.firstName}…`}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    className="w-full h-full text-sm bg-transparent outline-none placeholder:text-muted-foreground/50 text-foreground resize-none leading-relaxed"
+                  />
+                </div>
 
-            {/* Footer actions */}
-            <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-border/60 flex-shrink-0 bg-card">
-              <button
-                onClick={onClose}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Cancel
-              </button>
-              <div className="flex items-center gap-2.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleAction("draft")}
-                  disabled={isBusy || !contact.email}
-                  className="gap-1.5"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Save Draft
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleAction("sent")}
-                  disabled={isBusy || !contact.email || !subject.trim()}
-                  className="gap-1.5"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  Send
-                </Button>
+                {/* Action bar */}
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border/60 flex-shrink-0 bg-card">
+                  <button
+                    onClick={onClose}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Discard
+                  </button>
+                  <div className="flex items-center gap-2.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAction("draft")}
+                      disabled={isBusy || !contact.email}
+                      className="gap-1.5"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Save Draft
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAction("sent")}
+                      disabled={isBusy || !contact.email || !subject.trim()}
+                      className="gap-1.5"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      Send
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
