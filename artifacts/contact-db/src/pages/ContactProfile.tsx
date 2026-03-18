@@ -1,5 +1,5 @@
 import { useRoute, Link } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetContact,
   useGetContactInsights,
@@ -8,11 +8,12 @@ import {
   useCreditsStatus,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
+import { ComposeDrawer } from "@/components/ComposeDrawer";
 import {
   ArrowLeft, Mail, Phone, MapPin, Building, Briefcase,
   Linkedin, Twitter, ExternalLink, Newspaper, Tv2,
   Mic2, FileText, Share2, Megaphone, ChevronRight,
-  Lock, Zap, AlertCircle,
+  Lock, Zap, AlertCircle, Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -49,6 +50,8 @@ export default function ContactProfile() {
   const outOfCredits =
     !creditStatus?.isUnlimited &&
     (creditStatus?.creditsUsed ?? 0) >= (creditStatus?.creditsTotal ?? 0);
+
+  const [composeOpen, setComposeOpen] = useState(false);
 
   const handleReveal = () => {
     if (revealMutation.isPending) return;
@@ -162,13 +165,15 @@ export default function ContactProfile() {
 
                   {/* CTA buttons — only shown when revealed */}
                   {isRevealed && (
-                    <div className="flex gap-2 flex-shrink-0">
+                    <div className="flex gap-2 flex-shrink-0 flex-wrap">
                       {contact.email && (
-                        <a href={`mailto:${contact.email}`}>
-                          <Button variant="outline" size="sm" className="gap-2">
-                            <Mail className="h-4 w-4" /> Email
-                          </Button>
-                        </a>
+                        <Button
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setComposeOpen(true)}
+                        >
+                          <Send className="h-4 w-4" /> Send Email
+                        </Button>
                       )}
                       {contact.linkedinUrl && (
                         <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer">
@@ -387,6 +392,22 @@ export default function ContactProfile() {
           </div>
         </div>
       </div>
+
+      {contact.email && (
+        <ComposeDrawer
+          isOpen={composeOpen}
+          onClose={() => setComposeOpen(false)}
+          contact={{
+            id,
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            email: contact.email,
+            jobTitle: contact.jobTitle,
+            companyName: contact.company?.name,
+          }}
+          insights={insights}
+        />
+      )}
     </Shell>
   );
 }
