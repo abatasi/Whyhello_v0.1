@@ -3,11 +3,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   X, Send, FileText, ExternalLink,
   Newspaper, Tv2, Mic2, Share2, Megaphone, ChevronDown, ChevronUp,
-  Mail,
+  Mail, Building,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn, getInitials } from "@/lib/utils";
-import { useCreateMessage, useUpdateMessage } from "@workspace/api-client-react";
+import { useCreateMessage } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
 const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
@@ -42,14 +42,19 @@ export interface ComposeContact {
   companyName?: string | null;
 }
 
-interface ComposeDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  contact: ComposeContact;
+interface InsightsPanelProps {
   insights: ComposeInsight[];
+  label: string;
+  HeaderIcon: React.ElementType;
+  borderClass: string;
+  gradientClass: string;
+  iconBgClass: string;
+  iconColorClass: string;
 }
 
-function InsightsPanel({ insights, contactName }: { insights: ComposeInsight[]; contactName: string }) {
+function InsightsPanel({
+  insights, label, HeaderIcon, borderClass, gradientClass, iconBgClass, iconColorClass,
+}: InsightsPanelProps) {
   const [expanded, setExpanded] = useState(true);
 
   if (insights.length === 0) return null;
@@ -68,19 +73,17 @@ function InsightsPanel({ insights, contactName }: { insights: ComposeInsight[]; 
   });
 
   return (
-    <div className="border border-indigo-100 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-50/60 to-primary/5">
+    <div className={cn("border rounded-xl overflow-hidden", borderClass, gradientClass)}>
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/60 transition-colors"
       >
         <div className="flex items-center gap-2.5">
-          <div className="h-5 w-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Mail className="h-3 w-3 text-primary" />
+          <div className={cn("h-5 w-5 rounded-md flex items-center justify-center flex-shrink-0", iconBgClass)}>
+            <HeaderIcon className={cn("h-3 w-3", iconColorClass)} />
           </div>
-          <span className="text-xs font-semibold text-foreground">
-            Personal Insights — {contactName}
-          </span>
+          <span className="text-xs font-semibold text-foreground">{label}</span>
           <span className="text-xs text-muted-foreground bg-white/80 border border-border/50 rounded-full px-1.5 py-0.5 leading-none">
             {insights.length}
           </span>
@@ -140,7 +143,15 @@ function InsightsPanel({ insights, contactName }: { insights: ComposeInsight[]; 
   );
 }
 
-export function ComposeDrawer({ isOpen, onClose, contact, insights }: ComposeDrawerProps) {
+interface ComposeDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  contact: ComposeContact;
+  insights: ComposeInsight[];
+  companyInsights?: ComposeInsight[];
+}
+
+export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsights = [] }: ComposeDrawerProps) {
   const { toast } = useToast();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -191,7 +202,6 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights }: ComposeDra
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -202,7 +212,6 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights }: ComposeDra
             onClick={onClose}
           />
 
-          {/* Drawer panel */}
           <motion.div
             key="drawer"
             initial={{ x: "100%" }}
@@ -251,7 +260,28 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights }: ComposeDra
               </div>
 
               {/* Personal Insights */}
-              <InsightsPanel insights={insights} contactName={contactName} />
+              <InsightsPanel
+                insights={insights}
+                label={`Personal Insights — ${contactName}`}
+                HeaderIcon={Mail}
+                borderClass="border-indigo-100"
+                gradientClass="bg-gradient-to-br from-indigo-50/60 to-primary/5"
+                iconBgClass="bg-primary/10"
+                iconColorClass="text-primary"
+              />
+
+              {/* Company Insights */}
+              {contact.companyName && companyInsights.length > 0 && (
+                <InsightsPanel
+                  insights={companyInsights}
+                  label={`Company Insights — ${contact.companyName}`}
+                  HeaderIcon={Building}
+                  borderClass="border-amber-100"
+                  gradientClass="bg-gradient-to-br from-amber-50/60 to-orange-50/30"
+                  iconBgClass="bg-amber-100"
+                  iconColorClass="text-amber-600"
+                />
+              )}
 
               {/* Message body */}
               <div>
@@ -263,7 +293,7 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights }: ComposeDra
                   placeholder={`Write your message to ${contact.firstName}…`}
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
-                  rows={12}
+                  rows={10}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm bg-background outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground transition-colors resize-none"
                 />
               </div>

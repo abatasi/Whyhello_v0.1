@@ -204,6 +204,7 @@ router.get("/revealed-contacts", async (req, res) => {
         email: contactsTable.email,
         jobTitle: contactsTable.jobTitle,
         companyName: companiesTable.name,
+        companyId: contactsTable.companyId,
       })
       .from(contactRevealsTable)
       .innerJoin(contactsTable, eq(contactRevealsTable.contactId, contactsTable.id))

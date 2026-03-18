@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   useGetContact,
   useGetContactInsights,
+  useGetCompanyInsights,
   useRevealStatus,
   useRevealContact,
   useCreditsStatus,
@@ -43,6 +44,11 @@ export default function ContactProfile() {
     query: { enabled: !!id }
   });
   const { data: revealStatus, isLoading: revealLoading } = useRevealStatus(id);
+  // We read contact.company?.id after the contact loads; use 0 until available (query is disabled when 0)
+  const companyIdForInsights = contact?.company?.id ?? 0;
+  const { data: companyInsights = [] } = useGetCompanyInsights(companyIdForInsights, {
+    query: { enabled: companyIdForInsights > 0 }
+  });
   const { data: creditStatus } = useCreditsStatus();
   const revealMutation = useRevealContact();
 
@@ -388,6 +394,90 @@ export default function ContactProfile() {
                   />
                 )}
               </section>
+
+              {/* ── 3. Company Insights ─────────────────────── */}
+              {contact.company && companyInsights.length > 0 && (
+                <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                        Company Insights
+                      </h2>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5">
+                        {contact.company.name} — news, press releases & more
+                      </p>
+                    </div>
+                    <span className="text-xs bg-secondary px-2.5 py-1 rounded-full font-medium text-muted-foreground">
+                      {companyInsights.length} {companyInsights.length === 1 ? "result" : "results"}
+                    </span>
+                  </div>
+
+                  {(() => {
+                    const grouped = companyInsights.reduce<Record<string, typeof companyInsights>>((acc, ins) => {
+                      if (!acc[ins.mediaType]) acc[ins.mediaType] = [];
+                      acc[ins.mediaType].push(ins);
+                      return acc;
+                    }, {});
+                    const mediaOrder = ["article", "press_release", "video", "podcast", "blog_post", "linkedin_post"];
+                    const sortedGroups = Object.entries(grouped).sort(([a], [b]) => {
+                      const ai = mediaOrder.indexOf(a); const bi = mediaOrder.indexOf(b);
+                      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+                    });
+                    return (
+                      <div className="space-y-8">
+                        {sortedGroups.map(([type, items]) => {
+                          const cfg = getMediaConfig(type);
+                          const Icon = cfg.icon;
+                          return (
+                            <div key={type}>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className={cn("w-6 h-6 rounded-md flex items-center justify-center border", cfg.bg)}>
+                                  <Icon className={cn("h-3.5 w-3.5", cfg.color)} />
+                                </div>
+                                <span className={cn("text-xs font-semibold uppercase tracking-wider", cfg.color)}>
+                                  {cfg.label}s
+                                </span>
+                                <span className="text-xs text-muted-foreground/50 font-medium">{items.length}</span>
+                              </div>
+                              <div className="space-y-3">
+                                {items.map((ins) => (
+                                  <a key={ins.id} href={ins.url} target="_blank" rel="noopener noreferrer" className="block group">
+                                    <div className="flex gap-4 p-4 rounded-xl border border-border/50 hover:border-amber-200 hover:shadow-sm hover:bg-amber-50/30 transition-all duration-200">
+                                      <div className={cn("w-9 h-9 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5", cfg.bg)}>
+                                        <Icon className={cn("h-4 w-4", cfg.color)} />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">
+                                            {ins.title}
+                                          </p>
+                                          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5" />
+                                        </div>
+                                        {ins.description && (
+                                          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">{ins.description}</p>
+                                        )}
+                                        <div className="flex items-center gap-3 mt-2.5">
+                                          <span className="text-xs font-medium text-muted-foreground/70">{ins.source}</span>
+                                          {ins.publishedDate && (
+                                            <>
+                                              <span className="text-muted-foreground/30 text-xs">·</span>
+                                              <span className="text-xs text-muted-foreground/60">{ins.publishedDate}</span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </section>
+              )}
             </div>
           </div>
         </div>
@@ -406,6 +496,7 @@ export default function ContactProfile() {
             companyName: contact.company?.name,
           }}
           insights={insights}
+          companyInsights={companyInsights}
         />
       )}
     </Shell>

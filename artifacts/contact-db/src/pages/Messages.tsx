@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import {
   Mail, Send, FileText, Trash2, Plus, ChevronDown, ChevronUp,
   User, Newspaper, Tv2, Mic2, Share2, Megaphone, ExternalLink,
-  Search, X, Clock, CheckCheck, Inbox,
+  Search, X, Clock, CheckCheck, Inbox, Building,
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/Button";
@@ -17,7 +17,7 @@ import {
   type Message,
   type RevealedContact,
 } from "@workspace/api-client-react";
-import { useGetContactInsights } from "@workspace/api-client-react";
+import { useGetContactInsights, useGetCompanyInsights } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
 const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
@@ -116,6 +116,91 @@ function ContactInsightsPanel({ contactId, contactName }: { contactId: number; c
                           <span className="text-xs text-muted-foreground">{insight.source}</span>
                           {insight.publishedDate && (
                             <span className="text-xs text-muted-foreground">· {insight.publishedDate}</span>
+                          )}
+                        </div>
+                      </div>
+                      <ExternalLink className="h-3 w-3 flex-shrink-0 text-muted-foreground/50 group-hover/insight:text-muted-foreground mt-0.5" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CompanyInsightsPanel({ companyId, companyName }: { companyId: number; companyName: string }) {
+  const { data: insights = [] } = useGetCompanyInsights(companyId, { query: { enabled: companyId > 0 } });
+  const [expanded, setExpanded] = useState(true);
+
+  if (insights.length === 0) return null;
+
+  const grouped = insights.reduce<Record<string, typeof insights>>((acc, ins) => {
+    const key = ins.mediaType;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(ins);
+    return acc;
+  }, {});
+
+  return (
+    <div className="border border-amber-100 rounded-xl overflow-hidden bg-gradient-to-br from-amber-50/50 to-orange-50/30">
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/50 transition-colors"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="h-6 w-6 rounded-lg bg-amber-100 flex items-center justify-center">
+            <Building className="h-3.5 w-3.5 text-amber-600" />
+          </div>
+          <span className="text-sm font-semibold text-foreground">
+            Company Insights — {companyName}
+          </span>
+          <span className="text-xs text-muted-foreground bg-white border border-border/60 rounded-full px-2 py-0.5">
+            {insights.length} {insights.length === 1 ? "result" : "results"}
+          </span>
+        </div>
+        {expanded
+          ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 space-y-4 max-h-64 overflow-y-auto">
+          {Object.entries(grouped).map(([type, items]) => {
+            const cfg = getMediaConfig(type);
+            const Icon = cfg.icon;
+            return (
+              <div key={type}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Icon className={cn("h-3.5 w-3.5", cfg.color)} />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {cfg.label}s ({items.length})
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {items.map((ins) => (
+                    <a
+                      key={ins.id}
+                      href={ins.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "flex items-start gap-2.5 p-2.5 rounded-lg border text-left group/insight hover:shadow-sm transition-all",
+                        cfg.bg,
+                      )}
+                    >
+                      <Icon className={cn("h-3.5 w-3.5 flex-shrink-0 mt-0.5", cfg.color)} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-foreground line-clamp-2 group-hover/insight:text-primary transition-colors">
+                          {ins.title}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <span className="text-xs text-muted-foreground">{ins.source}</span>
+                          {ins.publishedDate && (
+                            <span className="text-xs text-muted-foreground">· {ins.publishedDate}</span>
                           )}
                         </div>
                       </div>
@@ -307,6 +392,14 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
           <ContactInsightsPanel
             contactId={selectedContact.id}
             contactName={`${selectedContact.firstName} ${selectedContact.lastName}`}
+          />
+        )}
+
+        {/* Company Insights panel */}
+        {selectedContact && selectedContact.companyId && selectedContact.companyName && (
+          <CompanyInsightsPanel
+            companyId={selectedContact.companyId}
+            companyName={selectedContact.companyName}
           />
         )}
 

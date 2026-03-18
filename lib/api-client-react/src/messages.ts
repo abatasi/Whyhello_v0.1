@@ -22,6 +22,7 @@ export interface RevealedContact {
   email: string;
   jobTitle: string | null;
   companyName: string | null;
+  companyId: number | null;
 }
 
 export function useListMessages(status?: string) {
