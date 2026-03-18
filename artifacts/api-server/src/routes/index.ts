@@ -10,6 +10,7 @@ import listsRouter from "./lists";
 import exportsRouter from "./exports";
 import creditsRouter from "./credits";
 import companyInsightsRouter from "./company-insights";
+import messagesRouter from "./messages";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use("/saved-searches", savedSearchesRouter);
 router.use("/lists", listsRouter);
 router.use("/exports", exportsRouter);
 router.use("/credits", creditsRouter);
+router.use("/messages", messagesRouter);
 
 export default router;

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2 } from "lucide-react";
+import { Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@workspace/replit-auth-web";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
@@ -367,6 +367,7 @@ export function Navbar() {
   const navItems = [
     { label: "Directory", href: "/" },
     { label: "Lists", href: "/lists" },
+    { label: "Message Center", href: "/messages" },
   ];
 
   const displayName = user?.firstName
@@ -403,7 +404,6 @@ export function Navbar() {
             })}
             <Button variant="ghost" className="px-4 py-2 rounded-lg">Market Research</Button>
             <Button variant="ghost" className="px-4 py-2 rounded-lg">Multi-threading</Button>
-            <Button variant="ghost" className="px-4 py-2 rounded-lg">Message Center</Button>
           </nav>
         </div>
 

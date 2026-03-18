@@ -13,6 +13,7 @@ import Lists from "@/pages/Lists";
 import ListDetail from "@/pages/ListDetail";
 import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
+import Messages from "@/pages/Messages";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -62,6 +63,7 @@ function Router() {
       <Route path="/lists" component={() => <ProtectedRoute component={Lists} />} />
       <Route path="/lists/:id" component={() => <ProtectedRoute component={ListDetail} />} />
       <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
+      <Route path="/messages" component={() => <ProtectedRoute component={Messages} />} />
       <Route component={NotFound} />
     </Switch>
   );

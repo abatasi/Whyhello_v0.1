@@ -7,3 +7,4 @@ export * from "./lists";
 export * from "./exports";
 export * from "./credits";
 export * from "./company-insights";
+export * from "./messages";

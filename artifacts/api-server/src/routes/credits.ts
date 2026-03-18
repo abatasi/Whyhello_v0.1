@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
 import { db } from "@workspace/db";
-import { usersTable, contactRevealsTable, companyRevealsTable } from "@workspace/db/schema";
+import { usersTable, contactRevealsTable, companyRevealsTable, contactsTable, companiesTable } from "@workspace/db/schema";
 import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
 
 type AuthedReq = Request & { user: { id: string } };
@@ -186,6 +186,42 @@ router.post("/reveal-company/:companyId", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to reveal company" });
+  }
+});
+
+// ── Revealed contacts list (for message center recipient picker) ────────
+
+router.get("/revealed-contacts", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  try {
+    const search = (req.query.search as string) ?? "";
+    const rows = await db
+      .select({
+        id: contactsTable.id,
+        firstName: contactsTable.firstName,
+        lastName: contactsTable.lastName,
+        email: contactsTable.email,
+        jobTitle: contactsTable.jobTitle,
+        companyName: companiesTable.name,
+      })
+      .from(contactRevealsTable)
+      .innerJoin(contactsTable, eq(contactRevealsTable.contactId, contactsTable.id))
+      .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
+      .where(
+        search
+          ? and(
+              eq(contactRevealsTable.userId, userId),
+              sql`(${contactsTable.firstName} ilike ${`%${search}%`} OR ${contactsTable.lastName} ilike ${`%${search}%`} OR ${contactsTable.email} ilike ${`%${search}%`})`
+            )
+          : eq(contactRevealsTable.userId, userId)
+      )
+      .orderBy(contactsTable.firstName, contactsTable.lastName)
+      .limit(50);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch revealed contacts" });
   }
 });
 
