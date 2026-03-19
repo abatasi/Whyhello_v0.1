@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn, getInitials } from "@/lib/utils";
-import { useCreateMessage } from "@workspace/api-client-react";
+import { useCreateMessage, useTrackInsightDrop, useInsightDropCount } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
 const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; headerBg: string }> = {
@@ -174,6 +174,11 @@ function InsightCard({ ins }: { ins: ComposeInsight }) {
             onDragStart={(e) => {
               setDraggingIdx(idx);
               e.dataTransfer.setData("text/plain", text);
+              e.dataTransfer.setData("application/x-insight-meta", JSON.stringify({
+                mediaType: ins.mediaType,
+                insightTitle: ins.title,
+                subInsightText: text,
+              }));
               e.dataTransfer.effectAllowed = "copy";
             }}
             onDragEnd={() => setDraggingIdx(null)}
@@ -277,6 +282,8 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const createMessage = useCreateMessage();
+  const trackDrop = useTrackInsightDrop();
+  const { data: dropCountData } = useInsightDropCount();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const contactName = `${contact.firstName} ${contact.lastName}`;
@@ -310,6 +317,17 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
       const newPos = start + prefix.length + text.length + suffix.length;
       ta.setSelectionRange(newPos, newPos);
     });
+    try {
+      const raw = e.dataTransfer.getData("application/x-insight-meta");
+      const meta = raw ? JSON.parse(raw) as { mediaType?: string; insightTitle?: string; subInsightText?: string } : {};
+      trackDrop.mutate({
+        mediaType: meta.mediaType,
+        insightTitle: meta.insightTitle,
+        subInsightText: meta.subInsightText,
+        contactId: contact.id,
+      });
+    } catch {
+    }
   }
 
   useEffect(() => {
@@ -403,6 +421,12 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
                   <div className="px-3 pt-2.5 pb-1.5 border-b border-border/40 flex-shrink-0 flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3 text-primary/70" />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Insights</span>
+                    {(dropCountData?.count ?? 0) > 0 && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold px-1.5 py-0.5 leading-none">
+                        <Lightbulb className="h-2.5 w-2.5" />
+                        {dropCountData!.count.toLocaleString()} used
+                      </span>
+                    )}
                     <span className="ml-auto text-[10px] text-muted-foreground/60 flex items-center gap-1">
                       <GripVertical className="h-2.5 w-2.5 text-muted-foreground/40" />
                       Drag takeaways into email

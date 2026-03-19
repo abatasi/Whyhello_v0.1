@@ -11,6 +11,7 @@ import exportsRouter from "./exports";
 import creditsRouter from "./credits";
 import companyInsightsRouter from "./company-insights";
 import messagesRouter from "./messages";
+import insightDropsRouter from "./insight-drops";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use("/lists", listsRouter);
 router.use("/exports", exportsRouter);
 router.use("/credits", creditsRouter);
 router.use("/messages", messagesRouter);
+router.use("/insight-drops", insightDropsRouter);
 
 export default router;

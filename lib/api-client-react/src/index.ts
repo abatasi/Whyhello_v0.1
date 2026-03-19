@@ -5,3 +5,4 @@ export * from "./messages";
 export * from "./exports";
 export * from "./lists";
 export * from "./saved-searches";
+export * from "./insight-drops";
