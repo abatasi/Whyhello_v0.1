@@ -4,6 +4,7 @@ import {
   Mail, Send, FileText, Trash2, Plus, ChevronDown, ChevronUp,
   User, Newspaper, Tv2, Mic2, Share2, Megaphone, ExternalLink,
   Search, X, Clock, CheckCheck, Inbox, Building,
+  Sparkles, Lightbulb, GripVertical,
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/Button";
@@ -14,23 +15,196 @@ import {
   useUpdateMessage,
   useDeleteMessage,
   useRevealedContacts,
+  useGetContactInsights,
+  useGetCompanyInsights,
+  useTrackInsightDrop,
+  useInsightDropCount,
   type Message,
   type RevealedContact,
 } from "@workspace/api-client-react";
-import { useGetContactInsights, useGetCompanyInsights } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
-const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
-  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600",   bg: "bg-blue-50 border-blue-100" },
-  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600", bg: "bg-violet-50 border-violet-100" },
-  video:         { label: "Video",         icon: Tv2,       color: "text-red-600",    bg: "bg-red-50 border-red-100" },
-  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600",  bg: "bg-green-50 border-green-100" },
-  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600",    bg: "bg-sky-50 border-sky-100" },
-  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600",  bg: "bg-amber-50 border-amber-100" },
+const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; headerBg: string }> = {
+  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600",   bg: "bg-blue-50/70 border-blue-100",     headerBg: "hover:bg-blue-100/60" },
+  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600", bg: "bg-violet-50/70 border-violet-100", headerBg: "hover:bg-violet-100/60" },
+  video:         { label: "Video",         icon: Tv2,       color: "text-red-600",    bg: "bg-red-50/70 border-red-100",       headerBg: "hover:bg-red-100/60" },
+  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600",  bg: "bg-green-50/70 border-green-100",   headerBg: "hover:bg-green-100/60" },
+  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600",    bg: "bg-sky-50/70 border-sky-100",       headerBg: "hover:bg-sky-100/60" },
+  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600",  bg: "bg-amber-50/70 border-amber-100",   headerBg: "hover:bg-amber-100/60" },
 };
 
 function getMediaConfig(type: string) {
-  return MEDIA_CONFIG[type] ?? { label: type, icon: ExternalLink, color: "text-muted-foreground", bg: "bg-secondary border-border" };
+  return MEDIA_CONFIG[type] ?? { label: type, icon: ExternalLink, color: "text-muted-foreground", bg: "bg-secondary border-border", headerBg: "hover:bg-secondary/60" };
+}
+
+const SUB_INSIGHTS_POOL: Record<string, string[]> = {
+  article: [
+    "Covers emerging trends in their industry segment",
+    "Highlights pain points around operational efficiency",
+    "References third-party research to support key claims",
+    "Focuses on cost reduction strategies for mid-market firms",
+    "Discusses leadership changes and their impact on strategy",
+    "Addresses regulatory compliance challenges",
+    "Explores technology adoption barriers",
+    "Advocates for data-driven decision making",
+    "Compares multiple vendor approaches",
+  ],
+  blog_post: [
+    "Shares first-hand experience with a recurring problem",
+    "Positions the author as a subject-matter expert",
+    "Uses storytelling to illustrate a business challenge",
+    "Includes actionable takeaways for practitioners",
+    "References community feedback and comments",
+    "Promotes a specific methodology or framework",
+    "Ties personal narrative to broader market shifts",
+    "Highlights lessons learned from a failed initiative",
+    "Encourages community debate and alternative viewpoints",
+  ],
+  video: [
+    "Demonstrates a live product workflow or demo",
+    "Features a panel of industry experts discussing trends",
+    "Uses visual storytelling to explain complex concepts",
+    "Includes real customer testimonials and case studies",
+    "Breaks down a technical topic for a non-technical audience",
+    "Highlights a keynote or conference presentation",
+    "Shows behind-the-scenes of a company initiative",
+    "Explores a day-in-the-life of a key persona",
+    "Interviews a thought leader on future market direction",
+  ],
+  podcast: [
+    "Long-form conversation exploring strategic priorities",
+    "Guest discusses lessons from a high-profile failure",
+    "Focuses on talent acquisition and retention challenges",
+    "Deep dive into a specific vertical or niche market",
+    "Explores the intersection of technology and culture",
+    "Covers go-to-market strategy and growth tactics",
+    "Host challenges conventional wisdom in the field",
+    "Shares predictions for the next 12–18 months",
+    "Discusses partnerships and ecosystem development",
+  ],
+  linkedin_post: [
+    "Shares a personal career milestone or achievement",
+    "Asks the audience a thought-provoking question",
+    "Reposts an industry report with personal commentary",
+    "Celebrates a team win or company milestone",
+    "Offers a contrarian perspective on a popular topic",
+    "Highlights a key insight from a recent event",
+    "Engages followers with a poll or open-ended question",
+    "Amplifies a colleague's or partner's content",
+    "Announces a new role, product, or initiative",
+  ],
+  press_release: [
+    "Announces a strategic partnership or integration",
+    "Details a new product launch or feature release",
+    "Reports a significant funding or acquisition event",
+    "Highlights executive appointments or leadership changes",
+    "Outlines expansion into a new market or geography",
+    "Communicates an award or industry recognition",
+    "Presents Q-on-Q or year-over-year performance milestones",
+    "Responds to a market event or competitive development",
+    "Signals a shift in corporate strategy or positioning",
+  ],
+};
+
+interface InsightItem {
+  id: number;
+  title: string;
+  url: string;
+  mediaType: string;
+  source: string;
+  publishedDate?: string | null;
+}
+
+function getSubInsights(insight: InsightItem): string[] {
+  const pool = SUB_INSIGHTS_POOL[insight.mediaType] ?? SUB_INSIGHTS_POOL.article;
+  const count = 2 + (insight.id % 4);
+  const start = (insight.id * 3) % pool.length;
+  const result: string[] = [];
+  for (let i = 0; i < count; i++) result.push(pool[(start + i) % pool.length]);
+  return result;
+}
+
+function InsightCard({ ins }: { ins: InsightItem }) {
+  const cfg = getMediaConfig(ins.mediaType);
+  const Icon = cfg.icon;
+  const subInsights = getSubInsights(ins);
+  const [expanded, setExpanded] = useState(true);
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
+
+  return (
+    <div className={cn("rounded-lg border overflow-hidden", cfg.bg)}>
+      <a
+        href={ins.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn("flex items-start gap-2 px-2.5 pt-2.5 pb-2 group/ins transition-colors", cfg.headerBg)}
+        onClick={(e) => { e.preventDefault(); setExpanded((v) => !v); }}
+      >
+        <Icon className={cn("h-3 w-3 flex-shrink-0 mt-0.5", cfg.color)} />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold text-foreground group-hover/ins:text-primary transition-colors leading-snug line-clamp-2">
+            {ins.title}
+          </p>
+          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+            <span className="text-[11px] text-muted-foreground">{ins.source}</span>
+            {ins.publishedDate && (
+              <span className="text-[11px] text-muted-foreground">· {ins.publishedDate}</span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <a
+            href={ins.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="p-0.5 rounded hover:bg-white/40 transition-colors"
+          >
+            <ExternalLink className="h-2.5 w-2.5 text-muted-foreground/40 group-hover/ins:text-primary transition-colors" />
+          </a>
+          {expanded
+            ? <ChevronUp className="h-2.5 w-2.5 text-muted-foreground/40" />
+            : <ChevronDown className="h-2.5 w-2.5 text-muted-foreground/40" />}
+        </div>
+      </a>
+
+      {expanded && (
+        <ul className="px-2 pb-2 space-y-1 border-t border-black/5 pt-2">
+          {subInsights.map((text, idx) => (
+            <li
+              key={idx}
+              draggable
+              onDragStart={(e) => {
+                setDraggingIdx(idx);
+                e.dataTransfer.setData("text/plain", text);
+                e.dataTransfer.setData("application/x-insight-meta", JSON.stringify({
+                  mediaType: ins.mediaType,
+                  insightTitle: ins.title,
+                  subInsightText: text,
+                }));
+                e.dataTransfer.effectAllowed = "copy";
+              }}
+              onDragEnd={() => setDraggingIdx(null)}
+              className={cn(
+                "flex items-start gap-1.5 rounded-md px-1.5 py-1.5 -mx-0.5",
+                "cursor-grab active:cursor-grabbing select-none",
+                "group/sub transition-all duration-100",
+                draggingIdx === idx
+                  ? "opacity-40 scale-[0.97] bg-black/5"
+                  : "hover:bg-white/60 hover:shadow-sm",
+              )}
+            >
+              <GripVertical className="h-3 w-3 flex-shrink-0 mt-[1px] text-muted-foreground/20 group-hover/sub:text-muted-foreground/50 transition-colors" />
+              <Lightbulb className="h-3 w-3 flex-shrink-0 mt-[1px] text-amber-500 group-hover/sub:text-amber-600 transition-colors" />
+              <span className="text-[11px] text-foreground/80 leading-snug group-hover/sub:text-foreground transition-colors">
+                {text}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 function formatDate(iso: string): string {
@@ -52,13 +226,6 @@ function ContactInsightsPanel({ contactId, contactName }: { contactId: number; c
   const [expanded, setExpanded] = useState(true);
 
   if (insights.length === 0) return null;
-
-  const grouped = insights.reduce<Record<string, typeof insights>>((acc, insight) => {
-    const key = insight.mediaType;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(insight);
-    return acc;
-  }, {});
 
   return (
     <div className="border border-border/60 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-50/40 to-primary/5">
@@ -83,49 +250,8 @@ function ContactInsightsPanel({ contactId, contactName }: { contactId: number; c
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 max-h-64 overflow-y-auto">
-          {Object.entries(grouped).map(([type, items]) => {
-            const cfg = getMediaConfig(type);
-            const Icon = cfg.icon;
-            return (
-              <div key={type}>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Icon className={cn("h-3.5 w-3.5", cfg.color)} />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {cfg.label}s ({items.length})
-                  </span>
-                </div>
-                <div className="space-y-1.5">
-                  {items.map((insight) => (
-                    <a
-                      key={insight.id}
-                      href={insight.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(
-                        "flex items-start gap-2.5 p-2.5 rounded-lg border text-left group/insight hover:shadow-sm transition-all",
-                        cfg.bg,
-                      )}
-                    >
-                      <Icon className={cn("h-3.5 w-3.5 flex-shrink-0 mt-0.5", cfg.color)} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-foreground line-clamp-2 group-hover/insight:text-primary transition-colors">
-                          {insight.title}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          <span className="text-xs text-muted-foreground">{insight.source}</span>
-                          {insight.publishedDate && (
-                            <span className="text-xs text-muted-foreground">· {insight.publishedDate}</span>
-                          )}
-                        </div>
-                      </div>
-                      <ExternalLink className="h-3 w-3 flex-shrink-0 text-muted-foreground/50 group-hover/insight:text-muted-foreground mt-0.5" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        <div className="px-3 pb-3 space-y-2 max-h-72 overflow-y-auto">
+          {insights.map((ins) => <InsightCard key={ins.id} ins={ins} />)}
         </div>
       )}
     </div>
@@ -137,13 +263,6 @@ function CompanyInsightsPanel({ companyId, companyName }: { companyId: number; c
   const [expanded, setExpanded] = useState(true);
 
   if (insights.length === 0) return null;
-
-  const grouped = insights.reduce<Record<string, typeof insights>>((acc, ins) => {
-    const key = ins.mediaType;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(ins);
-    return acc;
-  }, {});
 
   return (
     <div className="border border-amber-100 rounded-xl overflow-hidden bg-gradient-to-br from-amber-50/50 to-orange-50/30">
@@ -168,49 +287,8 @@ function CompanyInsightsPanel({ companyId, companyName }: { companyId: number; c
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 max-h-64 overflow-y-auto">
-          {Object.entries(grouped).map(([type, items]) => {
-            const cfg = getMediaConfig(type);
-            const Icon = cfg.icon;
-            return (
-              <div key={type}>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Icon className={cn("h-3.5 w-3.5", cfg.color)} />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {cfg.label}s ({items.length})
-                  </span>
-                </div>
-                <div className="space-y-1.5">
-                  {items.map((ins) => (
-                    <a
-                      key={ins.id}
-                      href={ins.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(
-                        "flex items-start gap-2.5 p-2.5 rounded-lg border text-left group/insight hover:shadow-sm transition-all",
-                        cfg.bg,
-                      )}
-                    >
-                      <Icon className={cn("h-3.5 w-3.5 flex-shrink-0 mt-0.5", cfg.color)} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-foreground line-clamp-2 group-hover/insight:text-primary transition-colors">
-                          {ins.title}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          <span className="text-xs text-muted-foreground">{ins.source}</span>
-                          {ins.publishedDate && (
-                            <span className="text-xs text-muted-foreground">· {ins.publishedDate}</span>
-                          )}
-                        </div>
-                      </div>
-                      <ExternalLink className="h-3 w-3 flex-shrink-0 text-muted-foreground/50 group-hover/insight:text-muted-foreground mt-0.5" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        <div className="px-3 pb-3 space-y-2 max-h-72 overflow-y-auto">
+          {insights.map((ins) => <InsightCard key={ins.id} ins={ins} />)}
         </div>
       )}
     </div>
@@ -230,9 +308,44 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [subject, setSubject] = useState(draftMessage?.subject ?? "");
   const [body, setBody] = useState(draftMessage?.body ?? "");
+  const [isDragOver, setIsDragOver] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
   const createMessage = useCreateMessage();
   const updateMessage = useUpdateMessage();
+  const trackDrop = useTrackInsightDrop();
+  const { data: dropCountData } = useInsightDropCount();
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragOver(false);
+    const text = e.dataTransfer.getData("text/plain");
+    if (!text || !bodyRef.current) return;
+    const ta = bodyRef.current;
+    ta.focus();
+    const start = ta.selectionStart ?? ta.value.length;
+    const end = ta.selectionEnd ?? ta.value.length;
+    const needsPrefix = start > 0 && ta.value[start - 1] !== "\n";
+    const prefix = needsPrefix ? "\n" : "";
+    const alreadyHasSuffix = ta.value.slice(end).startsWith("\n");
+    const suffix = alreadyHasSuffix ? "" : "\n";
+    const newValue = ta.value.slice(0, start) + prefix + text + suffix + ta.value.slice(end);
+    setBody(newValue);
+    requestAnimationFrame(() => {
+      const newPos = start + prefix.length + text.length + suffix.length;
+      ta.setSelectionRange(newPos, newPos);
+    });
+    try {
+      const raw = e.dataTransfer.getData("application/x-insight-meta");
+      const meta = raw ? JSON.parse(raw) as { mediaType?: string; insightTitle?: string; subInsightText?: string } : {};
+      trackDrop.mutate({
+        mediaType: meta.mediaType,
+        insightTitle: meta.insightTitle,
+        subInsightText: meta.subInsightText,
+        contactId: selectedContact?.id,
+      });
+    } catch { }
+  }
 
   const { data: revealedContacts = [], isLoading: contactsLoading } = useRevealedContacts(
     contactSearch.length >= 1 ? contactSearch : undefined
@@ -387,32 +500,68 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
           />
         </div>
 
-        {/* Personal Insights panel */}
+        {/* Insights panels with shared header */}
         {selectedContact && selectedContact.id > 0 && (
-          <ContactInsightsPanel
-            contactId={selectedContact.id}
-            contactName={`${selectedContact.firstName} ${selectedContact.lastName}`}
-          />
-        )}
-
-        {/* Company Insights panel */}
-        {selectedContact && selectedContact.companyId && selectedContact.companyName && (
-          <CompanyInsightsPanel
-            companyId={selectedContact.companyId}
-            companyName={selectedContact.companyName}
-          />
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-primary/70" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Insights</span>
+              {(dropCountData?.count ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold px-1.5 py-0.5 leading-none">
+                  <Lightbulb className="h-2.5 w-2.5" />
+                  {dropCountData!.count.toLocaleString()} used
+                </span>
+              )}
+              <span className="ml-auto text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                <GripVertical className="h-2.5 w-2.5 text-muted-foreground/40" />
+                Drag takeaways into message
+              </span>
+            </div>
+            <ContactInsightsPanel
+              contactId={selectedContact.id}
+              contactName={`${selectedContact.firstName} ${selectedContact.lastName}`}
+            />
+            {selectedContact.companyId && selectedContact.companyName && (
+              <CompanyInsightsPanel
+                companyId={selectedContact.companyId}
+                companyName={selectedContact.companyName}
+              />
+            )}
+          </div>
         )}
 
         {/* Body */}
         <div>
           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">Message</label>
-          <textarea
-            placeholder="Write your message…"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={10}
-            className="w-full border border-border rounded-lg px-3 py-2.5 text-sm bg-background outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground transition-colors resize-none"
-          />
+          <div
+            className={cn(
+              "rounded-lg transition-all duration-150",
+              isDragOver && "ring-2 ring-primary/25",
+            )}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "copy";
+              setIsDragOver(true);
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setIsDragOver(false);
+              }
+            }}
+            onDrop={handleDrop}
+          >
+            <textarea
+              ref={bodyRef}
+              placeholder={isDragOver ? "Drop insight here…" : "Write your message…"}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={10}
+              className={cn(
+                "w-full border rounded-lg px-3 py-2.5 text-sm bg-background outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground transition-colors resize-none",
+                isDragOver ? "border-primary/40 bg-primary/5" : "border-border",
+              )}
+            />
+          </div>
         </div>
       </div>
 
