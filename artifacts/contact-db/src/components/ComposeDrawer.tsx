@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn, getInitials } from "@/lib/utils";
-import { useCreateMessage, useTrackInsightDrop, useInsightDropCount } from "@workspace/api-client-react";
+import { useCreateMessage, useTrackInsightDrop } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
 const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; headerBg: string }> = {
@@ -283,8 +283,8 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
   const [body, setBody] = useState("");
   const createMessage = useCreateMessage();
   const trackDrop = useTrackInsightDrop();
-  const { data: dropCountData } = useInsightDropCount();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [insightDropCount, setInsightDropCount] = useState(0);
 
   const contactName = `${contact.firstName} ${contact.lastName}`;
   const hasInsights = insights.length > 0 || companyInsights.length > 0;
@@ -294,6 +294,7 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
     if (isOpen) {
       setSubject("");
       setBody("");
+      setInsightDropCount(0);
       setTimeout(() => bodyRef.current?.focus(), 320);
     }
   }, [isOpen, contact.id]);
@@ -317,6 +318,7 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
       const newPos = start + prefix.length + text.length + suffix.length;
       ta.setSelectionRange(newPos, newPos);
     });
+    setInsightDropCount((c) => c + 1);
     try {
       const raw = e.dataTransfer.getData("application/x-insight-meta");
       const meta = raw ? JSON.parse(raw) as { mediaType?: string; insightTitle?: string; subInsightText?: string } : {};
@@ -421,10 +423,10 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
                   <div className="px-3 pt-2.5 pb-1.5 border-b border-border/40 flex-shrink-0 flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3 text-primary/70" />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Insights</span>
-                    {(dropCountData?.count ?? 0) > 0 && (
+                    {insightDropCount > 0 && (
                       <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold px-1.5 py-0.5 leading-none">
                         <Lightbulb className="h-2.5 w-2.5" />
-                        {dropCountData!.count.toLocaleString()} used
+                        {insightDropCount} in this email
                       </span>
                     )}
                     <span className="ml-auto text-[10px] text-muted-foreground/60 flex items-center gap-1">

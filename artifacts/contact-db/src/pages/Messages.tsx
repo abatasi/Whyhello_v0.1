@@ -18,7 +18,6 @@ import {
   useGetContactInsights,
   useGetCompanyInsights,
   useTrackInsightDrop,
-  useInsightDropCount,
   type Message,
   type RevealedContact,
 } from "@workspace/api-client-react";
@@ -309,12 +308,12 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
   const [subject, setSubject] = useState(draftMessage?.subject ?? "");
   const [body, setBody] = useState(draftMessage?.body ?? "");
   const [isDragOver, setIsDragOver] = useState(false);
+  const [insightDropCount, setInsightDropCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const createMessage = useCreateMessage();
   const updateMessage = useUpdateMessage();
   const trackDrop = useTrackInsightDrop();
-  const { data: dropCountData } = useInsightDropCount();
 
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -335,6 +334,7 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
       const newPos = start + prefix.length + text.length + suffix.length;
       ta.setSelectionRange(newPos, newPos);
     });
+    setInsightDropCount((c) => c + 1);
     try {
       const raw = e.dataTransfer.getData("application/x-insight-meta");
       const meta = raw ? JSON.parse(raw) as { mediaType?: string; insightTitle?: string; subInsightText?: string } : {};
@@ -418,125 +418,136 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-3.5 border-b border-border/60 flex-shrink-0">
         <h2 className="text-base font-semibold">New Message</h2>
         <button onClick={onCancel} className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors">
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-        {/* Recipient field */}
-        <div ref={dropdownRef} className="relative">
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">To</label>
-          <div className={cn(
-            "flex items-center gap-2 border rounded-lg px-3 py-2 bg-background transition-colors",
-            showDropdown ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-border/80"
-          )}>
-            <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <input
-              type="text"
-              placeholder="Search revealed contacts…"
-              value={contactSearch}
-              onChange={(e) => {
-                setContactSearch(e.target.value);
-                setSelectedContact(null);
-                setShowDropdown(true);
-              }}
-              onFocus={() => setShowDropdown(true)}
-              className="flex-1 text-sm outline-none bg-transparent placeholder:text-muted-foreground"
-            />
-            {selectedContact && (
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full flex-shrink-0">
-                {selectedContact.email}
-              </span>
-            )}
-          </div>
-
-          {showDropdown && (
-            <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
-              {contactsLoading ? (
-                <div className="px-4 py-3 text-sm text-muted-foreground">Searching…</div>
-              ) : displayedContacts.length === 0 ? (
-                <div className="px-4 py-4 text-center">
-                  <p className="text-sm text-muted-foreground">No revealed contacts found</p>
-                  <p className="text-xs text-muted-foreground mt-1">Reveal a contact's email from the Directory first</p>
-                </div>
-              ) : (
-                displayedContacts.map((c) => (
-                  <button
-                    key={c.id}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handleSelectContact(c)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/40 transition-colors text-left"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
-                      {getInitials(`${c.firstName} ${c.lastName}`)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{c.firstName} {c.lastName}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {c.email}
-                        {c.jobTitle && ` · ${c.jobTitle}`}
-                        {c.companyName && ` · ${c.companyName}`}
-                      </p>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
+      {/* To field — full width, above columns */}
+      <div ref={dropdownRef} className="relative px-6 py-3 border-b border-border/40 flex-shrink-0">
+        <div className={cn(
+          "flex items-center gap-2 border rounded-lg px-3 py-2 bg-background transition-colors",
+          showDropdown ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-border/80"
+        )}>
+          <span className="text-xs font-semibold text-muted-foreground flex-shrink-0">To:</span>
+          <input
+            type="text"
+            placeholder="Search revealed contacts…"
+            value={contactSearch}
+            onChange={(e) => {
+              setContactSearch(e.target.value);
+              setSelectedContact(null);
+              setShowDropdown(true);
+            }}
+            onFocus={() => setShowDropdown(true)}
+            className="flex-1 text-sm outline-none bg-transparent placeholder:text-muted-foreground"
+          />
+          {selectedContact && (
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full flex-shrink-0">
+              {selectedContact.email}
+            </span>
           )}
         </div>
 
-        {/* Subject */}
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">Subject</label>
-          <input
-            type="text"
-            placeholder="Email subject…"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground transition-colors"
-          />
-        </div>
-
-        {/* Insights panels with shared header */}
-        {selectedContact && selectedContact.id > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3 w-3 text-primary/70" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Insights</span>
-              {(dropCountData?.count ?? 0) > 0 && (
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold px-1.5 py-0.5 leading-none">
-                  <Lightbulb className="h-2.5 w-2.5" />
-                  {dropCountData!.count.toLocaleString()} used
-                </span>
-              )}
-              <span className="ml-auto text-[10px] text-muted-foreground/60 flex items-center gap-1">
-                <GripVertical className="h-2.5 w-2.5 text-muted-foreground/40" />
-                Drag takeaways into message
-              </span>
-            </div>
-            <ContactInsightsPanel
-              contactId={selectedContact.id}
-              contactName={`${selectedContact.firstName} ${selectedContact.lastName}`}
-            />
-            {selectedContact.companyId && selectedContact.companyName && (
-              <CompanyInsightsPanel
-                companyId={selectedContact.companyId}
-                companyName={selectedContact.companyName}
-              />
+        {showDropdown && (
+          <div className="absolute z-50 top-full left-6 right-6 mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+            {contactsLoading ? (
+              <div className="px-4 py-3 text-sm text-muted-foreground">Searching…</div>
+            ) : displayedContacts.length === 0 ? (
+              <div className="px-4 py-4 text-center">
+                <p className="text-sm text-muted-foreground">No revealed contacts found</p>
+                <p className="text-xs text-muted-foreground mt-1">Reveal a contact's email from the Directory first</p>
+              </div>
+            ) : (
+              displayedContacts.map((c) => (
+                <button
+                  key={c.id}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSelectContact(c)}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/40 transition-colors text-left"
+                >
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                    {getInitials(`${c.firstName} ${c.lastName}`)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{c.firstName} {c.lastName}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {c.email}
+                      {c.jobTitle && ` · ${c.jobTitle}`}
+                      {c.companyName && ` · ${c.companyName}`}
+                    </p>
+                  </div>
+                </button>
+              ))
             )}
           </div>
         )}
+      </div>
 
-        {/* Body */}
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">Message</label>
+      {/* Two-column body */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
+
+        {/* Left column — Insights */}
+        <div className="w-[42%] border-r border-border/60 flex flex-col overflow-hidden flex-shrink-0">
+          <div className="px-4 pt-2.5 pb-2 border-b border-border/40 flex-shrink-0 flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3 text-primary/70" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Insights</span>
+            {insightDropCount > 0 && (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold px-1.5 py-0.5 leading-none">
+                <Lightbulb className="h-2.5 w-2.5" />
+                {insightDropCount} in this message
+              </span>
+            )}
+            <span className="ml-auto text-[10px] text-muted-foreground/60 flex items-center gap-1">
+              <GripVertical className="h-2.5 w-2.5 text-muted-foreground/40" />
+              Drag into message
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+            {selectedContact && selectedContact.id > 0 ? (
+              <>
+                <ContactInsightsPanel
+                  contactId={selectedContact.id}
+                  contactName={`${selectedContact.firstName} ${selectedContact.lastName}`}
+                />
+                {selectedContact.companyId && selectedContact.companyName && (
+                  <CompanyInsightsPanel
+                    companyId={selectedContact.companyId}
+                    companyName={selectedContact.companyName}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
+                <Sparkles className="h-8 w-8 text-muted-foreground/20 mb-3" />
+                <p className="text-xs text-muted-foreground">Select a recipient to see their insights</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right column — Subject + Message */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Subject */}
+          <div className="px-5 pt-3.5 pb-3 border-b border-border/40 flex-shrink-0">
+            <input
+              type="text"
+              placeholder="Subject…"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full text-sm bg-transparent outline-none placeholder:text-muted-foreground/60 text-foreground font-medium"
+            />
+          </div>
+
+          {/* Body textarea as drop zone */}
           <div
             className={cn(
-              "rounded-lg transition-all duration-150",
-              isDragOver && "ring-2 ring-primary/25",
+              "relative flex-1 flex flex-col px-5 pt-3 pb-4 transition-all duration-150",
+              isDragOver && "bg-primary/5",
             )}
             onDragOver={(e) => {
               e.preventDefault();
@@ -550,23 +561,22 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
             }}
             onDrop={handleDrop}
           >
+            {isDragOver && (
+              <div className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-primary/25 z-10" />
+            )}
             <textarea
               ref={bodyRef}
               placeholder={isDragOver ? "Drop insight here…" : "Write your message…"}
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              rows={10}
-              className={cn(
-                "w-full border rounded-lg px-3 py-2.5 text-sm bg-background outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground transition-colors resize-none",
-                isDragOver ? "border-primary/40 bg-primary/5" : "border-border",
-              )}
+              className="flex-1 w-full text-sm bg-transparent outline-none placeholder:text-muted-foreground/50 text-foreground resize-none leading-relaxed"
             />
           </div>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="px-6 py-4 border-t border-border/60 flex items-center justify-between gap-3">
+      {/* Footer */}
+      <div className="px-6 py-3.5 border-t border-border/60 flex items-center justify-between gap-3 flex-shrink-0">
         <button
           onClick={onCancel}
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
