@@ -151,13 +151,13 @@ function InsightCard({ ins }: { ins: ComposeInsight }) {
       >
         <Icon className={cn("h-3 w-3 flex-shrink-0 mt-0.5", cfg.color)} />
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold text-foreground group-hover/ins:text-primary transition-colors leading-snug line-clamp-2">
+          <p className="text-xs font-semibold text-foreground group-hover/ins:text-primary transition-colors leading-snug line-clamp-2">
             {ins.title}
           </p>
           <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-            <span className="text-[10px] text-muted-foreground">{ins.source}</span>
+            <span className="text-[11px] text-muted-foreground">{ins.source}</span>
             {ins.publishedDate && (
-              <span className="text-[10px] text-muted-foreground">· {ins.publishedDate}</span>
+              <span className="text-[11px] text-muted-foreground">· {ins.publishedDate}</span>
             )}
           </div>
         </div>
@@ -165,11 +165,11 @@ function InsightCard({ ins }: { ins: ComposeInsight }) {
       </a>
 
       {/* Sub-insights list */}
-      <ul className="px-2.5 pb-2.5 space-y-1.5 border-t border-black/5 pt-2">
+      <ul className="px-2.5 pb-2.5 space-y-2 border-t border-black/5 pt-2.5">
         {subInsights.map((text, idx) => (
-          <li key={idx} className="flex items-start gap-1.5">
-            <Lightbulb className="h-2.5 w-2.5 flex-shrink-0 mt-[1px] text-amber-500" />
-            <span className="text-[10px] text-foreground/75 leading-snug">{text}</span>
+          <li key={idx} className="flex items-start gap-2">
+            <Lightbulb className="h-3 w-3 flex-shrink-0 mt-[1px] text-amber-500" />
+            <span className="text-[11px] text-foreground/80 leading-snug">{text}</span>
           </li>
         ))}
       </ul>
