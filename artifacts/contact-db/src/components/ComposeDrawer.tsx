@@ -3,25 +3,97 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   X, Send, FileText, ExternalLink,
   Newspaper, Tv2, Mic2, Share2, Megaphone, ChevronDown, ChevronUp,
-  Mail, Building, Sparkles,
+  Mail, Building, Sparkles, Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn, getInitials } from "@/lib/utils";
 import { useCreateMessage } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
-const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
-  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600",   bg: "bg-blue-50 border-blue-100" },
-  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600", bg: "bg-violet-50 border-violet-100" },
-  video:         { label: "Video",         icon: Tv2,       color: "text-red-600",    bg: "bg-red-50 border-red-100" },
-  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600",  bg: "bg-green-50 border-green-100" },
-  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600",    bg: "bg-sky-50 border-sky-100" },
-  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600",  bg: "bg-amber-50 border-amber-100" },
+const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; headerBg: string }> = {
+  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600",   bg: "bg-blue-50/70 border-blue-100",   headerBg: "hover:bg-blue-100/60" },
+  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600", bg: "bg-violet-50/70 border-violet-100", headerBg: "hover:bg-violet-100/60" },
+  video:         { label: "Video",         icon: Tv2,       color: "text-red-600",    bg: "bg-red-50/70 border-red-100",     headerBg: "hover:bg-red-100/60" },
+  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600",  bg: "bg-green-50/70 border-green-100", headerBg: "hover:bg-green-100/60" },
+  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600",    bg: "bg-sky-50/70 border-sky-100",     headerBg: "hover:bg-sky-100/60" },
+  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600",  bg: "bg-amber-50/70 border-amber-100", headerBg: "hover:bg-amber-100/60" },
 };
 
 function getMediaConfig(type: string) {
-  return MEDIA_CONFIG[type] ?? { label: type, icon: ExternalLink, color: "text-muted-foreground", bg: "bg-secondary border-border" };
+  return MEDIA_CONFIG[type] ?? {
+    label: type, icon: ExternalLink,
+    color: "text-muted-foreground", bg: "bg-secondary border-border", headerBg: "hover:bg-secondary/60",
+  };
 }
+
+const SUB_INSIGHTS_POOL: Record<string, string[]> = {
+  article: [
+    "Highlights emerging trends reshaping the industry over the next 12–18 months",
+    "Proposes a new framework for measuring ROI on innovation initiatives",
+    "Challenges conventional wisdom around talent retention in hybrid environments",
+    "Identifies three critical barriers preventing wider enterprise adoption",
+    "Cites research linking distributed leadership to stronger organisational resilience",
+    "Argues for a customer-first approach over product-led growth at scale",
+    "Outlines how regulatory changes will impact go-to-market strategies in 2025",
+    "Explores the tension between speed-to-market and long-term technical debt",
+    "Makes the case that smaller, focused teams consistently outperform large ones",
+  ],
+  blog_post: [
+    "Shares a personal pivot from operator to founder and what changed",
+    "Outlines five actionable steps for building resilient supply chains post-pandemic",
+    "Compares bootstrapping versus VC funding with candid real-world trade-offs",
+    "Offers a counterintuitive take on why remote teams outperform in-person ones",
+    "Breaks down how top performers structure their first 90 minutes of the day",
+    "Reflects on the most expensive lesson learned from a failed product launch",
+    "Advocates for radical transparency as a competitive advantage in engineering culture",
+    "Argues that the best onboarding is built before a single hire is made",
+    "Reveals why most strategic plans fail in the first quarter of execution",
+  ],
+  video: [
+    "Live demo shows a new AI-powered workflow cutting manual processing by 70%",
+    "Interviews three C-suite leaders on their post-pandemic strategy pivots",
+    "Reveals surprising patterns in customer churn hidden inside support ticket data",
+    "Breaks down the technical architecture behind a full platform migration",
+    "Shares a behind-the-scenes look at an end-to-end go-to-market playbook",
+    "Demonstrates how to run a structured pre-mortem before a major launch",
+    "Explores what separates companies that scale from those that plateau at Series B",
+    "Unpacks the data behind a 3x improvement in enterprise sales cycle length",
+    "Shows how a design sprint compressed six months of product work into five days",
+  ],
+  podcast: [
+    "Deep dives into the strategic rationale behind a recent market consolidation",
+    "Discusses lessons from a failed Series B pitch that ultimately led to a profitable pivot",
+    "Explores why most enterprise software implementations stall before full adoption",
+    "Shares an unpublished finding on the correlation between NPS scores and LTV",
+    "Debates whether AI will augment or replace knowledge workers by 2027",
+    "Breaks down how they achieved 3× pipeline growth in a single quarter",
+    "Reflects on the cultural evolution required when moving from startup to scaleup",
+    "Examines the compounding effect of small operational improvements over 18 months",
+    "Challenges the assumption that growth always requires headcount expansion",
+  ],
+  press_release: [
+    "Announces a strategic partnership expected to unlock access to $50M in new markets",
+    "Reports 40% year-over-year revenue growth driven by enterprise segment expansion",
+    "Introduces a new product tier purpose-built for mid-market customers",
+    "Details a leadership transition and the rationale behind the succession plan",
+    "Outlines a five-year roadmap to achieve carbon neutrality across all operations",
+    "Reveals a $120M Series C to accelerate international expansion into EMEA and APAC",
+    "Discloses plans to open three regional offices and double engineering headcount by Q3",
+    "Launches an updated partner programme offering deeper integration and revenue sharing",
+    "Announces the acquisition of a complementary AI startup to strengthen the core platform",
+  ],
+  linkedin_post: [
+    "Challenges the belief that speed always wins over quality in product cycles",
+    "Shares a hard-earned lesson about hiring for attitude over demonstrated skills",
+    "Breaks down why most sales pipelines are fundamentally and dangerously optimistic",
+    "Reflects on what a decade of building companies taught about personal resilience",
+    "Invites open debate on whether the traditional CMO role is becoming obsolete",
+    "Argues that the best leaders create more leaders, not more direct followers",
+    "Offers a practical framework for deciding when to say no to a new opportunity",
+    "Points out the hidden cost of maintaining a culture of chronic over-commitment",
+    "Makes the case that company values only matter when they cost something to uphold",
+  ],
+};
 
 export interface ComposeInsight {
   id: number;
@@ -31,6 +103,17 @@ export interface ComposeInsight {
   source: string;
   description?: string | null;
   publishedDate?: string | null;
+}
+
+function getSubInsights(insight: ComposeInsight): string[] {
+  const pool = SUB_INSIGHTS_POOL[insight.mediaType] ?? SUB_INSIGHTS_POOL.article;
+  const count = 2 + (insight.id % 4);
+  const start = (insight.id * 3) % pool.length;
+  const result: string[] = [];
+  for (let i = 0; i < count; i++) {
+    result.push(pool[(start + i) % pool.length]);
+  }
+  return result;
 }
 
 export interface ComposeContact {
@@ -50,6 +133,48 @@ interface InsightsPanelProps {
   gradientClass: string;
   iconBgClass: string;
   iconColorClass: string;
+}
+
+function InsightCard({ ins }: { ins: ComposeInsight }) {
+  const cfg = getMediaConfig(ins.mediaType);
+  const Icon = cfg.icon;
+  const subInsights = getSubInsights(ins);
+
+  return (
+    <div className={cn("rounded-lg border overflow-hidden", cfg.bg)}>
+      {/* Clickable title row */}
+      <a
+        href={ins.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn("flex items-start gap-2 px-2.5 pt-2.5 pb-2 group/ins transition-colors", cfg.headerBg)}
+      >
+        <Icon className={cn("h-3 w-3 flex-shrink-0 mt-0.5", cfg.color)} />
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold text-foreground group-hover/ins:text-primary transition-colors leading-snug line-clamp-2">
+            {ins.title}
+          </p>
+          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+            <span className="text-[10px] text-muted-foreground">{ins.source}</span>
+            {ins.publishedDate && (
+              <span className="text-[10px] text-muted-foreground">· {ins.publishedDate}</span>
+            )}
+          </div>
+        </div>
+        <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40 group-hover/ins:text-primary transition-colors mt-0.5" />
+      </a>
+
+      {/* Sub-insights list */}
+      <ul className="px-2.5 pb-2.5 space-y-1.5 border-t border-black/5 pt-2">
+        {subInsights.map((text, idx) => (
+          <li key={idx} className="flex items-start gap-1.5">
+            <Lightbulb className="h-2.5 w-2.5 flex-shrink-0 mt-[1px] text-amber-500" />
+            <span className="text-[10px] text-foreground/75 leading-snug">{text}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function InsightsPanel({
@@ -94,7 +219,7 @@ function InsightsPanel({
       </button>
 
       {expanded && (
-        <div className="px-3 pb-3 space-y-2">
+        <div className="px-3 pb-3 space-y-3">
           {sortedGroups.map(([type, items]) => {
             const cfg = getMediaConfig(type);
             const Icon = cfg.icon;
@@ -106,33 +231,8 @@ function InsightsPanel({
                     {cfg.label}s ({items.length})
                   </span>
                 </div>
-                <div className="space-y-1.5">
-                  {items.map((ins) => (
-                    <a
-                      key={ins.id}
-                      href={ins.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(
-                        "flex items-start gap-2 p-2 rounded-lg border text-left group/ins hover:shadow-sm transition-all",
-                        cfg.bg,
-                      )}
-                    >
-                      <Icon className={cn("h-2.5 w-2.5 flex-shrink-0 mt-0.5", cfg.color)} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-medium text-foreground line-clamp-2 group-hover/ins:text-primary transition-colors leading-snug">
-                          {ins.title}
-                        </p>
-                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                          <span className="text-[10px] text-muted-foreground">{ins.source}</span>
-                          {ins.publishedDate && (
-                            <span className="text-[10px] text-muted-foreground">· {ins.publishedDate}</span>
-                          )}
-                        </div>
-                      </div>
-                      <ExternalLink className="h-2 w-2 flex-shrink-0 text-muted-foreground/40 group-hover/ins:text-muted-foreground mt-0.5" />
-                    </a>
-                  ))}
+                <div className="space-y-2">
+                  {items.map((ins) => <InsightCard key={ins.id} ins={ins} />)}
                 </div>
               </div>
             );
@@ -203,7 +303,6 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop — only top half darkened */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -214,7 +313,6 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
             onClick={onClose}
           />
 
-          {/* Drawer — bottom half of viewport */}
           <motion.div
             key="drawer"
             initial={{ y: "100%" }}
@@ -224,8 +322,7 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
             className="fixed bottom-0 left-0 right-0 h-[50vh] bg-card z-50 flex flex-col border-t border-border/70 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
           >
             {/* ── Header ─────────────────────────────────── */}
-            <div className="flex items-center justify-between pl-4 pr-4 py-2.5 border-b border-border/60 flex-shrink-0 bg-card">
-              {/* Drag handle hint */}
+            <div className="relative flex items-center justify-between pl-4 pr-4 py-2.5 border-b border-border/60 flex-shrink-0 bg-card">
               <div className="absolute left-1/2 -translate-x-1/2 top-1.5 w-8 h-1 rounded-full bg-border/60" />
 
               <div className="flex items-center gap-2.5 min-w-0">
@@ -258,13 +355,15 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
             <div className="flex-1 flex overflow-hidden">
 
               {/* Left column: Insights */}
-              {hasInsights ? (
-                <div className="w-[38%] border-r border-border/60 flex flex-col overflow-hidden">
-                  <div className="px-3 pt-2.5 pb-1.5 border-b border-border/40 flex-shrink-0">
-                    <div className="flex items-center gap-1.5">
-                      <Sparkles className="h-3 w-3 text-primary/70" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Insights</span>
-                    </div>
+              {hasInsights && (
+                <div className="w-[40%] border-r border-border/60 flex flex-col overflow-hidden">
+                  <div className="px-3 pt-2.5 pb-1.5 border-b border-border/40 flex-shrink-0 flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3 text-primary/70" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Insights</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                      <Lightbulb className="h-2.5 w-2.5 text-amber-400" />
+                      Key takeaways per insight
+                    </span>
                   </div>
                   <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
                     <InsightsPanel
@@ -289,11 +388,10 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
                     )}
                   </div>
                 </div>
-              ) : null}
+              )}
 
-              {/* Right column (or full-width): Compose */}
+              {/* Right column: Compose */}
               <div className={cn("flex flex-col overflow-hidden", hasInsights ? "flex-1" : "w-full")}>
-                {/* Subject */}
                 <div className="px-4 pt-3 pb-2.5 border-b border-border/40 flex-shrink-0">
                   <input
                     type="text"
@@ -304,7 +402,6 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
                   />
                 </div>
 
-                {/* Body textarea — fills remaining height */}
                 <div className="flex-1 overflow-hidden px-4 pt-3">
                   <textarea
                     ref={bodyRef}
@@ -315,7 +412,6 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
                   />
                 </div>
 
-                {/* Action bar */}
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border/60 flex-shrink-0 bg-card">
                   <button
                     onClick={onClose}
