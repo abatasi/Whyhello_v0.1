@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   X, Send, FileText, ExternalLink,
   Newspaper, Tv2, Mic2, Share2, Megaphone, ChevronDown, ChevronUp,
-  Mail, Building, Sparkles, Lightbulb,
+  Mail, Building, Sparkles, Lightbulb, GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn, getInitials } from "@/lib/utils";
@@ -139,6 +139,7 @@ function InsightCard({ ins }: { ins: ComposeInsight }) {
   const cfg = getMediaConfig(ins.mediaType);
   const Icon = cfg.icon;
   const subInsights = getSubInsights(ins);
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
 
   return (
     <div className={cn("rounded-lg border overflow-hidden", cfg.bg)}>
@@ -164,12 +165,32 @@ function InsightCard({ ins }: { ins: ComposeInsight }) {
         <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40 group-hover/ins:text-primary transition-colors mt-0.5" />
       </a>
 
-      {/* Sub-insights list */}
-      <ul className="px-2.5 pb-2.5 space-y-2 border-t border-black/5 pt-2.5">
+      {/* Draggable sub-insights list */}
+      <ul className="px-2 pb-2 space-y-1 border-t border-black/5 pt-2">
         {subInsights.map((text, idx) => (
-          <li key={idx} className="flex items-start gap-2">
-            <Lightbulb className="h-3 w-3 flex-shrink-0 mt-[1px] text-amber-500" />
-            <span className="text-[11px] text-foreground/80 leading-snug">{text}</span>
+          <li
+            key={idx}
+            draggable
+            onDragStart={(e) => {
+              setDraggingIdx(idx);
+              e.dataTransfer.setData("text/plain", text);
+              e.dataTransfer.effectAllowed = "copy";
+            }}
+            onDragEnd={() => setDraggingIdx(null)}
+            className={cn(
+              "flex items-start gap-1.5 rounded-md px-1.5 py-1.5 -mx-0.5",
+              "cursor-grab active:cursor-grabbing select-none",
+              "group/sub transition-all duration-100",
+              draggingIdx === idx
+                ? "opacity-40 scale-[0.97] bg-black/5"
+                : "hover:bg-white/60 hover:shadow-sm",
+            )}
+          >
+            <GripVertical className="h-3 w-3 flex-shrink-0 mt-[1px] text-muted-foreground/20 group-hover/sub:text-muted-foreground/50 transition-colors" />
+            <Lightbulb className="h-3 w-3 flex-shrink-0 mt-[1px] text-amber-500 group-hover/sub:text-amber-600 transition-colors" />
+            <span className="text-[11px] text-foreground/80 leading-snug group-hover/sub:text-foreground transition-colors">
+              {text}
+            </span>
           </li>
         ))}
       </ul>
@@ -260,6 +281,7 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
 
   const contactName = `${contact.firstName} ${contact.lastName}`;
   const hasInsights = insights.length > 0 || companyInsights.length > 0;
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -268,6 +290,27 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
       setTimeout(() => bodyRef.current?.focus(), 320);
     }
   }, [isOpen, contact.id]);
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragOver(false);
+    const text = e.dataTransfer.getData("text/plain");
+    if (!text || !bodyRef.current) return;
+    const ta = bodyRef.current;
+    ta.focus();
+    const start = ta.selectionStart ?? ta.value.length;
+    const end = ta.selectionEnd ?? ta.value.length;
+    const needsPrefix = start > 0 && ta.value[start - 1] !== "\n";
+    const prefix = needsPrefix ? "\n" : "";
+    const alreadyHasSuffix = ta.value.slice(end).startsWith("\n");
+    const suffix = alreadyHasSuffix ? "" : "\n";
+    const newValue = ta.value.slice(0, start) + prefix + text + suffix + ta.value.slice(end);
+    setBody(newValue);
+    requestAnimationFrame(() => {
+      const newPos = start + prefix.length + text.length + suffix.length;
+      ta.setSelectionRange(newPos, newPos);
+    });
+  }
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -361,8 +404,8 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
                     <Sparkles className="h-3 w-3 text-primary/70" />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Insights</span>
                     <span className="ml-auto text-[10px] text-muted-foreground/60 flex items-center gap-1">
-                      <Lightbulb className="h-2.5 w-2.5 text-amber-400" />
-                      Key takeaways per insight
+                      <GripVertical className="h-2.5 w-2.5 text-muted-foreground/40" />
+                      Drag takeaways into email
                     </span>
                   </div>
                   <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
@@ -402,10 +445,26 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
                   />
                 </div>
 
-                <div className="flex-1 overflow-hidden px-4 pt-3">
+                <div
+                  className={cn(
+                    "flex-1 overflow-hidden px-4 pt-3 rounded-sm transition-all duration-150",
+                    isDragOver && "bg-primary/5 ring-2 ring-inset ring-primary/25",
+                  )}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "copy";
+                    setIsDragOver(true);
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      setIsDragOver(false);
+                    }
+                  }}
+                  onDrop={handleDrop}
+                >
                   <textarea
                     ref={bodyRef}
-                    placeholder={`Write your message to ${contact.firstName}…`}
+                    placeholder={isDragOver ? "Drop insight here…" : `Write your message to ${contact.firstName}…`}
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                     className="w-full h-full text-sm bg-transparent outline-none placeholder:text-muted-foreground/50 text-foreground resize-none leading-relaxed"
