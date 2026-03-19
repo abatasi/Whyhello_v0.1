@@ -319,7 +319,7 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 32, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 h-[50vh] bg-card z-50 flex flex-col border-t border-border/70 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
+            className="fixed bottom-0 left-0 right-0 h-[75vh] bg-card z-50 flex flex-col border-t border-border/70 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
           >
             {/* ── Header ─────────────────────────────────── */}
             <div className="relative flex items-center justify-between pl-4 pr-4 py-2.5 border-b border-border/60 flex-shrink-0 bg-card">
