@@ -1119,6 +1119,7 @@ function MultiSelectFilter({
 }) {
   const [expanded, setExpanded] = useState(true);
   const [search, setSearch] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   if (!options || options.length === 0) return null;
@@ -1128,6 +1129,7 @@ function MultiSelectFilter({
   );
 
   const activeCount = selected.length;
+  const showChecklist = isFocused || search.length > 0;
 
   return (
     <div>
@@ -1158,11 +1160,13 @@ function MultiSelectFilter({
             style={{ overflow: "hidden" }}
           >
             <div className="pt-2 space-y-2">
+              {/* Active selections — always visible */}
               {selected.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {selected.map((s) => (
                     <button
                       key={s}
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => onChange(s)}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
                     >
@@ -1173,19 +1177,23 @@ function MultiSelectFilter({
                 </div>
               )}
 
+              {/* Search input — always visible */}
               <div className="relative">
                 <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search…"
+                  placeholder={isFocused ? "Type to filter…" : "Click to browse…"}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
                   className="w-full pl-8 pr-7 py-1.5 text-xs rounded-md border border-input bg-background outline-none focus:border-primary/60 placeholder:text-muted-foreground transition-colors"
                 />
                 {search && (
                   <button
-                    onClick={() => setSearch("")}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => { setSearch(""); inputRef.current?.focus(); }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     aria-label="Clear search"
                   >
@@ -1194,39 +1202,55 @@ function MultiSelectFilter({
                 )}
               </div>
 
-              <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
-                {filtered.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-2 text-center">No options found</p>
-                ) : (
-                  filtered.map((opt) => {
-                    const isSelected = selected.includes(opt);
-                    return (
-                      <label
-                        key={opt}
-                        className="flex items-center gap-2 cursor-pointer group"
-                        onClick={() => onChange(opt)}
-                      >
-                        <div className={cn(
-                          "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
-                          isSelected
-                            ? "bg-primary border-primary"
-                            : "border-input bg-background group-hover:border-primary/50",
-                        )}>
-                          {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
-                        </div>
-                        <span className={cn(
-                          "text-sm transition-colors",
-                          isSelected
-                            ? "text-foreground font-medium"
-                            : "text-muted-foreground group-hover:text-foreground",
-                        )}>
-                          {opt}
-                        </span>
-                      </label>
-                    );
-                  })
+              {/* Checklist — only visible when input is focused or a search query is active */}
+              <AnimatePresence initial={false}>
+                {showChecklist && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.15, ease: "easeInOut" }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <div
+                      className="max-h-48 overflow-y-auto space-y-1.5 pr-1"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {filtered.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-2 text-center">No options found</p>
+                      ) : (
+                        filtered.map((opt) => {
+                          const isSelected = selected.includes(opt);
+                          return (
+                            <label
+                              key={opt}
+                              className="flex items-center gap-2 cursor-pointer group"
+                              onClick={() => onChange(opt)}
+                            >
+                              <div className={cn(
+                                "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
+                                isSelected
+                                  ? "bg-primary border-primary"
+                                  : "border-input bg-background group-hover:border-primary/50",
+                              )}>
+                                {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
+                              </div>
+                              <span className={cn(
+                                "text-sm transition-colors",
+                                isSelected
+                                  ? "text-foreground font-medium"
+                                  : "text-muted-foreground group-hover:text-foreground",
+                              )}>
+                                {opt}
+                              </span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </motion.div>
                 )}
-              </div>
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
