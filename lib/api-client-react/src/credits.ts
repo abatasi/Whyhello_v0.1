@@ -23,7 +23,7 @@ export function useCreditsStatus() {
   return useQuery<CreditStatus>({
     queryKey: ["credits", "status"],
     queryFn: () => customFetch<CreditStatus>("/api/credits/status"),
-    staleTime: 30_000,
+    staleTime: 0,
   });
 }
 
