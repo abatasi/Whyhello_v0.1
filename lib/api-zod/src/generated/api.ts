@@ -109,7 +109,6 @@ export const GetContactInsightsParams = zod.object({
 export const GetContactInsightsResponseItem = zod.object({
   id: zod.number(),
   contactId: zod.number(),
-  category: zod.string().optional(),
   title: zod.string(),
   url: zod.string(),
   source: zod.string(),
@@ -117,9 +116,59 @@ export const GetContactInsightsResponseItem = zod.object({
   description: zod.string().nullish(),
   publishedDate: zod.string().nullish(),
 });
-export const GetContactInsightsResponse = zod.array(
-  GetContactInsightsResponseItem,
-);
+export const GetContactInsightsResponse = zod.array(GetContactInsightsResponseItem);
+
+export const GetContactIndustryInsightsParams = zod.object({ id: zod.coerce.number() });
+export const GetContactIndustryInsightsResponseItem = zod.object({
+  id: zod.number(),
+  contactId: zod.number(),
+  title: zod.string(),
+  url: zod.string(),
+  source: zod.string(),
+  mediaType: zod.string(),
+  description: zod.string().nullish(),
+  publishedDate: zod.string().nullish(),
+});
+export const GetContactIndustryInsightsResponse = zod.array(GetContactIndustryInsightsResponseItem);
+
+export const GetContactRoleInsightsParams = zod.object({ id: zod.coerce.number() });
+export const GetContactRoleInsightsResponseItem = zod.object({
+  id: zod.number(),
+  contactId: zod.number(),
+  title: zod.string(),
+  url: zod.string(),
+  source: zod.string(),
+  mediaType: zod.string(),
+  description: zod.string().nullish(),
+  publishedDate: zod.string().nullish(),
+});
+export const GetContactRoleInsightsResponse = zod.array(GetContactRoleInsightsResponseItem);
+
+export const GetContactColleagueInsightsParams = zod.object({ id: zod.coerce.number() });
+export const GetContactColleagueInsightsResponseItem = zod.object({
+  id: zod.number(),
+  contactId: zod.number(),
+  title: zod.string(),
+  url: zod.string(),
+  source: zod.string(),
+  mediaType: zod.string(),
+  description: zod.string().nullish(),
+  publishedDate: zod.string().nullish(),
+});
+export const GetContactColleagueInsightsResponse = zod.array(GetContactColleagueInsightsResponseItem);
+
+export const GetContactCounterpartInsightsParams = zod.object({ id: zod.coerce.number() });
+export const GetContactCounterpartInsightsResponseItem = zod.object({
+  id: zod.number(),
+  contactId: zod.number(),
+  title: zod.string(),
+  url: zod.string(),
+  source: zod.string(),
+  mediaType: zod.string(),
+  description: zod.string().nullish(),
+  publishedDate: zod.string().nullish(),
+});
+export const GetContactCounterpartInsightsResponse = zod.array(GetContactCounterpartInsightsResponseItem);
 
 /**
  * @summary List companies with filters

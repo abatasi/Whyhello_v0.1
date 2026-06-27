@@ -136,6 +136,90 @@ paths:
                 items:
                   $ref: "#/components/schemas/ContactInsight"
 
+  /contacts/{id}/industry-insights:
+    get:
+      operationId: getContactIndustryInsights
+      tags: [contacts]
+      summary: Get industry insights for a contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of industry insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IndustryInsight"
+
+  /contacts/{id}/role-insights:
+    get:
+      operationId: getContactRoleInsights
+      tags: [contacts]
+      summary: Get role insights for a contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of role insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoleInsight"
+
+  /contacts/{id}/colleague-insights:
+    get:
+      operationId: getContactColleagueInsights
+      tags: [contacts]
+      summary: Get colleague insights for a contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of colleague insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ColleagueInsight"
+
+  /contacts/{id}/counterpart-insights:
+    get:
+      operationId: getContactCounterpartInsights
+      tags: [contacts]
+      summary: Get counterpart insights for a contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of counterpart insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CounterpartInsight"
+
   /companies:
     get:
       operationId: listCompanies
@@ -264,8 +348,122 @@ components:
           type: integer
         contactId:
           type: integer
-        category:
+        title:
           type: string
+        url:
+          type: string
+        source:
+          type: string
+        mediaType:
+          type: string
+        description:
+          type: string
+          nullable: true
+        publishedDate:
+          type: string
+          nullable: true
+      required:
+        - id
+        - contactId
+        - title
+        - url
+        - source
+        - mediaType
+
+    IndustryInsight:
+      type: object
+      properties:
+        id:
+          type: integer
+        contactId:
+          type: integer
+        title:
+          type: string
+        url:
+          type: string
+        source:
+          type: string
+        mediaType:
+          type: string
+        description:
+          type: string
+          nullable: true
+        publishedDate:
+          type: string
+          nullable: true
+      required:
+        - id
+        - contactId
+        - title
+        - url
+        - source
+        - mediaType
+
+    RoleInsight:
+      type: object
+      properties:
+        id:
+          type: integer
+        contactId:
+          type: integer
+        title:
+          type: string
+        url:
+          type: string
+        source:
+          type: string
+        mediaType:
+          type: string
+        description:
+          type: string
+          nullable: true
+        publishedDate:
+          type: string
+          nullable: true
+      required:
+        - id
+        - contactId
+        - title
+        - url
+        - source
+        - mediaType
+
+    ColleagueInsight:
+      type: object
+      properties:
+        id:
+          type: integer
+        contactId:
+          type: integer
+        title:
+          type: string
+        url:
+          type: string
+        source:
+          type: string
+        mediaType:
+          type: string
+        description:
+          type: string
+          nullable: true
+        publishedDate:
+          type: string
+          nullable: true
+      required:
+        - id
+        - contactId
+        - title
+        - url
+        - source
+        - mediaType
+
+    CounterpartInsight:
+      type: object
+      properties:
+        id:
+          type: integer
+        contactId:
+          type: integer
         title:
           type: string
         url:

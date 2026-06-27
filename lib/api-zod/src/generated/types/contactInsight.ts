@@ -9,7 +9,50 @@
 export interface ContactInsight {
   id: number;
   contactId: number;
-  category?: string;
+  title: string;
+  url: string;
+  source: string;
+  mediaType: string;
+  description?: string | null;
+  publishedDate?: string | null;
+}
+
+export interface IndustryInsight {
+  id: number;
+  contactId: number;
+  title: string;
+  url: string;
+  source: string;
+  mediaType: string;
+  description?: string | null;
+  publishedDate?: string | null;
+}
+
+export interface RoleInsight {
+  id: number;
+  contactId: number;
+  title: string;
+  url: string;
+  source: string;
+  mediaType: string;
+  description?: string | null;
+  publishedDate?: string | null;
+}
+
+export interface ColleagueInsight {
+  id: number;
+  contactId: number;
+  title: string;
+  url: string;
+  source: string;
+  mediaType: string;
+  description?: string | null;
+  publishedDate?: string | null;
+}
+
+export interface CounterpartInsight {
+  id: number;
+  contactId: number;
   title: string;
   url: string;
   source: string;

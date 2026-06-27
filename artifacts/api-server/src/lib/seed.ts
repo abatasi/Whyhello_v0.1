@@ -1,5 +1,5 @@
 import { db, pool } from "@workspace/db";
-import { companiesTable, contactsTable, contactInsightsTable, companyInsightsTable } from "@workspace/db/schema";
+import { companiesTable, contactsTable, contactInsightsTable, companyInsightsTable, industryInsightsTable, roleInsightsTable, colleagueInsightsTable, counterpartInsightsTable } from "@workspace/db/schema";
 import { sql, eq, and } from "drizzle-orm";
 
 const COMPANIES = [
@@ -1264,6 +1264,46 @@ export async function seedInsightsIfEmpty() {
         media_type VARCHAR(50) NOT NULL,
         description TEXT,
         published_date VARCHAR(50)
+      );
+      CREATE TABLE IF NOT EXISTS industry_insights (
+        id SERIAL PRIMARY KEY,
+        contact_id INTEGER NOT NULL REFERENCES contacts(id),
+        title VARCHAR(500) NOT NULL,
+        url VARCHAR(1000) NOT NULL,
+        source VARCHAR(200) NOT NULL,
+        media_type VARCHAR(50) NOT NULL,
+        description TEXT,
+        published_date VARCHAR(50)
+      );
+      CREATE TABLE IF NOT EXISTS role_insights (
+        id SERIAL PRIMARY KEY,
+        contact_id INTEGER NOT NULL REFERENCES contacts(id),
+        title VARCHAR(500) NOT NULL,
+        url VARCHAR(1000) NOT NULL,
+        source VARCHAR(200) NOT NULL,
+        media_type VARCHAR(50) NOT NULL,
+        description TEXT,
+        published_date VARCHAR(50)
+      );
+      CREATE TABLE IF NOT EXISTS colleague_insights (
+        id SERIAL PRIMARY KEY,
+        contact_id INTEGER NOT NULL REFERENCES contacts(id),
+        title VARCHAR(500) NOT NULL,
+        url VARCHAR(1000) NOT NULL,
+        source VARCHAR(200) NOT NULL,
+        media_type VARCHAR(50) NOT NULL,
+        description TEXT,
+        published_date VARCHAR(50)
+      );
+      CREATE TABLE IF NOT EXISTS counterpart_insights (
+        id SERIAL PRIMARY KEY,
+        contact_id INTEGER NOT NULL REFERENCES contacts(id),
+        title VARCHAR(500) NOT NULL,
+        url VARCHAR(1000) NOT NULL,
+        source VARCHAR(200) NOT NULL,
+        media_type VARCHAR(50) NOT NULL,
+        description TEXT,
+        published_date VARCHAR(50)
       )
     `);
   } finally {
@@ -1340,29 +1380,62 @@ export async function seedCategoryInsightsIfEmpty() {
 
   if (!ahmed) return;
 
-  const categories = [...new Set(AHMED_CATEGORY_INSIGHTS.map((r) => r.category))];
-  const toInsert: typeof AHMED_CATEGORY_INSIGHTS = [];
+  const contactId = ahmed.id;
+  let seeded = 0;
 
-  for (const category of categories) {
-    const [{ n }] = await db
-      .select({ n: sql<number>`count(*)::int` })
-      .from(contactInsightsTable)
-      .where(and(eq(contactInsightsTable.contactId, ahmed.id), eq(contactInsightsTable.category, category)));
-
+  // Industry
+  {
+    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(industryInsightsTable).where(eq(industryInsightsTable.contactId, contactId));
     if (n === 0) {
-      toInsert.push(...AHMED_CATEGORY_INSIGHTS.filter((r) => r.category === category));
+      const rows = AHMED_CATEGORY_INSIGHTS.filter((r) => r.category === "industry");
+      if (rows.length) {
+        await db.insert(industryInsightsTable).values(rows.map(({ category: _c, ...rest }) => ({ contactId, ...rest })));
+        seeded += rows.length;
+      }
     }
   }
 
-  if (toInsert.length === 0) {
-    console.log("Category insights already up to date.");
-    return;
+  // Role
+  {
+    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(roleInsightsTable).where(eq(roleInsightsTable.contactId, contactId));
+    if (n === 0) {
+      const rows = AHMED_CATEGORY_INSIGHTS.filter((r) => r.category === "role");
+      if (rows.length) {
+        await db.insert(roleInsightsTable).values(rows.map(({ category: _c, ...rest }) => ({ contactId, ...rest })));
+        seeded += rows.length;
+      }
+    }
   }
 
-  await db.insert(contactInsightsTable).values(
-    toInsert.map((r) => ({ contactId: ahmed.id, ...r })),
-  );
-  console.log(`Seeded ${toInsert.length} category insights for Ahmed Hassan.`);
+  // Colleague
+  {
+    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, contactId));
+    if (n === 0) {
+      const rows = AHMED_CATEGORY_INSIGHTS.filter((r) => r.category === "colleague");
+      if (rows.length) {
+        await db.insert(colleagueInsightsTable).values(rows.map(({ category: _c, ...rest }) => ({ contactId, ...rest })));
+        seeded += rows.length;
+      }
+    }
+  }
+
+  // Counterpart
+  {
+    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, contactId));
+    if (n === 0) {
+      const rows = AHMED_CATEGORY_INSIGHTS.filter((r) => r.category === "counterpart");
+      if (rows.length) {
+        await db.insert(counterpartInsightsTable).values(rows.map(({ category: _c, ...rest }) => ({ contactId, ...rest })));
+        seeded += rows.length;
+      }
+    }
+  }
+
+  if (seeded > 0) {
+    console.log(`Seeded ${seeded} category insights for Ahmed Hassan.`);
+  } else {
+    console.log("Category insights already up to date.");
+  }
 }
 
 export async function seedIfEmpty() {

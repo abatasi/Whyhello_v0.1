@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 import {
   useGetContact,
   useGetContactInsights,
+  useGetContactIndustryInsights,
+  useGetContactRoleInsights,
+  useGetContactColleagueInsights,
+  useGetContactCounterpartInsights,
   useGetCompanyInsights,
   useRevealStatus,
   useRevealContact,
@@ -39,7 +43,7 @@ function getMediaConfig(type: string) {
 
 // ── Insight category definitions ───────────────────────────────────────────
 
-type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null; category?: string };
+type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null };
 
 interface InsightCategory {
   id: string;
@@ -67,7 +71,11 @@ export default function ContactProfile() {
   const id = parseInt(params?.id || "0");
 
   const { data: contact, isLoading, isError } = useGetContact(id, { query: { enabled: !!id } });
-  const { data: insights = [] } = useGetContactInsights(id, { query: { enabled: !!id } });
+  const { data: personalInsights = [] } = useGetContactInsights(id, { query: { enabled: !!id } });
+  const { data: industryInsights = [] } = useGetContactIndustryInsights(id, { query: { enabled: !!id } });
+  const { data: roleInsights = [] } = useGetContactRoleInsights(id, { query: { enabled: !!id } });
+  const { data: colleagueInsights = [] } = useGetContactColleagueInsights(id, { query: { enabled: !!id } });
+  const { data: counterpartInsights = [] } = useGetContactCounterpartInsights(id, { query: { enabled: !!id } });
   const companyIdForInsights = contact?.company?.id ?? 0;
   const { data: companyInsights = [] } = useGetCompanyInsights(companyIdForInsights, { query: { enabled: companyIdForInsights > 0 } });
   const { data: revealStatus, isLoading: revealLoading } = useRevealStatus(id);
@@ -91,16 +99,14 @@ export default function ContactProfile() {
     return () => { document.title = "Whyhello"; };
   }, [contact]);
 
-  // Group all contact insights by their category field; company comes from its own table
-  const categoryData = (insights as InsightItem[]).reduce<Record<string, InsightItem[]>>(
-    (acc, item) => {
-      const key = item.category ?? "personal";
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(item);
-      return acc;
-    },
-    { company: companyInsights as InsightItem[] },
-  );
+  const categoryData: Record<string, InsightItem[]> = {
+    personal:     personalInsights as InsightItem[],
+    industry:     industryInsights as InsightItem[],
+    role:         roleInsights as InsightItem[],
+    colleague:    colleagueInsights as InsightItem[],
+    counterpart:  counterpartInsights as InsightItem[],
+    company:      companyInsights as InsightItem[],
+  };
 
   if (isLoading) {
     return (
@@ -156,7 +162,7 @@ export default function ContactProfile() {
               <div className="flex items-center justify-between mb-1">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
                 <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                  {insights.length + companyInsights.length} sources
+                  {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
                 </span>
               </div>
 
@@ -411,7 +417,7 @@ export default function ContactProfile() {
             jobTitle: contact.jobTitle,
             companyName: contact.company?.name,
           }}
-          insights={insights}
+          insights={personalInsights}
           companyInsights={companyInsights}
         />
       )}

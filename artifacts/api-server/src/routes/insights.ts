@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { contactInsightsTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 const router: IRouter = Router({ mergeParams: true });
 
@@ -15,8 +15,11 @@ router.get("/", async (req, res) => {
     const insights = await db
       .select()
       .from(contactInsightsTable)
-      .where(eq(contactInsightsTable.contactId, contactId))
-      .orderBy(contactInsightsTable.category, contactInsightsTable.mediaType);
+      .where(and(
+        eq(contactInsightsTable.contactId, contactId),
+        eq(contactInsightsTable.category, "personal"),
+      ))
+      .orderBy(contactInsightsTable.mediaType);
     res.json(insights);
   } catch (err) {
     console.error(err);
