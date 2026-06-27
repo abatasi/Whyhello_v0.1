@@ -148,10 +148,6 @@ function IntroEmailModal({
               Craft a first-touch email using this contact's intelligence. Configure the parameters below, then generate.
             </DialogDescription>
           </div>
-          <DialogClose className="rounded-md opacity-70 hover:opacity-100 transition-opacity">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
         </div>
 
         {/* ── Body ── */}
