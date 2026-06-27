@@ -113,7 +113,7 @@ export default function ContactProfile() {
       <Shell>
         <div className="p-8 animate-pulse space-y-6 max-w-7xl mx-auto">
           <div className="h-6 w-24 bg-muted rounded" />
-          <div className="grid grid-cols-[20%_1fr_20%] gap-5">
+          <div className="grid grid-cols-[30%_1fr_30%] gap-5">
             <div className="space-y-3">
               {[...Array(6)].map((_, i) => <div key={i} className="h-10 bg-muted rounded-xl" />)}
             </div>
@@ -444,9 +444,7 @@ function InsightCategoryPanel({
   isRevealing: boolean;
   outOfCredits: boolean;
 }) {
-  const [open, setOpen] = useState(
-    category.id === "personal" || category.id === "company"
-  );
+  const [open, setOpen] = useState(true);
   const Icon = category.icon;
   const count = items.length;
 
