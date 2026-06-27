@@ -89,10 +89,9 @@ export default function ContactProfile() {
 
   const [composeOpen, setComposeOpen] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
-  const checkedInitRef = useRef(false);
+  const seenIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (checkedInitRef.current) return;
     const all = [
       ...(personalInsights as InsightItem[]).map(i => `personal-${i.id}`),
       ...(industryInsights as InsightItem[]).map(i => `industry-${i.id}`),
@@ -101,9 +100,14 @@ export default function ContactProfile() {
       ...(counterpartInsights as InsightItem[]).map(i => `counterpart-${i.id}`),
       ...(companyInsights as InsightItem[]).map(i => `company-${i.id}`),
     ];
-    if (all.length > 0) {
-      setCheckedIds(new Set(all));
-      checkedInitRef.current = true;
+    const newIds = all.filter(id => !seenIdsRef.current.has(id));
+    if (newIds.length > 0) {
+      newIds.forEach(id => seenIdsRef.current.add(id));
+      setCheckedIds(prev => {
+        const next = new Set(prev);
+        newIds.forEach(id => next.add(id));
+        return next;
+      });
     }
   }, [personalInsights, industryInsights, roleInsights, colleagueInsights, counterpartInsights, companyInsights]);
 
