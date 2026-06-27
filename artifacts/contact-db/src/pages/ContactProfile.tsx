@@ -21,7 +21,7 @@ import {
   Lock, Zap, AlertCircle, Send, User, TrendingUp,
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
-  Layers, Shield, Theater, HelpCircle, Wand2,
+  Layers, Shield, Theater, HelpCircle, Wand2, X,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -135,141 +135,161 @@ function IntroEmailModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center border flex-shrink-0 bg-blue-50 border-blue-200">
-              <Mail className="h-5 w-5 text-blue-600" />
-            </div>
+      <DialogContent className="max-w-3xl p-0 gap-0 overflow-hidden">
+
+        {/* ── Header ── */}
+        <div className="flex items-center gap-4 px-7 py-5 border-b border-border/60 bg-gradient-to-r from-blue-50/60 to-background">
+          <div className="h-11 w-11 rounded-xl flex items-center justify-center border flex-shrink-0 bg-blue-100 border-blue-200 shadow-sm">
+            <Mail className="h-5 w-5 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <DialogTitle className="text-base font-semibold">Intro Email</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              Craft a first-touch email using this contact's intelligence. Configure the parameters below, then generate.
+            </DialogDescription>
+          </div>
+          <DialogClose className="rounded-md opacity-70 hover:opacity-100 transition-opacity">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+        </div>
+
+        {/* ── Body ── */}
+        <div className="grid grid-cols-[1fr_1px_1fr] gap-0 px-0">
+
+          {/* Left column: email shape */}
+          <div className="px-7 py-6 space-y-6">
+
+            {/* Length */}
             <div>
-              <DialogTitle className="text-base">Intro Email</DialogTitle>
-              <DialogDescription className="text-xs mt-0.5">Configure your first-touch email before generating.</DialogDescription>
+              <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-3">Length</p>
+              <div className="grid grid-cols-3 gap-2.5">
+                {EMAIL_LENGTHS.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setLength(opt.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-1 py-3.5 px-3 rounded-xl border text-center transition-all",
+                      length === opt.id
+                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm ring-1 ring-blue-200"
+                        : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                    )}
+                  >
+                    <span className="text-sm font-semibold">{opt.label}</span>
+                    <span className="text-[11px] font-medium opacity-75">{opt.chars}</span>
+                    <span className="text-[10px] opacity-55 leading-tight">{opt.description}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        </DialogHeader>
 
-        <div className="space-y-5">
-
-          {/* Length */}
-          <div>
-            <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-2">Length</p>
-            <div className="grid grid-cols-3 gap-2">
-              {EMAIL_LENGTHS.map(opt => (
-                <button
-                  key={opt.id}
-                  onClick={() => setLength(opt.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-0.5 py-2.5 px-3 rounded-lg border text-center transition-colors",
-                    length === opt.id
-                      ? "bg-blue-50 border-blue-300 text-blue-700"
-                      : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                  )}
-                >
-                  <span className="text-xs font-semibold">{opt.label}</span>
-                  <span className="text-[10px] opacity-80">{opt.chars}</span>
-                  <span className="text-[9px] opacity-60">{opt.description}</span>
-                </button>
-              ))}
+            {/* Tone */}
+            <div>
+              <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-3">Tone</p>
+              <div className="flex flex-wrap gap-2">
+                {EMAIL_TONES.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setTone(t.toLowerCase())}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-xs font-semibold border transition-all",
+                      tone === t.toLowerCase()
+                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm ring-1 ring-blue-200"
+                        : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                    )}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Tone */}
-          <div>
-            <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-2">Tone</p>
-            <div className="flex flex-wrap gap-1.5">
-              {EMAIL_TONES.map(t => (
-                <button
-                  key={t}
-                  onClick={() => setTone(t.toLowerCase())}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-                    tone === t.toLowerCase()
-                      ? "bg-blue-50 border-blue-300 text-blue-700"
-                      : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
           </div>
 
-          {/* Insights to include */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Insights to Include</p>
-              {selectedCount > 0 && (
-                <span className="text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full">
-                  {selectedCount} selected
-                </span>
+          {/* Divider */}
+          <div className="bg-border/40 self-stretch" />
+
+          {/* Right column: insights */}
+          <div className="px-7 py-6 flex flex-col gap-4">
+
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Insights to Include</p>
+                {selectedCount > 0 && (
+                  <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
+                    {selectedCount} selected
+                  </span>
+                )}
+              </div>
+
+              {availableInsights.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 rounded-xl border border-dashed border-border/60 text-center text-muted-foreground">
+                  <AlertCircle className="h-5 w-5 opacity-40" />
+                  <p className="text-xs leading-snug max-w-[200px]">No insights checked in the left panel yet. Select some to include them here.</p>
+                </div>
+              ) : (
+                <div className="overflow-y-auto scroll-thin border border-border/60 rounded-xl divide-y divide-border/40" style={{ maxHeight: "260px" }}>
+                  {availableInsights.map(({ key, title, source, mediaType, category }) => {
+                    const cfg = getMediaConfig(mediaType);
+                    const MIcon = cfg.icon;
+                    const isSelected = selectedInsights.has(key);
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => toggleInsight(key)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
+                          isSelected ? "bg-blue-50/60" : "hover:bg-secondary/30"
+                        )}
+                      >
+                        <div className={cn(
+                          "h-4 w-4 rounded border-[1.5px] flex items-center justify-center flex-shrink-0 transition-colors",
+                          isSelected ? "bg-blue-100 border-blue-400" : "border-border/60 bg-background"
+                        )}>
+                          {isSelected && (
+                            <svg viewBox="0 0 10 10" className="h-2.5 w-2.5 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </div>
+                        <MIcon className={cn("h-3.5 w-3.5 flex-shrink-0", cfg.color)} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{title}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{cfg.label} · {source}</p>
+                        </div>
+                        <span className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0", category.accentBg, category.color)}>
+                          {category.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
 
-            {availableInsights.length === 0 ? (
-              <div className="flex items-center gap-2 px-3 py-3 rounded-lg border border-dashed border-border/60 text-xs text-muted-foreground">
-                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                No insights selected in the panel yet. Check some on the left to make them available here.
-              </div>
-            ) : (
-              <div className="max-h-40 overflow-y-auto scroll-thin border border-border/60 rounded-lg divide-y divide-border/40">
-                {availableInsights.map(({ key, title, source, mediaType, category }) => {
-                  const cfg = getMediaConfig(mediaType);
-                  const MIcon = cfg.icon;
-                  const isSelected = selectedInsights.has(key);
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => toggleInsight(key)}
-                      className={cn(
-                        "w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors",
-                        isSelected ? "bg-blue-50/50" : "hover:bg-secondary/30"
-                      )}
-                    >
-                      <div className={cn(
-                        "h-3.5 w-3.5 rounded border flex items-center justify-center flex-shrink-0 transition-colors",
-                        isSelected ? "bg-blue-100 border-blue-400" : "border-border/50 bg-background"
-                      )}>
-                        {isSelected && (
-                          <svg viewBox="0 0 10 10" className="h-2 w-2 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </div>
-                      <MIcon className={cn("h-3 w-3 flex-shrink-0", cfg.color)} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">{title}</p>
-                        <p className="text-[10px] text-muted-foreground">{cfg.label} · {source}</p>
-                      </div>
-                      <span className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0", category.accentBg, category.color)}>
-                        {category.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
             {showWarning && (
-              <div className="mt-2.5 flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-                <AlertCircle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
                 <p className="text-[11px] text-amber-800 leading-snug">
-                  <span className="font-semibold">Heads up:</span> using more than 2 insights risks making the email too long, diluting the focus, and reducing readability. Consider narrowing your selection to the 1–2 most relevant.
+                  <span className="font-semibold">Heads up:</span> more than 2 insights risks diluting focus and reducing readability. Narrow to 1–2 most relevant.
                 </p>
               </div>
             )}
-          </div>
 
+          </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2 mt-1">
+        {/* ── Footer ── */}
+        <div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-border/60 bg-secondary/20">
           <DialogClose asChild>
-            <Button variant="outline" size="sm">Cancel</Button>
+            <Button variant="outline" size="sm" className="h-9 px-5">Cancel</Button>
           </DialogClose>
-          <Button size="sm" className="gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">
+          <Button size="sm" className="h-9 px-5 gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
             <Wand2 className="h-3.5 w-3.5" />
             Generate Intro Email
           </Button>
-        </DialogFooter>
+        </div>
+
       </DialogContent>
     </Dialog>
   );
