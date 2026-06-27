@@ -17,6 +17,7 @@ import creditsRouter from "./credits";
 import companyInsightsRouter from "./company-insights";
 import messagesRouter from "./messages";
 import insightDropsRouter from "./insight-drops";
+import { contactJobsRouter, jobsRouter } from "./outreach-jobs";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,7 @@ router.use("/exports", exportsRouter);
 router.use("/credits", creditsRouter);
 router.use("/messages", messagesRouter);
 router.use("/insight-drops", insightDropsRouter);
+router.use("/contacts/:contactId/outreach-jobs", contactJobsRouter);
+router.use("/outreach-jobs", jobsRouter);
 
 export default router;

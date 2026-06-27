@@ -5,10 +5,13 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
@@ -22,17 +25,20 @@ import type {
   ContactInsight,
   ContactListResponse,
   CounterpartInsight,
+  CreateOutreachJobRequest,
   ErrorResponse,
   FilterOptions,
   HealthStatus,
   IndustryInsight,
   ListCompaniesParams,
   ListContactsParams,
+  OutreachJob,
   RoleInsight,
+  UpdateOutreachJobRequest,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -387,132 +393,364 @@ export function useGetContactInsights<
 /**
  * @summary Get industry insights for a contact
  */
-export const getGetContactIndustryInsightsUrl = (id: number) => `/api/contacts/${id}/industry-insights`;
+export const getGetContactIndustryInsightsUrl = (id: number) => {
+  return `/api/contacts/${id}/industry-insights`;
+};
 
-export const getContactIndustryInsights = async (id: number, options?: RequestInit): Promise<IndustryInsight[]> =>
-  customFetch<IndustryInsight[]>(getGetContactIndustryInsightsUrl(id), { ...options, method: "GET" });
+export const getContactIndustryInsights = async (
+  id: number,
+  options?: RequestInit,
+): Promise<IndustryInsight[]> => {
+  return customFetch<IndustryInsight[]>(getGetContactIndustryInsightsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
 
-export const getGetContactIndustryInsightsQueryKey = (id: number) =>
-  [`/api/contacts/${id}/industry-insights`] as const;
+export const getGetContactIndustryInsightsQueryKey = (id: number) => {
+  return [`/api/contacts/${id}/industry-insights`] as const;
+};
 
 export const getGetContactIndustryInsightsQueryOptions = <
   TData = Awaited<ReturnType<typeof getContactIndustryInsights>>,
   TError = ErrorType<unknown>,
->(id: number, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getContactIndustryInsights>>, TError, TData>; request?: SecondParameter<typeof customFetch> }) => {
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactIndustryInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetContactIndustryInsightsQueryKey(id);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getContactIndustryInsights>>> = ({ signal }) => getContactIndustryInsights(id, { signal, ...requestOptions });
-  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getContactIndustryInsights>>, TError, TData> & { queryKey: QueryKey };
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContactIndustryInsightsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContactIndustryInsights>>
+  > = ({ signal }) =>
+    getContactIndustryInsights(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContactIndustryInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
 };
 
-export type GetContactIndustryInsightsQueryResult = NonNullable<Awaited<ReturnType<typeof getContactIndustryInsights>>>;
+export type GetContactIndustryInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContactIndustryInsights>>
+>;
 export type GetContactIndustryInsightsQueryError = ErrorType<unknown>;
 
-export function useGetContactIndustryInsights<TData = Awaited<ReturnType<typeof getContactIndustryInsights>>, TError = ErrorType<unknown>>(
+/**
+ * @summary Get industry insights for a contact
+ */
+
+export function useGetContactIndustryInsights<
+  TData = Awaited<ReturnType<typeof getContactIndustryInsights>>,
+  TError = ErrorType<unknown>,
+>(
   id: number,
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getContactIndustryInsights>>, TError, TData>; request?: SecondParameter<typeof customFetch> },
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactIndustryInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetContactIndustryInsightsQueryOptions(id, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
 /**
  * @summary Get role insights for a contact
  */
-export const getGetContactRoleInsightsUrl = (id: number) => `/api/contacts/${id}/role-insights`;
+export const getGetContactRoleInsightsUrl = (id: number) => {
+  return `/api/contacts/${id}/role-insights`;
+};
 
-export const getContactRoleInsights = async (id: number, options?: RequestInit): Promise<RoleInsight[]> =>
-  customFetch<RoleInsight[]>(getGetContactRoleInsightsUrl(id), { ...options, method: "GET" });
+export const getContactRoleInsights = async (
+  id: number,
+  options?: RequestInit,
+): Promise<RoleInsight[]> => {
+  return customFetch<RoleInsight[]>(getGetContactRoleInsightsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
 
-export const getGetContactRoleInsightsQueryKey = (id: number) =>
-  [`/api/contacts/${id}/role-insights`] as const;
+export const getGetContactRoleInsightsQueryKey = (id: number) => {
+  return [`/api/contacts/${id}/role-insights`] as const;
+};
 
 export const getGetContactRoleInsightsQueryOptions = <
   TData = Awaited<ReturnType<typeof getContactRoleInsights>>,
   TError = ErrorType<unknown>,
->(id: number, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getContactRoleInsights>>, TError, TData>; request?: SecondParameter<typeof customFetch> }) => {
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactRoleInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetContactRoleInsightsQueryKey(id);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getContactRoleInsights>>> = ({ signal }) => getContactRoleInsights(id, { signal, ...requestOptions });
-  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getContactRoleInsights>>, TError, TData> & { queryKey: QueryKey };
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContactRoleInsightsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContactRoleInsights>>
+  > = ({ signal }) => getContactRoleInsights(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContactRoleInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
 };
 
-export type GetContactRoleInsightsQueryResult = NonNullable<Awaited<ReturnType<typeof getContactRoleInsights>>>;
+export type GetContactRoleInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContactRoleInsights>>
+>;
 export type GetContactRoleInsightsQueryError = ErrorType<unknown>;
 
-export function useGetContactRoleInsights<TData = Awaited<ReturnType<typeof getContactRoleInsights>>, TError = ErrorType<unknown>>(
+/**
+ * @summary Get role insights for a contact
+ */
+
+export function useGetContactRoleInsights<
+  TData = Awaited<ReturnType<typeof getContactRoleInsights>>,
+  TError = ErrorType<unknown>,
+>(
   id: number,
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getContactRoleInsights>>, TError, TData>; request?: SecondParameter<typeof customFetch> },
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactRoleInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetContactRoleInsightsQueryOptions(id, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
 /**
  * @summary Get colleague insights for a contact
  */
-export const getGetContactColleagueInsightsUrl = (id: number) => `/api/contacts/${id}/colleague-insights`;
+export const getGetContactColleagueInsightsUrl = (id: number) => {
+  return `/api/contacts/${id}/colleague-insights`;
+};
 
-export const getContactColleagueInsights = async (id: number, options?: RequestInit): Promise<ColleagueInsight[]> =>
-  customFetch<ColleagueInsight[]>(getGetContactColleagueInsightsUrl(id), { ...options, method: "GET" });
+export const getContactColleagueInsights = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ColleagueInsight[]> => {
+  return customFetch<ColleagueInsight[]>(
+    getGetContactColleagueInsightsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
 
-export const getGetContactColleagueInsightsQueryKey = (id: number) =>
-  [`/api/contacts/${id}/colleague-insights`] as const;
+export const getGetContactColleagueInsightsQueryKey = (id: number) => {
+  return [`/api/contacts/${id}/colleague-insights`] as const;
+};
 
 export const getGetContactColleagueInsightsQueryOptions = <
   TData = Awaited<ReturnType<typeof getContactColleagueInsights>>,
   TError = ErrorType<unknown>,
->(id: number, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getContactColleagueInsights>>, TError, TData>; request?: SecondParameter<typeof customFetch> }) => {
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactColleagueInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetContactColleagueInsightsQueryKey(id);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getContactColleagueInsights>>> = ({ signal }) => getContactColleagueInsights(id, { signal, ...requestOptions });
-  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getContactColleagueInsights>>, TError, TData> & { queryKey: QueryKey };
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContactColleagueInsightsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContactColleagueInsights>>
+  > = ({ signal }) =>
+    getContactColleagueInsights(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContactColleagueInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
 };
 
-export type GetContactColleagueInsightsQueryResult = NonNullable<Awaited<ReturnType<typeof getContactColleagueInsights>>>;
+export type GetContactColleagueInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContactColleagueInsights>>
+>;
 export type GetContactColleagueInsightsQueryError = ErrorType<unknown>;
 
-export function useGetContactColleagueInsights<TData = Awaited<ReturnType<typeof getContactColleagueInsights>>, TError = ErrorType<unknown>>(
+/**
+ * @summary Get colleague insights for a contact
+ */
+
+export function useGetContactColleagueInsights<
+  TData = Awaited<ReturnType<typeof getContactColleagueInsights>>,
+  TError = ErrorType<unknown>,
+>(
   id: number,
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getContactColleagueInsights>>, TError, TData>; request?: SecondParameter<typeof customFetch> },
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactColleagueInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetContactColleagueInsightsQueryOptions(id, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
 /**
  * @summary Get counterpart insights for a contact
  */
-export const getGetContactCounterpartInsightsUrl = (id: number) => `/api/contacts/${id}/counterpart-insights`;
+export const getGetContactCounterpartInsightsUrl = (id: number) => {
+  return `/api/contacts/${id}/counterpart-insights`;
+};
 
-export const getContactCounterpartInsights = async (id: number, options?: RequestInit): Promise<CounterpartInsight[]> =>
-  customFetch<CounterpartInsight[]>(getGetContactCounterpartInsightsUrl(id), { ...options, method: "GET" });
+export const getContactCounterpartInsights = async (
+  id: number,
+  options?: RequestInit,
+): Promise<CounterpartInsight[]> => {
+  return customFetch<CounterpartInsight[]>(
+    getGetContactCounterpartInsightsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
 
-export const getGetContactCounterpartInsightsQueryKey = (id: number) =>
-  [`/api/contacts/${id}/counterpart-insights`] as const;
+export const getGetContactCounterpartInsightsQueryKey = (id: number) => {
+  return [`/api/contacts/${id}/counterpart-insights`] as const;
+};
 
 export const getGetContactCounterpartInsightsQueryOptions = <
   TData = Awaited<ReturnType<typeof getContactCounterpartInsights>>,
   TError = ErrorType<unknown>,
->(id: number, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getContactCounterpartInsights>>, TError, TData>; request?: SecondParameter<typeof customFetch> }) => {
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactCounterpartInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetContactCounterpartInsightsQueryKey(id);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getContactCounterpartInsights>>> = ({ signal }) => getContactCounterpartInsights(id, { signal, ...requestOptions });
-  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getContactCounterpartInsights>>, TError, TData> & { queryKey: QueryKey };
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContactCounterpartInsightsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContactCounterpartInsights>>
+  > = ({ signal }) =>
+    getContactCounterpartInsights(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContactCounterpartInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
 };
 
-export type GetContactCounterpartInsightsQueryResult = NonNullable<Awaited<ReturnType<typeof getContactCounterpartInsights>>>;
+export type GetContactCounterpartInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContactCounterpartInsights>>
+>;
 export type GetContactCounterpartInsightsQueryError = ErrorType<unknown>;
 
-export function useGetContactCounterpartInsights<TData = Awaited<ReturnType<typeof getContactCounterpartInsights>>, TError = ErrorType<unknown>>(
+/**
+ * @summary Get counterpart insights for a contact
+ */
+
+export function useGetContactCounterpartInsights<
+  TData = Awaited<ReturnType<typeof getContactCounterpartInsights>>,
+  TError = ErrorType<unknown>,
+>(
   id: number,
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getContactCounterpartInsights>>, TError, TData>; request?: SecondParameter<typeof customFetch> },
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactCounterpartInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetContactCounterpartInsightsQueryOptions(id, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const queryOptions = getGetContactCounterpartInsightsQueryOptions(
+    id,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
@@ -858,3 +1096,435 @@ export function useGetFilterOptions<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List outreach jobs for a contact
+ */
+export const getListOutreachJobsUrl = (id: number) => {
+  return `/api/contacts/${id}/outreach-jobs`;
+};
+
+export const listOutreachJobs = async (
+  id: number,
+  options?: RequestInit,
+): Promise<OutreachJob[]> => {
+  return customFetch<OutreachJob[]>(getListOutreachJobsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListOutreachJobsQueryKey = (id: number) => {
+  return [`/api/contacts/${id}/outreach-jobs`] as const;
+};
+
+export const getListOutreachJobsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOutreachJobs>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOutreachJobs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListOutreachJobsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOutreachJobs>>
+  > = ({ signal }) => listOutreachJobs(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOutreachJobs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOutreachJobsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOutreachJobs>>
+>;
+export type ListOutreachJobsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List outreach jobs for a contact
+ */
+
+export function useListOutreachJobs<
+  TData = Awaited<ReturnType<typeof listOutreachJobs>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOutreachJobs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOutreachJobsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create an outreach generation job
+ */
+export const getCreateOutreachJobUrl = (id: number) => {
+  return `/api/contacts/${id}/outreach-jobs`;
+};
+
+export const createOutreachJob = async (
+  id: number,
+  createOutreachJobRequest: CreateOutreachJobRequest,
+  options?: RequestInit,
+): Promise<OutreachJob> => {
+  return customFetch<OutreachJob>(getCreateOutreachJobUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createOutreachJobRequest),
+  });
+};
+
+export const getCreateOutreachJobMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOutreachJob>>,
+    TError,
+    { id: number; data: BodyType<CreateOutreachJobRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createOutreachJob>>,
+  TError,
+  { id: number; data: BodyType<CreateOutreachJobRequest> },
+  TContext
+> => {
+  const mutationKey = ["createOutreachJob"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createOutreachJob>>,
+    { id: number; data: BodyType<CreateOutreachJobRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createOutreachJob(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateOutreachJobMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createOutreachJob>>
+>;
+export type CreateOutreachJobMutationBody = BodyType<CreateOutreachJobRequest>;
+export type CreateOutreachJobMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create an outreach generation job
+ */
+export const useCreateOutreachJob = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOutreachJob>>,
+    TError,
+    { id: number; data: BodyType<CreateOutreachJobRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createOutreachJob>>,
+  TError,
+  { id: number; data: BodyType<CreateOutreachJobRequest> },
+  TContext
+> => {
+  return useMutation(getCreateOutreachJobMutationOptions(options));
+};
+
+/**
+ * @summary Get a single outreach job
+ */
+export const getGetOutreachJobUrl = (jobId: number) => {
+  return `/api/outreach-jobs/${jobId}`;
+};
+
+export const getOutreachJob = async (
+  jobId: number,
+  options?: RequestInit,
+): Promise<OutreachJob> => {
+  return customFetch<OutreachJob>(getGetOutreachJobUrl(jobId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOutreachJobQueryKey = (jobId: number) => {
+  return [`/api/outreach-jobs/${jobId}`] as const;
+};
+
+export const getGetOutreachJobQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOutreachJob>>,
+  TError = ErrorType<unknown>,
+>(
+  jobId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOutreachJob>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetOutreachJobQueryKey(jobId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOutreachJob>>> = ({
+    signal,
+  }) => getOutreachJob(jobId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!jobId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOutreachJob>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOutreachJobQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOutreachJob>>
+>;
+export type GetOutreachJobQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a single outreach job
+ */
+
+export function useGetOutreachJob<
+  TData = Awaited<ReturnType<typeof getOutreachJob>>,
+  TError = ErrorType<unknown>,
+>(
+  jobId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOutreachJob>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOutreachJobQueryOptions(jobId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Rename an outreach job
+ */
+export const getUpdateOutreachJobUrl = (jobId: number) => {
+  return `/api/outreach-jobs/${jobId}`;
+};
+
+export const updateOutreachJob = async (
+  jobId: number,
+  updateOutreachJobRequest: UpdateOutreachJobRequest,
+  options?: RequestInit,
+): Promise<OutreachJob> => {
+  return customFetch<OutreachJob>(getUpdateOutreachJobUrl(jobId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateOutreachJobRequest),
+  });
+};
+
+export const getUpdateOutreachJobMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOutreachJob>>,
+    TError,
+    { jobId: number; data: BodyType<UpdateOutreachJobRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateOutreachJob>>,
+  TError,
+  { jobId: number; data: BodyType<UpdateOutreachJobRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateOutreachJob"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateOutreachJob>>,
+    { jobId: number; data: BodyType<UpdateOutreachJobRequest> }
+  > = (props) => {
+    const { jobId, data } = props ?? {};
+
+    return updateOutreachJob(jobId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateOutreachJobMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateOutreachJob>>
+>;
+export type UpdateOutreachJobMutationBody = BodyType<UpdateOutreachJobRequest>;
+export type UpdateOutreachJobMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Rename an outreach job
+ */
+export const useUpdateOutreachJob = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOutreachJob>>,
+    TError,
+    { jobId: number; data: BodyType<UpdateOutreachJobRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateOutreachJob>>,
+  TError,
+  { jobId: number; data: BodyType<UpdateOutreachJobRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateOutreachJobMutationOptions(options));
+};
+
+/**
+ * @summary Delete an outreach job
+ */
+export const getDeleteOutreachJobUrl = (jobId: number) => {
+  return `/api/outreach-jobs/${jobId}`;
+};
+
+export const deleteOutreachJob = async (
+  jobId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteOutreachJobUrl(jobId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteOutreachJobMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOutreachJob>>,
+    TError,
+    { jobId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteOutreachJob>>,
+  TError,
+  { jobId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteOutreachJob"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteOutreachJob>>,
+    { jobId: number }
+  > = (props) => {
+    const { jobId } = props ?? {};
+
+    return deleteOutreachJob(jobId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteOutreachJobMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteOutreachJob>>
+>;
+
+export type DeleteOutreachJobMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete an outreach job
+ */
+export const useDeleteOutreachJob = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOutreachJob>>,
+    TError,
+    { jobId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteOutreachJob>>,
+  TError,
+  { jobId: number },
+  TContext
+> => {
+  return useMutation(getDeleteOutreachJobMutationOptions(options));
+};

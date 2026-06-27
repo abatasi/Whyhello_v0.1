@@ -172,6 +172,36 @@ export interface FilterOptions {
   locations: string[];
 }
 
+export interface OutreachJobParams {
+  length: string;
+  tone: string;
+  selectedInsightKeys: string[];
+}
+
+export interface OutreachJob {
+  id: number;
+  contactId: number;
+  type: string;
+  status: string;
+  title: string;
+  params: OutreachJobParams;
+  result?: string | null;
+  prompt?: string | null;
+  sources?: string[] | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateOutreachJobRequest {
+  type: string;
+  title: string;
+  params: OutreachJobParams;
+}
+
+export interface UpdateOutreachJobRequest {
+  title: string;
+}
+
 export type ListContactsParams = {
   search?: string;
   jobTitle?: string;

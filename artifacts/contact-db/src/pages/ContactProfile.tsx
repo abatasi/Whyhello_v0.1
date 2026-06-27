@@ -1,5 +1,5 @@
 import { useRoute, Link } from "wouter";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   useGetContact,
   useGetContactInsights,
@@ -11,9 +11,11 @@ import {
   useRevealStatus,
   useRevealContact,
   useCreditsStatus,
+  useCreateOutreachJob,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { ComposeDrawer } from "@/components/ComposeDrawer";
+import { OutreachJobsList } from "@/components/OutreachJobsList";
 import {
   ArrowLeft, Mail, Phone, MapPin, Building, Briefcase,
   Linkedin, Twitter, ExternalLink, Newspaper, Tv2,
@@ -101,10 +103,11 @@ const EMAIL_LENGTHS = [
 const EMAIL_TONES = ["Professional", "Friendly", "Direct", "Warm", "Authoritative"];
 
 function IntroEmailModal({
-  open, onClose, checkedIds, categoryData,
+  open, onClose, onGenerate, checkedIds, categoryData,
 }: {
   open: boolean;
   onClose: () => void;
+  onGenerate: (params: { length: string; tone: string; selectedInsightKeys: string[] }) => void;
   checkedIds: Set<string>;
   categoryData: Record<string, InsightItem[]>;
 }) {
@@ -280,7 +283,14 @@ function IntroEmailModal({
           <DialogClose asChild>
             <Button variant="outline" size="sm" className="h-9 px-5">Cancel</Button>
           </DialogClose>
-          <Button size="sm" className="h-9 px-5 gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
+          <Button
+            size="sm"
+            className="h-9 px-5 gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+            onClick={() => {
+              onGenerate({ length, tone, selectedInsightKeys: Array.from(selectedInsights) });
+              onClose();
+            }}
+          >
             <Wand2 className="h-3.5 w-3.5" />
             Generate Intro Email
           </Button>
@@ -308,6 +318,20 @@ export default function ContactProfile() {
   const { data: revealStatus, isLoading: revealLoading } = useRevealStatus(id);
   const { data: creditStatus } = useCreditsStatus();
   const revealMutation = useRevealContact();
+  const createJobMutation = useCreateOutreachJob();
+
+  const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[] }) => {
+    const lengthLabel = params.length.charAt(0).toUpperCase() + params.length.slice(1);
+    const toneLabel = params.tone.charAt(0).toUpperCase() + params.tone.slice(1);
+    createJobMutation.mutate({
+      id,
+      data: {
+        type: "intro_email",
+        title: `Intro Email — ${lengthLabel}, ${toneLabel}`,
+        params: { length: params.length, tone: params.tone, selectedInsightKeys: params.selectedInsightKeys },
+      },
+    });
+  }, [createJobMutation, id]);
 
   const isRevealed = revealStatus?.isRevealed ?? false;
   const outOfCredits =
@@ -737,9 +761,13 @@ export default function ContactProfile() {
                         </div>
                         <span className="text-[10px] font-semibold text-foreground leading-tight">{output.label}</span>
                       </button>
-                    );
+                    );  /* end output button */
                   })}
                 </div>
+
+                {/* Jobs list */}
+                <OutreachJobsList contactId={id} />
+
               </aside>
             )}
 
@@ -798,6 +826,7 @@ export default function ContactProfile() {
       <IntroEmailModal
         open={activeOutput === "intro_email"}
         onClose={() => setActiveOutput(null)}
+        onGenerate={handleGenerateIntroEmail}
         checkedIds={checkedIds}
         categoryData={categoryData}
       />

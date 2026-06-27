@@ -116,9 +116,17 @@ export const GetContactInsightsResponseItem = zod.object({
   description: zod.string().nullish(),
   publishedDate: zod.string().nullish(),
 });
-export const GetContactInsightsResponse = zod.array(GetContactInsightsResponseItem);
+export const GetContactInsightsResponse = zod.array(
+  GetContactInsightsResponseItem,
+);
 
-export const GetContactIndustryInsightsParams = zod.object({ id: zod.coerce.number() });
+/**
+ * @summary Get industry insights for a contact
+ */
+export const GetContactIndustryInsightsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
 export const GetContactIndustryInsightsResponseItem = zod.object({
   id: zod.number(),
   contactId: zod.number(),
@@ -129,9 +137,17 @@ export const GetContactIndustryInsightsResponseItem = zod.object({
   description: zod.string().nullish(),
   publishedDate: zod.string().nullish(),
 });
-export const GetContactIndustryInsightsResponse = zod.array(GetContactIndustryInsightsResponseItem);
+export const GetContactIndustryInsightsResponse = zod.array(
+  GetContactIndustryInsightsResponseItem,
+);
 
-export const GetContactRoleInsightsParams = zod.object({ id: zod.coerce.number() });
+/**
+ * @summary Get role insights for a contact
+ */
+export const GetContactRoleInsightsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
 export const GetContactRoleInsightsResponseItem = zod.object({
   id: zod.number(),
   contactId: zod.number(),
@@ -142,9 +158,17 @@ export const GetContactRoleInsightsResponseItem = zod.object({
   description: zod.string().nullish(),
   publishedDate: zod.string().nullish(),
 });
-export const GetContactRoleInsightsResponse = zod.array(GetContactRoleInsightsResponseItem);
+export const GetContactRoleInsightsResponse = zod.array(
+  GetContactRoleInsightsResponseItem,
+);
 
-export const GetContactColleagueInsightsParams = zod.object({ id: zod.coerce.number() });
+/**
+ * @summary Get colleague insights for a contact
+ */
+export const GetContactColleagueInsightsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
 export const GetContactColleagueInsightsResponseItem = zod.object({
   id: zod.number(),
   contactId: zod.number(),
@@ -155,9 +179,17 @@ export const GetContactColleagueInsightsResponseItem = zod.object({
   description: zod.string().nullish(),
   publishedDate: zod.string().nullish(),
 });
-export const GetContactColleagueInsightsResponse = zod.array(GetContactColleagueInsightsResponseItem);
+export const GetContactColleagueInsightsResponse = zod.array(
+  GetContactColleagueInsightsResponseItem,
+);
 
-export const GetContactCounterpartInsightsParams = zod.object({ id: zod.coerce.number() });
+/**
+ * @summary Get counterpart insights for a contact
+ */
+export const GetContactCounterpartInsightsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
 export const GetContactCounterpartInsightsResponseItem = zod.object({
   id: zod.number(),
   contactId: zod.number(),
@@ -168,7 +200,9 @@ export const GetContactCounterpartInsightsResponseItem = zod.object({
   description: zod.string().nullish(),
   publishedDate: zod.string().nullish(),
 });
-export const GetContactCounterpartInsightsResponse = zod.array(GetContactCounterpartInsightsResponseItem);
+export const GetContactCounterpartInsightsResponse = zod.array(
+  GetContactCounterpartInsightsResponseItem,
+);
 
 /**
  * @summary List companies with filters
@@ -287,4 +321,108 @@ export const GetFilterOptionsResponse = zod.object({
   companySizes: zod.array(zod.string()),
   countries: zod.array(zod.string()),
   locations: zod.array(zod.string()),
+});
+
+/**
+ * @summary List outreach jobs for a contact
+ */
+export const ListOutreachJobsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListOutreachJobsResponseItem = zod.object({
+  id: zod.number(),
+  contactId: zod.number(),
+  type: zod.string(),
+  status: zod.string(),
+  title: zod.string(),
+  params: zod.object({
+    length: zod.string(),
+    tone: zod.string(),
+    selectedInsightKeys: zod.array(zod.string()),
+  }),
+  result: zod.string().nullish(),
+  prompt: zod.string().nullish(),
+  sources: zod.array(zod.string()).nullish(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListOutreachJobsResponse = zod.array(ListOutreachJobsResponseItem);
+
+/**
+ * @summary Create an outreach generation job
+ */
+export const CreateOutreachJobParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateOutreachJobBody = zod.object({
+  type: zod.string(),
+  title: zod.string(),
+  params: zod.object({
+    length: zod.string(),
+    tone: zod.string(),
+    selectedInsightKeys: zod.array(zod.string()),
+  }),
+});
+
+/**
+ * @summary Get a single outreach job
+ */
+export const GetOutreachJobParams = zod.object({
+  jobId: zod.coerce.number(),
+});
+
+export const GetOutreachJobResponse = zod.object({
+  id: zod.number(),
+  contactId: zod.number(),
+  type: zod.string(),
+  status: zod.string(),
+  title: zod.string(),
+  params: zod.object({
+    length: zod.string(),
+    tone: zod.string(),
+    selectedInsightKeys: zod.array(zod.string()),
+  }),
+  result: zod.string().nullish(),
+  prompt: zod.string().nullish(),
+  sources: zod.array(zod.string()).nullish(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Rename an outreach job
+ */
+export const UpdateOutreachJobParams = zod.object({
+  jobId: zod.coerce.number(),
+});
+
+export const UpdateOutreachJobBody = zod.object({
+  title: zod.string(),
+});
+
+export const UpdateOutreachJobResponse = zod.object({
+  id: zod.number(),
+  contactId: zod.number(),
+  type: zod.string(),
+  status: zod.string(),
+  title: zod.string(),
+  params: zod.object({
+    length: zod.string(),
+    tone: zod.string(),
+    selectedInsightKeys: zod.array(zod.string()),
+  }),
+  result: zod.string().nullish(),
+  prompt: zod.string().nullish(),
+  sources: zod.array(zod.string()).nullish(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Delete an outreach job
+ */
+export const DeleteOutreachJobParams = zod.object({
+  jobId: zod.coerce.number(),
 });

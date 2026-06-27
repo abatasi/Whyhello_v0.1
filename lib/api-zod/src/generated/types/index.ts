@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./colleagueInsight";
 export * from "./companyDetail";
 export * from "./companyInsight";
 export * from "./companyListResponse";
@@ -15,8 +16,15 @@ export * from "./contactDetail";
 export * from "./contactInsight";
 export * from "./contactListResponse";
 export * from "./contactSummary";
+export * from "./counterpartInsight";
+export * from "./createOutreachJobRequest";
 export * from "./errorResponse";
 export * from "./filterOptions";
 export * from "./healthStatus";
+export * from "./industryInsight";
 export * from "./listCompaniesParams";
 export * from "./listContactsParams";
+export * from "./outreachJob";
+export * from "./outreachJobParams";
+export * from "./roleInsight";
+export * from "./updateOutreachJobRequest";
