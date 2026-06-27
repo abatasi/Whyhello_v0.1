@@ -21,8 +21,12 @@ import {
   Lock, Zap, AlertCircle, Send, User, TrendingUp,
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
+  Layers, Shield, Theater, HelpCircle, Wand2,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getInitials, cn } from "@/lib/utils";
@@ -65,6 +69,27 @@ const INSIGHT_CATEGORIES: InsightCategory[] = [
   { id: "counterpart",  label: "Counterpart",  description: "Competitor & partner-side perspectives",        icon: Handshake,   color: "text-rose-600",    accentBg: "bg-rose-50",    accentBorder: "border-rose-200"   },
 ];
 
+// ── Outreach output types ───────────────────────────────────────────────────
+
+interface OutputType {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  border: string;
+  description: string;
+}
+
+const OUTPUT_TYPES: OutputType[] = [
+  { id: "intro_email",      label: "Intro Email",       icon: Mail,        color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-200",   description: "A personalized first-touch email tailored to this contact's background and current context." },
+  { id: "email_sequence",   label: "Email Sequence",    icon: Layers,      color: "text-violet-600",  bg: "bg-violet-50",  border: "border-violet-200", description: "A multi-step email cadence built around this contact's role, interests, and timing." },
+  { id: "battlecard",       label: "Battlecard",        icon: Shield,      color: "text-rose-600",    bg: "bg-rose-50",    border: "border-rose-200",   description: "A competitive one-pager to prep your team for this deal — objections, differentiators, and positioning." },
+  { id: "sales_simulation", label: "Sales Simulation",  icon: Theater,     color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200",  description: "Simulate a sales call with this contact as the prospect so you can practice before the real thing." },
+  { id: "talk_track",       label: "Talk Track",        icon: Mic2,        color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", description: "A structured verbal guide to keep your next conversation focused, confident, and on point." },
+  { id: "quiz",             label: "Quiz",              icon: HelpCircle,  color: "text-indigo-600",  bg: "bg-indigo-50",  border: "border-indigo-200",  description: "Test how well you know this contact — their priorities, company context, and hot-button topics." },
+];
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function ContactProfile() {
@@ -90,6 +115,7 @@ export default function ContactProfile() {
 
   const [composeOpen, setComposeOpen] = useState(false);
   const [insightsCollapsed, setInsightsCollapsed] = useState(false);
+  const [activeOutput, setActiveOutput] = useState<string | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const seenIdsRef = useRef<Set<string>>(new Set());
 
@@ -468,7 +494,7 @@ export default function ContactProfile() {
             </main>
 
             {/* ══════════════════════════════════════════════════════════════
-                RIGHT COLUMN — Outreach Sandbox
+                RIGHT COLUMN — Outreach
             ═══════════════════════════════════════════════════════════════ */}
             <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
               <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
@@ -476,46 +502,82 @@ export default function ContactProfile() {
                 <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Sandbox</span>
               </div>
 
-              {/* Draft Email */}
-              <SandboxCard
-                icon={PenLine}
-                title="Draft Email"
-                description="Compose a personalized email using insights from this contact's profile."
-                action={isRevealed && contact.email ? (
-                  <Button size="sm" className="w-full h-8 text-xs gap-1.5 mt-3" onClick={() => setComposeOpen(true)}>
-                    <Send className="h-3.5 w-3.5" /> Open Composer
-                  </Button>
-                ) : undefined}
-                locked={!isRevealed}
-              />
-
-              {/* LinkedIn Message */}
-              <SandboxCard
-                icon={Linkedin}
-                title="LinkedIn Message"
-                description="Craft a connection request or InMail tailored to this contact."
-                comingSoon
-              />
-
-              {/* Talking Points */}
-              <SandboxCard
-                icon={MessageSquare}
-                title="Talking Points"
-                description="Generate a list of conversation starters based on recent activity and shared context."
-                comingSoon
-              />
-
-              {/* Notes */}
-              <SandboxCard
-                icon={StickyNote}
-                title="Notes"
-                description="Capture your observations, ideas, and next steps for this contact."
-                comingSoon
-              />
+              {/* 3×2 output grid */}
+              <div className="grid grid-cols-3 gap-2">
+                {OUTPUT_TYPES.map((output) => {
+                  const Icon = output.icon;
+                  return (
+                    <button
+                      key={output.id}
+                      onClick={() => setActiveOutput(output.id)}
+                      className={cn(
+                        "group flex flex-col items-center gap-2 p-3 rounded-xl border bg-card hover:shadow-md transition-all text-center cursor-pointer",
+                        output.border,
+                        "hover:scale-[1.03]"
+                      )}
+                    >
+                      <div className={cn(
+                        "h-9 w-9 rounded-lg flex items-center justify-center border transition-colors",
+                        output.bg, output.border,
+                        "group-hover:brightness-95"
+                      )}>
+                        <Icon className={cn("h-4 w-4", output.color)} />
+                      </div>
+                      <span className="text-[10px] font-semibold text-foreground leading-tight">{output.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </aside>
 
         </div>
       </div>
+
+      {/* ── Outreach output modal ── */}
+      {(() => {
+        const output = OUTPUT_TYPES.find(o => o.id === activeOutput);
+        if (!output) return null;
+        const Icon = output.icon;
+        return (
+          <Dialog open={!!activeOutput} onOpenChange={(open) => !open && setActiveOutput(null)}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border flex-shrink-0", output.bg, output.border)}>
+                    <Icon className={cn("h-5 w-5", output.color)} />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-base">{output.label}</DialogTitle>
+                    <DialogDescription className="text-xs mt-0.5 leading-snug">{output.description}</DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* Parameters placeholder */}
+              <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 px-4 py-6 flex flex-col items-center gap-2 text-center">
+                <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
+                  <Wand2 className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium text-foreground">Parameters coming soon</p>
+                <p className="text-xs text-muted-foreground max-w-[22rem]">
+                  Customisation options for this output type will appear here. For now, click Generate to create with defaults.
+                </p>
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-2">
+                <DialogClose asChild>
+                  <Button variant="outline" size="sm">Cancel</Button>
+                </DialogClose>
+                <Button size="sm" className={cn("gap-1.5", output.bg.replace("bg-", "hover:bg-"), output.color, "border", output.border, "bg-card hover:brightness-95")}
+                  onClick={() => setActiveOutput(null)}>
+                  <Wand2 className="h-3.5 w-3.5" />
+                  Generate {output.label}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
 
       {contact.email && (
         <ComposeDrawer
