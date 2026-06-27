@@ -1307,6 +1307,64 @@ export async function seedInsightsIfEmpty() {
   }
 }
 
+// ── Category insights for Ahmed Hassan ────────────────────────────────────
+// Checked per-category so this is safe to run even after personal insights exist.
+
+const AHMED_CATEGORY_INSIGHTS: { category: string; title: string; url: string; source: string; mediaType: string; description: string; publishedDate: string }[] = [
+  // Industry — Retail
+  { category: "industry", title: "Retail's Big Bet on AI-Powered Personalization", url: "https://www.retaildive.com/news/retail-ai-personalization-2025", source: "Retail Dive", mediaType: "article", description: "Retailers are investing heavily in machine-learning engines to serve hyper-personalized product recommendations at scale — and early movers are seeing measurable lift in basket size and repeat purchase rates.", publishedDate: "Mar 2025" },
+  { category: "industry", title: "The Future of Omnichannel Retail — Bridging Digital and Physical", url: "https://open.spotify.com/episode/retail-remix-omnichannel-2025", source: "Retail Remix Podcast", mediaType: "podcast", description: "Host Melissa Minkow speaks with three retail innovators about closing the gap between in-store and digital experiences, loyalty program integration, and what shoppers actually want from unified commerce.", publishedDate: "Feb 2025" },
+  { category: "industry", title: "Why Retail Margins Are Under Pressure — and What Leaders Are Doing About It", url: "https://www.linkedin.com/posts/retail-margins-pressure-2025", source: "LinkedIn", mediaType: "linkedin_post", description: "A viral thread from retail executives discussing shrinkflation, freight costs, and the tactical moves finance and ops teams are making to protect EBITDA heading into H2.", publishedDate: "Jan 2025" },
+  { category: "industry", title: "NRF 2025 Big Show: Key Takeaways for Retail Leaders", url: "https://www.youtube.com/watch?v=nrf-2025-highlights", source: "National Retail Federation", mediaType: "video", description: "The NRF annual conference recap covers the biggest themes from 2025: AI in the store, autonomous checkout, RFID at scale, and what the next generation of retail leadership looks like.", publishedDate: "Jan 2025" },
+  // Role — CFO
+  { category: "role", title: "The Evolving Role of the Retail CFO: From Scorekeeper to Strategist", url: "https://www.cfo.com/retail-cfo-strategic-evolution-2025", source: "CFO Magazine", mediaType: "article", description: "Finance chiefs at major retailers describe how their mandate has expanded beyond financial reporting into growth strategy, technology investment governance, and enterprise-wide risk management.", publishedDate: "Apr 2025" },
+  { category: "role", title: "CFO Strategies for Managing Inflation and Cost Volatility", url: "https://open.spotify.com/episode/cfo-thought-leader-inflation-2025", source: "CFO Thought Leader Podcast", mediaType: "podcast", description: "Finance leaders from retail and consumer goods share real-world playbooks for dynamic pricing, hedging commodity exposure, and communicating margin guidance to investors during volatile macro cycles.", publishedDate: "Mar 2025" },
+  { category: "role", title: "How CFOs Are Becoming the Chief Transformation Officer", url: "https://www.gartner.com/en/finance/insights/cfo-transformation-2025", source: "Gartner", mediaType: "blog_post", description: "Gartner research finds that 68% of CFOs now co-own digital transformation initiatives. This piece examines the capabilities, org structures, and mindset shifts that separate finance leaders who drive change from those who merely fund it.", publishedDate: "Feb 2025" },
+  { category: "role", title: "Finance Leaders on Building Resilient, Demand-Responsive Supply Chains", url: "https://www.linkedin.com/posts/cfo-supply-chain-resilience-2025", source: "LinkedIn", mediaType: "linkedin_post", description: "CFOs across retail weigh in on how they are funding supply chain redesign projects, setting inventory investment thresholds, and partnering with COOs to reduce single-source supplier dependency after years of disruption.", publishedDate: "Feb 2025" },
+  // Colleague — Nexus Retail Group
+  { category: "colleague", title: "Rethinking Retail Merchandising in an AI-First World", url: "https://www.linkedin.com/posts/david-park-nexus-merchandising-2025", source: "LinkedIn", mediaType: "linkedin_post", description: "David Park, VP of Merchandising at Nexus Retail Group, shares how his team is piloting AI-driven assortment planning tools that reduce overstock by 22% while improving sell-through on seasonal categories.", publishedDate: "Apr 2025" },
+  { category: "colleague", title: "E-Commerce Growth Strategies for Omnichannel Brands", url: "https://www.retailtechnology.com/jessica-lee-nexus-ecommerce-2025", source: "Retail Technology Review", mediaType: "article", description: "Jessica Lee, Head of E-commerce at Nexus Retail Group, outlines the company's three-pronged approach to online growth: marketplace expansion, same-day delivery partnerships, and a first-party data strategy that is reducing paid acquisition costs.", publishedDate: "Mar 2025" },
+  { category: "colleague", title: "Nexus Retail Group Expands Omnichannel Capabilities with New Fulfilment Network", url: "https://www.prnewswire.com/nexus-retail-omnichannel-expansion-2025", source: "PR Newswire", mediaType: "press_release", description: "Nexus Retail Group announces a $120M investment in regional micro-fulfilment centres and same-day delivery infrastructure across its top 15 markets, supporting a company-wide omnichannel acceleration strategy backed by CFO Ahmed Hassan.", publishedDate: "Jan 2025" },
+  // Counterpart — CFO peers in Retail
+  { category: "counterpart", title: "Retail CFOs Respond to Consumer Spending Slowdown", url: "https://www.wsj.com/retail-cfos-consumer-spending-2025", source: "The Wall Street Journal", mediaType: "article", description: "Finance chiefs at Target, Macy's, and other major retailers discuss how they are recalibrating capital allocation, tightening discretionary spend, and protecting dividend commitments amid a prolonged dip in consumer confidence.", publishedDate: "Apr 2025" },
+  { category: "counterpart", title: "CFOs in Retail: Managing Inventory Costs in a High-Rate Environment", url: "https://www.linkedin.com/posts/retail-cfo-inventory-costs-2025", source: "LinkedIn", mediaType: "linkedin_post", description: "A roundtable post from finance leaders at competing retail groups on the real cost of carrying inventory at today's interest rates — and the creative financing structures some CFOs are using to reduce working capital drag.", publishedDate: "Mar 2025" },
+  { category: "counterpart", title: "Retail Finance Leaders Summit 2025: Highlights and Key Debates", url: "https://open.spotify.com/episode/retail-finance-summit-2025", source: "Retail CFO Podcast", mediaType: "podcast", description: "Recorded live at the Retail Finance Leaders Summit in Chicago, this episode captures panel debates on tariff exposure, AI investment ROI, and how CFOs are positioning their companies for profitable growth through 2027.", publishedDate: "Feb 2025" },
+];
+
+export async function seedCategoryInsightsIfEmpty() {
+  const [ahmed] = await db
+    .select({ id: contactsTable.id })
+    .from(contactsTable)
+    .where(and(eq(contactsTable.firstName, "Ahmed"), eq(contactsTable.lastName, "Hassan")))
+    .limit(1);
+
+  if (!ahmed) return;
+
+  const categories = [...new Set(AHMED_CATEGORY_INSIGHTS.map((r) => r.category))];
+  const toInsert: typeof AHMED_CATEGORY_INSIGHTS = [];
+
+  for (const category of categories) {
+    const [{ n }] = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(contactInsightsTable)
+      .where(and(eq(contactInsightsTable.contactId, ahmed.id), eq(contactInsightsTable.category, category)));
+
+    if (n === 0) {
+      toInsert.push(...AHMED_CATEGORY_INSIGHTS.filter((r) => r.category === category));
+    }
+  }
+
+  if (toInsert.length === 0) {
+    console.log("Category insights already up to date.");
+    return;
+  }
+
+  await db.insert(contactInsightsTable).values(
+    toInsert.map((r) => ({ contactId: ahmed.id, ...r })),
+  );
+  console.log(`Seeded ${toInsert.length} category insights for Ahmed Hassan.`);
+}
+
 export async function seedIfEmpty() {
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)::int` })
