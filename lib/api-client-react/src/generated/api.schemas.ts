@@ -202,6 +202,19 @@ export interface UpdateOutreachJobRequest {
   title: string;
 }
 
+export interface ContactChatMessage {
+  id: number;
+  contactId: number;
+  role: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface CreateChatMessageRequest {
+  role: string;
+  content: string;
+}
+
 export type ListContactsParams = {
   search?: string;
   jobTitle?: string;

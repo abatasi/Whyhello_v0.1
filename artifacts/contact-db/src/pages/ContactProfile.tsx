@@ -12,6 +12,9 @@ import {
   useRevealContact,
   useCreditsStatus,
   useCreateOutreachJob,
+  useListChatMessages,
+  useCreateChatMessage,
+  useClearChatMessages,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { ComposeDrawer } from "@/components/ComposeDrawer";
@@ -1187,25 +1190,43 @@ const STARTERS = (firstName: string) => [
 ];
 
 function ContactChat({ id, contact, checkedIds }: { id: number; contact: { firstName: string }; checkedIds: Set<string> }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { data: savedMessages = [], isLoading: historyLoading } = useListChatMessages(id);
+  const persistMessage = useCreateChatMessage();
+  const clearMutation = useClearChatMessages();
+
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Hydrate from DB on first load
+  useEffect(() => {
+    if (!historyLoading && !hydrated) {
+      setLocalMessages(savedMessages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })));
+      setHydrated(true);
+    }
+  }, [historyLoading, hydrated, savedMessages]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [localMessages]);
 
   async function sendMessage(content: string) {
     const text = content.trim();
     if (!text || isStreaming) return;
 
     const userMsg: ChatMessage = { role: "user", content: text };
-    const history = [...messages, userMsg];
-    setMessages([...history, { role: "assistant", content: "" }]);
+    const history = [...localMessages, userMsg];
+    setLocalMessages([...history, { role: "assistant", content: "" }]);
     setInput("");
     setIsStreaming(true);
+
+    // Persist user message
+    persistMessage.mutate({ id, data: { role: "user", content: text } });
+
+    let assistantContent = "";
 
     try {
       const resp = await fetch(`/api/contacts/${id}/chat`, {
@@ -1232,12 +1253,10 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
             const data = JSON.parse(line.slice(6));
             if (data.done) break;
             if (data.content) {
-              setMessages((prev) => {
+              assistantContent += data.content;
+              setLocalMessages((prev) => {
                 const next = [...prev];
-                next[next.length - 1] = {
-                  role: "assistant",
-                  content: next[next.length - 1].content + data.content,
-                };
+                next[next.length - 1] = { role: "assistant", content: next[next.length - 1].content + data.content };
                 return next;
               });
             }
@@ -1246,10 +1265,16 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
           }
         }
       }
+
+      // Persist completed assistant response
+      if (assistantContent) {
+        persistMessage.mutate({ id, data: { role: "assistant", content: assistantContent } });
+      }
     } catch {
-      setMessages((prev) => {
+      const errMsg = "Sorry, something went wrong. Please try again.";
+      setLocalMessages((prev) => {
         const next = [...prev];
-        next[next.length - 1] = { role: "assistant", content: "Sorry, something went wrong. Please try again." };
+        next[next.length - 1] = { role: "assistant", content: errMsg };
         return next;
       });
     } finally {
@@ -1257,6 +1282,14 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
       textareaRef.current?.focus();
     }
   }
+
+  function handleClear() {
+    setLocalMessages([]);
+    clearMutation.mutate({ id });
+  }
+
+  const messages = localMessages;
+  const showEmpty = hydrated && messages.length === 0;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden">
@@ -1271,8 +1304,9 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
         </span>
         {messages.length > 0 && (
           <button
-            onClick={() => setMessages([])}
-            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors ml-1"
+            onClick={handleClear}
+            disabled={clearMutation.isPending}
+            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors ml-1 disabled:opacity-40"
           >
             Clear
           </button>
@@ -1281,7 +1315,7 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        {messages.length === 0 ? (
+        {showEmpty ? (
           <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
               <Sparkles className="h-6 w-6 text-primary" />

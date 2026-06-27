@@ -21,10 +21,12 @@ import type {
   CompanyDetail,
   CompanyInsight,
   CompanyListResponse,
+  ContactChatMessage,
   ContactDetail,
   ContactInsight,
   ContactListResponse,
   CounterpartInsight,
+  CreateChatMessageRequest,
   CreateOutreachJobRequest,
   ErrorResponse,
   FilterOptions,
@@ -1527,4 +1529,190 @@ export const useDeleteOutreachJob = <
   TContext
 > => {
   return useMutation(getDeleteOutreachJobMutationOptions(options));
+};
+
+// ── Chat Messages ────────────────────────────────────────────────────────────
+
+export const getListChatMessagesUrl = (id: number) =>
+  `/api/contacts/${id}/chat-messages`;
+
+export const listChatMessages = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ContactChatMessage[]> => {
+  return customFetch<ContactChatMessage[]>(getListChatMessagesUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListChatMessagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listChatMessages>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listChatMessages>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? ["listChatMessages", id];
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listChatMessages>>> = () =>
+    listChatMessages(id, requestOptions);
+  return { queryKey, queryFn, enabled: id > 0, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listChatMessages>>,
+    TError,
+    TData
+  >;
+};
+
+export function useListChatMessages<
+  TData = Awaited<ReturnType<typeof listChatMessages>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listChatMessages>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListChatMessagesQueryOptions(id, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateChatMessageUrl = (id: number) =>
+  `/api/contacts/${id}/chat-messages`;
+
+export const createChatMessage = async (
+  id: number,
+  createChatMessageRequest: CreateChatMessageRequest,
+  options?: RequestInit,
+): Promise<ContactChatMessage> => {
+  return customFetch<ContactChatMessage>(getCreateChatMessageUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createChatMessageRequest),
+  });
+};
+
+export const getCreateChatMessageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createChatMessage>>,
+    TError,
+    { id: number; data: BodyType<CreateChatMessageRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createChatMessage>>,
+  TError,
+  { id: number; data: BodyType<CreateChatMessageRequest> },
+  TContext
+> => {
+  const mutationKey = ["createChatMessage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createChatMessage>>,
+    { id: number; data: BodyType<CreateChatMessageRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+    return createChatMessage(id, data, requestOptions);
+  };
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useCreateChatMessage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createChatMessage>>,
+    TError,
+    { id: number; data: BodyType<CreateChatMessageRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createChatMessage>>,
+  TError,
+  { id: number; data: BodyType<CreateChatMessageRequest> },
+  TContext
+> => {
+  return useMutation(getCreateChatMessageMutationOptions(options));
+};
+
+export const getClearChatMessagesUrl = (id: number) =>
+  `/api/contacts/${id}/chat-messages`;
+
+export const clearChatMessages = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getClearChatMessagesUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getClearChatMessagesMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearChatMessages>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clearChatMessages>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["clearChatMessages"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clearChatMessages>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+    return clearChatMessages(id, requestOptions);
+  };
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useClearChatMessages = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearChatMessages>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clearChatMessages>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getClearChatMessagesMutationOptions(options));
 };
