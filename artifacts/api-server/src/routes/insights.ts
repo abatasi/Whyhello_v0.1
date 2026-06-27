@@ -16,7 +16,7 @@ router.get("/", async (req, res) => {
       .select()
       .from(contactInsightsTable)
       .where(eq(contactInsightsTable.contactId, contactId))
-      .orderBy(contactInsightsTable.mediaType);
+      .orderBy(contactInsightsTable.category, contactInsightsTable.mediaType);
     res.json(insights);
   } catch (err) {
     console.error(err);

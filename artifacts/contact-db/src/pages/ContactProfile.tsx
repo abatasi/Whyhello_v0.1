@@ -39,7 +39,7 @@ function getMediaConfig(type: string) {
 
 // ── Insight category definitions ───────────────────────────────────────────
 
-type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null };
+type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null; category?: string };
 
 interface InsightCategory {
   id: string;
@@ -91,11 +91,16 @@ export default function ContactProfile() {
     return () => { document.title = "Whyhello"; };
   }, [contact]);
 
-  // Map category id → real data
-  const categoryData: Record<string, InsightItem[]> = {
-    personal: insights as InsightItem[],
-    company: companyInsights as InsightItem[],
-  };
+  // Group all contact insights by their category field; company comes from its own table
+  const categoryData = (insights as InsightItem[]).reduce<Record<string, InsightItem[]>>(
+    (acc, item) => {
+      const key = item.category ?? "personal";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    },
+    { company: companyInsights as InsightItem[] },
+  );
 
   if (isLoading) {
     return (
