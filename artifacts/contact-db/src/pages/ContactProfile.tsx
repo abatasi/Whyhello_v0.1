@@ -135,7 +135,7 @@ function IntroEmailModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl p-0 gap-0 overflow-hidden">
+      <DialogContent className="p-0 gap-0 overflow-hidden" style={{ width: "50vw", maxWidth: "50vw", maxHeight: "85vh", display: "flex", flexDirection: "column" }}>
 
         {/* ── Header ── */}
         <div className="flex items-center gap-4 px-7 py-5 border-b border-border/60 bg-gradient-to-r from-blue-50/60 to-background">
@@ -155,7 +155,7 @@ function IntroEmailModal({
         </div>
 
         {/* ── Body ── */}
-        <div className="grid grid-cols-[1fr_1px_1fr] gap-0 px-0">
+        <div className="grid grid-cols-[1fr_1px_1fr] gap-0 px-0 flex-1 overflow-y-auto">
 
           {/* Left column: email shape */}
           <div className="px-7 py-6 space-y-6">
