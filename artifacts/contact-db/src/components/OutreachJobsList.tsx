@@ -10,9 +10,16 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   CheckCircle2, XCircle, Eye, Share2, Download,
   Trash2, PenLine, FileText, ChevronDown, ChevronUp,
-  Copy, Check,
+  Copy, Check, MoreVertical, BookOpen,
 } from "lucide-react";
 
 type Job = {
@@ -88,8 +95,10 @@ function RenameDialog({ job, onClose, onSave }: { job: Job; onClose: () => void;
   );
 }
 
-function JobViewerModal({ job, onClose }: { job: Job; onClose: () => void }) {
-  const [tab, setTab] = useState<"result" | "prompt" | "sources">("result");
+type ViewTab = "result" | "prompt" | "sources";
+
+function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onClose: () => void; initialTab?: ViewTab }) {
+  const [tab, setTab] = useState<ViewTab>(initialTab);
   const [copied, setCopied] = useState(false);
 
   function copyToClipboard(text: string) {
@@ -109,15 +118,18 @@ function JobViewerModal({ job, onClose }: { job: Job; onClose: () => void }) {
     URL.revokeObjectURL(url);
   }
 
-  const tabs = [
-    { id: "result" as const, label: "Email" },
-    { id: "prompt" as const, label: "Prompt" },
-    { id: "sources" as const, label: "Sources" },
+  const tabs: { id: ViewTab; label: string }[] = [
+    { id: "result", label: "Email" },
+    { id: "prompt", label: "Prompt" },
+    { id: "sources", label: "Sources" },
   ];
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="p-0 gap-0 overflow-hidden" style={{ width: "52vw", maxWidth: "52vw", maxHeight: "82vh", display: "flex", flexDirection: "column" }}>
+      <DialogContent
+        className="p-0 gap-0 overflow-hidden"
+        style={{ width: "52vw", maxWidth: "52vw", maxHeight: "82vh", display: "flex", flexDirection: "column" }}
+      >
         <DialogHeader className="px-7 py-5 border-b border-border/60 flex-shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -203,6 +215,7 @@ function JobViewerModal({ job, onClose }: { job: Job; onClose: () => void }) {
 
 function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
   const [viewing, setViewing] = useState(false);
+  const [viewTab, setViewTab] = useState<ViewTab>("result");
   const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -217,7 +230,12 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
     renameMutation.mutate({ jobId: job.id, data: { title } }, { onSuccess: () => setRenaming(false) });
   }, [renameMutation, job.id]);
 
-  function downloadText() {
+  function openViewer(tab: ViewTab = "result") {
+    setViewTab(tab);
+    setViewing(true);
+  }
+
+  function downloadFile() {
     const blob = new Blob([job.result ?? ""], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -235,77 +253,102 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
   const isFailed = job.status === "failed";
   const isCompleted = job.status === "completed";
 
+  const primaryLabel = job.type === "intro_email" ? "View Email" : "View";
+
   return (
     <>
-      <div className={cn(
-        "rounded-xl border px-3.5 py-3 transition-all",
-        isGenerating && "border-blue-200/70 bg-gradient-to-r from-blue-50/40 to-indigo-50/20",
-        isFailed && "border-red-200/60 bg-red-50/20",
-        isCompleted && "bg-card border-border/60 hover:border-border"
-      )}>
-        <div className="flex items-start gap-2.5">
-          <div className="flex-shrink-0 mt-[3px]">
+      {/* Card — clicking the body opens the viewer for completed jobs */}
+      <div
+        onClick={() => isCompleted && openViewer("result")}
+        className={cn(
+          "rounded-xl border px-3.5 py-3 transition-all",
+          isGenerating && "border-blue-200/70 bg-gradient-to-r from-blue-50/40 to-indigo-50/20",
+          isFailed && "border-red-200/60 bg-red-50/20",
+          isCompleted && "bg-card border-border/60 hover:border-primary/40 hover:shadow-sm cursor-pointer"
+        )}
+      >
+        <div className="flex items-center gap-2.5">
+          {/* Status icon */}
+          <div className="flex-shrink-0">
             {isGenerating && <GeneratingBars />}
             {isCompleted && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
             {isFailed && <XCircle className="h-3.5 w-3.5 text-red-400" />}
           </div>
+
+          {/* Title + meta */}
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground leading-snug truncate">{job.title}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">
-              {job.type.replace("_", " ")} · {job.params?.length} · {job.params?.tone}
+              {isGenerating
+                ? <span className="text-blue-500/80 font-medium tracking-wide">Writing your email…</span>
+                : isFailed
+                  ? <span className="text-red-400 font-medium">Generation failed</span>
+                  : <>{job.type.replace("_", " ")} · {job.params?.length} · {job.params?.tone} · {timeAgo(job.createdAt)}</>
+              }
             </p>
-            {isGenerating && (
-              <p className="text-[10px] text-blue-500/80 mt-1 font-medium tracking-wide">Writing your email…</p>
-            )}
-            {isFailed && (
-              <p className="text-[10px] text-red-400 mt-1 font-medium">Generation failed</p>
-            )}
-            {isCompleted && (
-              <p className="text-[10px] text-muted-foreground/60 mt-1">{timeAgo(job.createdAt)}</p>
-            )}
           </div>
+
+          {/* Actions — only shown when completed */}
           {isCompleted && (
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <button
-                onClick={() => setViewing(true)}
-                title="View"
-                className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            <div
+              className="flex items-center gap-1 flex-shrink-0"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Primary action */}
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1.5 text-xs font-semibold px-2.5"
+                onClick={() => openViewer("result")}
               >
                 <Eye className="h-3 w-3" />
-              </button>
-              <button
-                onClick={shareJob}
-                title="Copy to clipboard"
-                className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                <Share2 className="h-3 w-3" />
-              </button>
-              <button
-                onClick={() => setRenaming(true)}
-                title="Rename"
-                className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                <PenLine className="h-3 w-3" />
-              </button>
-              <button
-                onClick={downloadText}
-                title="Download"
-                className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                <Download className="h-3 w-3" />
-              </button>
-              <button
-                onClick={() => setConfirmDelete(true)}
-                title="Delete"
-                className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
+                {primaryLabel}
+              </Button>
+
+              {/* More menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    title="More actions"
+                  >
+                    <MoreVertical className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 text-xs">
+                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={shareJob}>
+                    <Share2 className="h-3.5 w-3.5" />
+                    Share
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => setRenaming(true)}>
+                    <PenLine className="h-3.5 w-3.5" />
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={downloadFile}>
+                    <Download className="h-3.5 w-3.5" />
+                    Download
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("prompt")}>
+                    <BookOpen className="h-3.5 w-3.5" />
+                    View prompt &amp; sources
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="gap-2 text-xs cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
+
+          {/* Failed — only show delete */}
           {isFailed && (
             <button
-              onClick={() => setConfirmDelete(true)}
+              onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
               title="Delete"
               className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
             >
@@ -315,7 +358,7 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
         </div>
       </div>
 
-      {viewing && <JobViewerModal job={job} onClose={() => setViewing(false)} />}
+      {viewing && <JobViewerModal job={job} initialTab={viewTab} onClose={() => setViewing(false)} />}
       {renaming && <RenameDialog job={job} onClose={() => setRenaming(false)} onSave={handleRename} />}
 
       {confirmDelete && (
@@ -323,11 +366,18 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
           <DialogContent className="max-w-xs">
             <DialogHeader>
               <DialogTitle className="text-sm">Delete job?</DialogTitle>
-              <DialogDescription className="text-xs">This will permanently delete "{job.title}". This cannot be undone.</DialogDescription>
+              <DialogDescription className="text-xs">
+                This will permanently delete "{job.title}". This cannot be undone.
+              </DialogDescription>
             </DialogHeader>
             <div className="flex gap-2 justify-end mt-1">
               <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDelete} disabled={deleteMutation.isPending}>
+              <Button
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
                 {deleteMutation.isPending ? "Deleting…" : "Delete"}
               </Button>
             </div>
@@ -366,7 +416,9 @@ export function OutreachJobsList({ contactId, refetchTrigger }: { contactId: num
         className="flex items-center gap-1.5 w-full text-left mb-2"
       >
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Generated</span>
-        <span className="text-[10px] font-semibold bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-full">{jobs.length}</span>
+        <span className="text-[10px] font-semibold bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-full">
+          {jobs.length}
+        </span>
         {expanded
           ? <ChevronUp className="h-3 w-3 text-muted-foreground ml-auto" />
           : <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />}
