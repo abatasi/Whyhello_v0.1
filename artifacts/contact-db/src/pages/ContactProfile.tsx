@@ -185,7 +185,7 @@ export default function ContactProfile() {
 
   return (
     <Shell>
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-[#F8FAFC]">
+      <div className="flex flex-col overflow-hidden bg-[#F8FAFC]" style={{ height: "calc(100vh - 4rem)" }}>
         {/* Back nav */}
         <div className="px-6 pt-3 pb-2 flex-shrink-0">
           <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1.5">
@@ -195,12 +195,12 @@ export default function ContactProfile() {
         </div>
 
         {/* ── Three-column grid: 20 / 60 / 20 ──────────────────────────── */}
-        <div className="flex-1 min-h-0 px-6 pb-4 grid gap-5" style={{ gridTemplateColumns: "20% 1fr 20%" }}>
+        <div className="flex-1 min-h-0 px-6 pb-4 grid gap-5 overflow-hidden" style={{ gridTemplateColumns: "20% 1fr 20%", gridTemplateRows: "minmax(0, 1fr)" }}>
 
             {/* ══════════════════════════════════════════════════════════════
                 LEFT COLUMN — Insights
             ═══════════════════════════════════════════════════════════════ */}
-            <aside className="flex flex-col gap-3 overflow-y-auto min-h-0 pr-0.5">
+            <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
               <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
                 <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
@@ -375,7 +375,7 @@ export default function ContactProfile() {
             {/* ══════════════════════════════════════════════════════════════
                 RIGHT COLUMN — Outreach Sandbox
             ═══════════════════════════════════════════════════════════════ */}
-            <aside className="flex flex-col gap-3 overflow-y-auto min-h-0 pr-0.5">
+            <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
               <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Outreach</h2>
                 <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Sandbox</span>
