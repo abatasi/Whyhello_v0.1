@@ -109,6 +109,7 @@ export const GetContactInsightsParams = zod.object({
 export const GetContactInsightsResponseItem = zod.object({
   id: zod.number(),
   contactId: zod.number(),
+  category: zod.string().optional(),
   title: zod.string(),
   url: zod.string(),
   source: zod.string(),

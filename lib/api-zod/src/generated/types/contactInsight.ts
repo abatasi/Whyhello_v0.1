@@ -9,6 +9,7 @@
 export interface ContactInsight {
   id: number;
   contactId: number;
+  category?: string;
   title: string;
   url: string;
   source: string;
