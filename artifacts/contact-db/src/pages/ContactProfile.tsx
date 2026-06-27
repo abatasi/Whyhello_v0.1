@@ -168,7 +168,7 @@ export default function ContactProfile() {
 
               {INSIGHT_CATEGORIES.map((cat) => {
                 const items = categoryData[cat.id] ?? [];
-                const isPlaceholder = !["personal", "company"].includes(cat.id);
+                const isPlaceholder = false;
                 const isLocked = cat.id === "personal" && !isRevealed;
 
                 return (
