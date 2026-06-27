@@ -732,7 +732,6 @@ export default function ContactProfile() {
                 <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
                   <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Outreach</h2>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Sandbox</span>
                     <button
                       onClick={() => setOutreachCollapsed(true)}
                       title="Collapse outreach panel"
