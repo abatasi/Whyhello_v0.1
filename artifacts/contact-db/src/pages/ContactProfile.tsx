@@ -501,7 +501,7 @@ export default function ContactProfile() {
 
             {/* ── COLLAPSED left column ── */}
             {insightsCollapsed && (
-              <aside className="flex flex-col items-center min-h-0 overflow-hidden gap-1 pt-1">
+              <aside className="flex flex-col items-center min-h-0 gap-1 pt-1">
                 {/* Expand button */}
                 <button
                   onClick={() => setInsightsCollapsed(false)}
@@ -776,7 +776,7 @@ export default function ContactProfile() {
 
             {/* ── COLLAPSED right column ── */}
             {outreachCollapsed && (
-              <aside className="flex flex-col items-center min-h-0 overflow-hidden gap-1 pt-1">
+              <aside className="flex flex-col items-center min-h-0 gap-1 pt-1">
                 {/* Expand button */}
                 <button
                   onClick={() => setOutreachCollapsed(false)}
