@@ -1,5 +1,5 @@
 import { useRoute, Link } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useGetContact,
   useGetContactInsights,
@@ -189,19 +189,19 @@ export default function ContactProfile() {
             {/* ══════════════════════════════════════════════════════════════
                 CENTER COLUMN — Contact Hub
             ═══════════════════════════════════════════════════════════════ */}
-            <main className="space-y-5">
+            <main className="flex flex-col gap-5">
 
-              {/* Identity card */}
+              {/* ── Merged Identity + Contact Details card ── */}
               <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
-                <div className="h-24 bg-gradient-to-r from-primary/15 via-indigo-100/60 to-violet-100/40" />
-                <div className="px-6 pb-6">
-                  <div className="flex items-end gap-4 -mt-11 mb-4">
-                    <div className="h-20 w-20 rounded-full border-4 border-card bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-2xl font-bold text-primary shadow-md flex-shrink-0">
+                <div className="h-20 bg-gradient-to-r from-primary/15 via-indigo-100/60 to-violet-100/40" />
+                <div className="px-6 pb-5">
+                  <div className="flex items-end gap-4 -mt-10 mb-3">
+                    <div className="h-18 w-18 rounded-full border-4 border-card bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-xl font-bold text-primary shadow-md flex-shrink-0" style={{ height: "4.5rem", width: "4.5rem" }}>
                       {getInitials(`${contact.firstName} ${contact.lastName}`)}
                     </div>
                     <div className="pb-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h1 className="text-xl font-bold text-foreground leading-tight">
+                        <h1 className="text-lg font-bold text-foreground leading-tight">
                           {contact.firstName} {contact.lastName}
                         </h1>
                         {contact.seniority && (
@@ -227,7 +227,7 @@ export default function ContactProfile() {
                     )}
                   </div>
 
-                  {/* Role + Company row */}
+                  {/* Role + Company */}
                   <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                     <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
                     <span className="font-medium text-foreground">{contact.jobTitle}</span>
@@ -246,112 +246,85 @@ export default function ContactProfile() {
                   </div>
 
                   {contact.bio && (
-                    <p className="text-sm text-muted-foreground mt-3 leading-relaxed line-clamp-3">
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2">
                       {contact.bio}
                     </p>
                   )}
+
+                  {/* ── Contact Details (merged) ── */}
+                  <div className="border-t border-border/40 mt-4 pt-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Contact Details</p>
+                    {isRevealed ? (
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
+                        {contact.email && (
+                          <ContactDetailField icon={Mail} label="Email">
+                            <a href={`mailto:${contact.email}`} className="text-primary hover:underline break-all text-xs">
+                              {contact.email}
+                            </a>
+                          </ContactDetailField>
+                        )}
+                        {contact.phone && (
+                          <ContactDetailField icon={Phone} label="Phone">
+                            <a href={`tel:${contact.phone}`} className="text-foreground hover:text-primary transition-colors text-xs">
+                              {contact.phone}
+                            </a>
+                          </ContactDetailField>
+                        )}
+                        {(contact.location || contact.country) && (
+                          <ContactDetailField icon={MapPin} label="Location">
+                            <span className="text-xs">{[contact.location, contact.country].filter(Boolean).join(", ")}</span>
+                          </ContactDetailField>
+                        )}
+                        {contact.linkedinUrl && (
+                          <ContactDetailField icon={Linkedin} label="LinkedIn">
+                            <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer"
+                              className="text-[#0A66C2] hover:underline flex items-center gap-1 text-xs">
+                              View Profile <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </ContactDetailField>
+                        )}
+                        {contact.twitterHandle && (
+                          <ContactDetailField icon={Twitter} label="Twitter">
+                            <a href={`https://twitter.com/${contact.twitterHandle.replace("@", "")}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="text-primary hover:underline text-xs">
+                              {contact.twitterHandle}
+                            </a>
+                          </ContactDetailField>
+                        )}
+                        {contact.company?.industry && (
+                          <ContactDetailField icon={TrendingUp} label="Industry">
+                            <span className="text-xs">{contact.company.industry}</span>
+                          </ContactDetailField>
+                        )}
+                        {contact.company?.size && (
+                          <ContactDetailField icon={Users} label="Company Size">
+                            <span className="text-xs">{contact.company.size} employees</span>
+                          </ContactDetailField>
+                        )}
+                        {contact.company?.website && (
+                          <ContactDetailField icon={Globe} label="Website">
+                            <a href={contact.company.website} target="_blank" rel="noopener noreferrer"
+                              className="text-primary hover:underline flex items-center gap-1 text-xs truncate">
+                              {contact.company.website.replace(/^https?:\/\//, "")} <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                            </a>
+                          </ContactDetailField>
+                        )}
+                      </div>
+                    ) : (
+                      <LockedSection
+                        onReveal={handleReveal}
+                        isRevealing={revealMutation.isPending || revealLoading}
+                        outOfCredits={outOfCredits}
+                        creditStatus={creditStatus}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Contact Details */}
-              <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-5">Contact Details</h2>
-
-                {isRevealed ? (
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                    {contact.email && (
-                      <ContactDetailField icon={Mail} label="Email">
-                        <a href={`mailto:${contact.email}`} className="text-primary hover:underline break-all text-sm">
-                          {contact.email}
-                        </a>
-                      </ContactDetailField>
-                    )}
-                    {contact.phone && (
-                      <ContactDetailField icon={Phone} label="Phone">
-                        <a href={`tel:${contact.phone}`} className="text-foreground hover:text-primary transition-colors text-sm">
-                          {contact.phone}
-                        </a>
-                      </ContactDetailField>
-                    )}
-                    {(contact.location || contact.country) && (
-                      <ContactDetailField icon={MapPin} label="Location">
-                        <span className="text-sm">{[contact.location, contact.country].filter(Boolean).join(", ")}</span>
-                      </ContactDetailField>
-                    )}
-                    {contact.linkedinUrl && (
-                      <ContactDetailField icon={Linkedin} label="LinkedIn">
-                        <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer"
-                          className="text-[#0A66C2] hover:underline flex items-center gap-1 text-sm">
-                          View Profile <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </ContactDetailField>
-                    )}
-                    {contact.twitterHandle && (
-                      <ContactDetailField icon={Twitter} label="Twitter">
-                        <a href={`https://twitter.com/${contact.twitterHandle.replace("@", "")}`}
-                          target="_blank" rel="noopener noreferrer"
-                          className="text-primary hover:underline text-sm">
-                          {contact.twitterHandle}
-                        </a>
-                      </ContactDetailField>
-                    )}
-                    {contact.company?.industry && (
-                      <ContactDetailField icon={TrendingUp} label="Industry">
-                        <span className="text-sm">{contact.company.industry}</span>
-                      </ContactDetailField>
-                    )}
-                    {contact.company?.size && (
-                      <ContactDetailField icon={Users} label="Company Size">
-                        <span className="text-sm">{contact.company.size} employees</span>
-                      </ContactDetailField>
-                    )}
-                    {contact.company?.website && (
-                      <ContactDetailField icon={Globe} label="Website">
-                        <a href={contact.company.website} target="_blank" rel="noopener noreferrer"
-                          className="text-primary hover:underline flex items-center gap-1 text-sm truncate">
-                          {contact.company.website.replace(/^https?:\/\//, "")} <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                        </a>
-                      </ContactDetailField>
-                    )}
-                  </div>
-                ) : (
-                  <LockedSection
-                    onReveal={handleReveal}
-                    isRevealing={revealMutation.isPending || revealLoading}
-                    outOfCredits={outOfCredits}
-                    creditStatus={creditStatus}
-                  />
-                )}
-              </section>
-
-              {/* Strategy Assistant — future chatbot placeholder */}
-              <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Strategy Assistant</h2>
-                  <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Coming Soon</span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-5">
-                  Ask questions about {contact.firstName}, query linked insights, and get AI-generated talking points.
-                </p>
-                <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-5 flex flex-col items-center gap-3 text-center">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">AI-powered contact intelligence</p>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                      Drag insights from the left panel to query them here. Generate tailored talking points, conversation starters, and outreach strategies.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 justify-center mt-1">
-                    {["What are their priorities?", "Suggest an opener", "Summarize their company news"].map((q) => (
-                      <span key={q} className="text-xs px-3 py-1.5 rounded-full bg-card border border-border text-muted-foreground">
-                        {q}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </section>
+              {/* ── Strategy Assistant (live chatbot) ── */}
+              <ContactChat id={id} contact={contact} />
             </main>
 
             {/* ══════════════════════════════════════════════════════════════
@@ -640,6 +613,201 @@ function ContactDetailField({
       <div className="min-w-0 flex-1">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-0.5">{label}</p>
         <div className="truncate">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── ContactChat ────────────────────────────────────────────────────────────
+
+type ChatMessage = { role: "user" | "assistant"; content: string };
+
+const STARTERS = (firstName: string) => [
+  `What are ${firstName}'s key professional priorities right now?`,
+  `Suggest a conversation opener based on their recent activity`,
+  `Draft a short LinkedIn outreach message to ${firstName}`,
+  `What topics would resonate most with ${firstName}?`,
+];
+
+function ContactChat({ id, contact }: { id: number; contact: { firstName: string } }) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  async function sendMessage(content: string) {
+    const text = content.trim();
+    if (!text || isStreaming) return;
+
+    const userMsg: ChatMessage = { role: "user", content: text };
+    const history = [...messages, userMsg];
+    setMessages([...history, { role: "assistant", content: "" }]);
+    setInput("");
+    setIsStreaming(true);
+
+    try {
+      const resp = await fetch(`/api/contacts/${id}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+
+      if (!resp.ok || !resp.body) throw new Error("Request failed");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.done) break;
+            if (data.content) {
+              setMessages((prev) => {
+                const next = [...prev];
+                next[next.length - 1] = {
+                  role: "assistant",
+                  content: next[next.length - 1].content + data.content,
+                };
+                return next;
+              });
+            }
+          } catch {
+            // skip malformed chunk
+          }
+        }
+      }
+    } catch {
+      setMessages((prev) => {
+        const next = [...prev];
+        next[next.length - 1] = { role: "assistant", content: "Sorry, something went wrong. Please try again." };
+        return next;
+      });
+    } finally {
+      setIsStreaming(false);
+      textareaRef.current?.focus();
+    }
+  }
+
+  return (
+    <div
+      className="flex flex-col rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden"
+      style={{ height: "calc(100vh - 24rem)" }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 flex-shrink-0">
+        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+        </div>
+        <span className="text-xs font-bold uppercase tracking-widest text-foreground">Strategy Assistant</span>
+        <span className="ml-auto text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+          AI
+        </span>
+        {messages.length > 0 && (
+          <button
+            onClick={() => setMessages([])}
+            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors ml-1"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Ask me about {contact.firstName}</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                I have access to their insights, company context, and professional background.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 w-full max-w-sm">
+              {STARTERS(contact.firstName).map((q) => (
+                <button
+                  key={q}
+                  onClick={() => sendMessage(q)}
+                  className="text-xs px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/70 border border-border text-muted-foreground text-left transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {messages.map((msg, i) => (
+              <div key={i} className={cn("flex gap-2.5", msg.role === "user" ? "justify-end" : "justify-start")}>
+                {msg.role === "assistant" && (
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground rounded-tr-sm"
+                      : "bg-secondary text-foreground rounded-tl-sm",
+                  )}
+                >
+                  {msg.content || (
+                    isStreaming && i === messages.length - 1 ? (
+                      <span className="inline-flex gap-1 items-center">
+                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </span>
+                    ) : null
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="border-t border-border/40 p-3 flex gap-2 flex-shrink-0 bg-card">
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage(input);
+            }
+          }}
+          placeholder={`Ask about ${contact.firstName}…`}
+          rows={1}
+          className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/50 disabled:opacity-50"
+          disabled={isStreaming}
+        />
+        <button
+          onClick={() => sendMessage(input)}
+          disabled={!input.trim() || isStreaming}
+          className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <Send className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
