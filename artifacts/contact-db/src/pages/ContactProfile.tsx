@@ -88,6 +88,44 @@ export default function ContactProfile() {
     (creditStatus?.creditsUsed ?? 0) >= (creditStatus?.creditsTotal ?? 0);
 
   const [composeOpen, setComposeOpen] = useState(false);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const checkedInitRef = useRef(false);
+
+  useEffect(() => {
+    if (checkedInitRef.current) return;
+    const all = [
+      ...(personalInsights as InsightItem[]).map(i => `personal-${i.id}`),
+      ...(industryInsights as InsightItem[]).map(i => `industry-${i.id}`),
+      ...(roleInsights as InsightItem[]).map(i => `role-${i.id}`),
+      ...(colleagueInsights as InsightItem[]).map(i => `colleague-${i.id}`),
+      ...(counterpartInsights as InsightItem[]).map(i => `counterpart-${i.id}`),
+      ...(companyInsights as InsightItem[]).map(i => `company-${i.id}`),
+    ];
+    if (all.length > 0) {
+      setCheckedIds(new Set(all));
+      checkedInitRef.current = true;
+    }
+  }, [personalInsights, industryInsights, roleInsights, colleagueInsights, counterpartInsights, companyInsights]);
+
+  function toggleInsight(key: string) {
+    setCheckedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function toggleCategory(categoryId: string, catItems: InsightItem[]) {
+    const keys = catItems.map(i => `${categoryId}-${i.id}`);
+    setCheckedIds(prev => {
+      const next = new Set(prev);
+      const allChecked = keys.every(k => next.has(k));
+      if (allChecked) keys.forEach(k => next.delete(k));
+      else keys.forEach(k => next.add(k));
+      return next;
+    });
+  }
 
   const handleReveal = () => {
     if (revealMutation.isPending) return;
@@ -143,23 +181,23 @@ export default function ContactProfile() {
 
   return (
     <Shell>
-      <div className="bg-[#F8FAFC] min-h-full">
-        <div className="px-6 py-6">
-
-          {/* Back nav */}
-          <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-5 transition-colors gap-1.5">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-[#F8FAFC]">
+        {/* Back nav */}
+        <div className="px-6 pt-3 pb-2 flex-shrink-0">
+          <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1.5">
             <ArrowLeft className="h-4 w-4" />
             Back to Directory
           </Link>
+        </div>
 
-          {/* ── Three-column grid: 20 / 60 / 20 ──────────────────────────── */}
-          <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "20% 1fr 20%" }}>
+        {/* ── Three-column grid: 20 / 60 / 20 ──────────────────────────── */}
+        <div className="flex-1 min-h-0 px-6 pb-4 grid gap-5" style={{ gridTemplateColumns: "20% 1fr 20%" }}>
 
             {/* ══════════════════════════════════════════════════════════════
                 LEFT COLUMN — Insights
             ═══════════════════════════════════════════════════════════════ */}
-            <aside className="space-y-3 sticky top-6">
-              <div className="flex items-center justify-between mb-1">
+            <aside className="flex flex-col gap-3 overflow-y-auto min-h-0 pr-0.5">
+              <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
                 <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
                   {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
@@ -181,6 +219,9 @@ export default function ContactProfile() {
                     onReveal={handleReveal}
                     isRevealing={revealMutation.isPending || revealLoading}
                     outOfCredits={outOfCredits}
+                    checkedIds={checkedIds}
+                    onToggle={toggleInsight}
+                    onToggleAll={toggleCategory}
                   />
                 );
               })}
@@ -189,10 +230,10 @@ export default function ContactProfile() {
             {/* ══════════════════════════════════════════════════════════════
                 CENTER COLUMN — Contact Hub
             ═══════════════════════════════════════════════════════════════ */}
-            <main className="flex flex-col gap-5">
+            <main className="flex flex-col min-h-0 gap-5">
 
               {/* ── Merged Identity + Contact Details card ── */}
-              <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
+              <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden flex-shrink-0">
                 <div className="h-20 bg-gradient-to-r from-primary/15 via-indigo-100/60 to-violet-100/40" />
                 <div className="px-6 pb-5">
                   <div className="flex items-end gap-4 -mt-10 mb-3">
@@ -324,14 +365,14 @@ export default function ContactProfile() {
               </div>
 
               {/* ── Strategy Assistant (live chatbot) ── */}
-              <ContactChat id={id} contact={contact} />
+              <ContactChat id={id} contact={contact} checkedIds={checkedIds} />
             </main>
 
             {/* ══════════════════════════════════════════════════════════════
                 RIGHT COLUMN — Outreach Sandbox
             ═══════════════════════════════════════════════════════════════ */}
-            <aside className="space-y-3 sticky top-6">
-              <div className="flex items-center justify-between mb-1">
+            <aside className="flex flex-col gap-3 overflow-y-auto min-h-0 pr-0.5">
+              <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Outreach</h2>
                 <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Sandbox</span>
               </div>
@@ -374,7 +415,6 @@ export default function ContactProfile() {
               />
             </aside>
 
-          </div>
         </div>
       </div>
 
@@ -408,6 +448,9 @@ function InsightCategoryPanel({
   onReveal,
   isRevealing,
   outOfCredits,
+  checkedIds,
+  onToggle,
+  onToggleAll,
 }: {
   category: InsightCategory;
   items: InsightItem[];
@@ -416,19 +459,31 @@ function InsightCategoryPanel({
   onReveal: () => void;
   isRevealing: boolean;
   outOfCredits: boolean;
+  checkedIds: Set<string>;
+  onToggle: (key: string) => void;
+  onToggleAll: (categoryId: string, catItems: InsightItem[]) => void;
 }) {
   const [open, setOpen] = useState(true);
   const Icon = category.icon;
   const count = items.length;
 
+  const checkedCount = (!isPlaceholder && !isLocked)
+    ? items.filter(i => checkedIds.has(`${category.id}-${i.id}`)).length
+    : 0;
+  const allCategoryChecked = count > 0 && checkedCount === count;
+  const someCategoryChecked = checkedCount > 0 && checkedCount < count;
+
   return (
     <div className={cn(
-      "rounded-xl border bg-card overflow-hidden transition-all",
+      "rounded-xl border bg-card overflow-hidden transition-all flex-shrink-0",
       open ? "border-border/80 shadow-sm" : "border-border/40",
     )}>
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 group"
+        onKeyDown={(e) => e.key === "Enter" && setOpen((v) => !v)}
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 cursor-pointer"
       >
         <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0 border", category.accentBg, category.accentBorder)}>
           <Icon className={cn("h-3.5 w-3.5", category.color)} />
@@ -439,9 +494,30 @@ function InsightCategoryPanel({
         ) : isLocked ? (
           <Lock className="h-3 w-3 text-muted-foreground/50" />
         ) : count > 0 ? (
-          <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", category.accentBg, category.color)}>
-            {count}
-          </span>
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleAll(category.id, items); }}
+              title={allCategoryChecked ? "Deselect all" : "Select all"}
+              className={cn(
+                "h-3.5 w-3.5 rounded flex items-center justify-center flex-shrink-0 border transition-colors",
+                allCategoryChecked
+                  ? cn(category.accentBg, category.accentBorder)
+                  : "border-border/50 bg-background"
+              )}
+            >
+              {allCategoryChecked && (
+                <svg viewBox="0 0 10 10" className="h-2 w-2" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+              {someCategoryChecked && !allCategoryChecked && (
+                <span className="block h-0.5 w-1.5 bg-muted-foreground/60 rounded-full" />
+              )}
+            </button>
+            <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", category.accentBg, category.color)}>
+              {count}
+            </span>
+          </>
         ) : (
           <span className="text-[10px] text-muted-foreground/50">0</span>
         )}
@@ -449,7 +525,7 @@ function InsightCategoryPanel({
           "h-3.5 w-3.5 text-muted-foreground/60 transition-transform flex-shrink-0",
           open ? "rotate-180" : ""
         )} />
-      </button>
+      </div>
 
       {open && (
         <div className="border-t border-border/40">
@@ -462,31 +538,53 @@ function InsightCategoryPanel({
               No sources found.
             </p>
           ) : (
-            <div className="divide-y divide-border/40 max-h-72 overflow-y-auto">
+            <div className="divide-y divide-border/40">
               {items.map((item) => {
                 const cfg = getMediaConfig(item.mediaType);
                 const MIcon = cfg.icon;
+                const key = `${category.id}-${item.id}`;
+                const checked = checkedIds.has(key);
                 return (
-                  <a
+                  <div
                     key={item.id}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="flex items-start gap-2 px-3 py-2.5 hover:bg-secondary/40 transition-colors group"
                   >
-                    <div className={cn("w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 border", cfg.bg)}>
-                      <MIcon className={cn("h-2.5 w-2.5", cfg.color)} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
-                        {item.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                        {item.source}{item.publishedDate ? ` · ${item.publishedDate}` : ""}
-                      </p>
-                    </div>
-                    <ExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5" />
-                  </a>
+                    <button
+                      onClick={() => onToggle(key)}
+                      title={checked ? "Remove from context" : "Add to context"}
+                      className={cn(
+                        "h-3.5 w-3.5 rounded flex items-center justify-center flex-shrink-0 border mt-0.5 transition-colors",
+                        checked
+                          ? cn(category.accentBg, category.accentBorder)
+                          : "border-border/40 bg-background hover:border-border/80"
+                      )}
+                    >
+                      {checked && (
+                        <svg viewBox="0 0 10 10" className="h-2 w-2" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </button>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-start gap-2 flex-1 min-w-0"
+                    >
+                      <div className={cn("w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 border", cfg.bg)}>
+                        <MIcon className={cn("h-2.5 w-2.5", cfg.color)} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                          {item.title}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                          {item.source}{item.publishedDate ? ` · ${item.publishedDate}` : ""}
+                        </p>
+                      </div>
+                      <ExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5" />
+                    </a>
+                  </div>
                 );
               })}
             </div>
@@ -629,7 +727,7 @@ const STARTERS = (firstName: string) => [
   `What topics would resonate most with ${firstName}?`,
 ];
 
-function ContactChat({ id, contact }: { id: number; contact: { firstName: string } }) {
+function ContactChat({ id, contact, checkedIds }: { id: number; contact: { firstName: string }; checkedIds: Set<string> }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -654,7 +752,7 @@ function ContactChat({ id, contact }: { id: number; contact: { firstName: string
       const resp = await fetch(`/api/contacts/${id}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, selectedIds: Array.from(checkedIds) }),
       });
 
       if (!resp.ok || !resp.body) throw new Error("Request failed");
@@ -702,10 +800,7 @@ function ContactChat({ id, contact }: { id: number; contact: { firstName: string
   }
 
   return (
-    <div
-      className="flex flex-col rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden"
-      style={{ height: "calc(100vh - 24rem)" }}
-    >
+    <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 flex-shrink-0">
         <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">

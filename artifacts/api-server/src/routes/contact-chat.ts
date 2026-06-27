@@ -31,6 +31,18 @@ function parseMessages(body: unknown): { role: "user" | "assistant"; content: st
   return result;
 }
 
+function parseSelectedIds(body: unknown): Set<string> | null {
+  if (!body || typeof body !== "object") return null;
+  const ids = (body as Record<string, unknown>).selectedIds;
+  if (!Array.isArray(ids)) return null;
+  return new Set(ids.filter((id): id is string => typeof id === "string"));
+}
+
+function filterBySelected<T extends { id: number }>(items: T[], prefix: string, selected: Set<string> | null): T[] {
+  if (!selected) return items;
+  return items.filter(i => selected.has(`${prefix}-${i.id}`));
+}
+
 function fmt(items: Array<{ title: string; source: string; publishedDate?: string | null; description?: string | null }>) {
   if (!items.length) return "  None available.";
   return items
@@ -51,6 +63,7 @@ router.post("/", async (req, res) => {
       res.status(400).json({ error: "Invalid request body" });
       return;
     }
+    const selectedIds = parseSelectedIds(req.body);
 
     const [[contact], personal, industry, role, colleague, counterpart] = await Promise.all([
       db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1),
@@ -77,6 +90,13 @@ router.post("/", async (req, res) => {
       companyIns = ci;
     }
 
+    const fp = filterBySelected(personal, "personal", selectedIds);
+    const fi = filterBySelected(industry, "industry", selectedIds);
+    const fr = filterBySelected(role, "role", selectedIds);
+    const fc = filterBySelected(colleague, "colleague", selectedIds);
+    const fct = filterBySelected(counterpart, "counterpart", selectedIds);
+    const fci = filterBySelected(companyIns, "company", selectedIds);
+
     const systemPrompt = `You are an AI contact intelligence assistant embedded in Whyhello, a B2B relationship intelligence platform. Help the user deeply understand and engage with their contact.
 
 CONTACT PROFILE
@@ -88,22 +108,22 @@ Seniority: ${contact.seniority ?? "Not specified"}
 Bio: ${contact.bio ?? "Not available"}
 
 PERSONAL INSIGHTS (content directly about ${contact.firstName}):
-${fmt(personal)}
+${fmt(fp)}
 
 INDUSTRY INSIGHTS (sector trends they operate in):
-${fmt(industry)}
+${fmt(fi)}
 
 ROLE INSIGHTS (content relevant to their function):
-${fmt(role)}
+${fmt(fr)}
 
 COLLEAGUE INSIGHTS (their team and peers):
-${fmt(colleague)}
+${fmt(fc)}
 
 COUNTERPART INSIGHTS (competitor and partner perspectives):
-${fmt(counterpart)}
+${fmt(fct)}
 
 COMPANY INSIGHTS (${company?.name ?? "their company"} news and press):
-${fmt(companyIns)}
+${fmt(fci)}
 
 Your role:
 - Answer any question about this contact's priorities, background, and professional context
