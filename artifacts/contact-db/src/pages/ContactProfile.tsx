@@ -319,6 +319,7 @@ export default function ContactProfile() {
   const { data: creditStatus } = useCreditsStatus();
   const revealMutation = useRevealContact();
   const createJobMutation = useCreateOutreachJob();
+  const [jobRefetchTrigger, setJobRefetchTrigger] = useState(0);
 
   const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[] }) => {
     const lengthLabel = params.length.charAt(0).toUpperCase() + params.length.slice(1);
@@ -330,6 +331,8 @@ export default function ContactProfile() {
         title: `Intro Email — ${lengthLabel}, ${toneLabel}`,
         params: { length: params.length, tone: params.tone, selectedInsightKeys: params.selectedInsightKeys },
       },
+    }, {
+      onSuccess: () => setJobRefetchTrigger(t => t + 1),
     });
   }, [createJobMutation, id]);
 
@@ -766,7 +769,7 @@ export default function ContactProfile() {
                 </div>
 
                 {/* Jobs list */}
-                <OutreachJobsList contactId={id} />
+                <OutreachJobsList contactId={id} refetchTrigger={jobRefetchTrigger} />
 
               </aside>
             )}

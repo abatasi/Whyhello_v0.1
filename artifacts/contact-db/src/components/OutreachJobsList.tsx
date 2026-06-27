@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   useListOutreachJobs,
   useDeleteOutreachJob,
@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose,
 } from "@/components/ui/dialog";
 import {
-  Loader2, CheckCircle2, XCircle, Eye, Share2, Download,
+  CheckCircle2, XCircle, Eye, Share2, Download,
   Trash2, PenLine, FileText, ChevronDown, ChevronUp,
   Copy, Check,
 } from "lucide-react";
@@ -37,6 +37,30 @@ function timeAgo(dateStr: string) {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
+}
+
+function GeneratingBars() {
+  return (
+    <span className="inline-flex items-end gap-[3px] h-3.5">
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className="w-[3px] rounded-full bg-blue-400"
+          style={{
+            animation: "wyBarBounce 1.1s ease-in-out infinite",
+            animationDelay: `${i * 0.16}s`,
+            height: "6px",
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes wyBarBounce {
+          0%, 80%, 100% { transform: scaleY(1); opacity: 0.5; }
+          40% { transform: scaleY(2.2); opacity: 1; }
+        }
+      `}</style>
+    </span>
+  );
 }
 
 function RenameDialog({ job, onClose, onSave }: { job: Job; onClose: () => void; onSave: (title: string) => void }) {
@@ -214,14 +238,14 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
   return (
     <>
       <div className={cn(
-        "rounded-xl border bg-card px-3.5 py-3 transition-all",
-        isGenerating && "border-blue-200/60 bg-blue-50/30",
+        "rounded-xl border px-3.5 py-3 transition-all",
+        isGenerating && "border-blue-200/70 bg-gradient-to-r from-blue-50/40 to-indigo-50/20",
         isFailed && "border-red-200/60 bg-red-50/20",
-        isCompleted && "border-border/60 hover:border-border"
+        isCompleted && "bg-card border-border/60 hover:border-border"
       )}>
         <div className="flex items-start gap-2.5">
-          <div className="flex-shrink-0 mt-0.5">
-            {isGenerating && <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />}
+          <div className="flex-shrink-0 mt-[3px]">
+            {isGenerating && <GeneratingBars />}
             {isCompleted && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
             {isFailed && <XCircle className="h-3.5 w-3.5 text-red-400" />}
           </div>
@@ -231,7 +255,7 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
               {job.type.replace("_", " ")} · {job.params?.length} · {job.params?.tone}
             </p>
             {isGenerating && (
-              <p className="text-[10px] text-blue-500 mt-1 font-medium">Generating…</p>
+              <p className="text-[10px] text-blue-500/80 mt-1 font-medium tracking-wide">Writing your email…</p>
             )}
             {isFailed && (
               <p className="text-[10px] text-red-400 mt-1 font-medium">Generation failed</p>
@@ -314,7 +338,7 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
   );
 }
 
-export function OutreachJobsList({ contactId }: { contactId: number }) {
+export function OutreachJobsList({ contactId, refetchTrigger }: { contactId: number; refetchTrigger?: number }) {
   const [expanded, setExpanded] = useState(true);
 
   const { data: jobs = [], refetch } = useListOutreachJobs(contactId, {
@@ -326,6 +350,12 @@ export function OutreachJobsList({ contactId }: { contactId: number }) {
       },
     },
   });
+
+  useEffect(() => {
+    if (!refetchTrigger) return;
+    refetch();
+    setExpanded(true);
+  }, [refetchTrigger, refetch]);
 
   if (jobs.length === 0) return null;
 
