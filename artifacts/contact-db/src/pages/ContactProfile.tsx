@@ -20,8 +20,9 @@ import {
   Mic2, FileText, Share2, Megaphone, ChevronDown,
   Lock, Zap, AlertCircle, Send, User, TrendingUp,
   Users, Handshake, MessageSquare, Sparkles, PenLine,
-  StickyNote, Globe, ChevronRight,
+  StickyNote, Globe, ChevronRight, ChevronLeft,
 } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getInitials, cn } from "@/lib/utils";
@@ -88,6 +89,7 @@ export default function ContactProfile() {
     (creditStatus?.creditsUsed ?? 0) >= (creditStatus?.creditsTotal ?? 0);
 
   const [composeOpen, setComposeOpen] = useState(false);
+  const [insightsCollapsed, setInsightsCollapsed] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const seenIdsRef = useRef<Set<string>>(new Set());
 
@@ -195,41 +197,134 @@ export default function ContactProfile() {
         </div>
 
         {/* ── Three-column grid: 20 / 60 / 20 ──────────────────────────── */}
-        <div className="flex-1 min-h-0 px-6 pb-4 grid gap-5 overflow-hidden" style={{ gridTemplateColumns: "20% 1fr 20%", gridTemplateRows: "minmax(0, 1fr)" }}>
+        <div className="flex-1 min-h-0 px-6 pb-4 grid gap-5 overflow-hidden transition-[grid-template-columns] duration-200" style={{ gridTemplateColumns: insightsCollapsed ? "3rem 1fr 20%" : "20% 1fr 20%", gridTemplateRows: "minmax(0, 1fr)" }}>
 
             {/* ══════════════════════════════════════════════════════════════
                 LEFT COLUMN — Insights
             ═══════════════════════════════════════════════════════════════ */}
-            <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
-              <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
-                <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                  {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
-                </span>
-              </div>
+            {/* ── EXPANDED left column ── */}
+            {!insightsCollapsed && (
+              <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
+                <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
+                  <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                      {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
+                    </span>
+                    <button
+                      onClick={() => setInsightsCollapsed(true)}
+                      title="Collapse insights panel"
+                      className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
 
-              {INSIGHT_CATEGORIES.map((cat) => {
-                const items = categoryData[cat.id] ?? [];
-                const isPlaceholder = false;
-                const isLocked = cat.id === "personal" && !isRevealed;
+                {INSIGHT_CATEGORIES.map((cat) => {
+                  const items = categoryData[cat.id] ?? [];
+                  const isPlaceholder = false;
+                  const isLocked = cat.id === "personal" && !isRevealed;
+                  return (
+                    <InsightCategoryPanel
+                      key={cat.id}
+                      category={cat}
+                      items={items}
+                      isPlaceholder={isPlaceholder}
+                      isLocked={isLocked}
+                      onReveal={handleReveal}
+                      isRevealing={revealMutation.isPending || revealLoading}
+                      outOfCredits={outOfCredits}
+                      checkedIds={checkedIds}
+                      onToggle={toggleInsight}
+                      onToggleAll={toggleCategory}
+                    />
+                  );
+                })}
+              </aside>
+            )}
 
-                return (
-                  <InsightCategoryPanel
-                    key={cat.id}
-                    category={cat}
-                    items={items}
-                    isPlaceholder={isPlaceholder}
-                    isLocked={isLocked}
-                    onReveal={handleReveal}
-                    isRevealing={revealMutation.isPending || revealLoading}
-                    outOfCredits={outOfCredits}
-                    checkedIds={checkedIds}
-                    onToggle={toggleInsight}
-                    onToggleAll={toggleCategory}
-                  />
-                );
-              })}
-            </aside>
+            {/* ── COLLAPSED left column ── */}
+            {insightsCollapsed && (
+              <aside className="flex flex-col items-center min-h-0 overflow-hidden gap-1 pt-1">
+                {/* Expand button */}
+                <button
+                  onClick={() => setInsightsCollapsed(false)}
+                  title="Expand insights panel"
+                  className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/40 transition-colors flex-shrink-0 mb-1"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+
+                {/* Scrollable icon strip */}
+                <TooltipProvider delayDuration={150}>
+                  <div className="flex flex-col items-center gap-1 overflow-y-scroll scroll-thin flex-1 min-h-0 w-full pb-2">
+                    {INSIGHT_CATEGORIES.flatMap((cat) => {
+                      const items = categoryData[cat.id] ?? [];
+                      const CatIcon = cat.icon;
+                      if (items.length === 0) {
+                        return [(
+                          <Tooltip key={`cat-${cat.id}`}>
+                            <TooltipTrigger asChild>
+                              <div className={cn(
+                                "h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border opacity-40",
+                                cat.accentBg, cat.accentBorder
+                              )}>
+                                <CatIcon className={cn("h-3.5 w-3.5", cat.color)} />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" sideOffset={8} className="bg-popover border border-border text-popover-foreground shadow-lg p-0 overflow-hidden max-w-56">
+                              <div className="px-3 py-2">
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">{cat.label}</p>
+                                <p className="text-xs text-muted-foreground">No sources yet</p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        )];
+                      }
+                      return items.map((item) => {
+                        const cfg = getMediaConfig(item.mediaType);
+                        const MIcon = cfg.icon;
+                        const key = `${cat.id}-${item.id}`;
+                        const checked = checkedIds.has(key);
+                        return (
+                          <Tooltip key={key}>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => toggleInsight(key)}
+                                className={cn(
+                                  "h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border transition-colors",
+                                  checked
+                                    ? cn(cat.accentBg, cat.accentBorder)
+                                    : "bg-background border-border/40 hover:border-border/80"
+                                )}
+                              >
+                                <MIcon className={cn("h-3.5 w-3.5", checked ? cat.color : "text-muted-foreground/60")} />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" sideOffset={8} className="bg-popover border border-border text-popover-foreground shadow-lg p-0 overflow-hidden max-w-56">
+                              <div className={cn("px-2 py-1 text-[9px] font-semibold uppercase tracking-wider", cat.accentBg, cat.color)}>
+                                {cat.label}
+                              </div>
+                              <div className="px-3 py-2 flex flex-col gap-0.5">
+                                <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">{item.title}</p>
+                                <p className="text-[10px] text-muted-foreground">{cfg.label} · {item.source}</p>
+                                {item.publishedDate && (
+                                  <p className="text-[10px] text-muted-foreground/70">
+                                    {new Date(item.publishedDate).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                                  </p>
+                                )}
+                                <p className="text-[9px] text-muted-foreground/50 mt-0.5">{checked ? "✓ In context" : "Click to add to context"}</p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      });
+                    })}
+                  </div>
+                </TooltipProvider>
+              </aside>
+            )}
 
             {/* ══════════════════════════════════════════════════════════════
                 CENTER COLUMN — Contact Hub
