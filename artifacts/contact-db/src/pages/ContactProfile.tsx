@@ -832,7 +832,7 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">Ask me about {contact.firstName}</p>
+              <p className="text-sm font-semibold text-foreground">Ask me about {contact.firstName} based on {checkedIds.size} selected {checkedIds.size === 1 ? "source" : "sources"}</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
                 I have access to their insights, company context, and professional background.
               </p>
