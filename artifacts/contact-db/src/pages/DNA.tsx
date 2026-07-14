@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
 import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown,
-  Save, CheckCircle2, Dna, Sparkles,
+  Save, CheckCircle2, Dna, Sparkles, Upload, X, FileText,
+  Loader2, RefreshCw,
 } from "lucide-react";
 
-// ── Persistence helpers ──────────────────────────────────────────────────────
+// ── Persistence ──────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "whyhello_dna_v1";
+const STORAGE_KEY = "whyhello_dna_v2";
 
 function loadDNA(): DNAData {
   try {
@@ -24,8 +25,6 @@ function saveDNA(data: DNAData) {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type ToneTag = string;
-
 interface Product {
   id: string;
   name: string;
@@ -37,10 +36,10 @@ interface Product {
 
 interface DNAData {
   voice: {
-    toneTags: ToneTag[];
+    toneTags: string[];
     communicationStyle: string;
     writingNotes: string;
-    examplePhrases: string;
+    trainingText: string;
   };
   products: Product[];
   company: {
@@ -58,7 +57,7 @@ function defaultDNA(): DNAData {
       toneTags: [],
       communicationStyle: "balanced",
       writingNotes: "",
-      examplePhrases: "",
+      trainingText: "",
     },
     products: [],
     company: {
@@ -107,14 +106,9 @@ function useAutoSave(data: DNAData) {
 // ── Section wrapper ──────────────────────────────────────────────────────────
 
 function Section({
-  icon: Icon,
-  title,
-  subtitle,
-  accentBg,
-  accentBorder,
-  accentColor,
-  defaultOpen = true,
-  children,
+  icon: Icon, title, subtitle,
+  accentBg, accentBorder, accentColor,
+  defaultOpen = true, children,
 }: {
   icon: React.ElementType;
   title: string;
@@ -126,7 +120,6 @@ function Section({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-
   return (
     <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
       <button
@@ -143,7 +136,7 @@ function Section({
         <ChevronDown className={cn("h-4 w-4 text-muted-foreground/60 transition-transform flex-shrink-0", open && "rotate-180")} />
       </button>
       {open && (
-        <div className={cn("border-t border-border/40 px-6 py-6 flex flex-col gap-6")}>
+        <div className="border-t border-border/40 px-6 py-6 flex flex-col gap-6">
           {children}
         </div>
       )}
@@ -151,7 +144,7 @@ function Section({
   );
 }
 
-// ── Field components ─────────────────────────────────────────────────────────
+// ── Field ────────────────────────────────────────────────────────────────────
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -174,7 +167,7 @@ function Textarea({ value, onChange, placeholder, rows = 3 }: {
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full resize-none rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 leading-relaxed transition-colors"
+      className="w-full resize-y rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 leading-relaxed transition-colors"
     />
   );
 }
@@ -193,11 +186,74 @@ function Input({ value, onChange, placeholder }: {
   );
 }
 
+// ── Uploaded file pill ───────────────────────────────────────────────────────
+
+interface UploadedFile {
+  name: string;
+  status: "processing" | "done" | "error";
+}
+
+// ── Voice Profile card ───────────────────────────────────────────────────────
+
+function VoiceProfileCard({
+  summary, loading, onRefresh, hasInputs,
+}: {
+  summary: string;
+  loading: boolean;
+  onRefresh: () => void;
+  hasInputs: boolean;
+}) {
+  if (!hasInputs && !loading && !summary) return null;
+
+  return (
+    <div className="rounded-xl border border-violet-200 bg-violet-50/60 overflow-hidden">
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-violet-200/60">
+        <div className="h-6 w-6 rounded-full bg-violet-100 border border-violet-200 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="h-3.5 w-3.5 text-violet-600" />
+        </div>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700 flex-1">Your Voice Profile</span>
+        <span className="text-[10px] text-violet-500/70">Whyhello's read on you</span>
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          title="Regenerate"
+          className="h-6 w-6 rounded-md flex items-center justify-center text-violet-500 hover:text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-40"
+        >
+          <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+        </button>
+      </div>
+      <div className="px-4 py-3.5">
+        {loading ? (
+          <div className="flex flex-col gap-2">
+            <div className="h-3.5 bg-violet-200/60 rounded-full animate-pulse w-full" />
+            <div className="h-3.5 bg-violet-200/60 rounded-full animate-pulse w-[88%]" />
+            <div className="h-3.5 bg-violet-200/60 rounded-full animate-pulse w-[72%]" />
+          </div>
+        ) : (
+          <p className="text-sm text-violet-900/80 leading-relaxed">{summary}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function DNA() {
   const [data, setData] = useState<DNAData>(loadDNA);
   const saved = useAutoSave(data);
+
+  // Voice profile AI summary
+  const [voiceSummary, setVoiceSummary] = useState("");
+  const [voiceSummaryLoading, setVoiceSummaryLoading] = useState(false);
+  const summaryTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  // File upload state
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Setters ──────────────────────────────────────────────────────────────
 
   function setVoice(patch: Partial<DNAData["voice"]>) {
     setData(d => ({ ...d, voice: { ...d.voice, ...patch } }));
@@ -228,6 +284,78 @@ export default function DNA() {
       return { ...d, voice: { ...d.voice, toneTags: has ? d.voice.toneTags.filter(t => t !== tag) : [...d.voice.toneTags, tag] } };
     });
   }
+
+  // ── Voice profile generation ─────────────────────────────────────────────
+
+  const generateVoiceSummary = useCallback(async () => {
+    const { toneTags, communicationStyle, writingNotes, trainingText } = data.voice;
+    const hasInputs = toneTags.length > 0 || !!communicationStyle || !!writingNotes || !!trainingText;
+    if (!hasInputs) { setVoiceSummary(""); return; }
+
+    setVoiceSummaryLoading(true);
+    try {
+      const resp = await fetch("/api/dna/voice-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toneTags, communicationStyle, writingNotes, trainingText }),
+      });
+      const json = await resp.json() as { summary: string };
+      setVoiceSummary(json.summary ?? "");
+    } catch {
+      setVoiceSummary("Unable to generate summary right now.");
+    } finally {
+      setVoiceSummaryLoading(false);
+    }
+  }, [data.voice]);
+
+  // Debounced auto-generation when voice inputs change
+  useEffect(() => {
+    if (summaryTimer.current) clearTimeout(summaryTimer.current);
+    summaryTimer.current = setTimeout(generateVoiceSummary, 1500);
+    return () => { if (summaryTimer.current) clearTimeout(summaryTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.voice.toneTags, data.voice.communicationStyle, data.voice.writingNotes, data.voice.trainingText]);
+
+  // ── File upload handling ─────────────────────────────────────────────────
+
+  async function processFile(file: File) {
+    const name = file.name;
+    const allowed = name.endsWith(".txt") || name.endsWith(".docx") || name.endsWith(".pdf");
+    if (!allowed) return;
+
+    setUploadedFiles(prev => [...prev, { name, status: "processing" }]);
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const resp = await fetch("/api/dna/extract-text", { method: "POST", body: form });
+      if (!resp.ok) throw new Error("Extraction failed");
+      const { text } = await resp.json() as { text: string };
+      setData(d => ({
+        ...d,
+        voice: {
+          ...d.voice,
+          trainingText: d.voice.trainingText
+            ? d.voice.trainingText + "\n\n---\n\n" + text
+            : text,
+        },
+      }));
+      setUploadedFiles(prev => prev.map(f => f.name === name ? { ...f, status: "done" } : f));
+    } catch {
+      setUploadedFiles(prev => prev.map(f => f.name === name ? { ...f, status: "error" } : f));
+    }
+  }
+
+  function handleFiles(files: FileList | null) {
+    if (!files) return;
+    Array.from(files).forEach(processFile);
+  }
+
+  const voiceHasInputs =
+    data.voice.toneTags.length > 0 ||
+    !!data.voice.communicationStyle ||
+    !!data.voice.writingNotes ||
+    !!data.voice.trainingText;
 
   return (
     <Shell>
@@ -319,14 +447,94 @@ export default function DNA() {
             />
           </Field>
 
-          <Field label="Example phrases or openers" hint="Phrases you naturally use or love">
+          {/* Training communications */}
+          <Field
+            label="Training communications"
+            hint="Paste emails, messages, or any writing you want Whyhello to learn from"
+          >
             <Textarea
-              value={data.voice.examplePhrases}
-              onChange={v => setVoice({ examplePhrases: v })}
-              placeholder="e.g. 'Curious if you've seen…' / 'Quick thought based on your recent…' / 'Totally understand if the timing's off…'"
-              rows={3}
+              value={data.voice.trainingText}
+              onChange={v => setVoice({ trainingText: v })}
+              placeholder={`Paste previous emails, LinkedIn messages, proposals, or any writing that reflects how you genuinely communicate. The more you share, the more accurately Whyhello can write in your voice.\n\nYou can also upload .txt, .docx, or .pdf files below — the extracted text will be added here automatically.`}
+              rows={10}
             />
           </Field>
+
+          {/* File upload zone */}
+          <div className="flex flex-col gap-2">
+            <div
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+              onClick={() => fileInputRef.current?.click()}
+              className={cn(
+                "flex flex-col items-center gap-2.5 py-5 px-4 rounded-xl border-2 border-dashed cursor-pointer transition-all",
+                dragOver
+                  ? "border-violet-400 bg-violet-50"
+                  : "border-border/50 hover:border-violet-300 hover:bg-violet-50/40"
+              )}
+            >
+              <div className={cn(
+                "h-9 w-9 rounded-full flex items-center justify-center border transition-colors",
+                dragOver ? "bg-violet-100 border-violet-300" : "bg-secondary border-border/60"
+              )}>
+                <Upload className={cn("h-4 w-4", dragOver ? "text-violet-600" : "text-muted-foreground")} />
+              </div>
+              <div className="text-center">
+                <p className="text-xs font-semibold text-foreground">
+                  {dragOver ? "Drop to upload" : "Upload files"}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">.txt · .docx · .pdf · up to 15 MB each</p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                multiple
+                className="hidden"
+                onChange={e => handleFiles(e.target.files)}
+              />
+            </div>
+
+            {/* Uploaded file pills */}
+            {uploadedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {uploadedFiles.map((f, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-semibold transition-all",
+                      f.status === "processing" && "bg-secondary border-border/50 text-muted-foreground",
+                      f.status === "done" && "bg-emerald-50 border-emerald-200 text-emerald-700",
+                      f.status === "error" && "bg-red-50 border-red-200 text-red-600",
+                    )}
+                  >
+                    {f.status === "processing"
+                      ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                      : <FileText className="h-2.5 w-2.5" />
+                    }
+                    <span className="max-w-[160px] truncate">{f.name}</span>
+                    {f.status === "done" && <CheckCircle2 className="h-2.5 w-2.5" />}
+                    {f.status === "error" && <span className="opacity-70">failed</span>}
+                    <button
+                      onClick={e => { e.stopPropagation(); setUploadedFiles(prev => prev.filter((_, j) => j !== i)); }}
+                      className="ml-0.5 opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* AI Voice Profile card */}
+          <VoiceProfileCard
+            summary={voiceSummary}
+            loading={voiceSummaryLoading}
+            onRefresh={generateVoiceSummary}
+            hasInputs={voiceHasInputs}
+          />
         </Section>
 
         {/* ── Products ── */}
@@ -447,7 +655,7 @@ export default function DNA() {
             <Textarea
               value={data.company.positioning}
               onChange={v => setCompany({ positioning: v })}
-              placeholder="e.g. For revenue teams at growth-stage B2B companies who struggle to personalise outreach at scale, Whyhello is a relationship intelligence platform that surfaces the right context at the right moment — unlike generic CRMs that capture history but not opportunity."
+              placeholder="e.g. For revenue teams at growth-stage B2B companies who struggle to personalise outreach at scale, Whyhello is a relationship intelligence platform that surfaces the right context at the right moment…"
               rows={4}
             />
           </Field>
@@ -465,10 +673,7 @@ export default function DNA() {
             <div className="flex flex-col gap-2">
               {([0, 1, 2] as const).map(i => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className={cn(
-                    "h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 border",
-                    "bg-emerald-50 border-emerald-200 text-emerald-700"
-                  )}>
+                  <span className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 border bg-emerald-50 border-emerald-200 text-emerald-700">
                     {i + 1}
                   </span>
                   <Input
@@ -486,7 +691,7 @@ export default function DNA() {
           </Field>
         </Section>
 
-        {/* Footer hint */}
+        {/* Footer */}
         <div className="flex items-center gap-2 py-2 justify-center">
           <Sparkles className="h-3 w-3 text-muted-foreground/40" />
           <p className="text-[10px] text-muted-foreground/60 text-center">

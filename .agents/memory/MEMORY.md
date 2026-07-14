@@ -1,0 +1,1 @@
+- [gpt-5-mini API parameters](gpt-5-mini-params.md) — never set max_tokens or max_completion_tokens; both silently produce empty output
