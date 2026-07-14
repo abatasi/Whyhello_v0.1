@@ -26,7 +26,7 @@ import {
   Lock, Zap, AlertCircle, Send, User, TrendingUp,
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
-  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2,
+  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -802,7 +802,7 @@ export default function ContactProfile() {
               </div>
 
               {/* ── Strategy Assistant (live chatbot) ── */}
-              <ContactChat id={id} contact={contact} checkedIds={checkedIds} />
+              <ContactChat id={id} contact={contact} checkedIds={checkedIds} highlightedInsight={selectedInsight} />
             </main>
 
             {/* ══════════════════════════════════════════════════════════════
@@ -1625,7 +1625,14 @@ const STARTERS = (firstName: string) => [
   `What topics would resonate most with ${firstName}?`,
 ];
 
-function ContactChat({ id, contact, checkedIds }: { id: number; contact: { firstName: string }; checkedIds: Set<string> }) {
+function ContactChat({
+  id, contact, checkedIds, highlightedInsight,
+}: {
+  id: number;
+  contact: { firstName: string };
+  checkedIds: Set<string>;
+  highlightedInsight?: { item: InsightItem; category: InsightCategory } | null;
+}) {
   const { data: savedMessages = [], isLoading: historyLoading } = useListChatMessages(id);
   const persistMessage = useCreateChatMessage();
   const clearMutation = useClearChatMessages();
@@ -1634,8 +1641,22 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
   const [hydrated, setHydrated] = useState(false);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [useOnlyHighlighted, setUseOnlyHighlighted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Reset toggle whenever the highlighted insight changes
+  useEffect(() => {
+    setUseOnlyHighlighted(false);
+  }, [highlightedInsight?.item.id]);
+
+  // Effective source IDs sent to the API
+  const effectiveIds = (() => {
+    if (highlightedInsight && useOnlyHighlighted) {
+      return [`${highlightedInsight.category.id}-${highlightedInsight.item.id}`];
+    }
+    return Array.from(checkedIds);
+  })();
 
   // Hydrate from DB on first load
   useEffect(() => {
@@ -1668,7 +1689,7 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
       const resp = await fetch(`/api/contacts/${id}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, selectedIds: Array.from(checkedIds) }),
+        body: JSON.stringify({ messages: history, selectedIds: effectiveIds }),
       });
 
       if (!resp.ok || !resp.body) throw new Error("Request failed");
@@ -1757,10 +1778,21 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">Ask me about {contact.firstName} based on {checkedIds.size} selected {checkedIds.size === 1 ? "source" : "sources"}</p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                I have access to their insights, company context, and professional background.
-              </p>
+              {highlightedInsight && useOnlyHighlighted ? (
+                <>
+                  <p className="text-sm font-semibold text-foreground">Ask me about {contact.firstName}</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs leading-snug">
+                    Using only: <span className="font-medium text-foreground">{highlightedInsight.item.title}</span>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-foreground">Ask me about {contact.firstName} based on {effectiveIds.length} selected {effectiveIds.length === 1 ? "source" : "sources"}</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                    I have access to their insights, company context, and professional background.
+                  </p>
+                </>
+              )}
             </div>
             <div className="flex flex-col gap-2 w-full max-w-sm">
               {STARTERS(contact.firstName).map((q) => (
@@ -1808,8 +1840,42 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
         )}
       </div>
 
+      {/* Source toggle — visible when a highlighted insight is active */}
+      {highlightedInsight && (
+        <div className="border-t border-border/40 px-3 pt-2.5 pb-0 flex items-center gap-2.5 flex-shrink-0 bg-card">
+          <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary border border-border/50 flex-shrink-0">
+            <button
+              onClick={() => setUseOnlyHighlighted(false)}
+              className={cn(
+                "px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all",
+                !useOnlyHighlighted
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              All sources
+            </button>
+            <button
+              onClick={() => setUseOnlyHighlighted(true)}
+              className={cn(
+                "px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all flex items-center gap-1",
+                useOnlyHighlighted
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <BookOpen className="h-2.5 w-2.5 flex-shrink-0" />
+              This source
+            </button>
+          </div>
+          <span className="text-[10px] text-muted-foreground truncate min-w-0 flex-1 italic">
+            {highlightedInsight.item.title}
+          </span>
+        </div>
+      )}
+
       {/* Input */}
-      <div className="border-t border-border/40 p-3 flex gap-2 flex-shrink-0 bg-card">
+      <div className={cn("p-3 flex gap-2 flex-shrink-0 bg-card", !highlightedInsight && "border-t border-border/40")}>
         <textarea
           ref={textareaRef}
           value={input}
@@ -1820,7 +1886,11 @@ function ContactChat({ id, contact, checkedIds }: { id: number; contact: { first
               sendMessage(input);
             }
           }}
-          placeholder={`Ask about ${contact.firstName}…`}
+          placeholder={
+            highlightedInsight && useOnlyHighlighted
+              ? `Ask about this source…`
+              : `Ask about ${contact.firstName}…`
+          }
           rows={1}
           className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/50 disabled:opacity-50"
           disabled={isStreaming}
