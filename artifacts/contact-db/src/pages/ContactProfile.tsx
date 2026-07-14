@@ -504,6 +504,11 @@ export default function ContactProfile() {
                       checkedIds={checkedIds}
                       onToggle={toggleInsight}
                       onToggleAll={toggleCategory}
+                      onCardClick={(item) => {
+                        setSelectedInsight({ item, category: cat });
+                        setInsightsMode("expanded");
+                        setOutreachCollapsed(true);
+                      }}
                     />
                   );
                 })}
@@ -1453,11 +1458,9 @@ function InsightCategoryPanel({
                         </svg>
                       )}
                     </button>
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-start gap-2 flex-1 min-w-0"
+                    <button
+                      onClick={() => onCardClick?.(item)}
+                      className="flex items-start gap-2 flex-1 min-w-0 text-left"
                     >
                       <div className={cn("w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 border", cfg.bg)}>
                         <MIcon className={cn("h-2.5 w-2.5", cfg.color)} />
@@ -1470,7 +1473,15 @@ function InsightCategoryPanel({
                           {item.source}{item.publishedDate ? ` · ${item.publishedDate}` : ""}
                         </p>
                       </div>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5" />
+                    </button>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open source"
+                      className="h-5 w-5 flex items-center justify-center text-muted-foreground/40 hover:text-primary transition-colors flex-shrink-0 mt-0.5"
+                    >
+                      <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
                 );
