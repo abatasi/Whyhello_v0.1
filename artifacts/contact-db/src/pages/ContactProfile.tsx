@@ -26,7 +26,7 @@ import {
   Lock, Zap, AlertCircle, Send, User, TrendingUp,
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
-  Layers, Shield, Theater, HelpCircle, Wand2, X,
+  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -344,8 +344,9 @@ export default function ContactProfile() {
     !creditStatus?.isUnlimited &&
     (creditStatus?.creditsUsed ?? 0) >= (creditStatus?.creditsTotal ?? 0);
 
+  type InsightsMode = "normal" | "collapsed" | "expanded";
   const [composeOpen, setComposeOpen] = useState(false);
-  const [insightsCollapsed, setInsightsCollapsed] = useState(false);
+  const [insightsMode, setInsightsMode] = useState<InsightsMode>("normal");
   const [outreachCollapsed, setOutreachCollapsed] = useState(false);
   const [activeOutput, setActiveOutput] = useState<string | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
@@ -454,14 +455,14 @@ export default function ContactProfile() {
           </Link>
         </div>
 
-        {/* ── Three-column grid: 20 / 60 / 20 ──────────────────────────── */}
-        <div className="flex-1 min-h-0 px-6 pb-4 grid gap-5 overflow-hidden transition-[grid-template-columns] duration-200" style={{ gridTemplateColumns: `${insightsCollapsed ? "3rem" : "20%"} 1fr ${outreachCollapsed ? "3rem" : "20%"}`, gridTemplateRows: "minmax(0, 1fr)" }}>
+        {/* ── Three-column grid ─────────────────────────────────────────── */}
+        <div className="flex-1 min-h-0 px-6 pb-4 grid gap-5 overflow-hidden transition-[grid-template-columns] duration-200" style={{ gridTemplateColumns: `${insightsMode === "collapsed" ? "3rem" : insightsMode === "expanded" ? "50%" : "20%"} 1fr ${insightsMode === "expanded" ? "3rem" : outreachCollapsed ? "3rem" : "20%"}`, gridTemplateRows: "minmax(0, 1fr)" }}>
 
             {/* ══════════════════════════════════════════════════════════════
                 LEFT COLUMN — Insights
             ═══════════════════════════════════════════════════════════════ */}
-            {/* ── EXPANDED left column ── */}
-            {!insightsCollapsed && (
+            {/* ── NORMAL left column ── */}
+            {insightsMode === "normal" && (
               <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
                 <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
                   <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
@@ -470,7 +471,14 @@ export default function ContactProfile() {
                       {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
                     </span>
                     <button
-                      onClick={() => setInsightsCollapsed(true)}
+                      onClick={() => setInsightsMode("expanded")}
+                      title="Expand insights panel"
+                      className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <Maximize2 className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => setInsightsMode("collapsed")}
                       title="Collapse insights panel"
                       className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                     >
@@ -481,14 +489,13 @@ export default function ContactProfile() {
 
                 {INSIGHT_CATEGORIES.map((cat) => {
                   const items = categoryData[cat.id] ?? [];
-                  const isPlaceholder = false;
                   const isLocked = cat.id === "personal" && !isRevealed;
                   return (
                     <InsightCategoryPanel
                       key={cat.id}
                       category={cat}
                       items={items}
-                      isPlaceholder={isPlaceholder}
+                      isPlaceholder={false}
                       isLocked={isLocked}
                       onReveal={handleReveal}
                       isRevealing={revealMutation.isPending || revealLoading}
@@ -502,12 +509,62 @@ export default function ContactProfile() {
               </aside>
             )}
 
+            {/* ── EXPANDED left column (50% wide) ── */}
+            {insightsMode === "expanded" && (
+              <aside className="flex flex-col min-h-0 overflow-hidden">
+                <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0 pr-1">
+                  <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                      {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
+                    </span>
+                    <button
+                      onClick={() => setInsightsMode("normal")}
+                      title="Restore insights panel"
+                      className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <Minimize2 className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => setInsightsMode("collapsed")}
+                      title="Collapse insights panel"
+                      className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-scroll scroll-thin pr-1 pt-1 flex flex-col gap-4">
+                  {INSIGHT_CATEGORIES.map((cat) => {
+                    const items = categoryData[cat.id] ?? [];
+                    const isLocked = cat.id === "personal" && !isRevealed;
+                    return (
+                      <InsightCategoryPanel
+                        key={cat.id}
+                        category={cat}
+                        items={items}
+                        isPlaceholder={false}
+                        isLocked={isLocked}
+                        onReveal={handleReveal}
+                        isRevealing={revealMutation.isPending || revealLoading}
+                        outOfCredits={outOfCredits}
+                        checkedIds={checkedIds}
+                        onToggle={toggleInsight}
+                        onToggleAll={toggleCategory}
+                        expanded
+                      />
+                    );
+                  })}
+                </div>
+              </aside>
+            )}
+
             {/* ── COLLAPSED left column ── */}
-            {insightsCollapsed && (
+            {insightsMode === "collapsed" && (
               <aside className="flex flex-col items-center min-h-0 gap-1 pt-1">
-                {/* Expand button */}
+                {/* Restore button */}
                 <button
-                  onClick={() => setInsightsCollapsed(false)}
+                  onClick={() => setInsightsMode("normal")}
                   title="Expand insights panel"
                   className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/40 transition-colors flex-shrink-0 mb-1"
                 >
@@ -730,7 +787,7 @@ export default function ContactProfile() {
             ═══════════════════════════════════════════════════════════════ */}
 
             {/* ── EXPANDED right column ── */}
-            {!outreachCollapsed && (
+            {!outreachCollapsed && insightsMode !== "expanded" && (
               <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
                 <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
                   <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Outreach</h2>
@@ -777,16 +834,21 @@ export default function ContactProfile() {
             )}
 
             {/* ── COLLAPSED right column ── */}
-            {outreachCollapsed && (
+            {(outreachCollapsed || insightsMode === "expanded") && (
               <aside className="flex flex-col items-center min-h-0 gap-1 pt-1">
-                {/* Expand button */}
-                <button
-                  onClick={() => setOutreachCollapsed(false)}
-                  title="Expand outreach panel"
-                  className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/40 transition-colors flex-shrink-0 mb-1"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
+                {/* Expand button — only when explicitly user-collapsed, not auto-collapsed */}
+                {outreachCollapsed && insightsMode !== "expanded" && (
+                  <button
+                    onClick={() => setOutreachCollapsed(false)}
+                    title="Expand outreach panel"
+                    className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/40 transition-colors flex-shrink-0 mb-1"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                {insightsMode === "expanded" && (
+                  <div className="h-7 w-7 flex items-center justify-center flex-shrink-0 mb-1" />
+                )}
 
                 {/* Scrollable icon strip */}
                 <TooltipProvider delayDuration={150}>
@@ -913,6 +975,7 @@ function InsightCategoryPanel({
   checkedIds,
   onToggle,
   onToggleAll,
+  expanded = false,
 }: {
   category: InsightCategory;
   items: InsightItem[];
@@ -924,6 +987,7 @@ function InsightCategoryPanel({
   checkedIds: Set<string>;
   onToggle: (key: string) => void;
   onToggleAll: (categoryId: string, catItems: InsightItem[]) => void;
+  expanded?: boolean;
 }) {
   const [open, setOpen] = useState(true);
   const Icon = category.icon;
@@ -945,12 +1009,21 @@ function InsightCategoryPanel({
         tabIndex={0}
         onClick={() => setOpen((v) => !v)}
         onKeyDown={(e) => e.key === "Enter" && setOpen((v) => !v)}
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 cursor-pointer"
+        className={cn("w-full flex items-center gap-2.5 cursor-pointer", expanded ? "px-4 py-3" : "px-3 py-2.5")}
       >
-        <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0 border", category.accentBg, category.accentBorder)}>
-          <Icon className={cn("h-3.5 w-3.5", category.color)} />
+        <div className={cn(
+          "rounded-md flex items-center justify-center flex-shrink-0 border",
+          expanded ? "h-7 w-7" : "h-6 w-6",
+          category.accentBg, category.accentBorder
+        )}>
+          <Icon className={cn(expanded ? "h-4 w-4" : "h-3.5 w-3.5", category.color)} />
         </div>
-        <span className="flex-1 text-left text-xs font-semibold text-foreground">{category.label}</span>
+        <span className={cn("flex-1 text-left font-semibold text-foreground", expanded ? "text-sm" : "text-xs")}>{category.label}</span>
+        {expanded && count > 0 && !isPlaceholder && !isLocked && (
+          <span className={cn("text-[10px] font-medium text-muted-foreground mr-1")}>
+            {checkedCount}/{count} in context
+          </span>
+        )}
         {isPlaceholder ? (
           <span className="text-[9px] font-medium text-muted-foreground/60 bg-secondary px-1.5 py-0.5 rounded-full">Soon</span>
         ) : isLocked ? (
@@ -976,9 +1049,11 @@ function InsightCategoryPanel({
                 <span className="block h-0.5 w-1.5 bg-muted-foreground/60 rounded-full" />
               )}
             </button>
-            <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", category.accentBg, category.color)}>
-              {count}
-            </span>
+            {!expanded && (
+              <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", category.accentBg, category.color)}>
+                {count}
+              </span>
+            )}
           </>
         ) : (
           <span className="text-[10px] text-muted-foreground/50">0</span>
@@ -999,7 +1074,85 @@ function InsightCategoryPanel({
             <p className="text-xs text-muted-foreground text-center py-4 px-3">
               No sources found.
             </p>
+          ) : expanded ? (
+            /* ── Rich 2-column card grid for expanded mode ── */
+            <div className="grid grid-cols-2 gap-3 p-4">
+              {items.map((item) => {
+                const cfg = getMediaConfig(item.mediaType);
+                const MIcon = cfg.icon;
+                const key = `${category.id}-${item.id}`;
+                const checked = checkedIds.has(key);
+                return (
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "group relative rounded-xl border transition-all overflow-hidden",
+                      checked
+                        ? cn("shadow-sm ring-1", category.accentBorder, category.accentBg)
+                        : "bg-card border-border/60 hover:border-border hover:shadow-sm"
+                    )}
+                  >
+                    {/* Top bar with media type */}
+                    <div className={cn("flex items-center gap-2 px-3 py-2 border-b", checked ? "border-border/30" : "border-border/40 bg-secondary/20")}>
+                      <div className={cn("h-5 w-5 rounded flex items-center justify-center flex-shrink-0 border", cfg.bg)}>
+                        <MIcon className={cn("h-3 w-3", cfg.color)} />
+                      </div>
+                      <span className="text-[10px] font-semibold text-muted-foreground flex-1 truncate">{cfg.label}</span>
+                      {item.publishedDate && (
+                        <span className="text-[9px] text-muted-foreground/60 flex-shrink-0">
+                          {new Date(item.publishedDate).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                        </span>
+                      )}
+                    </div>
+                    {/* Content */}
+                    <div className="px-3 py-2.5 flex flex-col gap-1.5">
+                      <p className="text-xs font-semibold text-foreground leading-snug line-clamp-3">
+                        {item.title}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate">{item.source}</p>
+                      {item.description && (
+                        <p className="text-[10px] text-muted-foreground/80 leading-snug line-clamp-2 mt-0.5">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 px-3 pb-3">
+                      <button
+                        onClick={() => onToggle(key)}
+                        title={checked ? "Remove from context" : "Add to context"}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-[10px] font-semibold transition-all",
+                          checked
+                            ? cn(category.accentBg, category.accentBorder, category.color)
+                            : "bg-background border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+                        )}
+                      >
+                        {checked ? (
+                          <>
+                            <svg viewBox="0 0 10 10" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            In context
+                          </>
+                        ) : "Add to context"}
+                      </button>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open source"
+                        className="h-7 w-7 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border transition-colors flex-shrink-0"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
+            /* ── Compact list for normal mode ── */
             <div className="divide-y divide-border/40">
               {items.map((item) => {
                 const cfg = getMediaConfig(item.mediaType);
