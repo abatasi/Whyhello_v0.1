@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
 import {
@@ -193,26 +193,67 @@ interface UploadedFile {
   status: "processing" | "done" | "error";
 }
 
+// ── Save field button ─────────────────────────────────────────────────────────
+
+function SaveFieldButton({ show, onSave }: { show: boolean; onSave: () => void }) {
+  const [flash, setFlash] = useState(false);
+
+  function handleClick() {
+    onSave();
+    setFlash(true);
+    setTimeout(() => setFlash(false), 2000);
+  }
+
+  if (!show) return null;
+
+  return (
+    <div className="flex justify-end mt-1">
+      <button
+        onClick={handleClick}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-semibold transition-all",
+          flash
+            ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+            : "bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100"
+        )}
+      >
+        {flash
+          ? <><CheckCircle2 className="h-3 w-3" /> Saved</>
+          : <><Sparkles className="h-3 w-3" /> Save &amp; update profile</>
+        }
+      </button>
+    </div>
+  );
+}
+
 // ── Voice Profile card ───────────────────────────────────────────────────────
 
 function VoiceProfileCard({
-  summary, loading, onRefresh, hasInputs,
+  summary, loading, onRefresh, hasInputs, textDirty,
 }: {
   summary: string;
   loading: boolean;
   onRefresh: () => void;
   hasInputs: boolean;
+  textDirty: boolean;
 }) {
   if (!hasInputs && !loading && !summary) return null;
 
   return (
-    <div className="rounded-xl border border-violet-200 bg-violet-50/60 overflow-hidden">
+    <div className={cn(
+      "rounded-xl border overflow-hidden transition-colors",
+      textDirty && summary && !loading
+        ? "border-violet-300 bg-violet-50/80"
+        : "border-violet-200 bg-violet-50/60"
+    )}>
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-violet-200/60">
         <div className="h-6 w-6 rounded-full bg-violet-100 border border-violet-200 flex items-center justify-center flex-shrink-0">
           <Sparkles className="h-3.5 w-3.5 text-violet-600" />
         </div>
         <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700 flex-1">Your Voice Profile</span>
-        <span className="text-[10px] text-violet-500/70">Whyhello's read on you</span>
+        {textDirty && summary && !loading && (
+          <span className="text-[10px] text-violet-500 mr-1">Text updated — save fields to refresh</span>
+        )}
         <button
           onClick={onRefresh}
           disabled={loading}
@@ -246,7 +287,9 @@ export default function DNA() {
   // Voice profile AI summary
   const [voiceSummary, setVoiceSummary] = useState("");
   const [voiceSummaryLoading, setVoiceSummaryLoading] = useState(false);
-  const summaryTimer = useRef<ReturnType<typeof setTimeout>>();
+  // True when text fields have changed since the last profile generation
+  const [textDirtyForProfile, setTextDirtyForProfile] = useState(false);
+  const mountedRef = useRef(false);
 
   // File upload state
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -287,12 +330,14 @@ export default function DNA() {
 
   // ── Voice profile generation ─────────────────────────────────────────────
 
-  const generateVoiceSummary = useCallback(async () => {
-    const { toneTags, communicationStyle, writingNotes, trainingText } = data.voice;
+  // Takes explicit voice snapshot so callers are never affected by stale closures
+  async function generateVoiceSummary(voice: DNAData["voice"]) {
+    const { toneTags, communicationStyle, writingNotes, trainingText } = voice;
     const hasInputs = toneTags.length > 0 || !!communicationStyle || !!writingNotes || !!trainingText;
     if (!hasInputs) { setVoiceSummary(""); return; }
 
     setVoiceSummaryLoading(true);
+    setTextDirtyForProfile(false);
     try {
       const resp = await fetch("/api/dna/voice-summary", {
         method: "POST",
@@ -306,15 +351,23 @@ export default function DNA() {
     } finally {
       setVoiceSummaryLoading(false);
     }
-  }, [data.voice]);
+  }
 
-  // Debounced auto-generation when voice inputs change
+  // Auto-regen when pill pickers change (immediate user actions, not typing).
+  // Skip the very first render to avoid firing on page load.
   useEffect(() => {
-    if (summaryTimer.current) clearTimeout(summaryTimer.current);
-    summaryTimer.current = setTimeout(generateVoiceSummary, 1500);
-    return () => { if (summaryTimer.current) clearTimeout(summaryTimer.current); };
+    if (!mountedRef.current) { mountedRef.current = true; return; }
+    generateVoiceSummary(data.voice);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.voice.toneTags, data.voice.communicationStyle, data.voice.writingNotes, data.voice.trainingText]);
+  }, [data.voice.toneTags, data.voice.communicationStyle]);
+
+  // When text fields change, just mark the profile as potentially stale.
+  // The user triggers regen explicitly via the Save button.
+  useEffect(() => {
+    if (!mountedRef.current) return;
+    setTextDirtyForProfile(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.voice.writingNotes, data.voice.trainingText]);
 
   // ── File upload handling ─────────────────────────────────────────────────
 
@@ -445,6 +498,10 @@ export default function DNA() {
               placeholder="e.g. I keep sentences short and punchy. I avoid jargon. I like to lead with a question that makes the reader think…"
               rows={4}
             />
+            <SaveFieldButton
+              show={!!data.voice.writingNotes}
+              onSave={() => generateVoiceSummary(data.voice)}
+            />
           </Field>
 
           {/* Training communications */}
@@ -457,6 +514,10 @@ export default function DNA() {
               onChange={v => setVoice({ trainingText: v })}
               placeholder={`Paste previous emails, LinkedIn messages, proposals, or any writing that reflects how you genuinely communicate. The more you share, the more accurately Whyhello can write in your voice.\n\nYou can also upload .txt, .docx, or .pdf files below — the extracted text will be added here automatically.`}
               rows={10}
+            />
+            <SaveFieldButton
+              show={!!data.voice.trainingText}
+              onSave={() => generateVoiceSummary(data.voice)}
             />
           </Field>
 
@@ -532,8 +593,9 @@ export default function DNA() {
           <VoiceProfileCard
             summary={voiceSummary}
             loading={voiceSummaryLoading}
-            onRefresh={generateVoiceSummary}
+            onRefresh={() => generateVoiceSummary(data.voice)}
             hasInputs={voiceHasInputs}
+            textDirty={textDirtyForProfile}
           />
         </Section>
 

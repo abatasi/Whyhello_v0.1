@@ -80,12 +80,16 @@ router.post("/voice-summary", async (req, res) => {
 
   const sample = trainingText ? trainingText.slice(0, 4000) : "";
 
-  const prompt = `You are a communication analyst at Whyhello, a B2B relationship intelligence platform. Based on the professional profile below, write a precise 2–3 sentence declarative description of this person's communication identity. Be specific and grounded in what's been shared — write as if narrating who this person is as a communicator in a way that would feel accurate and useful when read back to them.
+  const lines: string[] = [];
+  if (toneTags.length > 0) lines.push(`Tone descriptors: ${toneTags.join(", ")}`);
+  if (communicationStyle) lines.push(`Communication style: ${communicationStyle}`);
+  if (writingNotes) lines.push(`Self-described writing voice: ${writingNotes}`);
+  if (sample) lines.push(`Sample communications:\n"""\n${sample}\n"""`);
+  const profileBlock = lines.join("\n");
 
-Tone descriptors: ${toneTags.length > 0 ? toneTags.join(", ") : "not specified"}
-Communication style: ${communicationStyle || "not specified"}
-Self-described writing voice: ${writingNotes || "not provided"}
-${sample ? `\nSample of their real communications:\n"""\n${sample}\n"""` : ""}
+  const prompt = `You are a communication analyst at Whyhello, a B2B relationship intelligence platform. Using the signals provided below — which may be sparse — synthesize a precise 2–3 sentence declarative description of this person's communication identity. Work only with what's actually been shared. Be specific and grounded. Write in third person, as if describing this person to someone about to interact with them.
+
+${profileBlock}
 
 Write only the 2–3 sentence description. No preamble, no label.`;
 
