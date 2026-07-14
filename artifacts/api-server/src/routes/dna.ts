@@ -63,15 +63,20 @@ router.post("/voice-summary", async (req, res) => {
     communicationStyle = "",
     writingNotes = "",
     trainingText = "",
+    suppressions = [],
+    suppressionNotes = "",
   } = req.body as {
     toneTags?: string[];
     communicationStyle?: string;
     writingNotes?: string;
     trainingText?: string;
+    suppressions?: string[];
+    suppressionNotes?: string;
   };
 
   const hasData =
-    toneTags.length > 0 || communicationStyle || writingNotes || trainingText;
+    toneTags.length > 0 || communicationStyle || writingNotes || trainingText ||
+    suppressions.length > 0 || suppressionNotes;
 
   if (!hasData) {
     res.json({ summary: "" });
@@ -85,9 +90,11 @@ router.post("/voice-summary", async (req, res) => {
   if (communicationStyle) lines.push(`Communication style: ${communicationStyle}`);
   if (writingNotes) lines.push(`Self-described writing voice: ${writingNotes}`);
   if (sample) lines.push(`Sample communications:\n"""\n${sample}\n"""`);
+  if (suppressions.length > 0) lines.push(`Explicit suppressions (never use): ${suppressions.join(", ")}`);
+  if (suppressionNotes) lines.push(`Additional things to avoid: ${suppressionNotes}`);
   const profileBlock = lines.join("\n");
 
-  const prompt = `You are a communication analyst at Whyhello, a B2B relationship intelligence platform. Using the signals provided below — which may be sparse — synthesize a precise 2–3 sentence declarative description of this person's communication identity. Work only with what's actually been shared. Be specific and grounded. Write in third person, as if describing this person to someone about to interact with them.
+  const prompt = `You are a communication analyst at Whyhello, a B2B relationship intelligence platform. Using the signals provided below — which may be sparse — synthesize a precise 2–3 sentence declarative description of this person's communication identity. Work only with what's actually been shared. Be specific and grounded. Where suppressions are listed, weave them naturally into the description as part of what defines this person's voice. Write in third person, as if describing this person to someone about to interact with them.
 
 ${profileBlock}
 

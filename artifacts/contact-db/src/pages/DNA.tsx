@@ -4,17 +4,26 @@ import { cn } from "@/lib/utils";
 import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown,
   Save, CheckCircle2, Dna, Sparkles, Upload, X, FileText,
-  Loader2, RefreshCw,
+  Loader2, RefreshCw, Ban,
 } from "lucide-react";
 
 // ── Persistence ──────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "whyhello_dna_v2";
+const STORAGE_KEY = "whyhello_dna_v3";
 
 function loadDNA(): DNAData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<DNAData>;
+      const d = defaultDNA();
+      return {
+        ...d,
+        ...parsed,
+        voice: { ...d.voice, ...(parsed.voice ?? {}) },
+        company: { ...d.company, ...(parsed.company ?? {}) },
+      };
+    }
   } catch { /* ignore */ }
   return defaultDNA();
 }
@@ -40,6 +49,8 @@ interface DNAData {
     communicationStyle: string;
     writingNotes: string;
     trainingText: string;
+    suppressions: string[];
+    suppressionNotes: string;
   };
   products: Product[];
   company: {
@@ -58,6 +69,8 @@ function defaultDNA(): DNAData {
       communicationStyle: "balanced",
       writingNotes: "",
       trainingText: "",
+      suppressions: [],
+      suppressionNotes: "",
     },
     products: [],
     company: {
@@ -74,6 +87,25 @@ const TONE_SUGGESTIONS = [
   "Direct", "Empathetic", "Confident", "Consultative", "Witty",
   "Professional", "Warm", "Data-driven", "Story-driven", "Concise",
   "Energetic", "Authoritative",
+];
+
+const SUPPRESSION_SUGGESTIONS = [
+  "Em dashes (—)",
+  "Emojis",
+  "Exclamation marks",
+  "Bullet point lists",
+  "Passive voice",
+  "Numbered lists",
+  "Corporate jargon",
+  "Rhetorical questions",
+  "Hedging language",
+  "Alliteration",
+  '"Game-changer" / "Paradigm shift"',
+  '"Hope this finds you well"',
+  '"Circle back" / "Touch base"',
+  '"Leverage" / "Synergy"',
+  '"Dive deep" / "Double-click"',
+  "Oxford comma",
 ];
 
 const STYLE_OPTIONS = [
@@ -327,13 +359,19 @@ export default function DNA() {
       return { ...d, voice: { ...d.voice, toneTags: has ? d.voice.toneTags.filter(t => t !== tag) : [...d.voice.toneTags, tag] } };
     });
   }
+  function toggleSuppression(tag: string) {
+    setData(d => {
+      const has = d.voice.suppressions.includes(tag);
+      return { ...d, voice: { ...d.voice, suppressions: has ? d.voice.suppressions.filter(t => t !== tag) : [...d.voice.suppressions, tag] } };
+    });
+  }
 
   // ── Voice profile generation ─────────────────────────────────────────────
 
   // Takes explicit voice snapshot so callers are never affected by stale closures
   async function generateVoiceSummary(voice: DNAData["voice"]) {
-    const { toneTags, communicationStyle, writingNotes, trainingText } = voice;
-    const hasInputs = toneTags.length > 0 || !!communicationStyle || !!writingNotes || !!trainingText;
+    const { toneTags, communicationStyle, writingNotes, trainingText, suppressions, suppressionNotes } = voice;
+    const hasInputs = toneTags.length > 0 || !!communicationStyle || !!writingNotes || !!trainingText || suppressions.length > 0 || !!suppressionNotes;
     if (!hasInputs) { setVoiceSummary(""); return; }
 
     setVoiceSummaryLoading(true);
@@ -342,7 +380,7 @@ export default function DNA() {
       const resp = await fetch("/api/dna/voice-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toneTags, communicationStyle, writingNotes, trainingText }),
+        body: JSON.stringify({ toneTags, communicationStyle, writingNotes, trainingText, suppressions, suppressionNotes }),
       });
       const json = await resp.json() as { summary: string };
       setVoiceSummary(json.summary ?? "");
@@ -359,7 +397,7 @@ export default function DNA() {
     if (!mountedRef.current) { mountedRef.current = true; return; }
     generateVoiceSummary(data.voice);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.voice.toneTags, data.voice.communicationStyle]);
+  }, [data.voice.toneTags, data.voice.communicationStyle, data.voice.suppressions]);
 
   // When text fields change, just mark the profile as potentially stale.
   // The user triggers regen explicitly via the Save button.
@@ -408,7 +446,9 @@ export default function DNA() {
     data.voice.toneTags.length > 0 ||
     !!data.voice.communicationStyle ||
     !!data.voice.writingNotes ||
-    !!data.voice.trainingText;
+    !!data.voice.trainingText ||
+    data.voice.suppressions.length > 0 ||
+    !!data.voice.suppressionNotes;
 
   return (
     <Shell>
@@ -587,6 +627,54 @@ export default function DNA() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Suppression / Do-not-use */}
+          <div className="flex flex-col gap-4 rounded-xl border border-rose-200/60 bg-rose-50/30 px-5 py-4">
+            <div className="flex items-center gap-2.5">
+              <div className="h-6 w-6 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center flex-shrink-0">
+                <Ban className="h-3.5 w-3.5 text-rose-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-foreground">Suppression list</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Patterns, words, or conventions to never appear in your voice</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {SUPPRESSION_SUGGESTIONS.map(tag => {
+                const active = data.voice.suppressions.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => toggleSuppression(tag)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-semibold border transition-all",
+                      active
+                        ? "bg-rose-100 border-rose-300 text-rose-700"
+                        : "bg-background border-border/60 text-muted-foreground hover:border-rose-200 hover:text-rose-700 hover:bg-rose-50"
+                    )}
+                  >
+                    {active && <span className="mr-1 opacity-60">✕</span>}{tag}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-foreground">Additional suppressions</label>
+              <textarea
+                value={data.voice.suppressionNotes}
+                onChange={e => setVoice({ suppressionNotes: e.target.value })}
+                rows={3}
+                placeholder="Anything else to avoid — phrases, structural habits, or stylistic tics you want to leave behind…"
+                className="w-full resize-y rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-rose-300/40 leading-relaxed transition-colors"
+              />
+              <SaveFieldButton
+                show={!!data.voice.suppressionNotes}
+                onSave={() => generateVoiceSummary(data.voice)}
+              />
+            </div>
           </div>
 
           {/* AI Voice Profile card */}
