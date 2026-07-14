@@ -27,7 +27,15 @@ async function runGeneration(jobId: number) {
   const [job] = await db.select().from(outreachJobsTable).where(eq(outreachJobsTable.id, jobId)).limit(1);
   if (!job) return;
 
-  const params = job.params as { length: string; tone: string; selectedInsightKeys: string[] };
+  type VoiceProfileData = {
+    toneTags: string[];
+    communicationStyle: string;
+    writingNotes: string;
+    trainingText: string;
+    suppressions: string[];
+    suppressionNotes: string;
+  };
+  const params = job.params as { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData };
   const selectedSet = new Set(params.selectedInsightKeys ?? []);
 
   const [[contact], personal, industry, role, colleague, counterpart] = await Promise.all([
@@ -69,10 +77,26 @@ async function runGeneration(jobId: number) {
   const lengthMap: Record<string, string> = { short: "~100 words, one punchy paragraph", medium: "~200 words, intro + value prop + CTA", long: "~350 words, full context, value prop, and CTA" };
   const lengthDesc = lengthMap[params.length] ?? "~200 words";
   const tone = params.tone ?? "professional";
+  const vp = params.voiceProfile;
 
   const insightsSection = allSelected.length > 0
     ? allSelected.map(i => fmtInsight(i)).join("\n")
     : "  No specific insights selected — use general professional context.";
+
+  function buildVoiceGuide(v: NonNullable<typeof vp>): string {
+    const lines: string[] = ["8. Write in the sender's defined voice — follow ALL constraints below:"];
+    if (v.toneTags.length > 0) lines.push(`   Tone descriptors: ${v.toneTags.join(", ")}`);
+    if (v.communicationStyle) lines.push(`   Communication style: ${v.communicationStyle}`);
+    if (v.writingNotes) lines.push(`   Self-described voice: ${v.writingNotes}`);
+    if (v.suppressions.length > 0) lines.push(`   NEVER use any of these: ${v.suppressions.join(", ")}`);
+    if (v.suppressionNotes) lines.push(`   Also avoid: ${v.suppressionNotes}`);
+    if (v.trainingText) lines.push(`   Voice sample (match this register):\n   """\n   ${v.trainingText.slice(0, 600).replace(/\n/g, "\n   ")}\n   """`);
+    return lines.join("\n");
+  }
+
+  const toneRule = tone === "my_voice_profile" && vp
+    ? buildVoiceGuide(vp)
+    : `8. Match the tone: ${tone}`;
 
   const systemPrompt = `You are an expert B2B sales and relationship consultant helping craft high-converting first-touch intro emails.
 
@@ -88,7 +112,7 @@ ${insightsSection}
 
 GENERATION PARAMETERS
 - Length: ${lengthDesc}
-- Tone: ${tone}
+- Tone: ${tone === "my_voice_profile" ? "Sender's custom voice profile (see rule 8)" : tone}
 
 RULES
 1. Write ONLY the email body — no subject line, no "Subject:", no headers
@@ -98,7 +122,7 @@ RULES
 5. One clear CTA at the end — suggest a 15-min call or reply to explore fit
 6. Sign off with "[Your Name]" as a placeholder signature
 7. Respect the length parameter strictly
-8. Match the tone: ${tone}`;
+${toneRule}`;
 
   const completion = await openai.chat.completions.create({
     model: "gpt-5-mini",

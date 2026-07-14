@@ -95,6 +95,39 @@ const OUTPUT_TYPES: OutputType[] = [
   { id: "quiz",             label: "Quiz",              icon: HelpCircle,  color: "text-indigo-600",  bg: "bg-indigo-50",  border: "border-indigo-200",  description: "Test how well you know this contact — their priorities, company context, and hot-button topics." },
 ];
 
+// ── DNA voice profile loader ────────────────────────────────────────────────
+
+const DNA_STORAGE_KEY = "whyhello_dna_v3";
+
+interface VoiceProfileData {
+  toneTags: string[];
+  communicationStyle: string;
+  writingNotes: string;
+  trainingText: string;
+  suppressions: string[];
+  suppressionNotes: string;
+}
+
+function loadVoiceProfile(): VoiceProfileData | null {
+  try {
+    const raw = localStorage.getItem(DNA_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { voice?: Partial<VoiceProfileData> };
+    const v = parsed.voice;
+    if (!v) return null;
+    const hasData = (v.toneTags?.length ?? 0) > 0 || !!v.communicationStyle || !!v.writingNotes || !!v.trainingText || (v.suppressions?.length ?? 0) > 0 || !!v.suppressionNotes;
+    if (!hasData) return null;
+    return {
+      toneTags: v.toneTags ?? [],
+      communicationStyle: v.communicationStyle ?? "",
+      writingNotes: v.writingNotes ?? "",
+      trainingText: v.trainingText ?? "",
+      suppressions: v.suppressions ?? [],
+      suppressionNotes: v.suppressionNotes ?? "",
+    };
+  } catch { return null; }
+}
+
 // ── IntroEmailModal ────────────────────────────────────────────────────────
 
 const EMAIL_LENGTHS = [
@@ -110,16 +143,22 @@ function IntroEmailModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onGenerate: (params: { length: string; tone: string; selectedInsightKeys: string[] }) => void;
+  onGenerate: (params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => void;
   checkedIds: Set<string>;
   categoryData: Record<string, InsightItem[]>;
 }) {
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
   const [tone, setTone] = useState("professional");
   const [selectedInsights, setSelectedInsights] = useState<Set<string>>(new Set());
+  const [voiceProfile, setVoiceProfile] = useState<VoiceProfileData | null>(null);
 
   useEffect(() => {
-    if (open) { setLength("medium"); setTone("professional"); setSelectedInsights(new Set()); }
+    if (open) {
+      setLength("medium");
+      setTone("professional");
+      setSelectedInsights(new Set());
+      setVoiceProfile(loadVoiceProfile());
+    }
   }, [open]);
 
   const availableInsights = INSIGHT_CATEGORIES.flatMap(cat =>
@@ -204,6 +243,47 @@ function IntroEmailModal({
                   </button>
                 ))}
               </div>
+
+              {/* My Voice Profile option */}
+              {voiceProfile && (
+                <div className="mt-3">
+                  <button
+                    onClick={() => setTone("my_voice_profile")}
+                    className={cn(
+                      "w-full flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all",
+                      tone === "my_voice_profile"
+                        ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200"
+                        : "bg-card border-border/60 hover:bg-secondary/40 hover:border-indigo-200"
+                    )}
+                  >
+                    <div className={cn(
+                      "h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border mt-0.5",
+                      tone === "my_voice_profile" ? "bg-indigo-100 border-indigo-200" : "bg-secondary border-border/60"
+                    )}>
+                      <Sparkles className={cn("h-3.5 w-3.5", tone === "my_voice_profile" ? "text-indigo-600" : "text-muted-foreground")} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-xs font-semibold", tone === "my_voice_profile" ? "text-indigo-700" : "text-foreground")}>
+                        My Voice Profile
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+                        {[
+                          voiceProfile.toneTags.length > 0 && voiceProfile.toneTags.slice(0, 3).join(", "),
+                          voiceProfile.communicationStyle && `${voiceProfile.communicationStyle} style`,
+                          voiceProfile.suppressions.length > 0 && `${voiceProfile.suppressions.length} suppression${voiceProfile.suppressions.length > 1 ? "s" : ""}`,
+                        ].filter(Boolean).join(" · ") || "Defined in DNA"}
+                      </p>
+                    </div>
+                    {tone === "my_voice_profile" && (
+                      <div className="h-4 w-4 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 mt-1">
+                        <svg viewBox="0 0 10 10" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>
@@ -290,7 +370,12 @@ function IntroEmailModal({
             size="sm"
             className="h-9 px-5 gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
             onClick={() => {
-              onGenerate({ length, tone, selectedInsightKeys: Array.from(selectedInsights) });
+              onGenerate({
+                length,
+                tone,
+                selectedInsightKeys: Array.from(selectedInsights),
+                ...(tone === "my_voice_profile" && voiceProfile ? { voiceProfile } : {}),
+              });
               onClose();
             }}
           >
@@ -324,15 +409,15 @@ export default function ContactProfile() {
   const createJobMutation = useCreateOutreachJob();
   const [jobRefetchTrigger, setJobRefetchTrigger] = useState(0);
 
-  const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[] }) => {
+  const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => {
     const lengthLabel = params.length.charAt(0).toUpperCase() + params.length.slice(1);
-    const toneLabel = params.tone.charAt(0).toUpperCase() + params.tone.slice(1);
+    const toneLabel = params.tone === "my_voice_profile" ? "My Voice Profile" : params.tone.charAt(0).toUpperCase() + params.tone.slice(1);
     createJobMutation.mutate({
       id,
       data: {
         type: "intro_email",
         title: `Single Email — ${lengthLabel}, ${toneLabel}`,
-        params: { length: params.length, tone: params.tone, selectedInsightKeys: params.selectedInsightKeys },
+        params: { length: params.length, tone: params.tone, selectedInsightKeys: params.selectedInsightKeys, voiceProfile: params.voiceProfile },
       },
     }, {
       onSuccess: () => setJobRefetchTrigger(t => t + 1),
