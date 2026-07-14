@@ -19,6 +19,7 @@ import messagesRouter from "./messages";
 import insightDropsRouter from "./insight-drops";
 import { contactJobsRouter, jobsRouter } from "./outreach-jobs";
 import contactChatMessagesRouter from "./contact-chat-messages";
+import insightSummarizeRouter from "./insight-summarize";
 
 const router: IRouter = Router();
 
@@ -43,5 +44,6 @@ router.use("/insight-drops", insightDropsRouter);
 router.use("/contacts/:contactId/outreach-jobs", contactJobsRouter);
 router.use("/contacts/:contactId/chat-messages", contactChatMessagesRouter);
 router.use("/outreach-jobs", jobsRouter);
+router.use("/insights/summarize", insightSummarizeRouter);
 
 export default router;
