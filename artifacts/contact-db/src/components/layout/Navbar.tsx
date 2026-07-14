@@ -368,6 +368,7 @@ export function Navbar() {
     { label: "Directory", href: "/" },
     { label: "Lists", href: "/lists" },
     { label: "Message Center", href: "/messages" },
+    { label: "DNA", href: "/dna" },
   ];
 
   const displayName = user?.firstName
@@ -402,7 +403,6 @@ export function Navbar() {
                 </Link>
               );
             })}
-            <Button variant="ghost" className="px-4 py-2 rounded-lg">Market Research</Button>
             <Button variant="ghost" className="px-4 py-2 rounded-lg">Multi-threading</Button>
           </nav>
         </div>
