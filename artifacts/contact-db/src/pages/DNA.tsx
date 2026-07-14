@@ -317,8 +317,14 @@ export default function DNA() {
   const saved = useAutoSave(data);
 
   // Voice profile AI summary
-  const [voiceSummary, setVoiceSummary] = useState("");
+  const SUMMARY_KEY = "whyhello_voice_summary";
+  const [voiceSummary, setVoiceSummaryState] = useState<string>(() => localStorage.getItem(SUMMARY_KEY) ?? "");
   const [voiceSummaryLoading, setVoiceSummaryLoading] = useState(false);
+  function setVoiceSummary(text: string) {
+    setVoiceSummaryState(text);
+    if (text) localStorage.setItem(SUMMARY_KEY, text);
+    else localStorage.removeItem(SUMMARY_KEY);
+  }
   // True when text fields have changed since the last profile generation
   const [textDirtyForProfile, setTextDirtyForProfile] = useState(false);
   const mountedRef = useRef(false);

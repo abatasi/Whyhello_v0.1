@@ -84,13 +84,14 @@ async function runGeneration(jobId: number) {
     : "  No specific insights selected — use general professional context.";
 
   function buildVoiceGuide(v: NonNullable<typeof vp>): string {
-    const lines: string[] = ["8. Write in the sender's defined voice — follow ALL constraints below:"];
+    const lines: string[] = ["8. Write in the sender's defined voice — follow ALL constraints below with zero exceptions:"];
     if (v.toneTags.length > 0) lines.push(`   Tone descriptors: ${v.toneTags.join(", ")}`);
     if (v.communicationStyle) lines.push(`   Communication style: ${v.communicationStyle}`);
-    if (v.writingNotes) lines.push(`   Self-described voice: ${v.writingNotes}`);
+    if (v.writingNotes) lines.push(`   Voice notes (read carefully — may contain specific closing phrases, sign-offs, or verbal habits that MUST appear verbatim): ${v.writingNotes}`);
     if (v.suppressions.length > 0) lines.push(`   NEVER use any of these: ${v.suppressions.join(", ")}`);
     if (v.suppressionNotes) lines.push(`   Also avoid: ${v.suppressionNotes}`);
     if (v.trainingText) lines.push(`   Voice sample (match this register):\n   """\n   ${v.trainingText.slice(0, 600).replace(/\n/g, "\n   ")}\n   """`);
+    lines.push(`   CRITICAL: If the voice notes mention a specific closing phrase or sign-off (e.g. "Thnx!", "Cheers,", "Talk soon"), use it EXACTLY — it must appear on its own line immediately before "[Your Name]".`);
     return lines.join("\n");
   }
 
@@ -120,7 +121,7 @@ RULES
 3. Never open with "I hope this email finds you well" or any variation of that cliché
 4. Tie the sender's value prop naturally to ${contact.firstName}'s context — don't pitch generically
 5. One clear CTA at the end — suggest a 15-min call or reply to explore fit
-6. Sign off with "[Your Name]" as a placeholder signature
+6. ${tone === "my_voice_profile" ? `Sign off using the sender's preferred closing phrase from their voice profile (see rule 8) followed by "[Your Name]" — do NOT invent a different closing` : `Sign off with "[Your Name]" as a placeholder signature`}
 7. Respect the length parameter strictly
 ${toneRule}`;
 
