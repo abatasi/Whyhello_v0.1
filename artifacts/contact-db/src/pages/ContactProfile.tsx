@@ -836,19 +836,17 @@ export default function ContactProfile() {
             {/* ── COLLAPSED right column ── */}
             {(outreachCollapsed || insightsMode === "expanded") && (
               <aside className="flex flex-col items-center min-h-0 gap-1 pt-1">
-                {/* Expand button — only when explicitly user-collapsed, not auto-collapsed */}
-                {outreachCollapsed && insightsMode !== "expanded" && (
-                  <button
-                    onClick={() => setOutreachCollapsed(false)}
-                    title="Expand outreach panel"
-                    className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/40 transition-colors flex-shrink-0 mb-1"
-                  >
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                  </button>
-                )}
-                {insightsMode === "expanded" && (
-                  <div className="h-7 w-7 flex items-center justify-center flex-shrink-0 mb-1" />
-                )}
+                {/* Expand button — always shown; when Insights is maxed, also restores it to normal */}
+                <button
+                  onClick={() => {
+                    setOutreachCollapsed(false);
+                    if (insightsMode === "expanded") setInsightsMode("normal");
+                  }}
+                  title="Expand outreach panel"
+                  className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/40 transition-colors flex-shrink-0 mb-1"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
 
                 {/* Scrollable icon strip */}
                 <TooltipProvider delayDuration={150}>
