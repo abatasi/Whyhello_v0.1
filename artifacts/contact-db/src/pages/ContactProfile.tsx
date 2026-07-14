@@ -1035,7 +1035,8 @@ function InsightDetailView({
 
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
-      {/* Panel header — mirrors expanded mode header */}
+
+      {/* ── Breadcrumb header ── */}
       <div className="flex items-center gap-2 py-1 flex-shrink-0 pr-1">
         <button
           onClick={onBack}
@@ -1063,11 +1064,11 @@ function InsightDetailView({
         </button>
       </div>
 
-      {/* Scrollable body */}
-      <div className="flex-1 overflow-y-scroll scroll-thin pr-1 pt-1 flex flex-col gap-3 min-h-0">
+      {/* ── Info cards (fixed height — don't scroll, don't grow) ── */}
+      <div className="flex flex-col gap-3 pt-1 pr-1 flex-shrink-0">
 
-        {/* ── Meta card ── */}
-        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden flex-shrink-0">
+        {/* Meta card */}
+        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <div className={cn("h-1 w-full", category.accentBg)} />
           <div className="p-4 flex flex-col gap-2.5">
             <div className="flex items-center gap-2 flex-wrap">
@@ -1116,8 +1117,8 @@ function InsightDetailView({
           </div>
         </div>
 
-        {/* ── AI Summary ── */}
-        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden flex-shrink-0">
+        {/* AI Summary */}
+        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Summary</span>
@@ -1136,8 +1137,8 @@ function InsightDetailView({
           </div>
         </div>
 
-        {/* ── Key Insights ── */}
-        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden flex-shrink-0">
+        {/* Key Insights */}
+        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
             <Zap className="h-3.5 w-3.5 text-amber-500" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Key Insights</span>
@@ -1164,70 +1165,68 @@ function InsightDetailView({
             )}
           </div>
         </div>
+      </div>
 
-        {/* ── Source preview (lite browser) ── */}
-        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden flex flex-col flex-shrink-0" style={{ minHeight: "340px" }}>
-          {/* Browser chrome */}
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40 bg-secondary/30 flex-shrink-0">
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <div className="h-2.5 w-2.5 rounded-full bg-red-300/80" />
-              <div className="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
-              <div className="h-2.5 w-2.5 rounded-full bg-green-300/80" />
-            </div>
-            <div className="flex-1 flex items-center gap-1.5 bg-background rounded-md px-2.5 py-1 border border-border/50 min-w-0 mx-1">
-              <Lock className="h-2.5 w-2.5 text-muted-foreground/50 flex-shrink-0" />
-              <span className="text-[10px] text-muted-foreground truncate flex-1">{displayUrl}</span>
-            </div>
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Open in new tab"
-              className="h-6 w-6 flex items-center justify-center rounded border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors flex-shrink-0"
-            >
-              <ExternalLink className="h-3 w-3" />
-            </a>
+      {/* ── Lite browser — grows to fill all remaining vertical space ── */}
+      <div className="flex-1 min-h-0 flex flex-col mt-3 pr-1 rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+        {/* Browser chrome */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40 bg-secondary/30 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="h-2.5 w-2.5 rounded-full bg-red-300/80" />
+            <div className="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
+            <div className="h-2.5 w-2.5 rounded-full bg-green-300/80" />
           </div>
-
-          {/* iframe area */}
-          <div className="relative flex-1 bg-white" style={{ minHeight: "280px" }}>
-            {!iframeLoaded && !iframeError && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground z-10">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
-                <span className="text-[10px] text-muted-foreground/70">Loading preview…</span>
-              </div>
-            )}
-            {iframeError && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6 z-10">
-                <Globe className="h-10 w-10 text-muted-foreground/20" />
-                <p className="text-xs font-semibold text-muted-foreground">Preview unavailable</p>
-                <p className="text-[10px] text-muted-foreground/60 leading-snug max-w-[180px]">
-                  This site blocks embedding. Open it in a new tab to read the full article.
-                </p>
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-semibold hover:bg-primary/90 transition-colors"
-                >
-                  Open in new tab <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            )}
-            <iframe
-              src={item.url}
-              title={item.title}
-              className={cn("w-full border-0 transition-opacity duration-300", iframeLoaded && !iframeError ? "opacity-100" : "opacity-0")}
-              style={{ height: "100%", minHeight: "280px" }}
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-              onLoad={() => setIframeLoaded(true)}
-              onError={() => setIframeError(true)}
-            />
+          <div className="flex-1 flex items-center gap-1.5 bg-background rounded-md px-2.5 py-1 border border-border/50 min-w-0 mx-1">
+            <Lock className="h-2.5 w-2.5 text-muted-foreground/50 flex-shrink-0" />
+            <span className="text-[10px] text-muted-foreground truncate flex-1">{displayUrl}</span>
           </div>
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open in new tab"
+            className="h-6 w-6 flex items-center justify-center rounded border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors flex-shrink-0"
+          >
+            <ExternalLink className="h-3 w-3" />
+          </a>
         </div>
 
-        <div className="h-2 flex-shrink-0" />
+        {/* iframe — fills the remaining space of the browser card */}
+        <div className="relative flex-1 min-h-0 bg-white">
+          {!iframeLoaded && !iframeError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
+              <span className="text-[10px] text-muted-foreground/70">Loading preview…</span>
+            </div>
+          )}
+          {iframeError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6 z-10">
+              <Globe className="h-10 w-10 text-muted-foreground/20" />
+              <p className="text-xs font-semibold text-muted-foreground">Preview unavailable</p>
+              <p className="text-[10px] text-muted-foreground/60 leading-snug max-w-[180px]">
+                This site blocks embedding. Open it in a new tab to read the full article.
+              </p>
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Open in new tab <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          )}
+          <iframe
+            src={item.url}
+            title={item.title}
+            className={cn("absolute inset-0 w-full h-full border-0 transition-opacity duration-300", iframeLoaded && !iframeError ? "opacity-100" : "opacity-0")}
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+            onLoad={() => setIframeLoaded(true)}
+            onError={() => setIframeError(true)}
+          />
+        </div>
       </div>
+
     </div>
   );
 }
