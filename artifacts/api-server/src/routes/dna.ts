@@ -94,7 +94,7 @@ router.post("/voice-summary", async (req, res) => {
   if (suppressionNotes) lines.push(`Additional things to avoid: ${suppressionNotes}`);
   const profileBlock = lines.join("\n");
 
-  const prompt = `You are a communication analyst at Whyhello, a B2B relationship intelligence platform. Using the signals provided below — which may be sparse — synthesize a precise 2–3 sentence declarative description of this person's communication identity. Work only with what's actually been shared. Be specific and grounded. Where suppressions are listed, weave them naturally into the description as part of what defines this person's voice. Write in third person, as if describing this person to someone about to interact with them.
+  const prompt = `You are a communication analyst at Whyhello, a B2B relationship intelligence platform. Using the signals provided below — which may be sparse — synthesize a precise 2–3 sentence declarative description of this person's communication identity. Work only with what's actually been shared. Be specific and grounded. Where suppressions are listed, weave them naturally into the description as part of what defines this person's voice. Write in second person, directly addressing the user — for example: "You write short, energetic messages…"
 
 ${profileBlock}
 
