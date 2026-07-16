@@ -1,16 +1,61 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import multer from "multer";
 import mammoth from "mammoth";
 import { createRequire } from "module";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { db } from "@workspace/db";
+import { dnaProfilesTable } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
 
 const require = createRequire(import.meta.url);
+
+type AuthedReq = Request & { user: { id: string } };
+function getUserId(req: Request): string | null {
+  return (req as AuthedReq).user?.id ?? null;
+}
 
 const router: IRouter = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 },
+});
+
+// ── GET /api/dna/profile ─────────────────────────────────────────────────────
+
+router.get("/profile", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  try {
+    const [row] = await db.select().from(dnaProfilesTable).where(eq(dnaProfilesTable.userId, userId));
+    res.json({ data: row ? JSON.parse(row.data) : null });
+  } catch (err) {
+    console.error("DNA profile GET error:", err);
+    res.status(500).json({ error: "Failed to load DNA profile" });
+  }
+});
+
+// ── PUT /api/dna/profile ──────────────────────────────────────────────────────
+
+router.put("/profile", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  const { data } = req.body as { data: unknown };
+  if (!data) { res.status(400).json({ error: "No data provided" }); return; }
+  try {
+    const serialised = JSON.stringify(data);
+    await db
+      .insert(dnaProfilesTable)
+      .values({ userId, data: serialised, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: dnaProfilesTable.userId,
+        set: { data: serialised, updatedAt: new Date() },
+      });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("DNA profile PUT error:", err);
+    res.status(500).json({ error: "Failed to save DNA profile" });
+  }
 });
 
 // ── POST /api/dna/extract-text ───────────────────────────────────────────────

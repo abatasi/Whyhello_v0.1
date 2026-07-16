@@ -10,25 +10,28 @@ import {
 
 // ── Persistence ──────────────────────────────────────────────────────────────
 
+const API_PROFILE_URL = "/api/dna/profile";
+
 const STORAGE_KEY = "whyhello_dna_v3";
+
+function mergeDNA(parsed: Partial<DNAData>): DNAData {
+  const d = defaultDNA();
+  return {
+    ...d,
+    ...parsed,
+    voice: { ...d.voice, ...(parsed.voice ?? {}) },
+    company: { ...d.company, ...(parsed.company ?? {}) },
+    products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: p.economicBenefits ?? [] })),
+    customers: (parsed.customers ?? []).map(c => ({ ...c, economicBenefits: c.economicBenefits ?? [] })),
+    marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
+    competitors: parsed.competitors ?? [],
+  };
+}
 
 function loadDNA(): DNAData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<DNAData>;
-      const d = defaultDNA();
-      return {
-        ...d,
-        ...parsed,
-        voice: { ...d.voice, ...(parsed.voice ?? {}) },
-        company: { ...d.company, ...(parsed.company ?? {}) },
-        products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: p.economicBenefits ?? [] })),
-        customers: (parsed.customers ?? []).map(c => ({ ...c, economicBenefits: c.economicBenefits ?? [] })),
-        marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
-        competitors: parsed.competitors ?? [],
-      };
-    }
+    if (raw) return mergeDNA(JSON.parse(raw) as Partial<DNAData>);
   } catch { /* ignore */ }
   return defaultDNA();
 }
@@ -195,8 +198,15 @@ function useAutoSave(data: DNAData) {
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
+    timer.current = setTimeout(async () => {
       saveDNA(data);
+      try {
+        await fetch(API_PROFILE_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data }),
+        });
+      } catch { /* localStorage save already succeeded — API failure is non-fatal */ }
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
     }, 600);
@@ -821,6 +831,21 @@ function CompetitorCard({
 export default function DNA() {
   const [data, setData] = useState<DNAData>(loadDNA);
   const saved = useAutoSave(data);
+
+  // Load from server on mount — server is the source of truth; localStorage is the fast startup cache
+  useEffect(() => {
+    let cancelled = false;
+    fetch(API_PROFILE_URL)
+      .then(r => (r.ok ? r.json() : null))
+      .then((json: { data: Partial<DNAData> } | null) => {
+        if (!cancelled && json?.data) {
+          setData(mergeDNA(json.data));
+        }
+      })
+      .catch(() => { /* not authenticated or API unavailable — localStorage data is fine */ });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Voice profile AI summary
   const SUMMARY_KEY = "whyhello_voice_summary";
