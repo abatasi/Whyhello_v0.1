@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown,
   Save, CheckCircle2, Dna, Sparkles, Upload, X, FileText,
-  Loader2, RefreshCw, Ban,
+  Loader2, RefreshCw, Ban, PenLine,
 } from "lucide-react";
 
 // ── Persistence ──────────────────────────────────────────────────────────────
@@ -261,46 +261,104 @@ function SaveFieldButton({ show, onSave }: { show: boolean; onSave: () => void }
 // ── Voice Profile card ───────────────────────────────────────────────────────
 
 function VoiceProfileCard({
-  summary, loading, onRefresh, hasInputs, textDirty,
+  summary, loading, onRefresh, onSave, hasInputs, textDirty,
 }: {
   summary: string;
   loading: boolean;
   onRefresh: () => void;
+  onSave: (text: string) => void;
   hasInputs: boolean;
   textDirty: boolean;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  function startEdit() {
+    setDraft(summary);
+    setIsEditing(true);
+  }
+  function cancelEdit() {
+    setIsEditing(false);
+    setDraft("");
+  }
+  function commitEdit() {
+    const trimmed = draft.trim();
+    if (trimmed) onSave(trimmed);
+    setIsEditing(false);
+    setDraft("");
+  }
+
   if (!hasInputs && !loading && !summary) return null;
 
   return (
     <div className={cn(
       "rounded-xl border overflow-hidden transition-colors",
-      textDirty && summary && !loading
-        ? "border-violet-300 bg-violet-50/80"
-        : "border-violet-200 bg-violet-50/60"
+      isEditing
+        ? "border-violet-400 bg-violet-50/90"
+        : textDirty && summary && !loading
+          ? "border-violet-300 bg-violet-50/80"
+          : "border-violet-200 bg-violet-50/60"
     )}>
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-violet-200/60">
         <div className="h-6 w-6 rounded-full bg-violet-100 border border-violet-200 flex items-center justify-center flex-shrink-0">
           <Sparkles className="h-3.5 w-3.5 text-violet-600" />
         </div>
         <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700 flex-1">Your Voice Profile</span>
-        {textDirty && summary && !loading && (
+        {!isEditing && textDirty && summary && !loading && (
           <span className="text-[10px] text-violet-500 mr-1">Text updated — save fields to refresh</span>
         )}
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          title="Regenerate"
-          className="h-6 w-6 rounded-md flex items-center justify-center text-violet-500 hover:text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-40"
-        >
-          <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
-        </button>
+        {!isEditing && !loading && summary && (
+          <button
+            onClick={startEdit}
+            title="Edit profile"
+            className="h-6 w-6 rounded-md flex items-center justify-center text-violet-400 hover:text-violet-700 hover:bg-violet-100 transition-colors"
+          >
+            <PenLine className="h-3 w-3" />
+          </button>
+        )}
+        {!isEditing && (
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            title="Regenerate"
+            className="h-6 w-6 rounded-md flex items-center justify-center text-violet-500 hover:text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-40"
+          >
+            <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+          </button>
+        )}
       </div>
+
       <div className="px-4 py-3.5">
         {loading ? (
           <div className="flex flex-col gap-2">
             <div className="h-3.5 bg-violet-200/60 rounded-full animate-pulse w-full" />
             <div className="h-3.5 bg-violet-200/60 rounded-full animate-pulse w-[88%]" />
             <div className="h-3.5 bg-violet-200/60 rounded-full animate-pulse w-[72%]" />
+          </div>
+        ) : isEditing ? (
+          <div className="flex flex-col gap-2.5">
+            <textarea
+              autoFocus
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              rows={4}
+              className="w-full resize-none rounded-lg border border-violet-300 bg-white px-3 py-2 text-sm text-violet-900 placeholder:text-violet-300 focus:outline-none focus:ring-1 focus:ring-violet-400 leading-relaxed"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={cancelEdit}
+                className="px-3 py-1 rounded-lg text-xs font-semibold text-violet-500 hover:text-violet-700 hover:bg-violet-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={commitEdit}
+                disabled={!draft.trim()}
+                className="px-3 py-1 rounded-lg text-xs font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors disabled:opacity-40"
+              >
+                Save
+              </button>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-violet-900/80 leading-relaxed">{summary}</p>
@@ -688,6 +746,7 @@ export default function DNA() {
             summary={voiceSummary}
             loading={voiceSummaryLoading}
             onRefresh={() => generateVoiceSummary(data.voice)}
+            onSave={setVoiceSummary}
             hasInputs={voiceHasInputs}
             textDirty={textDirtyForProfile}
           />
