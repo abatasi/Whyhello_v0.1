@@ -5,7 +5,7 @@ import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown,
   Save, CheckCircle2, Dna, Sparkles, Upload, X, FileText,
   Loader2, RefreshCw, Ban, PenLine, TrendingDown, TrendingUp,
-  Info, BarChart3,
+  Info, BarChart3, Users, Target, Globe, MessageSquare, Shield,
 } from "lucide-react";
 
 // ── Persistence ──────────────────────────────────────────────────────────────
@@ -24,6 +24,9 @@ function loadDNA(): DNAData {
         voice: { ...d.voice, ...(parsed.voice ?? {}) },
         company: { ...d.company, ...(parsed.company ?? {}) },
         products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: p.economicBenefits ?? [] })),
+        customers: (parsed.customers ?? []).map(c => ({ ...c, economicBenefits: c.economicBenefits ?? [] })),
+        marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
+        competitors: parsed.competitors ?? [],
       };
     }
   } catch { /* ignore */ }
@@ -55,6 +58,48 @@ interface Product {
   economicBenefits: EconomicBenefit[];
 }
 
+interface Customer {
+  id: string;
+  rawTestimonial: string;
+  customerProfile: string;
+  startingSituation: string;
+  customerPriorities: string;
+  solutionProvided: string;
+  customerTransformation: string;
+  results: string;
+  economicBenefits: EconomicBenefit[];
+  customerQuote: string;
+}
+
+interface MarketPosition {
+  pricePosition: string;
+  productBreadth: string;
+  productDepth: string;
+  customerFocus: string;
+  deliveryModel: string;
+  primaryAdvantage: string;
+  typicalBuyingPriority: string;
+}
+
+interface Competitor {
+  id: string;
+  name: string;
+  website: string;
+  productCompared: string;
+  category: string;
+  marketSegments: string;
+  dealFrequency: string;
+  notes: string;
+  theirStrengths: string;
+  buyersPreferThem: string;
+  theyAreBetterWhen: string;
+  avoidClaiming: string;
+  ourStrengths: string;
+  problemsExposingWeakness: string;
+  buyersPreferUs: string;
+  advantagesOverTime: string;
+}
+
 interface DNAData {
   voice: {
     toneTags: string[];
@@ -65,6 +110,9 @@ interface DNAData {
     suppressionNotes: string;
   };
   products: Product[];
+  customers: Customer[];
+  marketPosition: MarketPosition;
+  competitors: Competitor[];
   company: {
     name: string;
     valueWedge: string;
@@ -92,6 +140,17 @@ function defaultDNA(): DNAData {
       differentiators: "",
       pillars: ["", "", ""],
     },
+    customers: [],
+    marketPosition: {
+      pricePosition: "",
+      productBreadth: "",
+      productDepth: "",
+      customerFocus: "",
+      deliveryModel: "",
+      primaryAdvantage: "",
+      typicalBuyingPriority: "",
+    },
+    competitors: [],
   };
 }
 
@@ -422,6 +481,341 @@ function VoiceProfileCard({
   );
 }
 
+// ── CustomerCard ─────────────────────────────────────────────────────────────
+
+function CustomerCard({
+  customer, idx, onUpdate, onRemove, onAddEB, onUpdateEB, onRemoveEB,
+}: {
+  customer: Customer; idx: number;
+  onUpdate: (patch: Partial<Customer>) => void;
+  onRemove: () => void;
+  onAddEB: () => void;
+  onUpdateEB: (benefitId: string, patch: Partial<EconomicBenefit>) => void;
+  onRemoveEB: (benefitId: string) => void;
+}) {
+  const [extracting, setExtracting] = useState(false);
+  const [showSource, setShowSource] = useState(!customer.customerProfile);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleExtract() {
+    if (!customer.rawTestimonial.trim()) return;
+    setExtracting(true);
+    try {
+      const resp = await fetch("/api/dna/testimonial-extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: customer.rawTestimonial }),
+      });
+      const extracted = await resp.json();
+      onUpdate(extracted);
+      setShowSource(false);
+    } catch { /* ignore */ }
+    setExtracting(false);
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const resp = await fetch("/api/dna/extract-text", { method: "POST", body: formData });
+      const data = await resp.json();
+      onUpdate({ rawTestimonial: (customer.rawTestimonial ? customer.rawTestimonial + "\n\n" : "") + (data.text ?? "") });
+    } catch { /* ignore */ }
+    e.target.value = "";
+  }
+
+  return (
+    <div className="rounded-xl border border-border/60 bg-secondary/20 overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-card">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Customer {idx + 1}</span>
+        <div className="flex-1" />
+        <button onClick={onRemove} className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="p-4 flex flex-col gap-4">
+        {/* Source */}
+        <div className="rounded-xl border border-border/40 overflow-hidden">
+          <button
+            className="flex items-center gap-2 w-full px-3.5 py-2.5 bg-card text-left hover:bg-secondary/30 transition-colors"
+            onClick={() => setShowSource(v => !v)}
+          >
+            <FileText className="h-3.5 w-3.5 text-muted-foreground/60" />
+            <span className="text-xs font-semibold text-foreground flex-1">Source testimonial or case study</span>
+            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", !showSource && "-rotate-90")} />
+          </button>
+          {showSource && (
+            <div className="p-3.5 border-t border-border/40 flex flex-col gap-2.5 bg-secondary/10">
+              <textarea
+                value={customer.rawTestimonial}
+                onChange={e => onUpdate({ rawTestimonial: e.target.value })}
+                rows={5}
+                placeholder="Paste a testimonial, case study excerpt, call transcript, or win-loss note here…"
+                className="w-full resize-y rounded-lg border border-border/60 bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 leading-relaxed transition-colors"
+              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <input ref={fileRef} type="file" accept=".pdf,.docx,.txt" className="hidden" onChange={handleFile} />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/60 bg-card text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                >
+                  <Upload className="h-3 w-3" />
+                  Upload PDF / DOCX / TXT
+                </button>
+                <button
+                  onClick={handleExtract}
+                  disabled={!customer.rawTestimonial.trim() || extracting}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-violet-50 border-violet-200 text-xs font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {extracting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  {extracting ? "Extracting…" : "Extract key details"}
+                </button>
+                {extracting && <span className="text-[10px] text-muted-foreground">AI is reading your testimonial…</span>}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Structured fields */}
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Customer profile" hint="Company, industry, role, size">
+            <Textarea value={customer.customerProfile} onChange={v => onUpdate({ customerProfile: v })} placeholder="e.g. Mid-market SaaS company, 200-person team, VP of Revenue Operations" rows={2} />
+          </Field>
+          <Field label="Starting situation" hint="The before state">
+            <Textarea value={customer.startingSituation} onChange={v => onUpdate({ startingSituation: v })} placeholder="e.g. Spending 3+ hours per rep per day manually researching prospects before outreach…" rows={2} />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Customer priorities" hint="What they were trying to achieve">
+            <Textarea value={customer.customerPriorities} onChange={v => onUpdate({ customerPriorities: v })} placeholder="e.g. Reduce research time, increase pipeline quality, scale personalisation without adding headcount…" rows={2} />
+          </Field>
+          <Field label="Solution provided" hint="What was done for them">
+            <Textarea value={customer.solutionProvided} onChange={v => onUpdate({ solutionProvided: v })} placeholder="e.g. Deployed Whyhello across the full SDR team with Salesforce integration…" rows={2} />
+          </Field>
+        </div>
+        <Field label="Customer transformation" hint="The after state — how their situation changed">
+          <Textarea value={customer.customerTransformation} onChange={v => onUpdate({ customerTransformation: v })} placeholder="e.g. The team now enters every first call with full context on the buyer's priorities, recent news, and relationship history. Research is automated." rows={2} />
+        </Field>
+        <Field label="Results" hint="Specific measurable outcomes">
+          <Textarea value={customer.results} onChange={v => onUpdate({ results: v })} placeholder={"3× increase in qualified meetings booked\n80% reduction in prospect research time\n47% higher email reply rates"} rows={3} />
+        </Field>
+
+        {/* Economic benefits */}
+        <div className="pt-3 border-t border-border/40">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-5 w-5 rounded-md bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="h-3 w-3 text-amber-600" />
+            </div>
+            <p className="text-xs font-bold text-foreground">Economic Benefits</p>
+            <PainGainTooltip />
+            <p className="text-[10px] text-muted-foreground">Quantify the value delivered to this customer</p>
+          </div>
+          {(customer.economicBenefits ?? []).length === 0 && (
+            <div className="flex flex-col items-center gap-1.5 py-4 rounded-xl border border-dashed border-border/60 text-center mb-3">
+              <BarChart3 className="h-4 w-4 text-muted-foreground/40" />
+              <p className="text-xs text-muted-foreground/60">No economic benefits added yet</p>
+            </div>
+          )}
+          <div className="flex flex-col gap-3">
+            {(customer.economicBenefits ?? []).map(eb => (
+              <div key={eb.id} className={cn("rounded-xl border p-3.5 flex flex-col gap-3", eb.type === "pain" ? "border-rose-200 bg-rose-50/30" : "border-emerald-200 bg-emerald-50/30")}>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => onUpdateEB(eb.id, { type: "pain" })} className={cn("flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition-all", eb.type === "pain" ? "bg-rose-100 border-rose-300 text-rose-700" : "bg-card border-border/60 text-muted-foreground hover:border-rose-200 hover:text-rose-600")}>
+                    <TrendingDown className="h-3 w-3" />Pain
+                  </button>
+                  <button onClick={() => onUpdateEB(eb.id, { type: "gain" })} className={cn("flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition-all", eb.type === "gain" ? "bg-emerald-100 border-emerald-300 text-emerald-700" : "bg-card border-border/60 text-muted-foreground hover:border-emerald-200 hover:text-emerald-600")}>
+                    <TrendingUp className="h-3 w-3" />Gain
+                  </button>
+                  <div className="flex-1" />
+                  <button onClick={() => onRemoveEB(eb.id)} className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{eb.type === "pain" ? "Cost or risk reduced" : "Value or upside created"}</label>
+                  <textarea value={eb.description} onChange={e => onUpdateEB(eb.id, { description: e.target.value })} rows={2} placeholder={eb.type === "pain" ? "e.g. Eliminated manual research time per rep" : "e.g. Increased qualified pipeline per quarter"} className="w-full resize-none rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 leading-relaxed transition-colors" />
+                </div>
+                <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Amount</label>
+                    <input type="text" value={eb.amount} onChange={e => onUpdateEB(eb.id, { amount: e.target.value })} placeholder="e.g. 50,000" className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Unit</label>
+                    <input type="text" value={eb.unit} onChange={e => onUpdateEB(eb.id, { unit: e.target.value })} placeholder="$" className="h-9 w-20 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors text-center" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Frequency</label>
+                    <select value={eb.frequency} onChange={e => onUpdateEB(eb.id, { frequency: e.target.value })} className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors">
+                      <option value="yearly">Yearly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="one-time">One-time</option>
+                      <option value="per-transaction">Per transaction</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button onClick={onAddEB} className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-border hover:border-amber-300 hover:bg-amber-50/50 text-xs font-semibold text-muted-foreground hover:text-amber-700 transition-all">
+            <Plus className="h-3.5 w-3.5" />Add economic benefit
+          </button>
+        </div>
+
+        {/* Quote */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-5 rounded-md bg-indigo-50 border border-indigo-200 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="h-3 w-3 text-indigo-500" />
+            </div>
+            <label className="text-xs font-bold text-foreground">Customer Quote</label>
+            <span className="text-[10px] text-muted-foreground">The most compelling thing they said — verbatim</span>
+          </div>
+          <Textarea value={customer.customerQuote} onChange={v => onUpdate({ customerQuote: v })} placeholder={`"We cut our prospect research time by 80% in the first month. The team couldn't believe it was the same job."`} rows={3} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CompetitorCard ────────────────────────────────────────────────────────────
+
+function CompetitorCard({
+  competitor, idx, onUpdate, onRemove,
+}: {
+  competitor: Competitor; idx: number;
+  onUpdate: (patch: Partial<Competitor>) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-secondary/20 overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-card">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+          {competitor.name || `Competitor ${idx + 1}`}
+        </span>
+        <div className="flex-1" />
+        <button onClick={onRemove} className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="p-4 flex flex-col gap-4">
+        {/* Basic info */}
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Competitor name">
+            <Input value={competitor.name} onChange={v => onUpdate({ name: v })} placeholder="e.g. Outreach.io" />
+          </Field>
+          <Field label="Website">
+            <div className="relative">
+              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
+              <input
+                type="text"
+                value={competitor.website}
+                onChange={e => onUpdate({ website: e.target.value })}
+                placeholder="e.g. outreach.io"
+                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+              />
+            </div>
+          </Field>
+          <Field label="Product / solution compared">
+            <Input value={competitor.productCompared} onChange={v => onUpdate({ productCompared: v })} placeholder="e.g. Sales engagement platform" />
+          </Field>
+        </div>
+
+        {/* Category + frequency */}
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Competitive category">
+            <div className="flex flex-wrap gap-1.5">
+              {["Direct", "Indirect", "Substitute", "Status quo"].map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => onUpdate({ category: opt === competitor.category ? "" : opt })}
+                  className={cn("px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all",
+                    competitor.category === opt ? "bg-orange-100 border-orange-300 text-orange-700" : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/60"
+                  )}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="How often in deals">
+            <div className="flex flex-wrap gap-1.5">
+              {["Rarely", "Sometimes", "Often", "Constantly"].map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => onUpdate({ dealFrequency: opt === competitor.dealFrequency ? "" : opt })}
+                  className={cn("px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all",
+                    competitor.dealFrequency === opt ? "bg-orange-100 border-orange-300 text-orange-700" : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/60"
+                  )}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </Field>
+        </div>
+
+        <Field label="Market segments where they compete" hint="Industries, company sizes, geographies">
+          <Textarea value={competitor.marketSegments} onChange={v => onUpdate({ marketSegments: v })} placeholder="e.g. Mid-market SaaS, US-based, 200–2000 employees" rows={2} />
+        </Field>
+
+        <Field label="Notes, battlecards & win-loss intelligence" hint="Observations, call notes, supporting documents">
+          <Textarea value={competitor.notes} onChange={v => onUpdate({ notes: v })} placeholder="Paste battlecard content, call notes, win-loss observations, or any other intelligence here…" rows={3} />
+        </Field>
+
+        {/* Their strengths */}
+        <div className="rounded-xl border border-rose-200/70 bg-rose-50/20 p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-5 w-5 rounded-md bg-rose-100 border border-rose-200 flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="h-3 w-3 text-rose-500" />
+            </div>
+            <p className="text-xs font-bold text-rose-700">Where they are stronger</p>
+            <span className="text-[10px] text-muted-foreground">Be honest — this makes your positioning more credible</span>
+          </div>
+          <Field label="What do they do better than us?">
+            <Textarea value={competitor.theirStrengths} onChange={v => onUpdate({ theirStrengths: v })} placeholder="e.g. More mature integrations ecosystem, stronger brand recognition in enterprise, larger customer base…" rows={2} />
+          </Field>
+          <Field label="Which buyers are likely to prefer them?">
+            <Textarea value={competitor.buyersPreferThem} onChange={v => onUpdate({ buyersPreferThem: v })} placeholder="e.g. Large enterprises already deep in Salesforce, buyers who prioritise vendor brand risk…" rows={2} />
+          </Field>
+          <Field label="Under what circumstances are they the better choice?">
+            <Textarea value={competitor.theyAreBetterWhen} onChange={v => onUpdate({ theyAreBetterWhen: v })} placeholder="e.g. When the buyer needs 200+ native integrations out of the box, or has complex multi-team approval workflows…" rows={2} />
+          </Field>
+          <Field label="What claims should we avoid making against them?">
+            <Textarea value={competitor.avoidClaiming} onChange={v => onUpdate({ avoidClaiming: v })} placeholder="e.g. Avoid claiming we're more scalable — their enterprise track record is stronger and buyers know it…" rows={2} />
+          </Field>
+        </div>
+
+        {/* Our strengths */}
+        <div className="rounded-xl border border-blue-200/70 bg-blue-50/20 p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-5 w-5 rounded-md bg-blue-100 border border-blue-200 flex items-center justify-center flex-shrink-0">
+              <Shield className="h-3 w-3 text-blue-500" />
+            </div>
+            <p className="text-xs font-bold text-blue-700">Where we are stronger</p>
+          </div>
+          <Field label="What do we do better than them?">
+            <Textarea value={competitor.ourStrengths} onChange={v => onUpdate({ ourStrengths: v })} placeholder="e.g. Deeper relationship intelligence, faster time-to-value, AI that writes in the user's actual voice…" rows={2} />
+          </Field>
+          <Field label="Which customer problems expose their weaknesses?">
+            <Textarea value={competitor.problemsExposingWeakness} onChange={v => onUpdate({ problemsExposingWeakness: v })} placeholder="e.g. When the pain is personalisation at scale, their template-driven approach becomes a weakness…" rows={2} />
+          </Field>
+          <Field label="Which buyers are most likely to prefer us?">
+            <Textarea value={competitor.buyersPreferUs} onChange={v => onUpdate({ buyersPreferUs: v })} placeholder="e.g. Growth-stage SaaS, VP Sales focused on quality over volume, teams without a dedicated data team…" rows={2} />
+          </Field>
+          <Field label="What advantages appear over time rather than immediately?">
+            <Textarea value={competitor.advantagesOverTime} onChange={v => onUpdate({ advantagesOverTime: v })} placeholder="e.g. As the AI learns the user's voice across campaigns, output quality compounds in ways competitors can't replicate…" rows={2} />
+          </Field>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function DNA() {
@@ -480,6 +874,42 @@ export default function DNA() {
   }
   function removeEconomicBenefit(productId: string, benefitId: string) {
     setData(d => ({ ...d, products: d.products.map(p => p.id === productId ? { ...p, economicBenefits: (p.economicBenefits ?? []).filter(eb => eb.id !== benefitId) } : p) }));
+  }
+  // ── Customer helpers ──
+  function addCustomer() {
+    const c: Customer = { id: crypto.randomUUID(), rawTestimonial: "", customerProfile: "", startingSituation: "", customerPriorities: "", solutionProvided: "", customerTransformation: "", results: "", economicBenefits: [], customerQuote: "" };
+    setData(d => ({ ...d, customers: [...d.customers, c] }));
+  }
+  function updateCustomer(id: string, patch: Partial<Customer>) {
+    setData(d => ({ ...d, customers: d.customers.map(c => c.id === id ? { ...c, ...patch } : c) }));
+  }
+  function removeCustomer(id: string) {
+    setData(d => ({ ...d, customers: d.customers.filter(c => c.id !== id) }));
+  }
+  function addCustomerEB(customerId: string) {
+    const eb: EconomicBenefit = { id: crypto.randomUUID(), type: "gain", description: "", amount: "", unit: "$", frequency: "yearly" };
+    setData(d => ({ ...d, customers: d.customers.map(c => c.id === customerId ? { ...c, economicBenefits: [...(c.economicBenefits ?? []), eb] } : c) }));
+  }
+  function updateCustomerEB(customerId: string, benefitId: string, patch: Partial<EconomicBenefit>) {
+    setData(d => ({ ...d, customers: d.customers.map(c => c.id === customerId ? { ...c, economicBenefits: (c.economicBenefits ?? []).map(eb => eb.id === benefitId ? { ...eb, ...patch } : eb) } : c) }));
+  }
+  function removeCustomerEB(customerId: string, benefitId: string) {
+    setData(d => ({ ...d, customers: d.customers.map(c => c.id === customerId ? { ...c, economicBenefits: (c.economicBenefits ?? []).filter(eb => eb.id !== benefitId) } : c) }));
+  }
+  // ── Market position ──
+  function setMarketPosition(patch: Partial<MarketPosition>) {
+    setData(d => ({ ...d, marketPosition: { ...d.marketPosition, ...patch } }));
+  }
+  // ── Competitor helpers ──
+  function addCompetitor() {
+    const c: Competitor = { id: crypto.randomUUID(), name: "", website: "", productCompared: "", category: "", marketSegments: "", dealFrequency: "", notes: "", theirStrengths: "", buyersPreferThem: "", theyAreBetterWhen: "", avoidClaiming: "", ourStrengths: "", problemsExposingWeakness: "", buyersPreferUs: "", advantagesOverTime: "" };
+    setData(d => ({ ...d, competitors: [...d.competitors, c] }));
+  }
+  function updateCompetitor(id: string, patch: Partial<Competitor>) {
+    setData(d => ({ ...d, competitors: d.competitors.map(c => c.id === id ? { ...c, ...patch } : c) }));
+  }
+  function removeCompetitor(id: string) {
+    setData(d => ({ ...d, competitors: d.competitors.filter(c => c.id !== id) }));
   }
   function toggleTag(tag: string) {
     setData(d => {
@@ -1032,6 +1462,134 @@ export default function DNA() {
           >
             <Plus className="h-4 w-4" />
             Add product
+          </button>
+        </Section>
+
+        {/* ── Customers ── */}
+        <Section
+          icon={Users}
+          title="Your Customers"
+          subtitle="Build structured testimonials from your best customer stories — used to power social proof and objection handling"
+          accentBg="bg-sky-50"
+          accentBorder="border-sky-200"
+          accentColor="text-sky-600"
+        >
+          {(data.customers ?? []).length === 0 && (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <div className="h-12 w-12 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center">
+                <Users className="h-5 w-5 text-sky-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">No customer stories yet</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Paste a testimonial or case study to get started — the AI will extract the key details</p>
+              </div>
+            </div>
+          )}
+
+          {(data.customers ?? []).map((customer, idx) => (
+            <CustomerCard
+              key={customer.id}
+              customer={customer}
+              idx={idx}
+              onUpdate={patch => updateCustomer(customer.id, patch)}
+              onRemove={() => removeCustomer(customer.id)}
+              onAddEB={() => addCustomerEB(customer.id)}
+              onUpdateEB={(benefitId, patch) => updateCustomerEB(customer.id, benefitId, patch)}
+              onRemoveEB={benefitId => removeCustomerEB(customer.id, benefitId)}
+            />
+          ))}
+
+          <button
+            onClick={addCustomer}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-border hover:border-sky-300 hover:bg-sky-50/50 text-sm font-semibold text-muted-foreground hover:text-sky-700 transition-all self-start"
+          >
+            <Plus className="h-4 w-4" />
+            Add customer
+          </button>
+        </Section>
+
+        {/* ── Competitors ── */}
+        <Section
+          icon={Target}
+          title="Your Competitors"
+          subtitle="Define your market position and build an honest, balanced view of each competitor — powers credible, non-generic positioning"
+          accentBg="bg-orange-50"
+          accentBorder="border-orange-200"
+          accentColor="text-orange-600"
+        >
+          {/* Market Position */}
+          <div className="rounded-xl border border-border/60 bg-secondary/20 overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-card">
+              <div className="h-6 w-6 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                <Target className="h-3.5 w-3.5 text-orange-600" />
+              </div>
+              <span className="text-xs font-bold text-foreground">Our Market Position</span>
+              <span className="text-[10px] text-muted-foreground ml-1">Define where you generally sit — this becomes the baseline for every competitor comparison</span>
+            </div>
+            <div className="p-4 flex flex-col gap-3">
+              {(
+                [
+                  { key: "pricePosition",         label: "Price position",          options: ["Budget", "Value", "Mid-market", "Premium"] },
+                  { key: "productBreadth",         label: "Product breadth",         options: ["Specialized", "Balanced", "Comprehensive"] },
+                  { key: "productDepth",           label: "Product depth",           options: ["Basic", "Advanced", "Best-in-class"] },
+                  { key: "customerFocus",          label: "Customer focus",          options: ["SMB", "Mid-market", "Enterprise", "Multiple segments"] },
+                  { key: "deliveryModel",          label: "Delivery model",          options: ["Self-service", "Supported", "High-touch"] },
+                  { key: "primaryAdvantage",       label: "Primary advantage",       options: ["Price", "Simplicity", "Specialization", "Performance", "Service", "Breadth"] },
+                  { key: "typicalBuyingPriority",  label: "Typical buying priority", options: ["Lowest cost", "Fastest deployment", "Lowest risk", "Best capabilities", "Best long-term value"] },
+                ] as { key: keyof MarketPosition; label: string; options: string[] }[]
+              ).map(({ key, label, options }) => (
+                <div key={key} className="flex items-start gap-3">
+                  <span className="text-[10px] font-semibold text-muted-foreground w-36 flex-shrink-0 pt-1.5 leading-tight">{label}</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {options.map(opt => (
+                      <button
+                        key={opt}
+                        onClick={() => setMarketPosition({ [key]: opt === (data.marketPosition ?? {})[key] ? "" : opt })}
+                        className={cn(
+                          "px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all",
+                          (data.marketPosition ?? {})[key] === opt
+                            ? "bg-orange-100 border-orange-300 text-orange-700"
+                            : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                        )}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Competitor cards */}
+          {(data.competitors ?? []).length === 0 && (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <div className="h-12 w-12 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center">
+                <Target className="h-5 w-5 text-orange-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">No competitors added yet</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Add each competitor and define honestly where they beat you — and where you beat them</p>
+              </div>
+            </div>
+          )}
+
+          {(data.competitors ?? []).map((competitor, idx) => (
+            <CompetitorCard
+              key={competitor.id}
+              competitor={competitor}
+              idx={idx}
+              onUpdate={patch => updateCompetitor(competitor.id, patch)}
+              onRemove={() => removeCompetitor(competitor.id)}
+            />
+          ))}
+
+          <button
+            onClick={addCompetitor}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-border hover:border-orange-300 hover:bg-orange-50/50 text-sm font-semibold text-muted-foreground hover:text-orange-700 transition-all self-start"
+          >
+            <Plus className="h-4 w-4" />
+            Add competitor
           </button>
         </Section>
 

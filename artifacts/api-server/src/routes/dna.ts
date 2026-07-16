@@ -114,4 +114,45 @@ Write only the 2–3 sentence description. No preamble, no label.`;
   }
 });
 
+// ── POST /api/dna/testimonial-extract ────────────────────────────────────────
+
+router.post("/testimonial-extract", async (req, res) => {
+  const { text = "" } = req.body as { text: string };
+  if (!text.trim()) { res.json({}); return; }
+
+  const prompt = `Extract key information from the following customer testimonial, case study, or win-loss note into a structured JSON format.
+
+Return ONLY a valid JSON object with these exact keys (use empty string "" if a field cannot be determined):
+{
+  "customerProfile": "Brief description of the customer — company name, industry, size, role of the contact if known",
+  "startingSituation": "The before state — what problem, pain, or situation they were experiencing before the solution",
+  "customerPriorities": "What they were trying to achieve — their goals and priorities",
+  "solutionProvided": "What was done for them — the solution, approach, or implementation",
+  "customerTransformation": "The after state — how their situation changed as a result",
+  "results": "Specific measurable outcomes — numbers, percentages, timelines if mentioned",
+  "customerQuote": "The single most powerful direct verbatim quote from the customer, or empty string if none"
+}
+
+Source text:
+"""
+${text.slice(0, 6000)}
+"""
+
+Return only the JSON object. No preamble, no explanation, no code fences.`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-5-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const match = raw.match(/\{[\s\S]*\}/);
+    const data = match ? JSON.parse(match[0]) : {};
+    res.json(data);
+  } catch (err) {
+    console.error("Testimonial extract error:", err);
+    res.status(500).json({ error: "Extraction failed" });
+  }
+});
+
 export default router;
