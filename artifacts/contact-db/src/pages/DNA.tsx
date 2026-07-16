@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown,
   Save, CheckCircle2, Dna, Sparkles, Upload, X, FileText,
-  Loader2, RefreshCw, Ban, PenLine,
+  Loader2, RefreshCw, Ban, PenLine, TrendingDown, TrendingUp,
+  Info, BarChart3,
 } from "lucide-react";
 
 // ── Persistence ──────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ function loadDNA(): DNAData {
         ...parsed,
         voice: { ...d.voice, ...(parsed.voice ?? {}) },
         company: { ...d.company, ...(parsed.company ?? {}) },
+        products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: p.economicBenefits ?? [] })),
       };
     }
   } catch { /* ignore */ }
@@ -34,6 +36,15 @@ function saveDNA(data: DNAData) {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+interface EconomicBenefit {
+  id: string;
+  type: "pain" | "gain";
+  description: string;
+  amount: string;
+  unit: string;
+  frequency: string;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -41,6 +52,7 @@ interface Product {
   features: string;
   outcomes: string;
   persona: string;
+  economicBenefits: EconomicBenefit[];
 }
 
 interface DNAData {
@@ -258,6 +270,48 @@ function SaveFieldButton({ show, onSave }: { show: boolean; onSave: () => void }
   );
 }
 
+// ── Pain / Gain tooltip ───────────────────────────────────────────────────────
+
+function PainGainTooltip() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative inline-flex items-center" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        className="h-4 w-4 flex items-center justify-center text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+      >
+        <Info className="h-3.5 w-3.5" />
+      </button>
+      {open && (
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 z-50 w-[340px] rounded-xl border border-border bg-card shadow-xl p-4 text-xs pointer-events-none">
+          <div className="flex flex-col gap-3">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingDown className="h-3.5 w-3.5 text-rose-500 flex-shrink-0" />
+                <p className="font-bold text-rose-600">Pain</p>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">The economic costs or risks a product helps the customer reduce or avoid.</p>
+              <p className="text-muted-foreground mt-1.5 leading-relaxed"><span className="font-semibold text-foreground/70">Examples:</span> reducing operating costs, preventing lost revenue, eliminating wasted employee time, lowering customer churn, reducing costly errors, minimizing downtime, avoiding compliance penalties, preventing project delays, capturing missed opportunities, or reducing the cost of maintaining the status quo.</p>
+            </div>
+            <div className="border-t border-border/50" />
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                <p className="font-bold text-emerald-600">Gain</p>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">The economic value or upside a product helps the customer create or realize.</p>
+              <p className="text-muted-foreground mt-1.5 leading-relaxed"><span className="font-semibold text-foreground/70">Examples:</span> increasing revenue, improving profit margins, boosting productivity, accelerating time to market, strengthening customer retention, generating more sales opportunities, improving resource utilization, shortening time to value, or enabling growth without equivalent increases in cost.</p>
+            </div>
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-border" />
+          <div className="absolute left-1/2 -translate-x-1/2 top-full -mt-px w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-card" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Voice Profile card ───────────────────────────────────────────────────────
 
 function VoiceProfileCard({
@@ -408,7 +462,7 @@ export default function DNA() {
     });
   }
   function addProduct() {
-    const p: Product = { id: crypto.randomUUID(), name: "", tagline: "", features: "", outcomes: "", persona: "" };
+    const p: Product = { id: crypto.randomUUID(), name: "", tagline: "", features: "", outcomes: "", persona: "", economicBenefits: [] };
     setData(d => ({ ...d, products: [...d.products, p] }));
   }
   function updateProduct(id: string, patch: Partial<Product>) {
@@ -416,6 +470,16 @@ export default function DNA() {
   }
   function removeProduct(id: string) {
     setData(d => ({ ...d, products: d.products.filter(p => p.id !== id) }));
+  }
+  function addEconomicBenefit(productId: string) {
+    const eb: EconomicBenefit = { id: crypto.randomUUID(), type: "pain", description: "", amount: "", unit: "$", frequency: "yearly" };
+    setData(d => ({ ...d, products: d.products.map(p => p.id === productId ? { ...p, economicBenefits: [...(p.economicBenefits ?? []), eb] } : p) }));
+  }
+  function updateEconomicBenefit(productId: string, benefitId: string, patch: Partial<EconomicBenefit>) {
+    setData(d => ({ ...d, products: d.products.map(p => p.id === productId ? { ...p, economicBenefits: (p.economicBenefits ?? []).map(eb => eb.id === benefitId ? { ...eb, ...patch } : eb) } : p) }));
+  }
+  function removeEconomicBenefit(productId: string, benefitId: string) {
+    setData(d => ({ ...d, products: d.products.map(p => p.id === productId ? { ...p, economicBenefits: (p.economicBenefits ?? []).filter(eb => eb.id !== benefitId) } : p) }));
   }
   function toggleTag(tag: string) {
     setData(d => {
@@ -827,6 +891,137 @@ export default function DNA() {
                     placeholder="e.g. VP Sales at B2B SaaS companies, 50–500 employees"
                   />
                 </Field>
+
+                {/* ── Economic Benefits ── */}
+                <div className="pt-3 border-t border-border/40">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-5 w-5 rounded-md bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
+                      <BarChart3 className="h-3 w-3 text-amber-600" />
+                    </div>
+                    <p className="text-xs font-bold text-foreground">Economic Benefits</p>
+                    <PainGainTooltip />
+                    <p className="text-[10px] text-muted-foreground">Quantify the value this product creates or costs it removes</p>
+                  </div>
+
+                  {(product.economicBenefits ?? []).length === 0 && (
+                    <div className="flex flex-col items-center gap-1.5 py-5 rounded-xl border border-dashed border-border/60 text-center mb-3">
+                      <BarChart3 className="h-4 w-4 text-muted-foreground/40" />
+                      <p className="text-xs text-muted-foreground/60">No economic benefits added yet</p>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-3">
+                    {(product.economicBenefits ?? []).map(eb => (
+                      <div
+                        key={eb.id}
+                        className={cn(
+                          "rounded-xl border p-3.5 flex flex-col gap-3",
+                          eb.type === "pain"
+                            ? "border-rose-200 bg-rose-50/30"
+                            : "border-emerald-200 bg-emerald-50/30"
+                        )}
+                      >
+                        {/* Type toggle + remove */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateEconomicBenefit(product.id, eb.id, { type: "pain" })}
+                            className={cn(
+                              "flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition-all",
+                              eb.type === "pain"
+                                ? "bg-rose-100 border-rose-300 text-rose-700"
+                                : "bg-card border-border/60 text-muted-foreground hover:border-rose-200 hover:text-rose-600"
+                            )}
+                          >
+                            <TrendingDown className="h-3 w-3" />
+                            Pain
+                          </button>
+                          <button
+                            onClick={() => updateEconomicBenefit(product.id, eb.id, { type: "gain" })}
+                            className={cn(
+                              "flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition-all",
+                              eb.type === "gain"
+                                ? "bg-emerald-100 border-emerald-300 text-emerald-700"
+                                : "bg-card border-border/60 text-muted-foreground hover:border-emerald-200 hover:text-emerald-600"
+                            )}
+                          >
+                            <TrendingUp className="h-3 w-3" />
+                            Gain
+                          </button>
+                          <div className="flex-1" />
+                          <button
+                            onClick={() => removeEconomicBenefit(product.id, eb.id)}
+                            className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Description */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                            {eb.type === "pain" ? "Cost or risk reduced" : "Value or upside created"}
+                          </label>
+                          <textarea
+                            value={eb.description}
+                            onChange={e => updateEconomicBenefit(product.id, eb.id, { description: e.target.value })}
+                            rows={2}
+                            placeholder={eb.type === "pain"
+                              ? "e.g. Eliminates manual prospect research time per rep"
+                              : "e.g. Increases qualified pipeline generated per quarter"}
+                            className="w-full resize-none rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 leading-relaxed transition-colors"
+                          />
+                        </div>
+
+                        {/* Amount + Unit + Frequency */}
+                        <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Amount</label>
+                            <input
+                              type="text"
+                              value={eb.amount}
+                              onChange={e => updateEconomicBenefit(product.id, eb.id, { amount: e.target.value })}
+                              placeholder="e.g. 50,000"
+                              className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Unit</label>
+                            <input
+                              type="text"
+                              value={eb.unit}
+                              onChange={e => updateEconomicBenefit(product.id, eb.id, { unit: e.target.value })}
+                              placeholder="$"
+                              className="h-9 w-20 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors text-center"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Frequency</label>
+                            <select
+                              value={eb.frequency}
+                              onChange={e => updateEconomicBenefit(product.id, eb.id, { frequency: e.target.value })}
+                              className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors"
+                            >
+                              <option value="yearly">Yearly</option>
+                              <option value="monthly">Monthly</option>
+                              <option value="weekly">Weekly</option>
+                              <option value="one-time">One-time</option>
+                              <option value="per-transaction">Per transaction</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => addEconomicBenefit(product.id)}
+                    className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-border hover:border-amber-300 hover:bg-amber-50/50 text-xs font-semibold text-muted-foreground hover:text-amber-700 transition-all"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add economic benefit
+                  </button>
+                </div>
+
               </div>
             </div>
           ))}
