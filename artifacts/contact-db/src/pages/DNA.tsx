@@ -5,7 +5,7 @@ import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown,
   Save, CheckCircle2, Dna, Sparkles, Upload, X, FileText,
   Loader2, RefreshCw, Ban, PenLine, TrendingDown, TrendingUp,
-  Info, BarChart3, Users, Target, Globe, MessageSquare, Shield,
+  Info, BarChart3, Users, Users2, Target, Globe, MessageSquare, Shield,
 } from "lucide-react";
 
 // ── Persistence ──────────────────────────────────────────────────────────────
@@ -13,6 +13,15 @@ import {
 const API_PROFILE_URL = "/api/dna/profile";
 
 const STORAGE_KEY = "whyhello_dna_v3";
+
+function mergeBuyingCenter(saved?: Array<Partial<BuyingCenterSeat>>): BuyingCenterSeat[] {
+  const savedMap = new Map((saved ?? []).map(s => [s.seat!, s]));
+  return BUYING_CENTER_SEATS.map(def => ({
+    seat: def.seat,
+    seniorities: savedMap.get(def.seat)?.seniorities ?? [],
+    departments: savedMap.get(def.seat)?.departments ?? [],
+  }));
+}
 
 function mergeDNA(parsed: Partial<DNAData>): DNAData {
   const d = defaultDNA();
@@ -25,6 +34,7 @@ function mergeDNA(parsed: Partial<DNAData>): DNAData {
     customers: (parsed.customers ?? []).map(c => ({ ...c, economicBenefits: c.economicBenefits ?? [] })),
     marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
     competitors: parsed.competitors ?? [],
+    buyingCenter: mergeBuyingCenter(parsed.buyingCenter),
   };
 }
 
@@ -103,6 +113,12 @@ interface Competitor {
   advantagesOverTime: string;
 }
 
+interface BuyingCenterSeat {
+  seat: string;
+  seniorities: string[];
+  departments: string[];
+}
+
 interface DNAData {
   voice: {
     toneTags: string[];
@@ -116,6 +132,7 @@ interface DNAData {
   customers: Customer[];
   marketPosition: MarketPosition;
   competitors: Competitor[];
+  buyingCenter: BuyingCenterSeat[];
   company: {
     name: string;
     valueWedge: string;
@@ -154,6 +171,7 @@ function defaultDNA(): DNAData {
       typicalBuyingPriority: "",
     },
     competitors: [],
+    buyingCenter: BUYING_CENTER_SEATS.map(s => ({ seat: s.seat, seniorities: [], departments: [] })),
   };
 }
 
@@ -188,6 +206,36 @@ const STYLE_OPTIONS = [
   { value: "casual", label: "Casual" },
   { value: "technical", label: "Technical" },
   { value: "executive", label: "Executive" },
+];
+
+const SENIORITY_OPTIONS = [
+  "C-Suite", "VP", "Director", "Manager", "Individual Contributor",
+];
+
+const DEPARTMENT_OPTIONS = [
+  "Business Development", "Claims", "Clinical", "Consulting", "Content", "Creative",
+  "Customer Experience", "Customer Success", "Data", "Design", "Development", "Digital",
+  "Education", "Engineering", "Executive", "Finance", "Investments", "Legal", "Marketing",
+  "Medical", "Merchandising", "Operations", "Product", "Production", "Programs", "R&D",
+  "Research", "Revenue", "Risk", "Sales", "Security", "Underwriting",
+];
+
+const BUYING_CENTER_SEATS: { seat: string; role: string }[] = [
+  { seat: "Business Champion",               role: "Promotes the solution internally and helps advance the sale" },
+  { seat: "Economic Buyer",                  role: "Controls or authorizes the budget" },
+  { seat: "Decision Maker",                  role: "Makes or materially influences the final selection" },
+  { seat: "Executive Sponsor",               role: "Connects the initiative to executive priorities" },
+  { seat: "Business Owner",                  role: "Owns the business problem and expected outcome" },
+  { seat: "Technical Buyer",                 role: "Evaluates architecture, integrations and technical viability" },
+  { seat: "Security or Compliance Reviewer", role: "Assesses security, privacy, legal or regulatory risk" },
+  { seat: "Procurement",                     role: "Manages commercial terms and purchasing requirements" },
+  { seat: "Legal",                           role: "Reviews contractual and legal obligations" },
+  { seat: "Finance",                         role: "Validates costs, ROI and budget treatment" },
+  { seat: "End User",                        role: "Uses the product or experiences the operational change" },
+  { seat: "Implementer",                     role: "Owns deployment, configuration or change management" },
+  { seat: "Influencer",                      role: "Shapes requirements or internal opinions" },
+  { seat: "Blocker",                         role: "Can delay, oppose or prevent the purchase" },
+  { seat: "Coach",                           role: "Privately helps the seller understand the account and process" },
 ];
 
 // ── Auto-save hook ───────────────────────────────────────────────────────────
@@ -826,6 +874,160 @@ function CompetitorCard({
   );
 }
 
+// ── DeptSelector ──────────────────────────────────────────────────────────────
+
+function DeptSelector({ selected, onChange }: { selected: string[]; onChange: (v: string[]) => void }) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, []);
+
+  const toggle = (dept: string) =>
+    onChange(selected.includes(dept) ? selected.filter(d => d !== dept) : [...selected, dept]);
+
+  const filtered = DEPARTMENT_OPTIONS.filter(d =>
+    d.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Department</span>
+      <div className="flex flex-wrap gap-1.5 items-center">
+        {selected.map(dept => (
+          <button
+            key={dept}
+            onClick={() => toggle(dept)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-100 border border-indigo-300 text-indigo-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors"
+          >
+            {dept}
+            <X className="h-2.5 w-2.5" />
+          </button>
+        ))}
+        <div ref={wrapperRef} className="relative">
+          <button
+            onClick={() => setOpen(v => !v)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-dashed border-border hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 text-muted-foreground transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            Add
+          </button>
+          {open && (
+            <div className="absolute top-8 left-0 z-20 w-52 rounded-xl border border-border bg-popover shadow-lg overflow-hidden">
+              <div className="p-2 border-b border-border/50">
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search departments…"
+                  className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/50"
+                />
+              </div>
+              <div className="max-h-48 overflow-y-auto py-1">
+                {filtered.length === 0 ? (
+                  <p className="text-xs text-muted-foreground px-3 py-2">No results</p>
+                ) : filtered.map(dept => (
+                  <button
+                    key={dept}
+                    onClick={() => { toggle(dept); if (!selected.includes(dept)) setSearch(""); }}
+                    className={cn(
+                      "w-full text-left text-xs px-3 py-1.5 flex items-center gap-2 transition-colors",
+                      selected.includes(dept)
+                        ? "bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100"
+                        : "text-foreground hover:bg-secondary/60"
+                    )}
+                  >
+                    <span className={cn(
+                      "h-3.5 w-3.5 rounded-sm border flex-shrink-0 flex items-center justify-center transition-colors",
+                      selected.includes(dept) ? "bg-indigo-500 border-indigo-500" : "border-border/60"
+                    )}>
+                      {selected.includes(dept) && (
+                        <svg className="h-2 w-2 text-white" viewBox="0 0 8 6" fill="none">
+                          <path d="M1 3l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </span>
+                    {dept}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── BuyingCenterSeatCard ──────────────────────────────────────────────────────
+
+function BuyingCenterSeatCard({ seat, seniorities, departments, onUpdate }: {
+  seat: string;
+  seniorities: string[];
+  departments: string[];
+  onUpdate: (patch: { seniorities?: string[]; departments?: string[] }) => void;
+}) {
+  const def = BUYING_CENTER_SEATS.find(s => s.seat === seat);
+  const isConfigured = seniorities.length > 0 || departments.length > 0;
+
+  const toggleSeniority = (s: string) =>
+    onUpdate({ seniorities: seniorities.includes(s) ? seniorities.filter(x => x !== s) : [...seniorities, s] });
+
+  return (
+    <div className={cn(
+      "rounded-xl border bg-card transition-colors",
+      isConfigured ? "border-indigo-200/70" : "border-border/60"
+    )}>
+      <div className="px-4 py-3.5 flex items-start gap-3">
+        <div className={cn(
+          "mt-1.5 h-2 w-2 rounded-full flex-shrink-0 transition-colors",
+          isConfigured ? "bg-indigo-500" : "bg-border"
+        )} />
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">{seat}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{def?.role}</p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Seniority</span>
+            <div className="flex flex-wrap gap-1.5">
+              {SENIORITY_OPTIONS.map(s => (
+                <button
+                  key={s}
+                  onClick={() => toggleSeniority(s)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all",
+                    seniorities.includes(s)
+                      ? "bg-indigo-100 border-indigo-300 text-indigo-700"
+                      : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <DeptSelector
+            selected={departments}
+            onChange={v => onUpdate({ departments: v })}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function DNA() {
@@ -846,6 +1048,15 @@ export default function DNA() {
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function updateBuyingCenterSeat(seatName: string, patch: { seniorities?: string[]; departments?: string[] }) {
+    setData(d => ({
+      ...d,
+      buyingCenter: (d.buyingCenter ?? []).map(s =>
+        s.seat === seatName ? { ...s, ...patch } : s
+      ),
+    }));
+  }
 
   // Voice profile AI summary
   const SUMMARY_KEY = "whyhello_voice_summary";
@@ -1616,6 +1827,31 @@ export default function DNA() {
             <Plus className="h-4 w-4" />
             Add competitor
           </button>
+        </Section>
+
+        {/* ── Audience ── */}
+        <Section
+          icon={Users2}
+          title="Your Audience"
+          subtitle="Map the buying center — define who typically fills each role and which contacts in your database match them"
+          accentBg="bg-indigo-50"
+          accentBorder="border-indigo-200"
+          accentColor="text-indigo-600"
+        >
+          <p className="text-xs text-muted-foreground -mt-2">
+            For each buying-center seat, select the seniority levels and departments that typically fill that role at your target accounts. This powers contact targeting and persona-matched outreach.
+          </p>
+          <div className="flex flex-col gap-2.5">
+            {(data.buyingCenter ?? []).map(seat => (
+              <BuyingCenterSeatCard
+                key={seat.seat}
+                seat={seat.seat}
+                seniorities={seat.seniorities}
+                departments={seat.departments}
+                onUpdate={patch => updateBuyingCenterSeat(seat.seat, patch)}
+              />
+            ))}
+          </div>
         </Section>
 
         {/* ── Company ── */}
