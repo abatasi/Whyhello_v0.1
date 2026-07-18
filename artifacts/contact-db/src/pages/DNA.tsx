@@ -1167,6 +1167,28 @@ function BuyingCenterModal({ seatName, seniorities, departments, onUpdate, open,
   );
 }
 
+// ── Navigation config ────────────────────────────────────────────────────────
+
+type SectionId = "voice" | "products" | "customers" | "competitors" | "audience" | "company";
+
+const DNA_NAV: {
+  id: SectionId;
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  activeBg: string;
+  activeBorder: string;
+  activeText: string;
+  iconBg: string;
+}[] = [
+  { id: "voice",       icon: Mic2,      title: "Voice & Tone",  description: "Personality & style",   activeBg: "bg-violet-50",  activeBorder: "border-violet-200",  activeText: "text-violet-700",  iconBg: "bg-violet-100"  },
+  { id: "products",    icon: Package,   title: "Products",       description: "Features & outcomes",   activeBg: "bg-blue-50",    activeBorder: "border-blue-200",    activeText: "text-blue-700",    iconBg: "bg-blue-100"    },
+  { id: "customers",   icon: Users,     title: "Customers",      description: "Stories & proof",       activeBg: "bg-sky-50",     activeBorder: "border-sky-200",     activeText: "text-sky-700",     iconBg: "bg-sky-100"     },
+  { id: "competitors", icon: Target,    title: "Competitors",    description: "Market position",       activeBg: "bg-orange-50",  activeBorder: "border-orange-200",  activeText: "text-orange-700",  iconBg: "bg-orange-100"  },
+  { id: "audience",    icon: Users2,    title: "Audience",       description: "Buying center",         activeBg: "bg-indigo-50",  activeBorder: "border-indigo-200",  activeText: "text-indigo-700",  iconBg: "bg-indigo-100"  },
+  { id: "company",     icon: Building2, title: "Company",        description: "Context & pillars",     activeBg: "bg-emerald-50", activeBorder: "border-emerald-200", activeText: "text-emerald-700", iconBg: "bg-emerald-100" },
+];
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function DNA() {
@@ -1189,6 +1211,7 @@ export default function DNA() {
   }, []);
 
   const [activeSeat, setActiveSeat] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<SectionId>("voice");
 
   function updateBuyingCenterSeat(seatName: string, patch: { seniorities?: string[]; departments?: string[] }) {
     setData(d => ({
@@ -1387,7 +1410,7 @@ export default function DNA() {
 
   return (
     <Shell>
-      <div className="max-w-3xl mx-auto py-10 px-4 flex flex-col gap-8">
+      <div className="w-full max-w-[1400px] mx-auto py-8 px-8 flex flex-col gap-6">
 
         {/* Page header */}
         <div className="flex items-start justify-between">
@@ -1413,7 +1436,41 @@ export default function DNA() {
           </div>
         </div>
 
+        {/* Two-column body */}
+        <div className="flex gap-6 items-start">
+
+          {/* Left sidebar nav */}
+          <nav className="w-56 flex-shrink-0 sticky top-8 flex flex-col gap-0.5 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
+            {DNA_NAV.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={cn(
+                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all",
+                  activeSection === item.id
+                    ? cn(item.activeBg, "border", item.activeBorder)
+                    : "hover:bg-secondary/60 border border-transparent"
+                )}
+              >
+                <div className={cn(
+                  "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border",
+                  activeSection === item.id ? cn(item.iconBg, item.activeBorder) : "bg-secondary/60 border-border/50"
+                )}>
+                  <item.icon className={cn("h-4 w-4", activeSection === item.id ? item.activeText : "text-muted-foreground")} />
+                </div>
+                <div className="min-w-0">
+                  <p className={cn("text-sm font-semibold leading-tight", activeSection === item.id ? item.activeText : "text-foreground")}>{item.title}</p>
+                  <p className={cn("text-[10px] mt-0.5 truncate", activeSection === item.id ? cn(item.activeText, "opacity-70") : "text-muted-foreground")}>{item.description}</p>
+                </div>
+              </button>
+            ))}
+          </nav>
+
+          {/* Right content pane */}
+          <div className="flex-1 min-w-0 flex flex-col gap-8">
+
         {/* ── Voice & Tone ── */}
+        {activeSection === "voice" && (
         <Section
           icon={Mic2}
           title="Your Voice & Tone"
@@ -1622,8 +1679,10 @@ export default function DNA() {
             textDirty={textDirtyForProfile}
           />
         </Section>
+        )}
 
         {/* ── Products ── */}
+        {activeSection === "products" && (
         <Section
           icon={Package}
           title="Your Products"
@@ -1841,8 +1900,10 @@ export default function DNA() {
             Add product
           </button>
         </Section>
+        )}
 
         {/* ── Customers ── */}
+        {activeSection === "customers" && (
         <Section
           icon={Users}
           title="Your Customers"
@@ -1884,8 +1945,10 @@ export default function DNA() {
             Add customer
           </button>
         </Section>
+        )}
 
         {/* ── Competitors ── */}
+        {activeSection === "competitors" && (
         <Section
           icon={Target}
           title="Your Competitors"
@@ -1969,8 +2032,10 @@ export default function DNA() {
             Add competitor
           </button>
         </Section>
+        )}
 
         {/* ── Audience ── */}
+        {activeSection === "audience" && (
         <Section
           icon={Users2}
           title="Your Audience"
@@ -1999,8 +2064,10 @@ export default function DNA() {
             ))}
           </div>
         </Section>
+        )}
 
         {/* ── Company ── */}
+        {activeSection === "company" && (
         <Section
           icon={Building2}
           title="Your Company"
@@ -2065,6 +2132,7 @@ export default function DNA() {
             </div>
           </Field>
         </Section>
+        )}
 
         {/* Footer */}
         <div className="flex items-center gap-2 py-2 justify-center">
@@ -2073,6 +2141,9 @@ export default function DNA() {
             Everything you add here is used by the Strategy Assistant to write and advise in your voice.
           </p>
         </div>
+
+          </div>{/* /right-pane */}
+        </div>{/* /two-col */}
 
       </div>
     </Shell>
