@@ -1483,9 +1483,8 @@ export default function DNA() {
   }
   function removeTargetMarket(id: string) {
     const remaining = data.targetMarkets.filter(tm => tm.id !== id);
-    if (remaining.length === 0) return;
     setData(d => ({ ...d, targetMarkets: d.targetMarkets.filter(tm => tm.id !== id) }));
-    if (activeTargetMarketId === id) setActiveTargetMarketId(remaining[0].id);
+    if (activeTargetMarketId === id) setActiveTargetMarketId(remaining[0]?.id ?? "");
   }
   function renameTargetMarket(id: string, name: string) {
     if (!name.trim()) return;
@@ -2441,7 +2440,14 @@ export default function DNA() {
                         autoFocus
                         value={renameTmValue}
                         onChange={e => setRenameTmValue(e.target.value)}
-                        onBlur={() => { renameTargetMarket(tm.id, renameTmValue); setRenamingTmId(null); }}
+                        onBlur={() => {
+                          if (renameTmValue.trim()) {
+                            renameTargetMarket(tm.id, renameTmValue);
+                          } else {
+                            removeTargetMarket(tm.id);
+                          }
+                          setRenamingTmId(null);
+                        }}
                         className="bg-transparent outline-none text-sm font-semibold w-36 text-teal-700 placeholder:text-teal-400"
                         placeholder="Name this market…"
                       />
@@ -2479,7 +2485,17 @@ export default function DNA() {
 
             {activeTm && (
               <>
-                {tmOptionsLoading ? (
+                {renamingTmId === activeTm.id ? (
+                  <div className="flex flex-col items-center gap-3 py-12 text-center rounded-xl border border-dashed border-border/60 bg-secondary/20">
+                    <div className="h-10 w-10 rounded-xl bg-teal-100/70 border border-teal-200/60 flex items-center justify-center">
+                      <Globe className="h-4 w-4 text-teal-500/70" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Name this target market first</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">Filters unlock once you've confirmed the name above</p>
+                    </div>
+                  </div>
+                ) : tmOptionsLoading ? (
                   <div className="flex items-center gap-2 py-6 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <p className="text-sm">Loading filter options…</p>
