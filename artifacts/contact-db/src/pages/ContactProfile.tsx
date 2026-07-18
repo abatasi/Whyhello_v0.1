@@ -97,7 +97,7 @@ const OUTPUT_TYPES: OutputType[] = [
 
 // ── DNA voice profile loader ────────────────────────────────────────────────
 
-const DNA_STORAGE_KEY = "whyhello_dna_v3";
+const DNA_STORAGE_KEY = "whyhello_dna_v4";
 
 interface VoiceProfileData {
   toneTags: string[];

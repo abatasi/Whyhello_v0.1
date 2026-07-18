@@ -17,7 +17,7 @@ import {
 
 const API_PROFILE_URL = "/api/dna/profile";
 
-const STORAGE_KEY = "whyhello_dna_v3";
+const STORAGE_KEY = "whyhello_dna_v4";
 
 function mergeBuyingCenter(saved?: Array<Partial<BuyingCenterSeat>>): BuyingCenterSeat[] {
   const savedMap = new Map((saved ?? []).map(s => [s.seat!, s]));
