@@ -1974,7 +1974,7 @@ export default function DNA() {
         <Section
           icon={Users2}
           title="Your Audience"
-          subtitle="Map the buying center — define who typically fills each role and which contacts in your database match them"
+          subtitle="Map the buying center — define who typically fills each role and which contacts in Whyhello match them"
           accentBg="bg-indigo-50"
           accentBorder="border-indigo-200"
           accentColor="text-indigo-600"
