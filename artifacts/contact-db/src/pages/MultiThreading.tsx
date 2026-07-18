@@ -415,10 +415,10 @@ export default function MultiThreading() {
   const [selectedTmId, setSelectedTmId] = useState<string>("");
   const [dnaLoaded, setDnaLoaded] = useState(false);
 
-  const [companySearch, setCompanySearch] = useState("");
-  const [searchResults, setSearchResults] = useState<CompanyResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const [companyList, setCompanyList] = useState<CompanyResult[]>([]);
+  const [companyListLoading, setCompanyListLoading] = useState(false);
+  const [companyListTotal, setCompanyListTotal] = useState(0);
+  const [companyFilter, setCompanyFilter] = useState("");
 
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companyLoading, setCompanyLoading] = useState(false);
@@ -470,42 +470,35 @@ export default function MultiThreading() {
       .catch(() => setDnaLoaded(true));
   }, []);
 
-  // ── Company search (debounced, target-market-filtered) ──
+  // ── Load company list whenever the TM filter changes ──
   useEffect(() => {
-    const q = companySearch.trim();
-    if (q.length < 2) { setSearchResults([]); return; }
-    setSearchLoading(true);
-    const t = setTimeout(() => {
-      const params = new URLSearchParams({ search: q, limit: "8" });
-      if (activeTm) {
-        if (activeTm.industries.length > 0) params.set("industry", activeTm.industries.join(","));
-        if (activeTm.companySizes.length > 0) params.set("size", activeTm.companySizes.join(","));
-        if (activeTm.locations.length > 0) params.set("location", activeTm.locations.join(","));
-      }
-      fetch(`/api/companies?${params}`)
-        .then(r => r.json())
-        .then((json: { data: CompanyResult[] }) => setSearchResults(json.data ?? []))
-        .catch(() => setSearchResults([]))
-        .finally(() => setSearchLoading(false));
-    }, 300);
-    return () => clearTimeout(t);
-  }, [companySearch, activeTm]);
-
-  // Close search dropdown on outside click
-  useEffect(() => {
-    function handle(e: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setSearchResults([]);
-      }
+    const tm = targetMarkets.find(t => t.id === selectedTmId) ?? null;
+    setCompanyListLoading(true);
+    setCompanyList([]);
+    setCompanyListTotal(0);
+    setSelectedCompany(null);
+    setActiveSeat(null);
+    setOverrides({});
+    setCompanyFilter("");
+    const params = new URLSearchParams({ limit: "200", sortBy: "name" });
+    if (tm) {
+      if (tm.industries.length > 0) params.set("industry", tm.industries.join(","));
+      if (tm.companySizes.length > 0) params.set("size", tm.companySizes.join(","));
+      if (tm.locations.length > 0) params.set("location", tm.locations.join(","));
     }
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, []);
+    fetch(`/api/companies?${params}`)
+      .then(r => r.json())
+      .then((json: { data: CompanyResult[]; total: number }) => {
+        setCompanyList(json.data ?? []);
+        setCompanyListTotal(json.total ?? 0);
+      })
+      .catch(() => {})
+      .finally(() => setCompanyListLoading(false));
+  }, [selectedTmId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Select a company ──
+  // ── Select a company from the picklist ──
   function selectCompany(c: CompanyResult) {
-    setCompanySearch(c.name);
-    setSearchResults([]);
+    if (selectedCompany?.id === c.id) return;
     setActiveSeat(null);
     setOverrides({});
     setSelectedCompany(null);
@@ -515,14 +508,6 @@ export default function MultiThreading() {
       .then((data: Company) => setSelectedCompany(data))
       .catch(() => {})
       .finally(() => setCompanyLoading(false));
-  }
-
-  function clearCompany() {
-    setCompanySearch("");
-    setSearchResults([]);
-    setSelectedCompany(null);
-    setActiveSeat(null);
-    setOverrides({});
   }
 
   // ── Matching helpers ──
@@ -552,7 +537,11 @@ export default function MultiThreading() {
   const activeColors = activeDef ? (COLOR_MAP[activeDef.color] ?? COLOR_MAP.slate) : null;
 
   const allUnconfigured = dnaLoaded && buyingCenters.length === 0;
-  const activeBcUnconfigured = dnaLoaded && activeBc !== null && configuredSeatDefs.length === 0;
+
+  // Client-side name filter over the pre-loaded list
+  const filteredCompanies = companyFilter.trim()
+    ? companyList.filter(c => c.name.toLowerCase().includes(companyFilter.toLowerCase().trim()))
+    : companyList;
 
   // ── Render ──
   return (
@@ -579,14 +568,7 @@ export default function MultiThreading() {
               <TargetMarketSelector
                 targetMarkets={targetMarkets}
                 selectedId={selectedTmId}
-                onSelect={id => {
-                  setSelectedTmId(id);
-                  setSearchResults([]);
-                  setCompanySearch("");
-                  setSelectedCompany(null);
-                  setActiveSeat(null);
-                  setOverrides({});
-                }}
+                onSelect={id => setSelectedTmId(id)}
               />
             )}
 
@@ -599,151 +581,89 @@ export default function MultiThreading() {
               />
             )}
 
-            {/* Company search */}
-            <div ref={searchRef} className="relative">
-              <div className={cn(
-                "flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors",
-                searchResults.length > 0 ? "border-primary/40 bg-primary/5" : "border-border/60 bg-secondary/30"
-              )}>
-                <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+          </div>
+
+          {/* Company picklist */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+
+            {/* Filter bar */}
+            <div className="px-3 py-2 border-b border-border/40 flex items-center gap-2 flex-shrink-0">
+              <div className="flex-1 flex items-center gap-2 rounded-lg border border-border/50 bg-secondary/30 px-2.5 py-1.5">
+                <Building2 className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
                 <input
                   type="text"
-                  placeholder="Search for a company…"
-                  value={companySearch}
-                  onChange={e => setCompanySearch(e.target.value)}
-                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 min-w-0"
+                  placeholder="Filter companies…"
+                  value={companyFilter}
+                  onChange={e => setCompanyFilter(e.target.value)}
+                  className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/40 min-w-0"
                 />
-                {companyLoading && <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin flex-shrink-0" />}
-                {searchLoading && !companyLoading && <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin flex-shrink-0" />}
-                {companySearch && !companyLoading && (
-                  <button onClick={clearCompany} className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
-                    <X className="h-3.5 w-3.5" />
+                {companyFilter && (
+                  <button onClick={() => setCompanyFilter("")} className="text-muted-foreground/50 hover:text-muted-foreground flex-shrink-0">
+                    <X className="h-3 w-3" />
                   </button>
                 )}
               </div>
-
-              {searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-border bg-card shadow-xl z-50 overflow-hidden">
-                  {searchResults.map((c, i) => (
-                    <button
-                      key={c.id}
-                      onClick={() => selectCompany(c)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/50 text-left transition-colors",
-                        i > 0 && "border-t border-border/40"
-                      )}
-                    >
-                      <div className="h-7 w-7 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-3.5 w-3.5 text-amber-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{[c.industry, c.size, c.location].filter(Boolean).join(" · ")}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <span className="text-[10px] font-semibold text-muted-foreground/60 whitespace-nowrap flex-shrink-0">
+                {companyListLoading ? "…" : `${filteredCompanies.length}${companyListTotal > companyList.length ? `+` : ""}`}
+              </span>
             </div>
 
-            {/* Company badge once selected */}
-            {selectedCompany && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
-                <Building2 className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-amber-800 truncate">{selectedCompany.name}</p>
-                  <p className="text-[10px] text-amber-600">{selectedCompany.contacts.length} contact{selectedCompany.contacts.length !== 1 ? "s" : ""} in database</p>
+            {/* List */}
+            <div className="flex-1 overflow-y-auto">
+              {companyListLoading && (
+                <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <p className="text-xs">Loading companies…</p>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
 
-          {/* Seat list — only configured seats */}
-          <div className="flex-1 overflow-y-auto">
-
-            {/* No DNA configured */}
-            {dnaLoaded && allUnconfigured && (
-              <div className="px-4 py-8 text-center flex flex-col items-center gap-3">
-                <Dna className="h-8 w-8 text-muted-foreground/30" />
-                <p className="text-xs text-muted-foreground">No buying centers configured yet.</p>
-                <Link href="/dna">
-                  <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Set up in DNA →</span>
-                </Link>
-              </div>
-            )}
-
-            {/* BC exists but no seats configured */}
-            {!allUnconfigured && activeBcUnconfigured && (
-              <div className="px-4 py-8 text-center flex flex-col items-center gap-3">
-                <ListTree className="h-8 w-8 text-muted-foreground/30" />
-                <div>
-                  <p className="text-xs font-semibold text-foreground mb-1">No seats configured</p>
-                  <p className="text-xs text-muted-foreground">"{activeBc?.name}" has no seats with seniority or department criteria.</p>
+              {!companyListLoading && allUnconfigured && (
+                <div className="px-4 py-8 text-center flex flex-col items-center gap-3">
+                  <Dna className="h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">Set up a buying center in DNA first.</p>
+                  <Link href="/dna">
+                    <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Go to DNA →</span>
+                  </Link>
                 </div>
-                <Link href="/dna">
-                  <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in DNA →</span>
-                </Link>
-              </div>
-            )}
+              )}
 
-            {/* Seat list */}
-            {configuredSeatDefs.map(def => {
-              const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
-              const matches = selectedCompany ? getMatches(def.seat) : [];
-              const contact = selectedCompany ? getActiveContact(def.seat) : null;
-              const isActive = activeSeat === def.seat;
+              {!companyListLoading && !allUnconfigured && filteredCompanies.length === 0 && (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    {companyFilter ? "No companies match that filter." : "No companies match this target market."}
+                  </p>
+                </div>
+              )}
 
-              return (
-                <button
-                  key={def.seat}
-                  onClick={() => setActiveSeat(def.seat)}
-                  className={cn(
-                    "w-full flex items-start gap-3 px-4 py-3 text-left transition-all border-b border-border/30 last:border-0 border-l-2",
-                    isActive
-                      ? cn(colors.activeBg, colors.borderL)
-                      : "border-l-transparent hover:bg-secondary/30"
-                  )}
-                >
-                  <div className={cn(
-                    "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border mt-0.5",
-                    isActive ? cn(colors.iconBg, colors.border) : "bg-secondary/50 border-border/50"
-                  )}>
-                    <def.icon className={cn("h-3.5 w-3.5", isActive ? colors.iconColor : "text-muted-foreground/70")} />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <p className={cn(
-                        "text-xs font-semibold truncate",
-                        isActive ? colors.iconColor : "text-foreground"
-                      )}>
-                        {def.seat}
-                      </p>
-                      {selectedCompany && matches.length > 1 && (
-                        <span className="text-[9px] font-semibold bg-secondary rounded-full px-1.5 py-0.5 text-muted-foreground flex-shrink-0">
-                          +{matches.length - 1}
-                        </span>
-                      )}
-                    </div>
-
-                    {contact ? (
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {contact.firstName} {contact.lastName}
-                        {contact.jobTitle ? ` · ${contact.jobTitle}` : ""}
-                      </p>
-                    ) : selectedCompany ? (
-                      <p className="text-[11px] text-orange-500/80 font-medium">No match found</p>
-                    ) : (
-                      <p className="text-[11px] text-muted-foreground/50">{def.role}</p>
+              {!companyListLoading && filteredCompanies.map(c => {
+                const isSelected = selectedCompany?.id === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => selectCompany(c)}
+                    className={cn(
+                      "w-full flex items-start gap-3 px-4 py-3 text-left transition-all border-b border-border/30 last:border-0 border-l-2",
+                      isSelected ? "bg-amber-50/80 border-l-amber-400" : "border-l-transparent hover:bg-secondary/30"
                     )}
-                  </div>
-
-                  {isActive && (
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0 mt-2" />
-                  )}
-                </button>
-              );
-            })}
+                  >
+                    <div className={cn(
+                      "h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border mt-0.5",
+                      isSelected ? "bg-amber-100 border-amber-200" : "bg-secondary/50 border-border/50"
+                    )}>
+                      {isSelected && companyLoading
+                        ? <Loader2 className="h-3.5 w-3.5 text-amber-500 animate-spin" />
+                        : <Building2 className={cn("h-3.5 w-3.5", isSelected ? "text-amber-600" : "text-muted-foreground/70")} />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-xs font-semibold truncate", isSelected ? "text-amber-800" : "text-foreground")}>{c.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{[c.industry, c.size, c.location].filter(Boolean).join(" · ")}</p>
+                    </div>
+                    {isSelected && !companyLoading && <ChevronRight className="h-3.5 w-3.5 text-amber-500/60 flex-shrink-0 mt-1" />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -757,19 +677,13 @@ export default function MultiThreading() {
                 <Building2 className="h-8 w-8 text-amber-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground mb-1">Select a company to get started</p>
+                <p className="text-sm font-semibold text-foreground mb-1">Pick a company from the list</p>
                 <p className="text-xs text-muted-foreground max-w-xs">
-                  Search for a company above to see how your{activeBc ? ` "${activeBc.name}" ` : " "}buying center maps to their team.
+                  {activeBc
+                    ? `Select a company to map the "${activeBc.name}" buying center to their contacts.`
+                    : "Select a company from the left to view buying center coverage."}
                 </p>
               </div>
-              {allUnconfigured && (
-                <Link href="/dna">
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer">
-                    <Dna className="h-3.5 w-3.5" />
-                    Configure your buying center in DNA
-                  </div>
-                </Link>
-              )}
             </div>
           )}
 
@@ -781,43 +695,77 @@ export default function MultiThreading() {
             </div>
           )}
 
-          {/* Company loaded, no seat selected */}
+          {/* Company loaded — buying center grid */}
           {selectedCompany && !activeSeat && (
-            <div className="h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <GitBranch className="h-8 w-8 text-primary/60" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground mb-1">
-                  {selectedCompany.name} — {selectedCompany.contacts.length} contact{selectedCompany.contacts.length !== 1 ? "s" : ""} loaded
-                </p>
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  {configuredSeatDefs.length === 0
-                    ? `The "${activeBc?.name}" buying center has no configured seats yet.`
-                    : `Select a seat from the left to see who fills that role at ${selectedCompany.name}.`
-                  }
-                </p>
+            <div className="p-6 flex flex-col gap-5 max-w-4xl">
+              {/* Company header */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
+                    <Building2 className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-foreground leading-tight">{selectedCompany.name}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {[selectedCompany.industry, selectedCompany.size, selectedCompany.location].filter(Boolean).join(" · ")}
+                      {selectedCompany.contacts.length > 0 && ` · ${selectedCompany.contacts.length} contact${selectedCompany.contacts.length !== 1 ? "s" : ""}`}
+                    </p>
+                  </div>
+                </div>
+                {activeBc && (
+                  <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg px-2.5 py-1.5 flex-shrink-0 whitespace-nowrap">
+                    {activeBc.name}
+                  </span>
+                )}
               </div>
 
-              {configuredSeatDefs.length > 0 && (
-                <div className="flex flex-wrap gap-2 justify-center max-w-sm mt-2">
+              {/* Seat grid or empty state */}
+              {configuredSeatDefs.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-10 text-center rounded-xl border border-dashed border-border/60 bg-secondary/20">
+                  <ListTree className="h-8 w-8 text-muted-foreground/30" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground mb-1">No seats configured</p>
+                    <p className="text-xs text-muted-foreground">"{activeBc?.name}" needs seats defined in DNA first.</p>
+                  </div>
+                  <Link href="/dna">
+                    <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in DNA →</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {configuredSeatDefs.map(def => {
-                    const matches = getMatches(def.seat);
                     const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
+                    const matches = getMatches(def.seat);
+                    const contact = getActiveContact(def.seat);
                     return (
                       <button
                         key={def.seat}
                         onClick={() => setActiveSeat(def.seat)}
                         className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all",
-                          matches.length > 0
-                            ? cn(colors.chipBg, colors.border, colors.chipText)
-                            : "bg-orange-50 border-orange-200 text-orange-600"
+                          "flex flex-col gap-3 p-4 rounded-xl border text-left transition-all hover:shadow-sm",
+                          contact ? cn(colors.bg, colors.border) : "bg-orange-50/60 border-orange-200/80 hover:border-orange-300"
                         )}
                       >
-                        <def.icon className="h-3 w-3" />
-                        {def.seat}
-                        {matches.length > 0 && <span className="opacity-60">·{matches.length}</span>}
+                        <div className="flex items-center gap-2">
+                          <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0", contact ? colors.iconBg : "bg-orange-100")}>
+                            <def.icon className={cn("h-3.5 w-3.5", contact ? colors.iconColor : "text-orange-500")} />
+                          </div>
+                          <p className={cn("text-[11px] font-semibold flex-1 truncate", contact ? colors.iconColor : "text-orange-600")}>{def.seat}</p>
+                          {matches.length > 1 && (
+                            <span className="text-[9px] font-semibold bg-white/70 rounded-full px-1.5 py-0.5 text-muted-foreground flex-shrink-0">+{matches.length - 1}</span>
+                          )}
+                        </div>
+                        {contact ? (
+                          <div className="flex items-center gap-2.5">
+                            <ContactAvatar contact={contact} size="sm" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-foreground truncate">{contact.firstName} {contact.lastName}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{contact.jobTitle ?? "—"}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-orange-500/80 font-medium">No match found</p>
+                        )}
                       </button>
                     );
                   })}
