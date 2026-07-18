@@ -39,7 +39,10 @@ function mergeBuyingCenters(
       seats: mergeBuyingCenter(bc.seats),
     }));
   }
-  return [{ id: "default", name: "Default", seats: mergeBuyingCenter(legacy) }];
+  if (legacy && legacy.length > 0) {
+    return [{ id: "default", name: "Default", seats: mergeBuyingCenter(legacy) }];
+  }
+  return [];
 }
 
 function mergeTargetMarkets(
@@ -55,13 +58,10 @@ function mergeTargetMarkets(
       locations: tm.locations ?? [],
     }));
   }
-  return [{
-    id: "default",
-    name: "Default",
-    industries: legacy?.industries ?? [],
-    companySizes: legacy?.companySizes ?? [],
-    locations: legacy?.locations ?? [],
-  }];
+  if (legacy && (legacy.industries?.length || legacy.companySizes?.length || legacy.locations?.length)) {
+    return [{ id: "default", name: "Default", industries: legacy.industries ?? [], companySizes: legacy.companySizes ?? [], locations: legacy.locations ?? [] }];
+  }
+  return [];
 }
 
 function mergeDNA(parsed: StoredDNA): DNAData {
@@ -235,8 +235,8 @@ function defaultDNA(): DNAData {
       typicalBuyingPriority: "",
     },
     competitors: [],
-    buyingCenters: [{ id: "default", name: "Default", seats: BUYING_CENTER_SEATS.map(s => ({ seat: s.seat, seniorities: [], departments: [] })) }],
-    targetMarkets: [{ id: "default", name: "Default", industries: [], companySizes: [], locations: [] }],
+    buyingCenters: [],
+    targetMarkets: [],
   };
 }
 
@@ -1365,7 +1365,7 @@ export default function DNA() {
   const [activeSeat, setActiveSeat] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<SectionId>("voice");
   const [activeBuyingCenterId, setActiveBuyingCenterId] = useState<string>(
-    () => data.buyingCenters[0]?.id ?? "default"
+    () => data.buyingCenters[0]?.id ?? ""
   );
   const [renamingBcId, setRenamingBcId] = useState<string | null>(null);
   const [renameBcValue, setRenameBcValue] = useState<string>("");
@@ -1376,7 +1376,7 @@ export default function DNA() {
   }>({ industries: [], companySizes: [], locations: [] });
   const [tmOptionsLoading, setTmOptionsLoading] = useState(false);
   const [activeTargetMarketId, setActiveTargetMarketId] = useState<string>(
-    () => data.targetMarkets[0]?.id ?? "default"
+    () => data.targetMarkets[0]?.id ?? ""
   );
   const [renamingTmId, setRenamingTmId] = useState<string | null>(null);
   const [renameTmValue, setRenameTmValue] = useState<string>("");
@@ -2290,81 +2290,103 @@ export default function DNA() {
           accentBorder="border-indigo-200"
           accentColor="text-indigo-600"
         >
-          {/* Buying center tab bar */}
-          <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-border/40 mb-2">
-            {data.buyingCenters.map(bc => (
-              <div
-                key={bc.id}
-                className={cn(
-                  "group flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition-all",
-                  activeBuyingCenterId === bc.id
-                    ? "bg-indigo-100 border-indigo-300"
-                    : "bg-secondary/50 border-border/60 hover:bg-secondary cursor-pointer"
-                )}
+          {data.buyingCenters.length === 0 ? (
+            <div className="flex flex-col items-center gap-4 py-14 text-center">
+              <div className="h-12 w-12 rounded-2xl bg-indigo-100 border border-indigo-200 flex items-center justify-center">
+                <Users2 className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">No buying centers defined yet</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-xs">Add a buying center to map the roles and seat criteria for your typical deals</p>
+              </div>
+              <button
+                onClick={addBuyingCenter}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
               >
-                {renamingBcId === bc.id ? (
-                  <form
-                    onSubmit={e => { e.preventDefault(); renameBuyingCenter(bc.id, renameBcValue); setRenamingBcId(null); }}
-                    className="flex items-center"
-                  >
-                    <input
-                      autoFocus
-                      value={renameBcValue}
-                      onChange={e => setRenameBcValue(e.target.value)}
-                      onBlur={() => { renameBuyingCenter(bc.id, renameBcValue); setRenamingBcId(null); }}
-                      className="bg-transparent outline-none text-sm font-semibold w-32 text-indigo-700"
-                    />
-                  </form>
-                ) : (
-                  <button
-                    onClick={() => setActiveBuyingCenterId(bc.id)}
-                    onDoubleClick={() => { setRenamingBcId(bc.id); setRenameBcValue(bc.name); }}
+                <Plus className="h-4 w-4" />
+                Add buying center
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Buying center tab bar */}
+              <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-border/40 mb-2">
+                {data.buyingCenters.map(bc => (
+                  <div
+                    key={bc.id}
                     className={cn(
-                      "text-sm font-semibold",
-                      activeBuyingCenterId === bc.id ? "text-indigo-700" : "text-muted-foreground"
+                      "group flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition-all",
+                      activeBuyingCenterId === bc.id
+                        ? "bg-indigo-100 border-indigo-300"
+                        : "bg-secondary/50 border-border/60 hover:bg-secondary cursor-pointer"
                     )}
                   >
-                    {bc.name}
-                  </button>
-                )}
-                {data.buyingCenters.length > 1 && !renamingBcId && (
-                  <button
-                    onClick={e => { e.stopPropagation(); removeBuyingCenter(bc.id); }}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
+                    {renamingBcId === bc.id ? (
+                      <form
+                        onSubmit={e => { e.preventDefault(); renameBuyingCenter(bc.id, renameBcValue); setRenamingBcId(null); }}
+                        className="flex items-center"
+                      >
+                        <input
+                          autoFocus
+                          value={renameBcValue}
+                          onChange={e => setRenameBcValue(e.target.value)}
+                          onBlur={() => { renameBuyingCenter(bc.id, renameBcValue); setRenamingBcId(null); }}
+                          className="bg-transparent outline-none text-sm font-semibold w-32 text-indigo-700"
+                          placeholder="Name this buying center…"
+                        />
+                      </form>
+                    ) : (
+                      <button
+                        onClick={() => setActiveBuyingCenterId(bc.id)}
+                        onDoubleClick={() => { setRenamingBcId(bc.id); setRenameBcValue(bc.name); }}
+                        className={cn(
+                          "text-sm font-semibold",
+                          activeBuyingCenterId === bc.id ? "text-indigo-700" : "text-muted-foreground"
+                        )}
+                      >
+                        {bc.name}
+                      </button>
+                    )}
+                    {data.buyingCenters.length > 1 && !renamingBcId && (
+                      <button
+                        onClick={e => { e.stopPropagation(); removeBuyingCenter(bc.id); }}
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addBuyingCenter}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-border hover:border-indigo-300 hover:bg-indigo-50/50 text-xs font-semibold text-muted-foreground hover:text-indigo-700 transition-all"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  New buying center
+                </button>
               </div>
-            ))}
-            <button
-              onClick={addBuyingCenter}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-border hover:border-indigo-300 hover:bg-indigo-50/50 text-xs font-semibold text-muted-foreground hover:text-indigo-700 transition-all"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              New buying center
-            </button>
-          </div>
 
-          {activeSeat && activeBc && (
-            <BuyingCenterModal
-              seatName={activeSeat}
-              seniorities={activeBc.seats.find(s => s.seat === activeSeat)?.seniorities ?? []}
-              departments={activeBc.seats.find(s => s.seat === activeSeat)?.departments ?? []}
-              onUpdate={patch => updateBuyingCenterSeat(activeBc.id, activeSeat, patch)}
-              open={!!activeSeat}
-              onClose={() => setActiveSeat(null)}
-            />
+              {activeSeat && activeBc && (
+                <BuyingCenterModal
+                  seatName={activeSeat}
+                  seniorities={activeBc.seats.find(s => s.seat === activeSeat)?.seniorities ?? []}
+                  departments={activeBc.seats.find(s => s.seat === activeSeat)?.departments ?? []}
+                  onUpdate={patch => updateBuyingCenterSeat(activeBc.id, activeSeat, patch)}
+                  open={!!activeSeat}
+                  onClose={() => setActiveSeat(null)}
+                />
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {(activeBc?.seats ?? []).map(seat => (
+                  <BuyingCenterTile
+                    key={seat.seat}
+                    seat={seat}
+                    onClick={() => setActiveSeat(seat.seat)}
+                  />
+                ))}
+              </div>
+            </>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {(activeBc?.seats ?? []).map(seat => (
-              <BuyingCenterTile
-                key={seat.seat}
-                seat={seat}
-                onClick={() => setActiveSeat(seat.seat)}
-              />
-            ))}
-          </div>
         </Section>
         )}
 
@@ -2380,6 +2402,24 @@ export default function DNA() {
             accentBorder="border-teal-200"
             accentColor="text-teal-600"
           >
+            {data.targetMarkets.length === 0 ? (
+              <div className="flex flex-col items-center gap-4 py-14 text-center">
+                <div className="h-12 w-12 rounded-2xl bg-teal-100 border border-teal-200 flex items-center justify-center">
+                  <Globe className="h-5 w-5 text-teal-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">No target markets defined yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">Add a target market to define the ideal company profile for a segment you sell into</p>
+                </div>
+                <button
+                  onClick={addTargetMarket}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add target market
+                </button>
+              </div>
+            ) : (<>
             {/* Target market tab bar */}
             <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-border/40 mb-2">
               {data.targetMarkets.map(tm => (
@@ -2494,6 +2534,8 @@ export default function DNA() {
                 )}
               </>
             )}
+            </>
+          )}
           </Section>
           );
         })()}
