@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   Megaphone, Wallet, Vote, Crown, Briefcase, Cpu, ShieldCheck,
   ShoppingCart, Scale, Calculator, User, Wrench, MessageCircle, Ban, GraduationCap,
-  Building2, X, ExternalLink, Mail, Phone, MapPin, Linkedin,
+  Building2, Globe, X, ExternalLink, Mail, Phone, MapPin, Linkedin,
   ChevronRight, Loader2, GitBranch, Users, ChevronDown, AlertCircle,
   Dna, Check, ListTree,
 } from "lucide-react";
@@ -51,6 +51,14 @@ interface BuyingCenterConfig {
   id: string;
   name: string;
   seats: BuyingCenterSeat[];
+}
+
+interface TargetMarketConfig {
+  id: string;
+  name: string;
+  industries: string[];
+  companySizes: string[];
+  locations: string[];
 }
 
 interface CompanyResult {
@@ -241,6 +249,98 @@ function BuyingCenterSelector({
   );
 }
 
+// Target market selector dropdown
+function TargetMarketSelector({
+  targetMarkets,
+  selectedId,
+  onSelect,
+}: {
+  targetMarkets: TargetMarketConfig[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = targetMarkets.find(tm => tm.id === selectedId) ?? null;
+
+  useEffect(() => {
+    if (!open) return;
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  const criteriaCount = selected
+    ? selected.industries.length + selected.companySizes.length + selected.locations.length
+    : 0;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200 hover:bg-teal-100 transition-colors text-left"
+      >
+        <Globe className="h-3 w-3 text-teal-500 flex-shrink-0" />
+        <span className="flex-1 text-xs font-semibold text-teal-700 truncate">
+          {selected ? selected.name : "All companies"}
+        </span>
+        {criteriaCount > 0 && (
+          <span className="text-[9px] font-semibold bg-teal-200/60 text-teal-700 rounded-full px-1.5 py-0.5 flex-shrink-0">
+            {criteriaCount} filter{criteriaCount !== 1 ? "s" : ""}
+          </span>
+        )}
+        <ChevronDown className={cn("h-3 w-3 text-teal-400 flex-shrink-0 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-border bg-card shadow-xl z-50 overflow-hidden">
+          <div className="px-3 py-2 border-b border-border/50 bg-secondary/20">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Target market</p>
+          </div>
+          <button
+            onClick={() => { onSelect(""); setOpen(false); }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/40 text-left transition-colors border-b border-border/30"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">All companies</p>
+              <p className="text-[10px] text-muted-foreground">No target market filter</p>
+            </div>
+            {selectedId === "" && <Check className="h-3.5 w-3.5 text-teal-600 flex-shrink-0" />}
+          </button>
+          {targetMarkets.map(tm => {
+            const count = tm.industries.length + tm.companySizes.length + tm.locations.length;
+            return (
+              <button
+                key={tm.id}
+                onClick={() => { onSelect(tm.id); setOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/40 text-left transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{tm.name}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {count > 0 ? `${count} filter criterion${count !== 1 ? "a" : ""}` : "No criteria defined"}
+                  </p>
+                </div>
+                {tm.id === selectedId && <Check className="h-3.5 w-3.5 text-teal-600 flex-shrink-0" />}
+              </button>
+            );
+          })}
+          {targetMarkets.length === 0 && (
+            <div className="px-3 py-4 text-center">
+              <p className="text-xs text-muted-foreground">No target markets in DNA yet.</p>
+              <Link href="/dna">
+                <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in DNA →</span>
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Switch contact popover
 function SwitchContactButton({
   matches,
@@ -311,6 +411,8 @@ function SwitchContactButton({
 export default function MultiThreading() {
   const [buyingCenters, setBuyingCenters] = useState<BuyingCenterConfig[]>([]);
   const [selectedBcId, setSelectedBcId] = useState<string>("");
+  const [targetMarkets, setTargetMarkets] = useState<TargetMarketConfig[]>([]);
+  const [selectedTmId, setSelectedTmId] = useState<string>("");
   const [dnaLoaded, setDnaLoaded] = useState(false);
 
   const [companySearch, setCompanySearch] = useState("");
@@ -324,8 +426,9 @@ export default function MultiThreading() {
   const [activeSeat, setActiveSeat] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
 
-  // ── Derived active BC ──
+  // ── Derived active BC / TM ──
   const activeBc = buyingCenters.find(bc => bc.id === selectedBcId) ?? buyingCenters[0] ?? null;
+  const activeTm = targetMarkets.find(tm => tm.id === selectedTmId) ?? null;
 
   // Only seats that have at least one criterion configured
   const configuredSeatDefs = BUYING_CENTER_SEATS.filter(def => {
@@ -335,43 +438,58 @@ export default function MultiThreading() {
 
   // ── Load DNA buying centers ──
   useEffect(() => {
+    type StoredShape = {
+      buyingCenters?: BuyingCenterConfig[];
+      buyingCenter?: BuyingCenterSeat[];
+      targetMarkets?: TargetMarketConfig[];
+    };
+
+    function applyDna(d: StoredShape) {
+      const bcs: BuyingCenterConfig[] = d.buyingCenters?.length
+        ? d.buyingCenters
+        : d.buyingCenter ? [{ id: "default", name: "Default", seats: d.buyingCenter }] : [];
+      const tms: TargetMarketConfig[] = d.targetMarkets ?? [];
+      if (bcs.length > 0) { setBuyingCenters(bcs); setSelectedBcId(bcs[0].id); }
+      if (tms.length > 0) { setTargetMarkets(tms); }
+      setDnaLoaded(true);
+    }
+
+    // Primary: localStorage (always in sync with DNA page)
+    try {
+      const raw = localStorage.getItem("whyhello_dna_v4");
+      if (raw) { applyDna(JSON.parse(raw) as StoredShape); return; }
+    } catch {}
+
+    // Fallback: API
     fetch("/api/dna/profile")
       .then(r => r.ok ? r.json() : null)
-      .then((json: {
-        data?: {
-          buyingCenters?: BuyingCenterConfig[];
-          buyingCenter?: BuyingCenterSeat[];
-        };
-      } | null) => {
-        let bcs: BuyingCenterConfig[] = [];
-        if (json?.data?.buyingCenters && json.data.buyingCenters.length > 0) {
-          bcs = json.data.buyingCenters;
-        } else if (json?.data?.buyingCenter) {
-          bcs = [{ id: "default", name: "Default", seats: json.data.buyingCenter }];
-        }
-        if (bcs.length > 0) {
-          setBuyingCenters(bcs);
-          setSelectedBcId(bcs[0].id);
-        }
-        setDnaLoaded(true);
+      .then((json: { data?: StoredShape } | null) => {
+        if (json?.data) applyDna(json.data);
+        else setDnaLoaded(true);
       })
       .catch(() => setDnaLoaded(true));
   }, []);
 
-  // ── Company search (debounced) ──
+  // ── Company search (debounced, target-market-filtered) ──
   useEffect(() => {
     const q = companySearch.trim();
     if (q.length < 2) { setSearchResults([]); return; }
     setSearchLoading(true);
     const t = setTimeout(() => {
-      fetch(`/api/companies?search=${encodeURIComponent(q)}&limit=8`)
+      const params = new URLSearchParams({ search: q, limit: "8" });
+      if (activeTm) {
+        if (activeTm.industries.length > 0) params.set("industry", activeTm.industries.join(","));
+        if (activeTm.companySizes.length > 0) params.set("size", activeTm.companySizes.join(","));
+        if (activeTm.locations.length > 0) params.set("location", activeTm.locations.join(","));
+      }
+      fetch(`/api/companies?${params}`)
         .then(r => r.json())
         .then((json: { data: CompanyResult[] }) => setSearchResults(json.data ?? []))
         .catch(() => setSearchResults([]))
         .finally(() => setSearchLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [companySearch]);
+  }, [companySearch, activeTm]);
 
   // Close search dropdown on outside click
   useEffect(() => {
@@ -452,9 +570,25 @@ export default function MultiThreading() {
               </div>
               <div>
                 <h1 className="text-sm font-bold text-foreground leading-tight">Multi-threading</h1>
-                <p className="text-[10px] text-muted-foreground">Buying center by company</p>
+                <p className="text-[10px] text-muted-foreground">Target market · Buying center</p>
               </div>
             </div>
+
+            {/* Target market selector */}
+            {dnaLoaded && (
+              <TargetMarketSelector
+                targetMarkets={targetMarkets}
+                selectedId={selectedTmId}
+                onSelect={id => {
+                  setSelectedTmId(id);
+                  setSearchResults([]);
+                  setCompanySearch("");
+                  setSelectedCompany(null);
+                  setActiveSeat(null);
+                  setOverrides({});
+                }}
+              />
+            )}
 
             {/* Buying center selector */}
             {dnaLoaded && buyingCenters.length > 0 && (
