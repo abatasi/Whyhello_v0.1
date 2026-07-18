@@ -42,6 +42,28 @@ function mergeBuyingCenters(
   return [{ id: "default", name: "Default", seats: mergeBuyingCenter(legacy) }];
 }
 
+function mergeTargetMarkets(
+  saved?: Array<Partial<TargetMarketConfig>>,
+  legacy?: { industries?: string[]; companySizes?: string[]; locations?: string[] },
+): TargetMarketConfig[] {
+  if (saved && saved.length > 0) {
+    return saved.map(tm => ({
+      id: tm.id ?? "default",
+      name: tm.name ?? "Default",
+      industries: tm.industries ?? [],
+      companySizes: tm.companySizes ?? [],
+      locations: tm.locations ?? [],
+    }));
+  }
+  return [{
+    id: "default",
+    name: "Default",
+    industries: legacy?.industries ?? [],
+    companySizes: legacy?.companySizes ?? [],
+    locations: legacy?.locations ?? [],
+  }];
+}
+
 function mergeDNA(parsed: StoredDNA): DNAData {
   const d = defaultDNA();
   return {
@@ -54,11 +76,7 @@ function mergeDNA(parsed: StoredDNA): DNAData {
     marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
     competitors: parsed.competitors ?? [],
     buyingCenters: mergeBuyingCenters(parsed.buyingCenters, parsed.buyingCenter),
-    targetMarket: {
-      industries: parsed.targetMarket?.industries ?? [],
-      companySizes: parsed.targetMarket?.companySizes ?? [],
-      locations: parsed.targetMarket?.locations ?? [],
-    },
+    targetMarkets: mergeTargetMarkets(parsed.targetMarkets, parsed.targetMarket),
   };
 }
 
@@ -149,9 +167,19 @@ interface BuyingCenterConfig {
   seats: BuyingCenterSeat[];
 }
 
+interface TargetMarketConfig {
+  id: string;
+  name: string;
+  industries: string[];
+  companySizes: string[];
+  locations: string[];
+}
+
 type StoredDNA = Partial<DNAData> & {
   buyingCenter?: Array<Partial<BuyingCenterSeat>>;
   buyingCenters?: Array<Partial<BuyingCenterConfig>>;
+  targetMarket?: { industries?: string[]; companySizes?: string[]; locations?: string[] };
+  targetMarkets?: Array<Partial<TargetMarketConfig>>;
 };
 
 interface DNAData {
@@ -168,11 +196,7 @@ interface DNAData {
   marketPosition: MarketPosition;
   competitors: Competitor[];
   buyingCenters: BuyingCenterConfig[];
-  targetMarket: {
-    industries: string[];
-    companySizes: string[];
-    locations: string[];
-  };
+  targetMarkets: TargetMarketConfig[];
   company: {
     name: string;
     valueWedge: string;
@@ -212,7 +236,7 @@ function defaultDNA(): DNAData {
     },
     competitors: [],
     buyingCenters: [{ id: "default", name: "Default", seats: BUYING_CENTER_SEATS.map(s => ({ seat: s.seat, seniorities: [], departments: [] })) }],
-    targetMarket: { industries: [], companySizes: [], locations: [] },
+    targetMarkets: [{ id: "default", name: "Default", industries: [], companySizes: [], locations: [] }],
   };
 }
 
@@ -1351,6 +1375,11 @@ export default function DNA() {
     locations: string[];
   }>({ industries: [], companySizes: [], locations: [] });
   const [tmOptionsLoading, setTmOptionsLoading] = useState(false);
+  const [activeTargetMarketId, setActiveTargetMarketId] = useState<string>(
+    () => data.targetMarkets[0]?.id ?? "default"
+  );
+  const [renamingTmId, setRenamingTmId] = useState<string | null>(null);
+  const [renameTmValue, setRenameTmValue] = useState<string>("");
 
   useEffect(() => {
     setTmOptionsLoading(true);
@@ -1382,16 +1411,17 @@ export default function DNA() {
 
   function addBuyingCenter() {
     const id = `bc_${Date.now()}`;
-    const name = `Buying Center ${data.buyingCenters.length + 1}`;
     setData(d => ({
       ...d,
       buyingCenters: [...d.buyingCenters, {
         id,
-        name,
+        name: "New buying center",
         seats: BUYING_CENTER_SEATS.map(s => ({ seat: s.seat, seniorities: [], departments: [] })),
       }],
     }));
     setActiveBuyingCenterId(id);
+    setRenamingBcId(id);
+    setRenameBcValue("");
   }
 
   function removeBuyingCenter(id: string) {
@@ -1435,8 +1465,34 @@ export default function DNA() {
   function setCompany(patch: Partial<DNAData["company"]>) {
     setData(d => ({ ...d, company: { ...d.company, ...patch } }));
   }
-  function setTargetMarket(patch: Partial<DNAData["targetMarket"]>) {
-    setData(d => ({ ...d, targetMarket: { ...d.targetMarket, ...patch } }));
+  function updateTargetMarketFilters(id: string, patch: Partial<Omit<TargetMarketConfig, "id" | "name">>) {
+    setData(d => ({
+      ...d,
+      targetMarkets: d.targetMarkets.map(tm => tm.id === id ? { ...tm, ...patch } : tm),
+    }));
+  }
+  function addTargetMarket() {
+    const id = `tm_${Date.now()}`;
+    setData(d => ({
+      ...d,
+      targetMarkets: [...d.targetMarkets, { id, name: "New target market", industries: [], companySizes: [], locations: [] }],
+    }));
+    setActiveTargetMarketId(id);
+    setRenamingTmId(id);
+    setRenameTmValue("");
+  }
+  function removeTargetMarket(id: string) {
+    const remaining = data.targetMarkets.filter(tm => tm.id !== id);
+    if (remaining.length === 0) return;
+    setData(d => ({ ...d, targetMarkets: d.targetMarkets.filter(tm => tm.id !== id) }));
+    if (activeTargetMarketId === id) setActiveTargetMarketId(remaining[0].id);
+  }
+  function renameTargetMarket(id: string, name: string) {
+    if (!name.trim()) return;
+    setData(d => ({
+      ...d,
+      targetMarkets: d.targetMarkets.map(tm => tm.id === id ? { ...tm, name: name.trim() } : tm),
+    }));
   }
   function setPillar(i: 0 | 1 | 2, v: string) {
     setData(d => {
@@ -2313,68 +2369,134 @@ export default function DNA() {
         )}
 
         {/* ── Target Market ── */}
-        {activeSection === "targetMarket" && (
-        <Section
-          icon={Globe}
-          title="Target Market"
-          subtitle="Define your ideal customer company — these filters map directly to the Company filters in Directory Search"
-          accentBg="bg-teal-50"
-          accentBorder="border-teal-200"
-          accentColor="text-teal-600"
-        >
-          {tmOptionsLoading ? (
-            <div className="flex items-center gap-2 py-6 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <p className="text-sm">Loading filter options…</p>
+        {activeSection === "targetMarket" && (() => {
+          const activeTm = data.targetMarkets.find(t => t.id === activeTargetMarketId) ?? data.targetMarkets[0] ?? null;
+          return (
+          <Section
+            icon={Globe}
+            title="Target Market"
+            subtitle="Define your ideal customer company — these filters map directly to the Company filters in Directory Search"
+            accentBg="bg-teal-50"
+            accentBorder="border-teal-200"
+            accentColor="text-teal-600"
+          >
+            {/* Target market tab bar */}
+            <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-border/40 mb-2">
+              {data.targetMarkets.map(tm => (
+                <div
+                  key={tm.id}
+                  className={cn(
+                    "group flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition-all",
+                    activeTargetMarketId === tm.id
+                      ? "bg-teal-100 border-teal-300"
+                      : "bg-secondary/50 border-border/60 hover:bg-secondary cursor-pointer"
+                  )}
+                >
+                  {renamingTmId === tm.id ? (
+                    <form
+                      onSubmit={e => { e.preventDefault(); renameTargetMarket(tm.id, renameTmValue); setRenamingTmId(null); }}
+                      className="flex items-center"
+                    >
+                      <input
+                        autoFocus
+                        value={renameTmValue}
+                        onChange={e => setRenameTmValue(e.target.value)}
+                        onBlur={() => { renameTargetMarket(tm.id, renameTmValue); setRenamingTmId(null); }}
+                        className="bg-transparent outline-none text-sm font-semibold w-36 text-teal-700 placeholder:text-teal-400"
+                        placeholder="Name this market…"
+                      />
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => setActiveTargetMarketId(tm.id)}
+                      onDoubleClick={() => { setRenamingTmId(tm.id); setRenameTmValue(tm.name); }}
+                      className={cn(
+                        "text-sm font-semibold",
+                        activeTargetMarketId === tm.id ? "text-teal-700" : "text-muted-foreground"
+                      )}
+                    >
+                      {tm.name}
+                    </button>
+                  )}
+                  {data.targetMarkets.length > 1 && !renamingTmId && (
+                    <button
+                      onClick={e => { e.stopPropagation(); removeTargetMarket(tm.id); }}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={addTargetMarket}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-border hover:border-teal-300 hover:bg-teal-50/50 text-xs font-semibold text-muted-foreground hover:text-teal-700 transition-all"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                New target market
+              </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <TargetFilterPicker
-                title="Industry"
-                options={targetMarketOptions.industries}
-                selected={data.targetMarket.industries}
-                onChange={industries => setTargetMarket({ industries })}
-              />
-              <TargetFilterPicker
-                title="Company Size"
-                options={targetMarketOptions.companySizes}
-                selected={data.targetMarket.companySizes}
-                onChange={companySizes => setTargetMarket({ companySizes })}
-              />
-              <TargetFilterPicker
-                title="Location"
-                options={targetMarketOptions.locations}
-                selected={data.targetMarket.locations}
-                onChange={locations => setTargetMarket({ locations })}
-                hint="City or region"
-              />
-            </div>
-          )}
 
-          {(data.targetMarket.industries.length > 0 || data.targetMarket.companySizes.length > 0 || data.targetMarket.locations.length > 0) && (
-            <div className="rounded-xl bg-teal-50 border border-teal-200 p-4 flex flex-col gap-2.5">
-              <p className="text-[11px] font-semibold text-teal-700 uppercase tracking-wide">ICP summary</p>
-              <div className="flex flex-wrap gap-1.5">
-                {data.targetMarket.industries.map(v => (
-                  <span key={`ind-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
-                    <Globe className="h-2.5 w-2.5 flex-shrink-0" />{v}
-                  </span>
-                ))}
-                {data.targetMarket.companySizes.map(v => (
-                  <span key={`sz-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
-                    <BarChart3 className="h-2.5 w-2.5 flex-shrink-0" />{v}
-                  </span>
-                ))}
-                {data.targetMarket.locations.map(v => (
-                  <span key={`loc-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
-                    <MapPin className="h-2.5 w-2.5 flex-shrink-0" />{v}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </Section>
-        )}
+            {activeTm && (
+              <>
+                {tmOptionsLoading ? (
+                  <div className="flex items-center gap-2 py-6 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <p className="text-sm">Loading filter options…</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <TargetFilterPicker
+                      title="Industry"
+                      options={targetMarketOptions.industries}
+                      selected={activeTm.industries}
+                      onChange={industries => updateTargetMarketFilters(activeTm.id, { industries })}
+                    />
+                    <TargetFilterPicker
+                      title="Company Size"
+                      options={targetMarketOptions.companySizes}
+                      selected={activeTm.companySizes}
+                      onChange={companySizes => updateTargetMarketFilters(activeTm.id, { companySizes })}
+                    />
+                    <TargetFilterPicker
+                      title="Location"
+                      options={targetMarketOptions.locations}
+                      selected={activeTm.locations}
+                      onChange={locations => updateTargetMarketFilters(activeTm.id, { locations })}
+                      hint="City or region"
+                    />
+                  </div>
+                )}
+
+                {(activeTm.industries.length > 0 || activeTm.companySizes.length > 0 || activeTm.locations.length > 0) && (
+                  <div className="rounded-xl bg-teal-50 border border-teal-200 p-4 flex flex-col gap-2.5">
+                    <p className="text-[11px] font-semibold text-teal-700 uppercase tracking-wide">
+                      ICP summary — {activeTm.name}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeTm.industries.map(v => (
+                        <span key={`ind-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
+                          <Globe className="h-2.5 w-2.5 flex-shrink-0" />{v}
+                        </span>
+                      ))}
+                      {activeTm.companySizes.map(v => (
+                        <span key={`sz-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
+                          <BarChart3 className="h-2.5 w-2.5 flex-shrink-0" />{v}
+                        </span>
+                      ))}
+                      {activeTm.locations.map(v => (
+                        <span key={`loc-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
+                          <MapPin className="h-2.5 w-2.5 flex-shrink-0" />{v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </Section>
+          );
+        })()}
 
         {/* ── Company ── */}
         {activeSection === "company" && (
