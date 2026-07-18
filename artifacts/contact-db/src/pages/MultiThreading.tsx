@@ -7,7 +7,7 @@ import {
   ShoppingCart, Scale, Calculator, User, Wrench, MessageCircle, Ban, GraduationCap,
   Building2, X, ExternalLink, Mail, Phone, MapPin, Linkedin,
   ChevronRight, Loader2, GitBranch, Users, ChevronDown, AlertCircle,
-  Dna, Check,
+  Dna, Check, ListTree,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -47,6 +47,12 @@ interface BuyingCenterSeat {
   departments: string[];
 }
 
+interface BuyingCenterConfig {
+  id: string;
+  name: string;
+  seats: BuyingCenterSeat[];
+}
+
 interface CompanyResult {
   id: number;
   name: string;
@@ -60,21 +66,21 @@ interface CompanyResult {
 const BUYING_CENTER_SEATS: {
   seat: string; role: string; icon: React.ElementType; color: string;
 }[] = [
-  { seat: "Business Champion",               role: "Promotes the solution internally",                            icon: Megaphone,     color: "violet"  },
-  { seat: "Economic Buyer",                  role: "Controls or authorizes the budget",                           icon: Wallet,        color: "emerald" },
-  { seat: "Decision Maker",                  role: "Makes the final selection",                                   icon: Vote,          color: "violet"  },
-  { seat: "Executive Sponsor",               role: "Connects to executive priorities",                            icon: Crown,         color: "violet"  },
-  { seat: "Business Owner",                  role: "Owns the business problem",                                   icon: Briefcase,     color: "amber"   },
-  { seat: "Technical Buyer",                 role: "Evaluates architecture & integrations",                       icon: Cpu,           color: "blue"    },
-  { seat: "Security or Compliance Reviewer", role: "Assesses security & regulatory risk",                         icon: ShieldCheck,   color: "slate"   },
-  { seat: "Procurement",                     role: "Manages commercial & purchasing",                             icon: ShoppingCart,  color: "emerald" },
-  { seat: "Legal",                           role: "Reviews contractual obligations",                             icon: Scale,         color: "slate"   },
-  { seat: "Finance",                         role: "Validates costs, ROI & budget",                               icon: Calculator,    color: "emerald" },
-  { seat: "End User",                        role: "Uses the product day-to-day",                                 icon: User,          color: "sky"     },
-  { seat: "Implementer",                     role: "Owns deployment & configuration",                             icon: Wrench,        color: "blue"    },
-  { seat: "Influencer",                      role: "Shapes requirements & opinions",                              icon: MessageCircle, color: "sky"     },
-  { seat: "Blocker",                         role: "Can delay or oppose the purchase",                            icon: Ban,           color: "rose"    },
-  { seat: "Coach",                           role: "Helps the seller understand the account",                     icon: GraduationCap, color: "amber"   },
+  { seat: "Business Champion",               role: "Promotes the solution internally",         icon: Megaphone,     color: "violet"  },
+  { seat: "Economic Buyer",                  role: "Controls or authorizes the budget",        icon: Wallet,        color: "emerald" },
+  { seat: "Decision Maker",                  role: "Makes the final selection",                icon: Vote,          color: "violet"  },
+  { seat: "Executive Sponsor",               role: "Connects to executive priorities",         icon: Crown,         color: "violet"  },
+  { seat: "Business Owner",                  role: "Owns the business problem",               icon: Briefcase,     color: "amber"   },
+  { seat: "Technical Buyer",                 role: "Evaluates architecture & integrations",    icon: Cpu,           color: "blue"    },
+  { seat: "Security or Compliance Reviewer", role: "Assesses security & regulatory risk",     icon: ShieldCheck,   color: "slate"   },
+  { seat: "Procurement",                     role: "Manages commercial & purchasing",          icon: ShoppingCart,  color: "emerald" },
+  { seat: "Legal",                           role: "Reviews contractual obligations",          icon: Scale,         color: "slate"   },
+  { seat: "Finance",                         role: "Validates costs, ROI & budget",            icon: Calculator,    color: "emerald" },
+  { seat: "End User",                        role: "Uses the product day-to-day",              icon: User,          color: "sky"     },
+  { seat: "Implementer",                     role: "Owns deployment & configuration",          icon: Wrench,        color: "blue"    },
+  { seat: "Influencer",                      role: "Shapes requirements & opinions",           icon: MessageCircle, color: "sky"     },
+  { seat: "Blocker",                         role: "Can delay or oppose the purchase",         icon: Ban,           color: "rose"    },
+  { seat: "Coach",                           role: "Helps the seller understand the account",  icon: GraduationCap, color: "amber"   },
 ];
 
 const COLOR_MAP: Record<string, {
@@ -93,11 +99,7 @@ const COLOR_MAP: Record<string, {
 // ── Seniority ranking ─────────────────────────────────────────────────────────
 
 const SENIORITY_RANK: Record<string, number> = {
-  "C-Suite": 5,
-  "VP": 4,
-  "Director": 3,
-  "Manager": 2,
-  "Individual Contributor": 1,
+  "C-Suite": 5, "VP": 4, "Director": 3, "Manager": 2, "Individual Contributor": 1,
 };
 
 // ── Matching logic ────────────────────────────────────────────────────────────
@@ -113,7 +115,6 @@ function matchContactsToSeat(seat: BuyingCenterSeat, contacts: Contact[]): Conta
   const hasDept = seat.departments.length > 0;
   if (!hasSeniority && !hasDept) return [];
 
-  // Strict: match on both configured criteria
   const strict = contacts.filter(c => {
     const senOk = !hasSeniority || seat.seniorities.includes(c.seniority ?? "");
     const deptOk = !hasDept || seat.departments.includes(c.department ?? "");
@@ -121,7 +122,6 @@ function matchContactsToSeat(seat: BuyingCenterSeat, contacts: Contact[]): Conta
   });
   if (strict.length > 0) return sortBySeniority(strict);
 
-  // Relaxed: match on either
   const relaxed = contacts.filter(c =>
     seat.seniorities.includes(c.seniority ?? "") ||
     seat.departments.includes(c.department ?? "")
@@ -167,6 +167,76 @@ function ContactAvatar({ contact, size = "md" }: { contact: Contact; size?: "sm"
   return (
     <div className={cn("rounded-full bg-gradient-to-br flex items-center justify-center font-bold flex-shrink-0", sizeClass, color)}>
       {initials}
+    </div>
+  );
+}
+
+// Buying center selector dropdown
+function BuyingCenterSelector({
+  buyingCenters,
+  selectedId,
+  onSelect,
+}: {
+  buyingCenters: BuyingCenterConfig[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = buyingCenters.find(bc => bc.id === selectedId) ?? buyingCenters[0];
+
+  useEffect(() => {
+    if (!open) return;
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  if (buyingCenters.length <= 1) {
+    return (
+      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200">
+        <ListTree className="h-3 w-3 text-indigo-500 flex-shrink-0" />
+        <span className="text-xs font-semibold text-indigo-700 truncate">{selected?.name ?? "Default"}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors text-left"
+      >
+        <ListTree className="h-3 w-3 text-indigo-500 flex-shrink-0" />
+        <span className="flex-1 text-xs font-semibold text-indigo-700 truncate">{selected?.name ?? "Default"}</span>
+        <ChevronDown className={cn("h-3 w-3 text-indigo-400 flex-shrink-0 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-border bg-card shadow-xl z-50 overflow-hidden">
+          <div className="px-3 py-2 border-b border-border/50 bg-secondary/20">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Buying center</p>
+          </div>
+          {buyingCenters.map(bc => {
+            const configuredCount = bc.seats.filter(s => s.seniorities.length > 0 || s.departments.length > 0).length;
+            return (
+              <button
+                key={bc.id}
+                onClick={() => { onSelect(bc.id); setOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/40 text-left transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{bc.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{configuredCount} seat{configuredCount !== 1 ? "s" : ""} configured</p>
+                </div>
+                {bc.id === selectedId && <Check className="h-3.5 w-3.5 text-indigo-600 flex-shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -239,7 +309,8 @@ function SwitchContactButton({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function MultiThreading() {
-  const [buyingCenter, setBuyingCenter] = useState<BuyingCenterSeat[]>([]);
+  const [buyingCenters, setBuyingCenters] = useState<BuyingCenterConfig[]>([]);
+  const [selectedBcId, setSelectedBcId] = useState<string>("");
   const [dnaLoaded, setDnaLoaded] = useState(false);
 
   const [companySearch, setCompanySearch] = useState("");
@@ -253,12 +324,35 @@ export default function MultiThreading() {
   const [activeSeat, setActiveSeat] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
 
-  // ── Load DNA buying center ──
+  // ── Derived active BC ──
+  const activeBc = buyingCenters.find(bc => bc.id === selectedBcId) ?? buyingCenters[0] ?? null;
+
+  // Only seats that have at least one criterion configured
+  const configuredSeatDefs = BUYING_CENTER_SEATS.filter(def => {
+    const seat = activeBc?.seats.find(s => s.seat === def.seat);
+    return seat && (seat.seniorities.length > 0 || seat.departments.length > 0);
+  });
+
+  // ── Load DNA buying centers ──
   useEffect(() => {
     fetch("/api/dna/profile")
       .then(r => r.ok ? r.json() : null)
-      .then((json: { data?: { buyingCenter?: BuyingCenterSeat[] } } | null) => {
-        if (json?.data?.buyingCenter) setBuyingCenter(json.data.buyingCenter);
+      .then((json: {
+        data?: {
+          buyingCenters?: BuyingCenterConfig[];
+          buyingCenter?: BuyingCenterSeat[];
+        };
+      } | null) => {
+        let bcs: BuyingCenterConfig[] = [];
+        if (json?.data?.buyingCenters && json.data.buyingCenters.length > 0) {
+          bcs = json.data.buyingCenters;
+        } else if (json?.data?.buyingCenter) {
+          bcs = [{ id: "default", name: "Default", seats: json.data.buyingCenter }];
+        }
+        if (bcs.length > 0) {
+          setBuyingCenters(bcs);
+          setSelectedBcId(bcs[0].id);
+        }
         setDnaLoaded(true);
       })
       .catch(() => setDnaLoaded(true));
@@ -315,8 +409,8 @@ export default function MultiThreading() {
 
   // ── Matching helpers ──
   function getMatches(seatName: string): Contact[] {
-    if (!selectedCompany) return [];
-    const seat = buyingCenter.find(s => s.seat === seatName);
+    if (!selectedCompany || !activeBc) return [];
+    const seat = activeBc.seats.find(s => s.seat === seatName);
     if (!seat) return [];
     return matchContactsToSeat(seat, selectedCompany.contacts);
   }
@@ -332,18 +426,15 @@ export default function MultiThreading() {
     return matches[0];
   }
 
-  function isSeatConfigured(seatName: string): boolean {
-    const seat = buyingCenter.find(s => s.seat === seatName);
-    return !!(seat && (seat.seniorities.length > 0 || seat.departments.length > 0));
-  }
-
   // ── Derived active seat values ──
   const activeDef = activeSeat ? BUYING_CENTER_SEATS.find(s => s.seat === activeSeat) ?? null : null;
-  const activeConfig = activeSeat ? buyingCenter.find(s => s.seat === activeSeat) ?? null : null;
+  const activeConfig = activeSeat && activeBc ? activeBc.seats.find(s => s.seat === activeSeat) ?? null : null;
   const activeContact = activeSeat ? getActiveContact(activeSeat) : null;
   const activeMatches = activeSeat ? getMatches(activeSeat) : [];
   const activeColors = activeDef ? (COLOR_MAP[activeDef.color] ?? COLOR_MAP.slate) : null;
-  const activeIsConfigured = activeSeat ? isSeatConfigured(activeSeat) : false;
+
+  const allUnconfigured = dnaLoaded && buyingCenters.length === 0;
+  const activeBcUnconfigured = dnaLoaded && activeBc !== null && configuredSeatDefs.length === 0;
 
   // ── Render ──
   return (
@@ -353,9 +444,9 @@ export default function MultiThreading() {
         {/* ── Left panel ── */}
         <div className="w-80 flex-shrink-0 border-r border-border/60 bg-card flex flex-col overflow-hidden">
 
-          {/* Panel header + company picker */}
-          <div className="px-4 pt-4 pb-3 border-b border-border/60 flex-shrink-0">
-            <div className="flex items-center gap-2 mb-3">
+          {/* Panel header */}
+          <div className="px-4 pt-4 pb-3 border-b border-border/60 flex-shrink-0 flex flex-col gap-3">
+            <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
                 <GitBranch className="h-3.5 w-3.5 text-primary" />
               </div>
@@ -364,6 +455,15 @@ export default function MultiThreading() {
                 <p className="text-[10px] text-muted-foreground">Buying center by company</p>
               </div>
             </div>
+
+            {/* Buying center selector */}
+            {dnaLoaded && buyingCenters.length > 0 && (
+              <BuyingCenterSelector
+                buyingCenters={buyingCenters}
+                selectedId={selectedBcId}
+                onSelect={id => { setSelectedBcId(id); setActiveSeat(null); setOverrides({}); }}
+              />
+            )}
 
             {/* Company search */}
             <div ref={searchRef} className="relative">
@@ -388,7 +488,6 @@ export default function MultiThreading() {
                 )}
               </div>
 
-              {/* Search results dropdown */}
               {searchResults.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-border bg-card shadow-xl z-50 overflow-hidden">
                   {searchResults.map((c, i) => (
@@ -415,7 +514,7 @@ export default function MultiThreading() {
 
             {/* Company badge once selected */}
             {selectedCompany && (
-              <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
                 <Building2 className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-amber-800 truncate">{selectedCompany.name}</p>
@@ -425,11 +524,37 @@ export default function MultiThreading() {
             )}
           </div>
 
-          {/* Seat list */}
+          {/* Seat list — only configured seats */}
           <div className="flex-1 overflow-y-auto">
-            {BUYING_CENTER_SEATS.map(def => {
+
+            {/* No DNA configured */}
+            {dnaLoaded && allUnconfigured && (
+              <div className="px-4 py-8 text-center flex flex-col items-center gap-3">
+                <Dna className="h-8 w-8 text-muted-foreground/30" />
+                <p className="text-xs text-muted-foreground">No buying centers configured yet.</p>
+                <Link href="/dna">
+                  <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Set up in DNA →</span>
+                </Link>
+              </div>
+            )}
+
+            {/* BC exists but no seats configured */}
+            {!allUnconfigured && activeBcUnconfigured && (
+              <div className="px-4 py-8 text-center flex flex-col items-center gap-3">
+                <ListTree className="h-8 w-8 text-muted-foreground/30" />
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-1">No seats configured</p>
+                  <p className="text-xs text-muted-foreground">"{activeBc?.name}" has no seats with seniority or department criteria.</p>
+                </div>
+                <Link href="/dna">
+                  <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in DNA →</span>
+                </Link>
+              </div>
+            )}
+
+            {/* Seat list */}
+            {configuredSeatDefs.map(def => {
               const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
-              const configured = isSeatConfigured(def.seat);
               const matches = selectedCompany ? getMatches(def.seat) : [];
               const contact = selectedCompany ? getActiveContact(def.seat) : null;
               const isActive = activeSeat === def.seat;
@@ -472,10 +597,8 @@ export default function MultiThreading() {
                         {contact.firstName} {contact.lastName}
                         {contact.jobTitle ? ` · ${contact.jobTitle}` : ""}
                       </p>
-                    ) : selectedCompany && configured ? (
+                    ) : selectedCompany ? (
                       <p className="text-[11px] text-orange-500/80 font-medium">No match found</p>
-                    ) : selectedCompany && !configured ? (
-                      <p className="text-[11px] text-muted-foreground/40">Not configured in DNA</p>
                     ) : (
                       <p className="text-[11px] text-muted-foreground/50">{def.role}</p>
                     )}
@@ -493,7 +616,7 @@ export default function MultiThreading() {
         {/* ── Right panel ── */}
         <div className="flex-1 min-w-0 overflow-y-auto bg-[#F8FAFC]">
 
-          {/* ── State: no company selected ── */}
+          {/* No company selected */}
           {!selectedCompany && !companyLoading && (
             <div className="h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
               <div className="h-16 w-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center">
@@ -502,10 +625,10 @@ export default function MultiThreading() {
               <div>
                 <p className="text-sm font-semibold text-foreground mb-1">Select a company to get started</p>
                 <p className="text-xs text-muted-foreground max-w-xs">
-                  Search for a company in the left panel to see how your DNA buying center maps to their team.
+                  Search for a company above to see how your{activeBc ? ` "${activeBc.name}" ` : " "}buying center maps to their team.
                 </p>
               </div>
-              {dnaLoaded && buyingCenter.every(s => s.seniorities.length === 0 && s.departments.length === 0) && (
+              {allUnconfigured && (
                 <Link href="/dna">
                   <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer">
                     <Dna className="h-3.5 w-3.5" />
@@ -516,7 +639,7 @@ export default function MultiThreading() {
             </div>
           )}
 
-          {/* ── State: company loading ── */}
+          {/* Company loading */}
           {companyLoading && (
             <div className="h-full flex items-center justify-center gap-3 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -524,7 +647,7 @@ export default function MultiThreading() {
             </div>
           )}
 
-          {/* ── State: company loaded, no seat selected ── */}
+          {/* Company loaded, no seat selected */}
           {selectedCompany && !activeSeat && (
             <div className="h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
               <div className="h-16 w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
@@ -535,73 +658,50 @@ export default function MultiThreading() {
                   {selectedCompany.name} — {selectedCompany.contacts.length} contact{selectedCompany.contacts.length !== 1 ? "s" : ""} loaded
                 </p>
                 <p className="text-xs text-muted-foreground max-w-xs">
-                  Select a buying center seat from the left to see who fills that role at {selectedCompany.name}.
+                  {configuredSeatDefs.length === 0
+                    ? `The "${activeBc?.name}" buying center has no configured seats yet.`
+                    : `Select a seat from the left to see who fills that role at ${selectedCompany.name}.`
+                  }
                 </p>
               </div>
 
-              {/* Quick overview chips */}
-              <div className="flex flex-wrap gap-2 justify-center max-w-sm mt-2">
-                {BUYING_CENTER_SEATS.map(def => {
-                  const matches = getMatches(def.seat);
-                  const configured = isSeatConfigured(def.seat);
-                  const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
-                  if (!configured) return null;
-                  return (
-                    <button
-                      key={def.seat}
-                      onClick={() => setActiveSeat(def.seat)}
-                      className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all",
-                        matches.length > 0
-                          ? cn(colors.chipBg, colors.border, colors.chipText)
-                          : "bg-orange-50 border-orange-200 text-orange-600"
-                      )}
-                    >
-                      <def.icon className="h-3 w-3" />
-                      {def.seat}
-                      {matches.length > 0 && <span className="opacity-60">·{matches.length}</span>}
-                    </button>
-                  );
-                })}
-              </div>
+              {configuredSeatDefs.length > 0 && (
+                <div className="flex flex-wrap gap-2 justify-center max-w-sm mt-2">
+                  {configuredSeatDefs.map(def => {
+                    const matches = getMatches(def.seat);
+                    const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
+                    return (
+                      <button
+                        key={def.seat}
+                        onClick={() => setActiveSeat(def.seat)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all",
+                          matches.length > 0
+                            ? cn(colors.chipBg, colors.border, colors.chipText)
+                            : "bg-orange-50 border-orange-200 text-orange-600"
+                        )}
+                      >
+                        <def.icon className="h-3 w-3" />
+                        {def.seat}
+                        {matches.length > 0 && <span className="opacity-60">·{matches.length}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── State: seat selected, not configured in DNA ── */}
-          {selectedCompany && activeSeat && !activeIsConfigured && (
+          {/* Seat selected, no match found */}
+          {selectedCompany && activeSeat && activeMatches.length === 0 && activeDef && activeColors && (
             <div className="h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
-              {activeDef && activeColors && (
-                <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center border", activeColors.iconBg, activeColors.border)}>
-                  <activeDef.icon className={cn("h-7 w-7", activeColors.iconColor)} />
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-semibold text-foreground mb-1">{activeSeat} — not configured</p>
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  This seat has no seniority or department criteria set in your DNA profile. Configure it to find matching contacts.
-                </p>
+              <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center border", activeColors.iconBg, activeColors.border)}>
+                <activeDef.icon className={cn("h-7 w-7", activeColors.iconColor)} />
               </div>
-              <Link href="/dna">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer">
-                  <Dna className="h-3.5 w-3.5" />
-                  Configure in DNA
-                </div>
-              </Link>
-            </div>
-          )}
-
-          {/* ── State: seat configured, no match found ── */}
-          {selectedCompany && activeSeat && activeIsConfigured && activeMatches.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
-              {activeDef && activeColors && (
-                <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center border", activeColors.iconBg, activeColors.border)}>
-                  <activeDef.icon className={cn("h-7 w-7", activeColors.iconColor)} />
-                </div>
-              )}
               <div>
                 <p className="text-sm font-semibold text-foreground mb-1">No match at {selectedCompany.name}</p>
                 <p className="text-xs text-muted-foreground max-w-xs">
-                  No contacts at {selectedCompany.name} match the criteria you've set for the {activeSeat} seat.
+                  No contacts match the criteria for the {activeSeat} seat.
                 </p>
               </div>
               {activeConfig && (
@@ -623,16 +723,16 @@ export default function MultiThreading() {
               )}
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <AlertCircle className="h-3.5 w-3.5" />
-                {selectedCompany.contacts.length} contact{selectedCompany.contacts.length !== 1 ? "s" : ""} at {selectedCompany.name} don't match this seat's criteria
+                {selectedCompany.contacts.length} contact{selectedCompany.contacts.length !== 1 ? "s" : ""} at {selectedCompany.name} — none match
               </div>
             </div>
           )}
 
-          {/* ── State: contact found ── */}
-          {selectedCompany && activeSeat && activeIsConfigured && activeContact && activeDef && activeColors && (
+          {/* Contact found */}
+          {selectedCompany && activeSeat && activeContact && activeDef && activeColors && (
             <div className="max-w-2xl mx-auto p-8 flex flex-col gap-6">
 
-              {/* Contact header */}
+              {/* Contact header card */}
               <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
                 <div className={cn("px-6 py-5 flex items-start gap-5 border-b border-border/40", activeColors.bg)}>
                   <ContactAvatar contact={activeContact} size="lg" />
@@ -651,8 +751,6 @@ export default function MultiThreading() {
                         </div>
                       </Link>
                     </div>
-
-                    {/* Tags row */}
                     <div className="flex flex-wrap items-center gap-2 mt-3">
                       {activeContact.seniority && <SenioritySwatch value={activeContact.seniority} />}
                       {activeContact.department && (
@@ -727,12 +825,15 @@ export default function MultiThreading() {
                 </Link>
               )}
 
-              {/* Seat match info */}
+              {/* Seat match card */}
               <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
                 <div className={cn("px-5 py-3 border-b border-border/40 flex items-center justify-between", activeColors.bg)}>
                   <div className="flex items-center gap-2">
                     <activeDef.icon className={cn("h-4 w-4", activeColors.iconColor)} />
                     <p className="text-sm font-semibold text-foreground">Seat: {activeSeat}</p>
+                    {activeBc && (
+                      <span className="text-[10px] text-muted-foreground font-medium">· {activeBc.name}</span>
+                    )}
                   </div>
                   <SwitchContactButton
                     matches={activeMatches}
@@ -768,13 +869,13 @@ export default function MultiThreading() {
                     <Users className="h-3 w-3 text-muted-foreground" />
                     <p className="text-[11px] text-muted-foreground">
                       {activeMatches.length} contact{activeMatches.length !== 1 ? "s" : ""} at {selectedCompany.name} match this seat
-                      {activeMatches.length > 1 ? ` — showing most senior by default` : ""}
+                      {activeMatches.length > 1 ? " — showing most senior by default" : ""}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Other matches list (if > 1) */}
+              {/* All matches list */}
               {activeMatches.length > 1 && (
                 <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
                   <div className="px-5 py-3 border-b border-border/40 bg-secondary/20">

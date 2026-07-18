@@ -28,7 +28,21 @@ function mergeBuyingCenter(saved?: Array<Partial<BuyingCenterSeat>>): BuyingCent
   }));
 }
 
-function mergeDNA(parsed: Partial<DNAData>): DNAData {
+function mergeBuyingCenters(
+  saved?: Array<Partial<BuyingCenterConfig>>,
+  legacy?: Array<Partial<BuyingCenterSeat>>,
+): BuyingCenterConfig[] {
+  if (saved && saved.length > 0) {
+    return saved.map(bc => ({
+      id: bc.id ?? "default",
+      name: bc.name ?? "Default",
+      seats: mergeBuyingCenter(bc.seats),
+    }));
+  }
+  return [{ id: "default", name: "Default", seats: mergeBuyingCenter(legacy) }];
+}
+
+function mergeDNA(parsed: StoredDNA): DNAData {
   const d = defaultDNA();
   return {
     ...d,
@@ -39,14 +53,14 @@ function mergeDNA(parsed: Partial<DNAData>): DNAData {
     customers: (parsed.customers ?? []).map(c => ({ ...c, economicBenefits: c.economicBenefits ?? [] })),
     marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
     competitors: parsed.competitors ?? [],
-    buyingCenter: mergeBuyingCenter(parsed.buyingCenter),
+    buyingCenters: mergeBuyingCenters(parsed.buyingCenters, parsed.buyingCenter),
   };
 }
 
 function loadDNA(): DNAData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return mergeDNA(JSON.parse(raw) as Partial<DNAData>);
+    if (raw) return mergeDNA(JSON.parse(raw) as StoredDNA);
   } catch { /* ignore */ }
   return defaultDNA();
 }
@@ -124,6 +138,17 @@ interface BuyingCenterSeat {
   departments: string[];
 }
 
+interface BuyingCenterConfig {
+  id: string;
+  name: string;
+  seats: BuyingCenterSeat[];
+}
+
+type StoredDNA = Partial<DNAData> & {
+  buyingCenter?: Array<Partial<BuyingCenterSeat>>;
+  buyingCenters?: Array<Partial<BuyingCenterConfig>>;
+};
+
 interface DNAData {
   voice: {
     toneTags: string[];
@@ -137,7 +162,7 @@ interface DNAData {
   customers: Customer[];
   marketPosition: MarketPosition;
   competitors: Competitor[];
-  buyingCenter: BuyingCenterSeat[];
+  buyingCenters: BuyingCenterConfig[];
   company: {
     name: string;
     valueWedge: string;
@@ -176,7 +201,7 @@ function defaultDNA(): DNAData {
       typicalBuyingPriority: "",
     },
     competitors: [],
-    buyingCenter: BUYING_CENTER_SEATS.map(s => ({ seat: s.seat, seniorities: [], departments: [] })),
+    buyingCenters: [{ id: "default", name: "Default", seats: BUYING_CENTER_SEATS.map(s => ({ seat: s.seat, seniorities: [], departments: [] })) }],
   };
 }
 
@@ -1200,7 +1225,7 @@ export default function DNA() {
     let cancelled = false;
     fetch(API_PROFILE_URL)
       .then(r => (r.ok ? r.json() : null))
-      .then((json: { data: Partial<DNAData> } | null) => {
+      .then((json: { data: StoredDNA } | null) => {
         if (!cancelled && json?.data) {
           setData(mergeDNA(json.data));
         }
@@ -1212,13 +1237,51 @@ export default function DNA() {
 
   const [activeSeat, setActiveSeat] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<SectionId>("voice");
+  const [activeBuyingCenterId, setActiveBuyingCenterId] = useState<string>(
+    () => data.buyingCenters[0]?.id ?? "default"
+  );
+  const [renamingBcId, setRenamingBcId] = useState<string | null>(null);
+  const [renameBcValue, setRenameBcValue] = useState<string>("");
 
-  function updateBuyingCenterSeat(seatName: string, patch: { seniorities?: string[]; departments?: string[] }) {
+  const activeBc = data.buyingCenters.find(bc => bc.id === activeBuyingCenterId) ?? data.buyingCenters[0] ?? null;
+
+  function updateBuyingCenterSeat(bcId: string, seatName: string, patch: { seniorities?: string[]; departments?: string[] }) {
     setData(d => ({
       ...d,
-      buyingCenter: (d.buyingCenter ?? []).map(s =>
-        s.seat === seatName ? { ...s, ...patch } : s
+      buyingCenters: d.buyingCenters.map(bc =>
+        bc.id === bcId
+          ? { ...bc, seats: bc.seats.map(s => s.seat === seatName ? { ...s, ...patch } : s) }
+          : bc
       ),
+    }));
+  }
+
+  function addBuyingCenter() {
+    const id = `bc_${Date.now()}`;
+    const name = `Buying Center ${data.buyingCenters.length + 1}`;
+    setData(d => ({
+      ...d,
+      buyingCenters: [...d.buyingCenters, {
+        id,
+        name,
+        seats: BUYING_CENTER_SEATS.map(s => ({ seat: s.seat, seniorities: [], departments: [] })),
+      }],
+    }));
+    setActiveBuyingCenterId(id);
+  }
+
+  function removeBuyingCenter(id: string) {
+    const remaining = data.buyingCenters.filter(bc => bc.id !== id);
+    if (remaining.length === 0) return;
+    setData(d => ({ ...d, buyingCenters: d.buyingCenters.filter(bc => bc.id !== id) }));
+    if (activeBuyingCenterId === id) setActiveBuyingCenterId(remaining[0].id);
+  }
+
+  function renameBuyingCenter(id: string, name: string) {
+    if (!name.trim()) return;
+    setData(d => ({
+      ...d,
+      buyingCenters: d.buyingCenters.map(bc => bc.id === id ? { ...bc, name: name.trim() } : bc),
     }));
   }
 
@@ -2044,18 +2107,74 @@ export default function DNA() {
           accentBorder="border-indigo-200"
           accentColor="text-indigo-600"
         >
-          {activeSeat && (
+          {/* Buying center tab bar */}
+          <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-border/40 mb-2">
+            {data.buyingCenters.map(bc => (
+              <div
+                key={bc.id}
+                className={cn(
+                  "group flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition-all",
+                  activeBuyingCenterId === bc.id
+                    ? "bg-indigo-100 border-indigo-300"
+                    : "bg-secondary/50 border-border/60 hover:bg-secondary cursor-pointer"
+                )}
+              >
+                {renamingBcId === bc.id ? (
+                  <form
+                    onSubmit={e => { e.preventDefault(); renameBuyingCenter(bc.id, renameBcValue); setRenamingBcId(null); }}
+                    className="flex items-center"
+                  >
+                    <input
+                      autoFocus
+                      value={renameBcValue}
+                      onChange={e => setRenameBcValue(e.target.value)}
+                      onBlur={() => { renameBuyingCenter(bc.id, renameBcValue); setRenamingBcId(null); }}
+                      className="bg-transparent outline-none text-sm font-semibold w-32 text-indigo-700"
+                    />
+                  </form>
+                ) : (
+                  <button
+                    onClick={() => setActiveBuyingCenterId(bc.id)}
+                    onDoubleClick={() => { setRenamingBcId(bc.id); setRenameBcValue(bc.name); }}
+                    className={cn(
+                      "text-sm font-semibold",
+                      activeBuyingCenterId === bc.id ? "text-indigo-700" : "text-muted-foreground"
+                    )}
+                  >
+                    {bc.name}
+                  </button>
+                )}
+                {data.buyingCenters.length > 1 && !renamingBcId && (
+                  <button
+                    onClick={e => { e.stopPropagation(); removeBuyingCenter(bc.id); }}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={addBuyingCenter}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-border hover:border-indigo-300 hover:bg-indigo-50/50 text-xs font-semibold text-muted-foreground hover:text-indigo-700 transition-all"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New buying center
+            </button>
+          </div>
+
+          {activeSeat && activeBc && (
             <BuyingCenterModal
               seatName={activeSeat}
-              seniorities={(data.buyingCenter ?? []).find(s => s.seat === activeSeat)?.seniorities ?? []}
-              departments={(data.buyingCenter ?? []).find(s => s.seat === activeSeat)?.departments ?? []}
-              onUpdate={patch => updateBuyingCenterSeat(activeSeat, patch)}
+              seniorities={activeBc.seats.find(s => s.seat === activeSeat)?.seniorities ?? []}
+              departments={activeBc.seats.find(s => s.seat === activeSeat)?.departments ?? []}
+              onUpdate={patch => updateBuyingCenterSeat(activeBc.id, activeSeat, patch)}
               open={!!activeSeat}
               onClose={() => setActiveSeat(null)}
             />
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {(data.buyingCenter ?? []).map(seat => (
+            {(activeBc?.seats ?? []).map(seat => (
               <BuyingCenterTile
                 key={seat.seat}
                 seat={seat}
