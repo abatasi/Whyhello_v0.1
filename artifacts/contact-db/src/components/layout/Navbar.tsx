@@ -403,7 +403,17 @@ export function Navbar() {
                 </Link>
               );
             })}
-            <Button variant="ghost" className="px-4 py-2 rounded-lg">Multi-threading</Button>
+            <Link
+              href="/multithreading"
+              className={cn(
+                "px-4 py-2 rounded-lg transition-colors",
+                location.startsWith("/multithreading")
+                  ? "bg-secondary/50 text-foreground"
+                  : "hover:bg-secondary/30 hover:text-foreground",
+              )}
+            >
+              Multi-threading
+            </Link>
           </nav>
         </div>
 
