@@ -6,7 +6,12 @@ import {
   Save, CheckCircle2, Dna, Sparkles, Upload, X, FileText,
   Loader2, RefreshCw, Ban, PenLine, TrendingDown, TrendingUp,
   Info, BarChart3, Users, Users2, Target, Globe, MessageSquare, Shield,
+  Megaphone, Wallet, Vote, Crown, Briefcase, Cpu, ShieldCheck,
+  ShoppingCart, Scale, Calculator, User, Wrench, MessageCircle, GraduationCap,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 
 // ── Persistence ──────────────────────────────────────────────────────────────
 
@@ -220,23 +225,36 @@ const DEPARTMENT_OPTIONS = [
   "Research", "Revenue", "Risk", "Sales", "Security", "Underwriting",
 ];
 
-const BUYING_CENTER_SEATS: { seat: string; role: string }[] = [
-  { seat: "Business Champion",               role: "Promotes the solution internally and helps advance the sale" },
-  { seat: "Economic Buyer",                  role: "Controls or authorizes the budget" },
-  { seat: "Decision Maker",                  role: "Makes or materially influences the final selection" },
-  { seat: "Executive Sponsor",               role: "Connects the initiative to executive priorities" },
-  { seat: "Business Owner",                  role: "Owns the business problem and expected outcome" },
-  { seat: "Technical Buyer",                 role: "Evaluates architecture, integrations and technical viability" },
-  { seat: "Security or Compliance Reviewer", role: "Assesses security, privacy, legal or regulatory risk" },
-  { seat: "Procurement",                     role: "Manages commercial terms and purchasing requirements" },
-  { seat: "Legal",                           role: "Reviews contractual and legal obligations" },
-  { seat: "Finance",                         role: "Validates costs, ROI and budget treatment" },
-  { seat: "End User",                        role: "Uses the product or experiences the operational change" },
-  { seat: "Implementer",                     role: "Owns deployment, configuration or change management" },
-  { seat: "Influencer",                      role: "Shapes requirements or internal opinions" },
-  { seat: "Blocker",                         role: "Can delay, oppose or prevent the purchase" },
-  { seat: "Coach",                           role: "Privately helps the seller understand the account and process" },
+const BUYING_CENTER_SEATS: { seat: string; role: string; icon: React.ElementType; color: string }[] = [
+  { seat: "Business Champion",               role: "Promotes the solution internally and helps advance the sale",    icon: Megaphone,     color: "violet"  },
+  { seat: "Economic Buyer",                  role: "Controls or authorizes the budget",                             icon: Wallet,        color: "emerald" },
+  { seat: "Decision Maker",                  role: "Makes or materially influences the final selection",            icon: Vote,          color: "violet"  },
+  { seat: "Executive Sponsor",               role: "Connects the initiative to executive priorities",               icon: Crown,         color: "violet"  },
+  { seat: "Business Owner",                  role: "Owns the business problem and expected outcome",                icon: Briefcase,     color: "amber"   },
+  { seat: "Technical Buyer",                 role: "Evaluates architecture, integrations and technical viability",  icon: Cpu,           color: "blue"    },
+  { seat: "Security or Compliance Reviewer", role: "Assesses security, privacy, legal or regulatory risk",         icon: ShieldCheck,   color: "slate"   },
+  { seat: "Procurement",                     role: "Manages commercial terms and purchasing requirements",          icon: ShoppingCart,  color: "emerald" },
+  { seat: "Legal",                           role: "Reviews contractual and legal obligations",                     icon: Scale,         color: "slate"   },
+  { seat: "Finance",                         role: "Validates costs, ROI and budget treatment",                     icon: Calculator,    color: "emerald" },
+  { seat: "End User",                        role: "Uses the product or experiences the operational change",        icon: User,          color: "sky"     },
+  { seat: "Implementer",                     role: "Owns deployment, configuration or change management",          icon: Wrench,        color: "blue"    },
+  { seat: "Influencer",                      role: "Shapes requirements or internal opinions",                     icon: MessageCircle, color: "sky"     },
+  { seat: "Blocker",                         role: "Can delay, oppose or prevent the purchase",                    icon: Ban,           color: "rose"    },
+  { seat: "Coach",                           role: "Privately helps the seller understand the account and process", icon: GraduationCap, color: "amber"  },
 ];
+
+const COLOR_MAP: Record<string, {
+  bg: string; border: string; iconBg: string; iconColor: string;
+  chipBg: string; chipBorder: string; chipText: string;
+}> = {
+  violet:  { bg: "bg-violet-50",  border: "border-violet-200",  iconBg: "bg-violet-100",  iconColor: "text-violet-600",  chipBg: "bg-violet-100",  chipBorder: "border-violet-200",  chipText: "text-violet-700"  },
+  emerald: { bg: "bg-emerald-50", border: "border-emerald-200", iconBg: "bg-emerald-100", iconColor: "text-emerald-600", chipBg: "bg-emerald-100", chipBorder: "border-emerald-200", chipText: "text-emerald-700" },
+  blue:    { bg: "bg-blue-50",    border: "border-blue-200",    iconBg: "bg-blue-100",    iconColor: "text-blue-600",    chipBg: "bg-blue-100",    chipBorder: "border-blue-200",    chipText: "text-blue-700"    },
+  amber:   { bg: "bg-amber-50",   border: "border-amber-200",   iconBg: "bg-amber-100",   iconColor: "text-amber-600",   chipBg: "bg-amber-100",   chipBorder: "border-amber-200",   chipText: "text-amber-700"   },
+  slate:   { bg: "bg-slate-50",   border: "border-slate-200",   iconBg: "bg-slate-100",   iconColor: "text-slate-500",   chipBg: "bg-slate-100",   chipBorder: "border-slate-200",   chipText: "text-slate-600"   },
+  sky:     { bg: "bg-sky-50",     border: "border-sky-200",     iconBg: "bg-sky-100",     iconColor: "text-sky-600",     chipBg: "bg-sky-100",     chipBorder: "border-sky-200",     chipText: "text-sky-700"     },
+  rose:    { bg: "bg-rose-50",    border: "border-rose-200",    iconBg: "bg-rose-100",    iconColor: "text-rose-600",    chipBg: "bg-rose-100",    chipBorder: "border-rose-200",    chipText: "text-rose-600"    },
+};
 
 // ── Auto-save hook ───────────────────────────────────────────────────────────
 
@@ -968,47 +986,144 @@ function DeptSelector({ selected, onChange }: { selected: string[]; onChange: (v
   );
 }
 
-// ── BuyingCenterSeatCard ──────────────────────────────────────────────────────
+// ── BuyingCenterTile ──────────────────────────────────────────────────────────
 
-function BuyingCenterSeatCard({ seat, seniorities, departments, onUpdate }: {
-  seat: string;
+function BuyingCenterTile({ seat, onClick }: { seat: BuyingCenterSeat; onClick: () => void }) {
+  const def = BUYING_CENTER_SEATS.find(s => s.seat === seat.seat)!;
+  const isConfigured = seat.seniorities.length > 0 || seat.departments.length > 0;
+  const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
+  const Icon = def.icon;
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "group flex flex-col gap-3 p-4 rounded-xl border text-left transition-all hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
+        isConfigured
+          ? cn(colors.bg, colors.border)
+          : "bg-card border-border/60 hover:border-indigo-200 hover:bg-indigo-50/30"
+      )}
+    >
+      {/* Icon */}
+      <div className={cn(
+        "h-9 w-9 rounded-lg flex items-center justify-center border transition-colors",
+        isConfigured
+          ? cn(colors.iconBg, colors.border)
+          : "bg-secondary/50 border-border/40 group-hover:bg-indigo-50 group-hover:border-indigo-200"
+      )}>
+        <Icon className={cn(
+          "h-4 w-4 transition-colors",
+          isConfigured ? colors.iconColor : "text-muted-foreground/50 group-hover:text-indigo-500"
+        )} />
+      </div>
+
+      {/* Title + description */}
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          "text-xs font-bold leading-snug",
+          isConfigured ? "text-foreground" : "text-muted-foreground/70 group-hover:text-foreground transition-colors"
+        )}>
+          {seat.seat}
+        </p>
+        <p className="text-[10px] text-muted-foreground/70 leading-relaxed mt-0.5 line-clamp-2">
+          {def.role}
+        </p>
+      </div>
+
+      {/* Status footer */}
+      <div className="border-t border-black/5 pt-2.5 min-h-[2rem]">
+        {isConfigured ? (
+          <div className="flex flex-col gap-1">
+            {seat.seniorities.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {seat.seniorities.slice(0, 2).map(s => (
+                  <span key={s} className={cn(
+                    "px-1.5 py-0.5 rounded text-[9px] font-bold border",
+                    colors.chipBg, colors.chipBorder, colors.chipText
+                  )}>
+                    {s === "Individual Contributor" ? "IC" : s}
+                  </span>
+                ))}
+                {seat.seniorities.length > 2 && (
+                  <span className={cn(
+                    "px-1.5 py-0.5 rounded text-[9px] font-bold border",
+                    colors.chipBg, colors.chipBorder, colors.chipText
+                  )}>
+                    +{seat.seniorities.length - 2}
+                  </span>
+                )}
+              </div>
+            )}
+            {seat.departments.length > 0 && (
+              <p className="text-[10px] text-muted-foreground/60 truncate leading-tight">
+                {seat.departments.slice(0, 2).join(", ")}{seat.departments.length > 2 ? ` +${seat.departments.length - 2}` : ""}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-[10px] text-muted-foreground/30 group-hover:text-indigo-400 transition-colors">
+            Click to configure →
+          </p>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ── BuyingCenterModal ─────────────────────────────────────────────────────────
+
+function BuyingCenterModal({ seatName, seniorities, departments, onUpdate, open, onClose }: {
+  seatName: string;
   seniorities: string[];
   departments: string[];
   onUpdate: (patch: { seniorities?: string[]; departments?: string[] }) => void;
+  open: boolean;
+  onClose: () => void;
 }) {
-  const def = BUYING_CENTER_SEATS.find(s => s.seat === seat);
-  const isConfigured = seniorities.length > 0 || departments.length > 0;
+  const def = BUYING_CENTER_SEATS.find(s => s.seat === seatName);
+  if (!def) return null;
+  const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
+  const Icon = def.icon;
 
   const toggleSeniority = (s: string) =>
     onUpdate({ seniorities: seniorities.includes(s) ? seniorities.filter(x => x !== s) : [...seniorities, s] });
 
   return (
-    <div className={cn(
-      "rounded-xl border bg-card transition-colors",
-      isConfigured ? "border-indigo-200/70" : "border-border/60"
-    )}>
-      <div className="px-4 py-3.5 flex items-start gap-3">
-        <div className={cn(
-          "mt-1.5 h-2 w-2 rounded-full flex-shrink-0 transition-colors",
-          isConfigured ? "bg-indigo-500" : "bg-border"
-        )} />
-        <div className="flex-1 min-w-0 flex flex-col gap-3">
-          <div>
-            <p className="text-sm font-semibold text-foreground">{seat}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{def?.role}</p>
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-[480px]">
+        <div className="flex flex-col gap-5 pt-1">
+
+          {/* Header */}
+          <div className="flex items-center gap-3 pr-6">
+            <div className={cn(
+              "h-10 w-10 rounded-xl flex items-center justify-center border flex-shrink-0",
+              colors.iconBg, colors.border
+            )}>
+              <Icon className={cn("h-5 w-5", colors.iconColor)} />
+            </div>
+            <div>
+              <DialogTitle className="text-sm font-bold leading-snug">{seatName}</DialogTitle>
+              <DialogDescription className="text-[11px] mt-0.5 leading-relaxed">{def.role}</DialogDescription>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Seniority</span>
+          <div className="h-px bg-border/50" />
+
+          {/* Seniority */}
+          <div className="flex flex-col gap-2">
+            <div>
+              <p className="text-xs font-semibold text-foreground">Seniority</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Select all levels that typically fill this seat</p>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {SENIORITY_OPTIONS.map(s => (
                 <button
                   key={s}
                   onClick={() => toggleSeniority(s)}
                   className={cn(
-                    "px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all",
+                    "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
                     seniorities.includes(s)
-                      ? "bg-indigo-100 border-indigo-300 text-indigo-700"
+                      ? cn(colors.chipBg, colors.chipBorder, colors.chipText)
                       : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
                   )}
                 >
@@ -1018,13 +1133,37 @@ function BuyingCenterSeatCard({ seat, seniorities, departments, onUpdate }: {
             </div>
           </div>
 
-          <DeptSelector
-            selected={departments}
-            onChange={v => onUpdate({ departments: v })}
-          />
+          {/* Department */}
+          <div className="flex flex-col gap-2">
+            <div>
+              <p className="text-xs font-semibold text-foreground">Department</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Select departments where this role is typically found</p>
+            </div>
+            <DeptSelector selected={departments} onChange={v => onUpdate({ departments: v })} />
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end border-t border-border/40 pt-3 -mb-1">
+            <button
+              onClick={onClose}
+              className={cn(
+                "px-5 py-2 rounded-lg text-white text-sm font-semibold transition-colors",
+                def.color === "violet"  && "bg-violet-600 hover:bg-violet-700",
+                def.color === "emerald" && "bg-emerald-600 hover:bg-emerald-700",
+                def.color === "blue"    && "bg-blue-600 hover:bg-blue-700",
+                def.color === "amber"   && "bg-amber-500 hover:bg-amber-600",
+                def.color === "slate"   && "bg-slate-600 hover:bg-slate-700",
+                def.color === "sky"     && "bg-sky-600 hover:bg-sky-700",
+                def.color === "rose"    && "bg-rose-600 hover:bg-rose-700",
+              )}
+            >
+              Done
+            </button>
+          </div>
+
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1048,6 +1187,8 @@ export default function DNA() {
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const [activeSeat, setActiveSeat] = useState<string | null>(null);
 
   function updateBuyingCenterSeat(seatName: string, patch: { seniorities?: string[]; departments?: string[] }) {
     setData(d => ({
@@ -1838,17 +1979,22 @@ export default function DNA() {
           accentBorder="border-indigo-200"
           accentColor="text-indigo-600"
         >
-          <p className="text-xs text-muted-foreground -mt-2">
-            For each buying-center seat, select the seniority levels and departments that typically fill that role at your target accounts. This powers contact targeting and persona-matched outreach.
-          </p>
-          <div className="flex flex-col gap-2.5">
+          {activeSeat && (
+            <BuyingCenterModal
+              seatName={activeSeat}
+              seniorities={(data.buyingCenter ?? []).find(s => s.seat === activeSeat)?.seniorities ?? []}
+              departments={(data.buyingCenter ?? []).find(s => s.seat === activeSeat)?.departments ?? []}
+              onUpdate={patch => updateBuyingCenterSeat(activeSeat, patch)}
+              open={!!activeSeat}
+              onClose={() => setActiveSeat(null)}
+            />
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {(data.buyingCenter ?? []).map(seat => (
-              <BuyingCenterSeatCard
+              <BuyingCenterTile
                 key={seat.seat}
-                seat={seat.seat}
-                seniorities={seat.seniorities}
-                departments={seat.departments}
-                onUpdate={patch => updateBuyingCenterSeat(seat.seat, patch)}
+                seat={seat}
+                onClick={() => setActiveSeat(seat.seat)}
               />
             ))}
           </div>
