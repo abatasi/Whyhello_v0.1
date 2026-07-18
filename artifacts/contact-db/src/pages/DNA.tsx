@@ -5,7 +5,7 @@ import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown,
   Save, CheckCircle2, Dna, Sparkles, Upload, X, FileText,
   Loader2, RefreshCw, Ban, PenLine, TrendingDown, TrendingUp,
-  Info, BarChart3, Users, Users2, Target, Globe, MessageSquare, Shield,
+  Info, BarChart3, Users, Users2, Target, Globe, MessageSquare, Shield, Search, MapPin,
   Megaphone, Wallet, Vote, Crown, Briefcase, Cpu, ShieldCheck,
   ShoppingCart, Scale, Calculator, User, Wrench, MessageCircle, GraduationCap,
 } from "lucide-react";
@@ -54,6 +54,11 @@ function mergeDNA(parsed: StoredDNA): DNAData {
     marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
     competitors: parsed.competitors ?? [],
     buyingCenters: mergeBuyingCenters(parsed.buyingCenters, parsed.buyingCenter),
+    targetMarket: {
+      industries: parsed.targetMarket?.industries ?? [],
+      companySizes: parsed.targetMarket?.companySizes ?? [],
+      locations: parsed.targetMarket?.locations ?? [],
+    },
   };
 }
 
@@ -163,6 +168,11 @@ interface DNAData {
   marketPosition: MarketPosition;
   competitors: Competitor[];
   buyingCenters: BuyingCenterConfig[];
+  targetMarket: {
+    industries: string[];
+    companySizes: string[];
+    locations: string[];
+  };
   company: {
     name: string;
     valueWedge: string;
@@ -202,6 +212,7 @@ function defaultDNA(): DNAData {
     },
     competitors: [],
     buyingCenters: [{ id: "default", name: "Default", seats: BUYING_CENTER_SEATS.map(s => ({ seat: s.seat, seniorities: [], departments: [] })) }],
+    targetMarket: { industries: [], companySizes: [], locations: [] },
   };
 }
 
@@ -1192,9 +1203,100 @@ function BuyingCenterModal({ seatName, seniorities, departments, onUpdate, open,
   );
 }
 
+// ── TargetFilterPicker ────────────────────────────────────────────────────────
+
+function TargetFilterPicker({
+  title,
+  options,
+  selected,
+  onChange,
+  hint,
+}: {
+  title: string;
+  options: string[];
+  selected: string[];
+  onChange: (v: string[]) => void;
+  hint?: string;
+}) {
+  const [search, setSearch] = useState("");
+  const filtered = search.trim()
+    ? options.filter(o => o.toLowerCase().includes(search.toLowerCase()))
+    : options;
+
+  function toggle(val: string) {
+    onChange(selected.includes(val) ? selected.filter(v => v !== val) : [...selected, val]);
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-start justify-between min-h-[1.75rem]">
+        <div>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          {hint && <p className="text-[11px] text-muted-foreground mt-0.5">{hint}</p>}
+        </div>
+        {selected.length > 0 && (
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            <span className="text-[10px] font-semibold text-teal-700 bg-teal-100 border border-teal-200 rounded-full px-2 py-0.5">
+              {selected.length} selected
+            </span>
+            <button onClick={() => onChange([])} className="text-[11px] text-muted-foreground hover:text-destructive transition-colors">
+              Clear
+            </button>
+          </div>
+        )}
+      </div>
+
+      {options.length > 8 && (
+        <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/30 px-2.5 py-1.5">
+          <Search className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+          <input
+            type="text"
+            placeholder={`Filter ${title.toLowerCase()}…`}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/50"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className={cn(
+        "flex flex-wrap gap-1.5",
+        options.length > 8 && "max-h-52 overflow-y-auto pr-0.5"
+      )}>
+        {filtered.length > 0 ? filtered.map(opt => {
+          const isSelected = selected.includes(opt);
+          return (
+            <button
+              key={opt}
+              onClick={() => toggle(opt)}
+              className={cn(
+                "px-2.5 py-1 rounded-lg border text-xs font-medium transition-all",
+                isSelected
+                  ? "bg-teal-100 border-teal-300 text-teal-700"
+                  : "bg-secondary/50 border-border/60 text-muted-foreground hover:border-teal-200 hover:bg-teal-50/50 hover:text-teal-700"
+              )}
+            >
+              {opt}
+            </button>
+          );
+        }) : (
+          <p className="text-xs text-muted-foreground/50 py-1">
+            {search ? `No results for "${search}"` : "No options available"}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Navigation config ────────────────────────────────────────────────────────
 
-type SectionId = "voice" | "products" | "customers" | "competitors" | "audience" | "company";
+type SectionId = "voice" | "products" | "customers" | "competitors" | "buyingCenter" | "targetMarket" | "company";
 
 const DNA_NAV: {
   id: SectionId;
@@ -1206,12 +1308,13 @@ const DNA_NAV: {
   activeText: string;
   iconBg: string;
 }[] = [
-  { id: "voice",       icon: Mic2,      title: "Voice & Tone",  description: "Personality & style",   activeBg: "bg-violet-50",  activeBorder: "border-violet-200",  activeText: "text-violet-700",  iconBg: "bg-violet-100"  },
-  { id: "products",    icon: Package,   title: "Products",       description: "Features & outcomes",   activeBg: "bg-blue-50",    activeBorder: "border-blue-200",    activeText: "text-blue-700",    iconBg: "bg-blue-100"    },
-  { id: "customers",   icon: Users,     title: "Customers",      description: "Stories & proof",       activeBg: "bg-sky-50",     activeBorder: "border-sky-200",     activeText: "text-sky-700",     iconBg: "bg-sky-100"     },
-  { id: "competitors", icon: Target,    title: "Competitors",    description: "Market position",       activeBg: "bg-orange-50",  activeBorder: "border-orange-200",  activeText: "text-orange-700",  iconBg: "bg-orange-100"  },
-  { id: "audience",    icon: Users2,    title: "Audience",       description: "Buying center",         activeBg: "bg-indigo-50",  activeBorder: "border-indigo-200",  activeText: "text-indigo-700",  iconBg: "bg-indigo-100"  },
-  { id: "company",     icon: Building2, title: "Company",        description: "Context & pillars",     activeBg: "bg-emerald-50", activeBorder: "border-emerald-200", activeText: "text-emerald-700", iconBg: "bg-emerald-100" },
+  { id: "voice",        icon: Mic2,      title: "Voice & Tone",   description: "Personality & style",   activeBg: "bg-violet-50",  activeBorder: "border-violet-200",  activeText: "text-violet-700",  iconBg: "bg-violet-100"  },
+  { id: "products",     icon: Package,   title: "Products",        description: "Features & outcomes",   activeBg: "bg-blue-50",    activeBorder: "border-blue-200",    activeText: "text-blue-700",    iconBg: "bg-blue-100"    },
+  { id: "customers",    icon: Users,     title: "Customers",       description: "Stories & proof",       activeBg: "bg-sky-50",     activeBorder: "border-sky-200",     activeText: "text-sky-700",     iconBg: "bg-sky-100"     },
+  { id: "competitors",  icon: Target,    title: "Competitors",     description: "Market position",       activeBg: "bg-orange-50",  activeBorder: "border-orange-200",  activeText: "text-orange-700",  iconBg: "bg-orange-100"  },
+  { id: "buyingCenter", icon: Users2,    title: "Buying Center",   description: "Roles & criteria",      activeBg: "bg-indigo-50",  activeBorder: "border-indigo-200",  activeText: "text-indigo-700",  iconBg: "bg-indigo-100"  },
+  { id: "targetMarket", icon: Globe,     title: "Target Market",   description: "ICP company profile",   activeBg: "bg-teal-50",    activeBorder: "border-teal-200",    activeText: "text-teal-700",    iconBg: "bg-teal-100"    },
+  { id: "company",      icon: Building2, title: "Company",         description: "Context & pillars",     activeBg: "bg-emerald-50", activeBorder: "border-emerald-200", activeText: "text-emerald-700", iconBg: "bg-emerald-100" },
 ];
 
 // ── Main page ────────────────────────────────────────────────────────────────
@@ -1242,6 +1345,27 @@ export default function DNA() {
   );
   const [renamingBcId, setRenamingBcId] = useState<string | null>(null);
   const [renameBcValue, setRenameBcValue] = useState<string>("");
+  const [targetMarketOptions, setTargetMarketOptions] = useState<{
+    industries: string[];
+    companySizes: string[];
+    locations: string[];
+  }>({ industries: [], companySizes: [], locations: [] });
+  const [tmOptionsLoading, setTmOptionsLoading] = useState(false);
+
+  useEffect(() => {
+    setTmOptionsLoading(true);
+    fetch("/api/filters/options")
+      .then(r => r.json())
+      .then((json: { industries?: string[]; companySizes?: string[]; locations?: string[] }) => {
+        setTargetMarketOptions({
+          industries: json.industries ?? [],
+          companySizes: json.companySizes ?? [],
+          locations: json.locations ?? [],
+        });
+      })
+      .catch(() => {})
+      .finally(() => setTmOptionsLoading(false));
+  }, []);
 
   const activeBc = data.buyingCenters.find(bc => bc.id === activeBuyingCenterId) ?? data.buyingCenters[0] ?? null;
 
@@ -1310,6 +1434,9 @@ export default function DNA() {
   }
   function setCompany(patch: Partial<DNAData["company"]>) {
     setData(d => ({ ...d, company: { ...d.company, ...patch } }));
+  }
+  function setTargetMarket(patch: Partial<DNAData["targetMarket"]>) {
+    setData(d => ({ ...d, targetMarket: { ...d.targetMarket, ...patch } }));
   }
   function setPillar(i: 0 | 1 | 2, v: string) {
     setData(d => {
@@ -2098,10 +2225,10 @@ export default function DNA() {
         )}
 
         {/* ── Audience ── */}
-        {activeSection === "audience" && (
+        {activeSection === "buyingCenter" && (
         <Section
           icon={Users2}
-          title="Your Audience"
+          title="Buying Center"
           subtitle="Map the buying center — define who typically fills each role and which contacts in Whyhello match them"
           accentBg="bg-indigo-50"
           accentBorder="border-indigo-200"
@@ -2182,6 +2309,70 @@ export default function DNA() {
               />
             ))}
           </div>
+        </Section>
+        )}
+
+        {/* ── Target Market ── */}
+        {activeSection === "targetMarket" && (
+        <Section
+          icon={Globe}
+          title="Target Market"
+          subtitle="Define your ideal customer company — these filters map directly to the Company filters in Directory Search"
+          accentBg="bg-teal-50"
+          accentBorder="border-teal-200"
+          accentColor="text-teal-600"
+        >
+          {tmOptionsLoading ? (
+            <div className="flex items-center gap-2 py-6 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <p className="text-sm">Loading filter options…</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <TargetFilterPicker
+                title="Industry"
+                options={targetMarketOptions.industries}
+                selected={data.targetMarket.industries}
+                onChange={industries => setTargetMarket({ industries })}
+              />
+              <TargetFilterPicker
+                title="Company Size"
+                options={targetMarketOptions.companySizes}
+                selected={data.targetMarket.companySizes}
+                onChange={companySizes => setTargetMarket({ companySizes })}
+              />
+              <TargetFilterPicker
+                title="Location"
+                options={targetMarketOptions.locations}
+                selected={data.targetMarket.locations}
+                onChange={locations => setTargetMarket({ locations })}
+                hint="City or region"
+              />
+            </div>
+          )}
+
+          {(data.targetMarket.industries.length > 0 || data.targetMarket.companySizes.length > 0 || data.targetMarket.locations.length > 0) && (
+            <div className="rounded-xl bg-teal-50 border border-teal-200 p-4 flex flex-col gap-2.5">
+              <p className="text-[11px] font-semibold text-teal-700 uppercase tracking-wide">ICP summary</p>
+              <div className="flex flex-wrap gap-1.5">
+                {data.targetMarket.industries.map(v => (
+                  <span key={`ind-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
+                    <Globe className="h-2.5 w-2.5 flex-shrink-0" />{v}
+                  </span>
+                ))}
+                {data.targetMarket.companySizes.map(v => (
+                  <span key={`sz-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
+                    <BarChart3 className="h-2.5 w-2.5 flex-shrink-0" />{v}
+                  </span>
+                ))}
+                {data.targetMarket.locations.map(v => (
+                  <span key={`loc-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
+                    <MapPin className="h-2.5 w-2.5 flex-shrink-0" />{v}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </Section>
         )}
 
