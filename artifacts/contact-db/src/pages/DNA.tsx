@@ -1440,7 +1440,7 @@ export default function DNA() {
         <div className="flex gap-6 items-start">
 
           {/* Left sidebar nav */}
-          <nav className="w-56 flex-shrink-0 sticky top-8 flex flex-col gap-0.5 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
+          <nav className="w-56 flex-shrink-0 sticky top-20 flex flex-col gap-0.5 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
             {DNA_NAV.map(item => (
               <button
                 key={item.id}
