@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   Mail, Send, FileText, Trash2, Plus, ChevronDown, ChevronUp,
   User, Newspaper, Tv2, Mic2, Share2, Megaphone, ExternalLink,
   Search, X, Clock, CheckCheck, Inbox, Building,
-  Sparkles, Lightbulb, GripVertical,
+  Sparkles, Lightbulb, GripVertical, Loader2,
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/Button";
@@ -398,23 +399,56 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
     }
   }
 
+  const { data: emailAccounts = [] } = useQuery<{ id: number; provider: string; email: string }[]>({
+    queryKey: ["email-accounts"],
+    queryFn: () => fetch("/api/email-accounts").then((r) => r.json()),
+  });
+  const [isSending, setIsSending] = useState(false);
+  const [, navigate] = useLocation();
+
   async function handleSend() {
     if (!selectedContact) { toast({ title: "No recipient", description: "Please select a contact first.", variant: "destructive" }); return; }
     if (!subject.trim()) { toast({ title: "No subject", description: "Please add a subject line.", variant: "destructive" }); return; }
+    if (emailAccounts.length === 0) {
+      toast({ title: "No email account connected", description: "Connect Gmail or Outlook in Settings first.", variant: "destructive" });
+      navigate("/settings");
+      return;
+    }
+    setIsSending(true);
     try {
+      let messageId: number;
       if (draftMessage) {
-        await updateMessage.mutateAsync({ id: draftMessage.id, subject, body, toEmail: selectedContact.email, toName: `${selectedContact.firstName} ${selectedContact.lastName}`, contactId: selectedContact.id, status: "sent" });
+        const updated = await updateMessage.mutateAsync({ id: draftMessage.id, subject, body, toEmail: selectedContact.email, toName: `${selectedContact.firstName} ${selectedContact.lastName}`, contactId: selectedContact.id });
+        messageId = updated.id;
       } else {
-        await createMessage.mutateAsync({ contactId: selectedContact.id, toEmail: selectedContact.email, toName: `${selectedContact.firstName} ${selectedContact.lastName}`, subject, body, status: "sent" });
+        const created = await createMessage.mutateAsync({ contactId: selectedContact.id, toEmail: selectedContact.email, toName: `${selectedContact.firstName} ${selectedContact.lastName}`, subject, body });
+        messageId = created.id;
       }
-      toast({ title: "Message sent!", description: `Sent to ${selectedContact.firstName} ${selectedContact.lastName}` });
+      const sendRes = await fetch(`/api/messages/${messageId}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!sendRes.ok) {
+        const err = await sendRes.json() as { error?: string };
+        if (err.error?.includes("No connected email account")) {
+          toast({ title: "No email account connected", description: "Connect Gmail or Outlook in Settings.", variant: "destructive" });
+          navigate("/settings");
+          return;
+        }
+        throw new Error(err.error ?? "Failed to send email");
+      }
+      const result = await sendRes.json() as { sentFrom?: string };
+      toast({ title: "Email sent!", description: result.sentFrom ? `Sent from ${result.sentFrom}` : `Sent to ${selectedContact.firstName} ${selectedContact.lastName}` });
       onSaved();
-    } catch {
-      toast({ title: "Failed to send message", variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Failed to send", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
+    } finally {
+      setIsSending(false);
     }
   }
 
-  const isBusy = createMessage.isPending || updateMessage.isPending;
+  const isBusy = createMessage.isPending || updateMessage.isPending || isSending;
 
   return (
     <div className="flex flex-col h-full">
@@ -577,13 +611,25 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
 
       {/* Footer */}
       <div className="px-6 py-3.5 border-t border-border/60 flex items-center justify-between gap-3 flex-shrink-0">
-        <button
-          onClick={onCancel}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Cancel
-        </button>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            onClick={onCancel}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+          >
+            Cancel
+          </button>
+          {emailAccounts.length > 0 && (
+            <span className="text-xs text-muted-foreground/70 truncate hidden sm:block">
+              · via {emailAccounts[0].email}
+            </span>
+          )}
+          {emailAccounts.length === 0 && (
+            <span className="text-xs text-amber-600/80 hidden sm:block flex-shrink-0">
+              · No email connected
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2.5 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
@@ -600,8 +646,8 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
             disabled={isBusy || !selectedContact}
             className="gap-1.5"
           >
-            <Send className="h-3.5 w-3.5" />
-            Send
+            {isSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            {isSending ? "Sending…" : "Send"}
           </Button>
         </div>
       </div>

@@ -16,6 +16,7 @@ import Login from "@/pages/Login";
 import Messages from "@/pages/Messages";
 import DNA from "@/pages/DNA";
 import MultiThreading from "@/pages/MultiThreading";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/messages" component={() => <ProtectedRoute component={Messages} />} />
       <Route path="/dna" component={() => <ProtectedRoute component={DNA} />} />
       <Route path="/multithreading" component={() => <ProtectedRoute component={MultiThreading} />} />
+      <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route component={NotFound} />
     </Switch>
   );

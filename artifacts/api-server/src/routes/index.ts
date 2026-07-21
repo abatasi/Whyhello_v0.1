@@ -21,6 +21,7 @@ import { contactJobsRouter, jobsRouter } from "./outreach-jobs";
 import contactChatMessagesRouter from "./contact-chat-messages";
 import insightSummarizeRouter from "./insight-summarize";
 import dnaRouter from "./dna";
+import emailAccountsRouter from "./email-accounts";
 
 const router: IRouter = Router();
 
@@ -47,5 +48,6 @@ router.use("/contacts/:contactId/chat-messages", contactChatMessagesRouter);
 router.use("/outreach-jobs", jobsRouter);
 router.use("/insights/summarize", insightSummarizeRouter);
 router.use("/dna", dnaRouter);
+router.use("/email-accounts", emailAccountsRouter);
 
 export default router;

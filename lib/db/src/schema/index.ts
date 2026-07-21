@@ -16,3 +16,4 @@ export * from "./insight-drops";
 export * from "./outreach-jobs";
 export * from "./contact-chat-messages";
 export * from "./dna-profiles";
+export * from "./user-email-accounts";

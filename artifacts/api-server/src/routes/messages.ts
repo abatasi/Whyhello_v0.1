@@ -1,7 +1,8 @@
 import { Router, type IRouter, type Request } from "express";
 import { db } from "@workspace/db";
-import { messagesTable, contactsTable } from "@workspace/db/schema";
+import { messagesTable, contactsTable, userEmailAccountsTable } from "@workspace/db/schema";
 import { and, eq, desc, sql } from "drizzle-orm";
+import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts";
 
 const router: IRouter = Router();
 
@@ -106,6 +107,52 @@ router.patch("/:id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to update message" });
+  }
+});
+
+router.post("/:id/send", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  const id = parseInt(req.params.id);
+  if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+  try {
+    const [message] = await db.select().from(messagesTable)
+      .where(and(eq(messagesTable.id, id), eq(messagesTable.userId, userId)));
+    if (!message) { res.status(404).json({ error: "Message not found" }); return; }
+
+    const { accountId } = req.body as { accountId?: number };
+    const accountWhere = accountId
+      ? and(eq(userEmailAccountsTable.id, accountId), eq(userEmailAccountsTable.userId, userId))
+      : eq(userEmailAccountsTable.userId, userId);
+
+    const [account] = await db.select().from(userEmailAccountsTable).where(accountWhere);
+    if (!account) {
+      res.status(400).json({ error: "No connected email account found. Connect Gmail or Outlook in Settings." });
+      return;
+    }
+
+    const accessToken = await getValidAccessToken(account);
+    if (!accessToken) {
+      res.status(401).json({ error: "Email token expired. Please reconnect your account in Settings." });
+      return;
+    }
+
+    if (account.provider === "gmail") {
+      await sendViaGmail(accessToken, message.toEmail, message.toName, message.subject, message.body);
+    } else if (account.provider === "outlook") {
+      await sendViaOutlook(accessToken, message.toEmail, message.toName, message.subject, message.body);
+    } else {
+      res.status(400).json({ error: "Unknown email provider" }); return;
+    }
+
+    await db.update(messagesTable)
+      .set({ status: "sent", updatedAt: new Date() })
+      .where(eq(messagesTable.id, id));
+
+    res.json({ success: true, sentFrom: account.email });
+  } catch (err) {
+    console.error("Send message error:", err);
+    res.status(500).json({ error: err instanceof Error ? err.message : "Failed to send email" });
   }
 });
 

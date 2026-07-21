@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2, Mail } from "lucide-react";
+import { Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2, Mail, Settings } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@workspace/replit-auth-web";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
@@ -454,6 +454,16 @@ export function Navbar() {
                 </div>
               )}
               <span className="text-sm font-medium hidden md:block">{displayName}</span>
+            </Link>
+            <Link href="/settings">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full text-muted-foreground hover:text-foreground"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
             </Link>
             <Button
               variant="ghost"
