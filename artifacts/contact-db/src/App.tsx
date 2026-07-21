@@ -14,7 +14,7 @@ import ListDetail from "@/pages/ListDetail";
 import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
 import Messages from "@/pages/Messages";
-import DNA from "@/pages/DNA";
+import HQ from "@/pages/HQ";
 import MultiThreading from "@/pages/MultiThreading";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
@@ -67,7 +67,7 @@ function Router() {
       <Route path="/lists/:id" component={() => <ProtectedRoute component={ListDetail} />} />
       <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
       <Route path="/messages" component={() => <ProtectedRoute component={Messages} />} />
-      <Route path="/dna" component={() => <ProtectedRoute component={DNA} />} />
+      <Route path="/hq" component={() => <ProtectedRoute component={HQ} />} />
       <Route path="/multithreading" component={() => <ProtectedRoute component={MultiThreading} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route component={NotFound} />

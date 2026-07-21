@@ -7,7 +7,7 @@ import {
   ShoppingCart, Scale, Calculator, User, Wrench, MessageCircle, Ban, GraduationCap,
   Building2, Globe, X, ExternalLink, Mail, Phone, MapPin, Linkedin,
   ChevronRight, Loader2, GitBranch, Users, ChevronDown, AlertCircle,
-  Dna, Check, ListTree,
+  Landmark, Check, ListTree,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -329,9 +329,9 @@ function TargetMarketSelector({
           })}
           {targetMarkets.length === 0 && (
             <div className="px-3 py-4 text-center">
-              <p className="text-xs text-muted-foreground">No target markets in DNA yet.</p>
-              <Link href="/dna">
-                <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in DNA →</span>
+              <p className="text-xs text-muted-foreground">No target markets in HQ yet.</p>
+              <Link href="/hq">
+                <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in HQ →</span>
               </Link>
             </div>
           )}
@@ -461,7 +461,7 @@ export default function MultiThreading() {
     } catch {}
 
     // Fallback: API
-    fetch("/api/dna/profile")
+    fetch("/api/hq/profile")
       .then(r => r.ok ? r.json() : null)
       .then((json: { data?: StoredShape } | null) => {
         if (json?.data) applyDna(json.data);
@@ -619,10 +619,10 @@ export default function MultiThreading() {
 
               {!companyListLoading && allUnconfigured && (
                 <div className="px-4 py-8 text-center flex flex-col items-center gap-3">
-                  <Dna className="h-8 w-8 text-muted-foreground/30" />
-                  <p className="text-xs text-muted-foreground">Set up a buying center in DNA first.</p>
-                  <Link href="/dna">
-                    <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Go to DNA →</span>
+                  <Landmark className="h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">Set up a buying center in HQ first.</p>
+                  <Link href="/hq">
+                    <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Go to HQ →</span>
                   </Link>
                 </div>
               )}
@@ -725,10 +725,10 @@ export default function MultiThreading() {
                   <ListTree className="h-8 w-8 text-muted-foreground/30" />
                   <div>
                     <p className="text-sm font-medium text-foreground mb-1">No seats configured</p>
-                    <p className="text-xs text-muted-foreground">"{activeBc?.name}" needs seats defined in DNA first.</p>
+                    <p className="text-xs text-muted-foreground">"{activeBc?.name}" needs seats defined in HQ first.</p>
                   </div>
-                  <Link href="/dna">
-                    <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in DNA →</span>
+                  <Link href="/hq">
+                    <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in HQ →</span>
                   </Link>
                 </div>
               ) : (
@@ -924,7 +924,7 @@ export default function MultiThreading() {
                   />
                 </div>
                 <div className="px-5 py-4 flex flex-col gap-3">
-                  <p className="text-xs text-muted-foreground font-medium">Matching criteria defined in DNA</p>
+                  <p className="text-xs text-muted-foreground font-medium">Matching criteria defined in HQ</p>
                   <div className="flex flex-col gap-2">
                     {activeConfig && activeConfig.seniorities.length > 0 && (
                       <div className="flex items-start gap-2">

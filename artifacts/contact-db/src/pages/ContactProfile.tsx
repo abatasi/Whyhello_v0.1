@@ -271,7 +271,7 @@ function IntroEmailModal({
                           voiceProfile.toneTags.length > 0 && voiceProfile.toneTags.slice(0, 3).join(", "),
                           voiceProfile.communicationStyle && `${voiceProfile.communicationStyle} style`,
                           voiceProfile.suppressions.length > 0 && `${voiceProfile.suppressions.length} suppression${voiceProfile.suppressions.length > 1 ? "s" : ""}`,
-                        ].filter(Boolean).join(" · ") || "Defined in DNA"}
+                        ].filter(Boolean).join(" · ") || "Defined in HQ"}
                       </p>
                     </div>
                     {tone === "my_voice_profile" && (

@@ -3,7 +3,7 @@ import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
 import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown,
-  Save, CheckCircle2, Dna, Sparkles, Upload, X, FileText,
+  Save, CheckCircle2, Landmark, Sparkles, Upload, X, FileText,
   Loader2, RefreshCw, Ban, PenLine, TrendingDown, TrendingUp,
   Info, BarChart3, Users, Users2, Target, Globe, MessageSquare, Shield, Search, MapPin,
   Megaphone, Wallet, Vote, Crown, Briefcase, Cpu, ShieldCheck,
@@ -15,7 +15,7 @@ import {
 
 // ── Persistence ──────────────────────────────────────────────────────────────
 
-const API_PROFILE_URL = "/api/dna/profile";
+const API_PROFILE_URL = "/api/hq/profile";
 
 const STORAGE_KEY = "whyhello_dna_v4";
 
@@ -637,7 +637,7 @@ function CustomerCard({
     if (!customer.rawTestimonial.trim()) return;
     setExtracting(true);
     try {
-      const resp = await fetch("/api/dna/testimonial-extract", {
+      const resp = await fetch("/api/hq/testimonial-extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: customer.rawTestimonial }),
@@ -655,7 +655,7 @@ function CustomerCard({
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const resp = await fetch("/api/dna/extract-text", { method: "POST", body: formData });
+      const resp = await fetch("/api/hq/extract-text", { method: "POST", body: formData });
       const data = await resp.json();
       onUpdate({ rawTestimonial: (customer.rawTestimonial ? customer.rawTestimonial + "\n\n" : "") + (data.text ?? "") });
     } catch { /* ignore */ }
@@ -1322,7 +1322,7 @@ function TargetFilterPicker({
 
 type SectionId = "voice" | "products" | "customers" | "competitors" | "buyingCenter" | "targetMarket" | "company";
 
-const DNA_NAV: {
+const HQ_NAV: {
   id: SectionId;
   icon: React.ElementType;
   title: string;
@@ -1343,7 +1343,7 @@ const DNA_NAV: {
 
 // ── Main page ────────────────────────────────────────────────────────────────
 
-export default function DNA() {
+export default function HQ() {
   const [data, setData] = useState<DNAData>(loadDNA);
   const saved = useAutoSave(data);
 
@@ -1580,7 +1580,7 @@ export default function DNA() {
     setVoiceSummaryLoading(true);
     setTextDirtyForProfile(false);
     try {
-      const resp = await fetch("/api/dna/voice-summary", {
+      const resp = await fetch("/api/hq/voice-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ toneTags, communicationStyle, writingNotes, trainingText, suppressions, suppressionNotes }),
@@ -1622,7 +1622,7 @@ export default function DNA() {
     try {
       const form = new FormData();
       form.append("file", file);
-      const resp = await fetch("/api/dna/extract-text", { method: "POST", body: form });
+      const resp = await fetch("/api/hq/extract-text", { method: "POST", body: form });
       if (!resp.ok) throw new Error("Extraction failed");
       const { text } = await resp.json() as { text: string };
       setData(d => ({
@@ -1661,10 +1661,10 @@ export default function DNA() {
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <Dna className="h-6 w-6 text-primary" />
+              <Landmark className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground tracking-tight">DNA</h1>
+              <h1 className="text-xl font-bold text-foreground tracking-tight">HQ</h1>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Your training ground — voice, products, and company context for every AI interaction.
               </p>
@@ -1686,7 +1686,7 @@ export default function DNA() {
 
           {/* Left sidebar nav */}
           <nav className="w-56 flex-shrink-0 sticky top-20 flex flex-col gap-0.5 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
-            {DNA_NAV.map(item => (
+            {HQ_NAV.map(item => (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}

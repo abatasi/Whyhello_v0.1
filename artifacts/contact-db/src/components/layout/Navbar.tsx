@@ -368,7 +368,7 @@ export function Navbar() {
     { label: "Directory", href: "/" },
     { label: "Lists", href: "/lists" },
     { label: "Message Center", href: "/messages" },
-    { label: "DNA", href: "/dna" },
+    { label: "HQ", href: "/hq" },
   ];
 
   const displayName = user?.firstName

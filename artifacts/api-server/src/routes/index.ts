@@ -47,7 +47,7 @@ router.use("/contacts/:contactId/outreach-jobs", contactJobsRouter);
 router.use("/contacts/:contactId/chat-messages", contactChatMessagesRouter);
 router.use("/outreach-jobs", jobsRouter);
 router.use("/insights/summarize", insightSummarizeRouter);
-router.use("/dna", dnaRouter);
+router.use("/hq", dnaRouter);
 router.use("/email-accounts", emailAccountsRouter);
 
 export default router;
