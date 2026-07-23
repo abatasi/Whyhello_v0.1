@@ -366,6 +366,8 @@ export function Navbar() {
 
   const navItems = [
     { label: "Directory", href: "/" },
+    { label: "Industries", href: "/industries" },
+    { label: "Roles", href: "/roles" },
     { label: "Lists", href: "/lists" },
     { label: "Message Center", href: "/messages" },
     { label: "HQ", href: "/hq" },

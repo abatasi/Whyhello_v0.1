@@ -1,5 +1,5 @@
 import { db, pool } from "@workspace/db";
-import { companiesTable, contactsTable, contactInsightsTable, companyInsightsTable, industryInsightsTable, roleInsightsTable, colleagueInsightsTable, counterpartInsightsTable } from "@workspace/db/schema";
+import { companiesTable, contactsTable, contactInsightsTable, companyInsightsTable, colleagueInsightsTable, counterpartInsightsTable } from "@workspace/db/schema";
 import { sql, eq, and } from "drizzle-orm";
 
 const COMPANIES = [
@@ -1382,30 +1382,6 @@ export async function seedCategoryInsightsIfEmpty() {
 
   const contactId = ahmed.id;
   let seeded = 0;
-
-  // Industry
-  {
-    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(industryInsightsTable).where(eq(industryInsightsTable.contactId, contactId));
-    if (n === 0) {
-      const rows = AHMED_CATEGORY_INSIGHTS.filter((r) => r.category === "industry");
-      if (rows.length) {
-        await db.insert(industryInsightsTable).values(rows.map(({ category: _c, ...rest }) => ({ contactId, ...rest })));
-        seeded += rows.length;
-      }
-    }
-  }
-
-  // Role
-  {
-    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(roleInsightsTable).where(eq(roleInsightsTable.contactId, contactId));
-    if (n === 0) {
-      const rows = AHMED_CATEGORY_INSIGHTS.filter((r) => r.category === "role");
-      if (rows.length) {
-        await db.insert(roleInsightsTable).values(rows.map(({ category: _c, ...rest }) => ({ contactId, ...rest })));
-        seeded += rows.length;
-      }
-    }
-  }
 
   // Colleague
   {

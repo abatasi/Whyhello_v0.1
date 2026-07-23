@@ -18,6 +18,10 @@ import HQ from "@/pages/HQ";
 import MultiThreading from "@/pages/MultiThreading";
 import Settings from "@/pages/Settings";
 import Import from "@/pages/Import";
+import Industries from "@/pages/Industries";
+import IndustryDetail from "@/pages/IndustryDetail";
+import Roles from "@/pages/Roles";
+import RoleDetail from "@/pages/RoleDetail";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -72,6 +76,10 @@ function Router() {
       <Route path="/multithreading" component={() => <ProtectedRoute component={MultiThreading} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route path="/import" component={() => <ProtectedRoute component={Import} />} />
+      <Route path="/industries" component={() => <ProtectedRoute component={Industries} />} />
+      <Route path="/industries/:id" component={() => <ProtectedRoute component={IndustryDetail} />} />
+      <Route path="/roles" component={() => <ProtectedRoute component={Roles} />} />
+      <Route path="/roles/:id" component={() => <ProtectedRoute component={RoleDetail} />} />
       <Route component={NotFound} />
     </Switch>
   );

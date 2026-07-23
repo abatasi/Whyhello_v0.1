@@ -6,6 +6,8 @@ import {
   contactsTable,
   contactInsightsTable,
   companyInsightsTable,
+  industriesTable,
+  rolesTable,
   industryInsightsTable,
   roleInsightsTable,
 } from "@workspace/db/schema";
@@ -72,12 +74,30 @@ export interface TemplateConfig {
 
 const TEMPLATES: TemplateConfig[] = [
   {
+    key: "industries",
+    label: "Industries",
+    description: "Top-level industry classifications. Upload these first; companies reference them via industryId.",
+    columns: [
+      { name: "name",        required: true,  type: "text", example: "B2B SaaS",                           notes: "Industry name — must be unique" },
+      { name: "description", required: false, type: "text", example: "Cloud-based software sold to businesses", notes: "Optional description" },
+    ],
+  },
+  {
+    key: "roles",
+    label: "Roles",
+    description: "Top-level role classifications. Upload these first; contacts reference them via roleId.",
+    columns: [
+      { name: "name",        required: true,  type: "text", example: "VP of Sales",          notes: "Role name — must be unique" },
+      { name: "description", required: false, type: "text", example: "Leads revenue and GTM strategy", notes: "Optional description" },
+    ],
+  },
+  {
     key: "companies",
     label: "Companies",
     description: "Bulk import companies. Rows with a 'name' that already exists (case-insensitive) are skipped.",
     columns: [
       { name: "name",          required: true,  type: "text",   example: "Acme Corp",          notes: "Company name — must be unique" },
-      { name: "industryId",    required: false, type: "number", example: "3",                  notes: "Numeric ID of an existing Industry Insight — links this company to its industry" },
+      { name: "industryId",    required: false, type: "number", example: "3",                  notes: "Numeric ID of an existing Industry — links this company to its industry" },
       { name: "industry",      required: false, type: "text",   example: "Technology",          notes: "Free-text industry label (separate from industryId)" },
       { name: "size",          required: false, type: "text",   example: "51-200",              notes: "1-10, 11-50, 51-200, 201-500, 501-1000, 1001-5000, 5001+" },
       { name: "location",      required: false, type: "text",   example: "San Francisco, CA",   notes: "City and/or state" },
@@ -96,7 +116,7 @@ const TEMPLATES: TemplateConfig[] = [
     columns: [
       { name: "firstName",     required: true,  type: "text",   example: "Jane",                notes: "First name" },
       { name: "lastName",      required: true,  type: "text",   example: "Smith",               notes: "Last name" },
-      { name: "roleId",        required: false, type: "number", example: "2",                   notes: "Numeric ID of an existing Role Insight — links this contact to their role" },
+      { name: "roleId",        required: false, type: "number", example: "2",                   notes: "Numeric ID of an existing Role — links this contact to their role" },
       { name: "jobTitle",      required: false, type: "text",   example: "VP of Sales",         notes: "" },
       { name: "department",    required: false, type: "text",   example: "Sales",               notes: "e.g. Sales, Marketing, Engineering" },
       { name: "seniority",     required: false, type: "text",   example: "VP",                  notes: "C-Suite, VP, Director, Manager, IC" },
@@ -142,27 +162,29 @@ const TEMPLATES: TemplateConfig[] = [
   {
     key: "industry_insights",
     label: "Industry Insights",
-    description: "Define industry classifications. Each record gets its own unique industry_id which companies can reference via their industryId field.",
+    description: "Articles, reports, and content linked to an Industry. Must reference a parent Industry via industryId.",
     columns: [
-      { name: "title",        required: true,  type: "text",   example: "B2B SaaS",                                notes: "Industry name or label — this becomes the industry_id reference" },
-      { name: "url",          required: true,  type: "url",    example: "https://gartner.com/saas-report-2024",    notes: "Source URL — required, all insight data is drawn from here" },
-      { name: "source",       required: false, type: "text",   example: "Gartner",                                notes: "Publication or source name" },
-      { name: "mediaType",    required: false, type: "text",   example: "report",                                 notes: "article, podcast, video, press_release, report, social" },
-      { name: "description",  required: false, type: "text",   example: "Cloud-based software sold to businesses", notes: "Description of the industry" },
-      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                             notes: "ISO date YYYY-MM-DD" },
+      { name: "industryId",   required: true,  type: "number", example: "1",                                      notes: "Numeric ID of the parent Industry (upload Industries first)" },
+      { name: "title",        required: true,  type: "text",   example: "The Future of B2B SaaS in 2025",         notes: "Article or content headline" },
+      { name: "url",          required: true,  type: "url",    example: "https://gartner.com/saas-report-2024",   notes: "Source URL — required, all insight data is drawn from here" },
+      { name: "source",       required: false, type: "text",   example: "Gartner",                               notes: "Publication or source name" },
+      { name: "mediaType",    required: false, type: "text",   example: "report",                                notes: "article, podcast, video, press_release, report, social" },
+      { name: "description",  required: false, type: "text",   example: "Analysis of SaaS growth trends...",     notes: "Brief summary" },
+      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                            notes: "ISO date YYYY-MM-DD" },
     ],
   },
   {
     key: "role_insights",
     label: "Role Insights",
-    description: "Define role classifications. Each record gets its own unique role_id which contacts can reference via their roleId field.",
+    description: "Articles, podcasts, and content linked to a Role. Must reference a parent Role via roleId.",
     columns: [
-      { name: "title",        required: true,  type: "text",   example: "VP of Sales",                            notes: "Role name or label — this becomes the role_id reference" },
-      { name: "url",          required: true,  type: "url",    example: "https://linkedin.com/jobs/vp-sales-123", notes: "Source URL — required, all insight data is drawn from here" },
-      { name: "source",       required: false, type: "text",   example: "LinkedIn",                               notes: "Publication or source name" },
-      { name: "mediaType",    required: false, type: "text",   example: "social",                                 notes: "article, podcast, video, press_release, social" },
-      { name: "description",  required: false, type: "text",   example: "Leads revenue and GTM strategy",         notes: "Description of the role" },
-      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                             notes: "ISO date YYYY-MM-DD" },
+      { name: "roleId",       required: true,  type: "number", example: "2",                                      notes: "Numeric ID of the parent Role (upload Roles first)" },
+      { name: "title",        required: true,  type: "text",   example: "How CFOs Are Driving Transformation",   notes: "Article or content headline" },
+      { name: "url",          required: true,  type: "url",    example: "https://linkedin.com/posts/cfo-2024",   notes: "Source URL — required, all insight data is drawn from here" },
+      { name: "source",       required: false, type: "text",   example: "LinkedIn",                              notes: "Publication or source name" },
+      { name: "mediaType",    required: false, type: "text",   example: "social",                                notes: "article, podcast, video, press_release, social" },
+      { name: "description",  required: false, type: "text",   example: "CFO perspectives on transformation...", notes: "Brief summary" },
+      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                            notes: "ISO date YYYY-MM-DD" },
     ],
   },
 ];
@@ -326,17 +348,55 @@ router.post("/:table", upload.single("file"), async (req, res) => {
         results.errors.push({ row: i + 2, reason: String(err) });
       }
     }
+  } else if (tableKey === "industries") {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const name = r.name?.trim();
+      if (!name) {
+        results.errors.push({ row: i + 2, reason: "Missing required field: name" });
+        continue;
+      }
+      try {
+        await db.insert(industriesTable).values({
+          name,
+          description: r.description || null,
+        });
+        results.inserted++;
+      } catch (err) {
+        results.errors.push({ row: i + 2, reason: String(err) });
+      }
+    }
+  } else if (tableKey === "roles") {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const name = r.name?.trim();
+      if (!name) {
+        results.errors.push({ row: i + 2, reason: "Missing required field: name" });
+        continue;
+      }
+      try {
+        await db.insert(rolesTable).values({
+          name,
+          description: r.description || null,
+        });
+        results.inserted++;
+      } catch (err) {
+        results.errors.push({ row: i + 2, reason: String(err) });
+      }
+    }
   } else if (tableKey === "industry_insights") {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
+      const industryId = parseInt(r.industryId ?? "");
       const title = r.title?.trim();
       const url = r.url?.trim();
-      if (!title || !url) {
-        results.errors.push({ row: i + 2, reason: "Missing required fields: title and/or url" });
+      if (!industryId || !title || !url) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: industryId, title, and/or url" });
         continue;
       }
       try {
         await db.insert(industryInsightsTable).values({
+          industryId,
           title,
           url,
           source: r.source?.trim() || null,
@@ -352,14 +412,16 @@ router.post("/:table", upload.single("file"), async (req, res) => {
   } else if (tableKey === "role_insights") {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
+      const roleId = parseInt(r.roleId ?? "");
       const title = r.title?.trim();
       const url = r.url?.trim();
-      if (!title || !url) {
-        results.errors.push({ row: i + 2, reason: "Missing required fields: title and/or url" });
+      if (!roleId || !title || !url) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: roleId, title, and/or url" });
         continue;
       }
       try {
         await db.insert(roleInsightsTable).values({
+          roleId,
           title,
           url,
           source: r.source?.trim() || null,

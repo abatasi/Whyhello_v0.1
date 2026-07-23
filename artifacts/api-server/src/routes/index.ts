@@ -23,6 +23,8 @@ import insightSummarizeRouter from "./insight-summarize";
 import dnaRouter from "./dna";
 import emailAccountsRouter from "./email-accounts";
 import bulkUploadRouter from "./bulk-upload";
+import industriesRouter from "./industries";
+import rolesRouter from "./roles";
 
 const router: IRouter = Router();
 
@@ -50,6 +52,8 @@ router.use("/outreach-jobs", jobsRouter);
 router.use("/insights/summarize", insightSummarizeRouter);
 router.use("/hq", dnaRouter);
 router.use("/email-accounts", emailAccountsRouter);
+router.use("/industries", industriesRouter);
+router.use("/roles", rolesRouter);
 router.use("/bulk-upload", bulkUploadRouter);
 
 export default router;

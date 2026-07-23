@@ -1,3 +1,5 @@
+export * from "./industries";
+export * from "./roles";
 export * from "./companies";
 export * from "./contacts";
 export * from "./contact-insights";

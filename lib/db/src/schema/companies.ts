@@ -1,12 +1,12 @@
 import { pgTable, text, serial, integer, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { industryInsightsTable } from "./industry-insights";
+import { industriesTable } from "./industries";
 
 export const companiesTable = pgTable("companies", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  industryId: integer("industry_id").references(() => industryInsightsTable.id),
+  industryId: integer("industry_id").references(() => industriesTable.id),
   industry: varchar("industry", { length: 100 }),
   size: varchar("size", { length: 50 }),
   location: varchar("location", { length: 255 }),
