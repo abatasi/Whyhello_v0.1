@@ -3,12 +3,14 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { companiesTable } from "./companies";
 import { rolesTable } from "./roles";
+import { industriesTable } from "./industries";
 
 export const contactsTable = pgTable("contacts", {
   id: serial("id").primaryKey(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
   roleId: integer("role_id").references(() => rolesTable.id),
+  industryId: integer("industry_id").references(() => industriesTable.id),
   jobTitle: varchar("job_title", { length: 200 }),
   department: varchar("department", { length: 100 }),
   seniority: varchar("seniority", { length: 50 }),

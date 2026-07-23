@@ -117,6 +117,7 @@ const TEMPLATES: TemplateConfig[] = [
       { name: "firstName",     required: true,  type: "text",   example: "Jane",                notes: "First name" },
       { name: "lastName",      required: true,  type: "text",   example: "Smith",               notes: "Last name" },
       { name: "roleId",        required: false, type: "number", example: "2",                   notes: "Numeric ID of an existing Role — links this contact to their role" },
+      { name: "industryId",    required: false, type: "number", example: "1",                   notes: "Numeric ID of an existing Industry — links this contact to their industry" },
       { name: "jobTitle",      required: false, type: "text",   example: "VP of Sales",         notes: "" },
       { name: "department",    required: false, type: "text",   example: "Sales",               notes: "e.g. Sales, Marketing, Engineering" },
       { name: "seniority",     required: false, type: "text",   example: "VP",                  notes: "C-Suite, VP, Director, Manager, IC" },
@@ -286,6 +287,7 @@ router.post("/:table", upload.single("file"), async (req, res) => {
           twitterHandle: r.twitterHandle || null,
           bio: r.bio || null,
           companyId: r.companyId ? (parseInt(r.companyId) || null) : null,
+          industryId: r.industryId ? (parseInt(r.industryId) || null) : null,
         });
         results.inserted++;
       } catch (err) {
