@@ -369,6 +369,7 @@ export function Navbar() {
     { label: "Lists", href: "/lists" },
     { label: "Message Center", href: "/messages" },
     { label: "HQ", href: "/hq" },
+    { label: "Import", href: "/import" },
   ];
 
   const displayName = user?.firstName

@@ -1,0 +1,302 @@
+import { Router, type IRouter } from "express";
+import multer from "multer";
+import { db } from "@workspace/db";
+import {
+  companiesTable,
+  contactsTable,
+  contactInsightsTable,
+  companyInsightsTable,
+} from "@workspace/db/schema";
+import { eq, ilike } from "drizzle-orm";
+
+const router: IRouter = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+});
+
+// ── CSV parser ────────────────────────────────────────────────────────────────
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let inQuotes = false;
+  let current = "";
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (ch === "," && !inQuotes) {
+      result.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function parseCSV(buffer: Buffer): Record<string, string>[] {
+  const text = buffer.toString("utf-8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const lines = text.trim().split("\n").filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = parseCSVLine(line);
+    const obj: Record<string, string> = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] ?? "").trim(); });
+    return obj;
+  });
+}
+
+// ── Template definitions ──────────────────────────────────────────────────────
+
+export interface ColumnDef {
+  name: string;
+  required: boolean;
+  type: string;
+  example: string;
+  notes: string;
+}
+
+export interface TemplateConfig {
+  key: string;
+  label: string;
+  description: string;
+  columns: ColumnDef[];
+}
+
+const TEMPLATES: TemplateConfig[] = [
+  {
+    key: "companies",
+    label: "Companies",
+    description: "Bulk import companies. Rows with a 'name' that already exists (case-insensitive) are skipped.",
+    columns: [
+      { name: "name",          required: true,  type: "text",   example: "Acme Corp",          notes: "Company name — must be unique" },
+      { name: "industry",      required: false, type: "text",   example: "Technology",          notes: "e.g. Technology, Healthcare, Finance" },
+      { name: "size",          required: false, type: "text",   example: "51-200",              notes: "1-10, 11-50, 51-200, 201-500, 501-1000, 1001-5000, 5001+" },
+      { name: "location",      required: false, type: "text",   example: "San Francisco, CA",   notes: "City and/or state" },
+      { name: "country",       required: false, type: "text",   example: "United States",       notes: "Full country name" },
+      { name: "website",       required: false, type: "url",    example: "https://acme.com",    notes: "Include https://" },
+      { name: "description",   required: false, type: "text",   example: "Builds great things", notes: "Short company bio" },
+      { name: "employeeCount", required: false, type: "number", example: "250",                 notes: "Numeric headcount" },
+      { name: "foundedYear",   required: false, type: "number", example: "2015",                notes: "4-digit year" },
+      { name: "linkedinUrl",   required: false, type: "url",    example: "https://linkedin.com/company/acme", notes: "Full LinkedIn URL" },
+    ],
+  },
+  {
+    key: "contacts",
+    label: "Contacts",
+    description: "Bulk import contacts. Rows whose 'email' already exists are skipped. Use 'companyName' to link to an existing company.",
+    columns: [
+      { name: "firstName",     required: true,  type: "text",   example: "Jane",                notes: "First name" },
+      { name: "lastName",      required: true,  type: "text",   example: "Smith",               notes: "Last name" },
+      { name: "jobTitle",      required: false, type: "text",   example: "VP of Sales",         notes: "" },
+      { name: "department",    required: false, type: "text",   example: "Sales",               notes: "e.g. Sales, Marketing, Engineering" },
+      { name: "seniority",     required: false, type: "text",   example: "VP",                  notes: "C-Suite, VP, Director, Manager, IC" },
+      { name: "email",         required: false, type: "email",  example: "jane@acme.com",       notes: "Used to detect duplicates" },
+      { name: "phone",         required: false, type: "text",   example: "+1 415 555 0100",     notes: "" },
+      { name: "location",      required: false, type: "text",   example: "New York, NY",        notes: "City and/or state" },
+      { name: "country",       required: false, type: "text",   example: "United States",       notes: "" },
+      { name: "linkedinUrl",   required: false, type: "url",    example: "https://linkedin.com/in/janesmith", notes: "" },
+      { name: "twitterHandle", required: false, type: "text",   example: "@janesmith",          notes: "With or without @" },
+      { name: "bio",           required: false, type: "text",   example: "B2B sales leader...", notes: "Short bio or notes" },
+      { name: "companyName",   required: false, type: "text",   example: "Acme Corp",           notes: "Must match an existing company name exactly (case-insensitive)" },
+    ],
+  },
+  {
+    key: "contact_insights",
+    label: "Contact Insights",
+    description: "Bulk import news, articles, or data points linked to contacts. 'contactId' must be the numeric ID of an existing contact.",
+    columns: [
+      { name: "contactId",    required: true,  type: "number", example: "42",                              notes: "Numeric contact ID from the Directory" },
+      { name: "title",        required: true,  type: "text",   example: "Jane Smith joins board of Acme",  notes: "Headline or title" },
+      { name: "url",          required: true,  type: "url",    example: "https://techcrunch.com/...",      notes: "Source article URL" },
+      { name: "source",       required: true,  type: "text",   example: "TechCrunch",                     notes: "Publication or source name" },
+      { name: "mediaType",    required: true,  type: "text",   example: "article",                        notes: "article, podcast, video, press_release, social" },
+      { name: "category",     required: false, type: "text",   example: "news",                           notes: "news, funding, promotion, social (default: personal)" },
+      { name: "description",  required: false, type: "text",   example: "Jane was appointed...",          notes: "Brief summary of the insight" },
+      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                     notes: "ISO date YYYY-MM-DD" },
+    ],
+  },
+  {
+    key: "company_insights",
+    label: "Company Insights",
+    description: "Bulk import news, articles, or data points linked to companies. 'companyId' must be the numeric ID of an existing company.",
+    columns: [
+      { name: "companyId",    required: true,  type: "number", example: "7",                              notes: "Numeric company ID from the Directory" },
+      { name: "title",        required: true,  type: "text",   example: "Acme Corp raises $50M Series B", notes: "Headline or title" },
+      { name: "url",          required: true,  type: "url",    example: "https://bloomberg.com/...",       notes: "Source article URL" },
+      { name: "source",       required: true,  type: "text",   example: "Bloomberg",                      notes: "Publication or source name" },
+      { name: "mediaType",    required: true,  type: "text",   example: "article",                        notes: "article, podcast, video, press_release, social" },
+      { name: "description",  required: false, type: "text",   example: "Acme Corp announced...",         notes: "Brief summary of the insight" },
+      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                     notes: "ISO date YYYY-MM-DD" },
+    ],
+  },
+];
+
+// ── Routes ────────────────────────────────────────────────────────────────────
+
+router.get("/templates", (_req, res) => {
+  res.json(TEMPLATES);
+});
+
+router.get("/template/:table", (req, res) => {
+  const tpl = TEMPLATES.find(t => t.key === req.params.table);
+  if (!tpl) { res.status(404).json({ error: "Unknown table" }); return; }
+
+  const headers = tpl.columns.map(c => c.name);
+  const examples = tpl.columns.map(c => c.example);
+  const csv = [headers.join(","), examples.join(",")].join("\n");
+
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="${tpl.key}_template.csv"`);
+  res.send(csv);
+});
+
+router.post("/:table/preview", upload.single("file"), (req, res) => {
+  const tpl = TEMPLATES.find(t => t.key === req.params.table);
+  if (!tpl) { res.status(404).json({ error: "Unknown table" }); return; }
+  if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
+
+  const rows = parseCSV(req.file.buffer);
+  const headers = rows.length > 0 ? Object.keys(rows[0]) : tpl.columns.map(c => c.name);
+  res.json({ headers, rows: rows.slice(0, 5), total: rows.length });
+});
+
+router.post("/:table", upload.single("file"), async (req, res) => {
+  const tableKey = req.params.table;
+  const tpl = TEMPLATES.find(t => t.key === tableKey);
+  if (!tpl) { res.status(404).json({ error: "Unknown table" }); return; }
+  if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
+
+  const rows = parseCSV(req.file.buffer);
+  if (rows.length === 0) { res.status(400).json({ error: "File has no data rows" }); return; }
+
+  const results = { inserted: 0, skipped: 0, errors: [] as { row: number; reason: string }[] };
+
+  if (tableKey === "companies") {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const name = r.name?.trim();
+      if (!name) { results.errors.push({ row: i + 2, reason: "Missing required field: name" }); continue; }
+      try {
+        const existing = await db.select({ id: companiesTable.id }).from(companiesTable)
+          .where(ilike(companiesTable.name, name)).limit(1);
+        if (existing.length > 0) { results.skipped++; continue; }
+        await db.insert(companiesTable).values({
+          name,
+          industry: r.industry || null,
+          size: r.size || null,
+          location: r.location || null,
+          country: r.country || null,
+          website: r.website || null,
+          description: r.description || null,
+          employeeCount: r.employeeCount ? (parseInt(r.employeeCount) || null) : null,
+          foundedYear: r.foundedYear ? (parseInt(r.foundedYear) || null) : null,
+          linkedinUrl: r.linkedinUrl || null,
+        });
+        results.inserted++;
+      } catch (err) {
+        results.errors.push({ row: i + 2, reason: String(err) });
+      }
+    }
+  } else if (tableKey === "contacts") {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const firstName = r.firstName?.trim();
+      const lastName = r.lastName?.trim();
+      if (!firstName || !lastName) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: firstName and/or lastName" });
+        continue;
+      }
+      try {
+        const email = r.email?.trim() || null;
+        if (email) {
+          const existing = await db.select({ id: contactsTable.id }).from(contactsTable)
+            .where(eq(contactsTable.email, email)).limit(1);
+          if (existing.length > 0) { results.skipped++; continue; }
+        }
+        let companyId: number | null = null;
+        const companyName = r.companyName?.trim();
+        if (companyName) {
+          const co = await db.select({ id: companiesTable.id }).from(companiesTable)
+            .where(ilike(companiesTable.name, companyName)).limit(1);
+          if (co.length > 0) companyId = co[0].id;
+        }
+        await db.insert(contactsTable).values({
+          firstName, lastName,
+          jobTitle: r.jobTitle || null,
+          department: r.department || null,
+          seniority: r.seniority || null,
+          email,
+          phone: r.phone || null,
+          location: r.location || null,
+          country: r.country || null,
+          linkedinUrl: r.linkedinUrl || null,
+          twitterHandle: r.twitterHandle || null,
+          bio: r.bio || null,
+          companyId,
+        });
+        results.inserted++;
+      } catch (err) {
+        results.errors.push({ row: i + 2, reason: String(err) });
+      }
+    }
+  } else if (tableKey === "contact_insights") {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const contactId = parseInt(r.contactId ?? "");
+      const title = r.title?.trim();
+      if (!contactId || !title) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: contactId and/or title" });
+        continue;
+      }
+      try {
+        await db.insert(contactInsightsTable).values({
+          contactId,
+          title,
+          url: r.url?.trim() || "",
+          source: r.source?.trim() || "",
+          mediaType: r.mediaType?.trim() || "article",
+          category: r.category?.trim() || "personal",
+          description: r.description || null,
+          publishedDate: r.publishedDate || null,
+        });
+        results.inserted++;
+      } catch (err) {
+        results.errors.push({ row: i + 2, reason: String(err) });
+      }
+    }
+  } else if (tableKey === "company_insights") {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const companyId = parseInt(r.companyId ?? "");
+      const title = r.title?.trim();
+      if (!companyId || !title) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: companyId and/or title" });
+        continue;
+      }
+      try {
+        await db.insert(companyInsightsTable).values({
+          companyId,
+          title,
+          url: r.url?.trim() || "",
+          source: r.source?.trim() || "",
+          mediaType: r.mediaType?.trim() || "article",
+          description: r.description || null,
+          publishedDate: r.publishedDate || null,
+        });
+        results.inserted++;
+      } catch (err) {
+        results.errors.push({ row: i + 2, reason: String(err) });
+      }
+    }
+  }
+
+  res.json(results);
+});
+
+export default router;

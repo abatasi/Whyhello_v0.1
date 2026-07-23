@@ -17,6 +17,7 @@ import Messages from "@/pages/Messages";
 import HQ from "@/pages/HQ";
 import MultiThreading from "@/pages/MultiThreading";
 import Settings from "@/pages/Settings";
+import Import from "@/pages/Import";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/hq" component={() => <ProtectedRoute component={HQ} />} />
       <Route path="/multithreading" component={() => <ProtectedRoute component={MultiThreading} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/import" component={() => <ProtectedRoute component={Import} />} />
       <Route component={NotFound} />
     </Switch>
   );
