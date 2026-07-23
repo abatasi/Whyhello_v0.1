@@ -127,7 +127,7 @@ const TEMPLATES: TemplateConfig[] = [
       { name: "linkedinUrl",   required: false, type: "url",    example: "https://linkedin.com/in/janesmith", notes: "" },
       { name: "twitterHandle", required: false, type: "text",   example: "@janesmith",          notes: "With or without @" },
       { name: "bio",           required: false, type: "text",   example: "B2B sales leader...", notes: "Short bio or notes" },
-      { name: "companyName",   required: false, type: "text",   example: "Acme Corp",           notes: "Must match an existing company name exactly (case-insensitive)" },
+      { name: "companyId",     required: false, type: "number", example: "7",                   notes: "Numeric ID of an existing Company — links this contact to their company" },
     ],
   },
   {
@@ -272,13 +272,6 @@ router.post("/:table", upload.single("file"), async (req, res) => {
             .where(eq(contactsTable.email, email)).limit(1);
           if (existing.length > 0) { results.skipped++; continue; }
         }
-        let companyId: number | null = null;
-        const companyName = r.companyName?.trim();
-        if (companyName) {
-          const co = await db.select({ id: companiesTable.id }).from(companiesTable)
-            .where(ilike(companiesTable.name, companyName)).limit(1);
-          if (co.length > 0) companyId = co[0].id;
-        }
         await db.insert(contactsTable).values({
           firstName, lastName,
           roleId: r.roleId ? (parseInt(r.roleId) || null) : null,
@@ -292,7 +285,7 @@ router.post("/:table", upload.single("file"), async (req, res) => {
           linkedinUrl: r.linkedinUrl || null,
           twitterHandle: r.twitterHandle || null,
           bio: r.bio || null,
-          companyId,
+          companyId: r.companyId ? (parseInt(r.companyId) || null) : null,
         });
         results.inserted++;
       } catch (err) {
