@@ -2,11 +2,13 @@ import { pgTable, text, serial, integer, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { companiesTable } from "./companies";
+import { roleInsightsTable } from "./role-insights";
 
 export const contactsTable = pgTable("contacts", {
   id: serial("id").primaryKey(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
+  roleId: integer("role_id").references(() => roleInsightsTable.id),
   jobTitle: varchar("job_title", { length: 200 }),
   department: varchar("department", { length: 100 }),
   seniority: varchar("seniority", { length: 50 }),
