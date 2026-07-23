@@ -6,6 +6,8 @@ import {
   contactsTable,
   contactInsightsTable,
   companyInsightsTable,
+  industryInsightsTable,
+  roleInsightsTable,
 } from "@workspace/db/schema";
 import { eq, ilike } from "drizzle-orm";
 
@@ -133,6 +135,34 @@ const TEMPLATES: TemplateConfig[] = [
       { name: "mediaType",    required: true,  type: "text",   example: "article",                        notes: "article, podcast, video, press_release, social" },
       { name: "description",  required: false, type: "text",   example: "Acme Corp announced...",         notes: "Brief summary of the insight" },
       { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                     notes: "ISO date YYYY-MM-DD" },
+    ],
+  },
+  {
+    key: "industry_insights",
+    label: "Industry Insights",
+    description: "Bulk import industry-level news or research linked to contacts. 'contactId' must be the numeric ID of an existing contact.",
+    columns: [
+      { name: "contactId",    required: true,  type: "number", example: "42",                                   notes: "Numeric contact ID from the Directory" },
+      { name: "title",        required: true,  type: "text",   example: "State of SaaS 2024 — Gartner Report",  notes: "Headline or title" },
+      { name: "url",          required: true,  type: "url",    example: "https://gartner.com/...",               notes: "Source article URL" },
+      { name: "source",       required: true,  type: "text",   example: "Gartner",                              notes: "Publication or source name" },
+      { name: "mediaType",    required: true,  type: "text",   example: "report",                               notes: "article, podcast, video, press_release, report, social" },
+      { name: "description",  required: false, type: "text",   example: "Annual industry benchmark...",         notes: "Brief summary of the insight" },
+      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                           notes: "ISO date YYYY-MM-DD" },
+    ],
+  },
+  {
+    key: "role_insights",
+    label: "Role Insights",
+    description: "Bulk import role-specific content (job posts, thought leadership, etc.) linked to contacts. 'contactId' must be the numeric ID of an existing contact.",
+    columns: [
+      { name: "contactId",    required: true,  type: "number", example: "42",                                      notes: "Numeric contact ID from the Directory" },
+      { name: "title",        required: true,  type: "text",   example: "How Jane transformed the sales org",      notes: "Headline or title" },
+      { name: "url",          required: true,  type: "url",    example: "https://linkedin.com/posts/...",           notes: "Source article or post URL" },
+      { name: "source",       required: true,  type: "text",   example: "LinkedIn",                                notes: "Publication or source name" },
+      { name: "mediaType",    required: true,  type: "text",   example: "social",                                  notes: "article, podcast, video, press_release, social" },
+      { name: "description",  required: false, type: "text",   example: "Jane shared her playbook for...",         notes: "Brief summary of the insight" },
+      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                              notes: "ISO date YYYY-MM-DD" },
     ],
   },
 ];
@@ -282,6 +312,54 @@ router.post("/:table", upload.single("file"), async (req, res) => {
       try {
         await db.insert(companyInsightsTable).values({
           companyId,
+          title,
+          url: r.url?.trim() || "",
+          source: r.source?.trim() || "",
+          mediaType: r.mediaType?.trim() || "article",
+          description: r.description || null,
+          publishedDate: r.publishedDate || null,
+        });
+        results.inserted++;
+      } catch (err) {
+        results.errors.push({ row: i + 2, reason: String(err) });
+      }
+    }
+  } else if (tableKey === "industry_insights") {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const contactId = parseInt(r.contactId ?? "");
+      const title = r.title?.trim();
+      if (!contactId || !title) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: contactId and/or title" });
+        continue;
+      }
+      try {
+        await db.insert(industryInsightsTable).values({
+          contactId,
+          title,
+          url: r.url?.trim() || "",
+          source: r.source?.trim() || "",
+          mediaType: r.mediaType?.trim() || "article",
+          description: r.description || null,
+          publishedDate: r.publishedDate || null,
+        });
+        results.inserted++;
+      } catch (err) {
+        results.errors.push({ row: i + 2, reason: String(err) });
+      }
+    }
+  } else if (tableKey === "role_insights") {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const contactId = parseInt(r.contactId ?? "");
+      const title = r.title?.trim();
+      if (!contactId || !title) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: contactId and/or title" });
+        continue;
+      }
+      try {
+        await db.insert(roleInsightsTable).values({
+          contactId,
           title,
           url: r.url?.trim() || "",
           source: r.source?.trim() || "",
