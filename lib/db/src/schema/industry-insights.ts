@@ -1,9 +1,9 @@
 import { pgTable, serial, integer, varchar, text } from "drizzle-orm/pg-core";
-import { contactsTable } from "./contacts";
+import { companiesTable } from "./companies";
 
 export const industryInsightsTable = pgTable("industry_insights", {
   id: serial("id").primaryKey(),
-  contactId: integer("contact_id").references(() => contactsTable.id).notNull(),
+  companyId: integer("company_id").references(() => companiesTable.id).notNull(),
   title: varchar("title", { length: 500 }).notNull(),
   url: varchar("url", { length: 1000 }).notNull(),
   source: varchar("source", { length: 200 }).notNull(),

@@ -140,9 +140,9 @@ const TEMPLATES: TemplateConfig[] = [
   {
     key: "industry_insights",
     label: "Industry Insights",
-    description: "Bulk import industry-level news or research linked to contacts. 'contactId' must be the numeric ID of an existing contact.",
+    description: "Bulk import industry-level news or research linked to companies. 'companyId' must be the numeric ID of an existing company.",
     columns: [
-      { name: "contactId",    required: true,  type: "number", example: "42",                                   notes: "Numeric contact ID from the Directory" },
+      { name: "companyId",    required: true,  type: "number", example: "7",                                    notes: "Numeric company ID from the Directory" },
       { name: "title",        required: true,  type: "text",   example: "State of SaaS 2024 — Gartner Report",  notes: "Headline or title" },
       { name: "url",          required: true,  type: "url",    example: "https://gartner.com/...",               notes: "Source article URL" },
       { name: "source",       required: true,  type: "text",   example: "Gartner",                              notes: "Publication or source name" },
@@ -327,15 +327,15 @@ router.post("/:table", upload.single("file"), async (req, res) => {
   } else if (tableKey === "industry_insights") {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
-      const contactId = parseInt(r.contactId ?? "");
+      const companyId = parseInt(r.companyId ?? "");
       const title = r.title?.trim();
-      if (!contactId || !title) {
-        results.errors.push({ row: i + 2, reason: "Missing required fields: contactId and/or title" });
+      if (!companyId || !title) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: companyId and/or title" });
         continue;
       }
       try {
         await db.insert(industryInsightsTable).values({
-          contactId,
+          companyId,
           title,
           url: r.url?.trim() || "",
           source: r.source?.trim() || "",
