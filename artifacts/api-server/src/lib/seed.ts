@@ -1,5 +1,5 @@
 import { db, pool } from "@workspace/db";
-import { companiesTable, contactsTable, contactInsightsTable, companyInsightsTable, colleagueInsightsTable, counterpartInsightsTable } from "@workspace/db/schema";
+import { companiesTable, contactsTable, contactInsightsTable, companyInsightsTable, colleagueInsightsTable, counterpartInsightsTable, industriesTable, rolesTable, industryInsightsTable, roleInsightsTable } from "@workspace/db/schema";
 import { sql, eq, and } from "drizzle-orm";
 
 const COMPANIES = [
@@ -1265,26 +1265,6 @@ export async function seedInsightsIfEmpty() {
         description TEXT,
         published_date VARCHAR(50)
       );
-      CREATE TABLE IF NOT EXISTS industry_insights (
-        id SERIAL PRIMARY KEY,
-        contact_id INTEGER NOT NULL REFERENCES contacts(id),
-        title VARCHAR(500) NOT NULL,
-        url VARCHAR(1000) NOT NULL,
-        source VARCHAR(200) NOT NULL,
-        media_type VARCHAR(50) NOT NULL,
-        description TEXT,
-        published_date VARCHAR(50)
-      );
-      CREATE TABLE IF NOT EXISTS role_insights (
-        id SERIAL PRIMARY KEY,
-        contact_id INTEGER NOT NULL REFERENCES contacts(id),
-        title VARCHAR(500) NOT NULL,
-        url VARCHAR(1000) NOT NULL,
-        source VARCHAR(200) NOT NULL,
-        media_type VARCHAR(50) NOT NULL,
-        description TEXT,
-        published_date VARCHAR(50)
-      );
       CREATE TABLE IF NOT EXISTS colleague_insights (
         id SERIAL PRIMARY KEY,
         contact_id INTEGER NOT NULL REFERENCES contacts(id),
@@ -1454,4 +1434,87 @@ export async function seedIfEmpty() {
   await db.insert(contactsTable).values(contactRows);
 
   console.log(`Seeded ${inserted.length} companies and ${contactRows.length} contacts.`);
+}
+
+// ── Industries, Roles, and their Insights ─────────────────────────────────
+
+const WEALTH_MANAGEMENT_INDUSTRY_INSIGHTS = [
+  { title: "10 Wealth Management Trends Shaping 2026", url: "https://www.oliverwyman.com/our-expertise/insights/2025/dec/wealth-management-trends-2026.html", source: "Oliver Wyman", mediaType: "article", description: "Outlines ten forces reshaping wealth management, including AI-augmented advice, unified client data, tokenized cash, private markets, embedded distribution, pricing discipline and downturn readiness.", publishedDate: "2025-12-01" },
+  { title: "Wealth management trends for 2026: Six questions driven by a wave of change", url: "https://clearingcustody.fidelity.com/insights/topics/running-your-business/wealth-management-trends-for-2026", source: "Fidelity", mediaType: "article", description: "Examines how AI, alternative assets, consolidation, cybersecurity and changing definitions of client value may affect wealth managers and high-net-worth clients in 2026.", publishedDate: "2026-01-01" },
+  { title: "Private capital: Tailwinds for growth in US defined contribution plans", url: "https://www.deloitte.com/us/en/insights/industry/financial-services/financial-services-industry-predictions/2026/private-capital-defined-contribution-plans.html", source: "Deloitte", mediaType: "article", description: "Analyzes how regulatory change and target-date fund structures could expand private-capital access in defined-contribution plans, potentially pushing the asset class beyond US$1 trillion by 2030.", publishedDate: "2026-05-20" },
+  { title: "Innovative tech shakes up wealth management in Canada", url: "https://www.ft.com/content/569a04c1-a6d7-4035-8b50-62c04640f140", source: "Financial Times", mediaType: "article", description: "Provides a Canada-specific view of how fintech firms, AI and interactive analytics are helping independent wealth managers offer more sophisticated, family-office-style capabilities.", publishedDate: "2026-04-24" },
+  { title: "CIRO's 2026 Annual Priorities", url: "https://www.ciro.ca/newsroom/publications/ciros-2026-annual-priorities", source: "CIRO", mediaType: "bulletin", description: "Sets out the Canadian regulatory agenda for integration, rule consolidation, enhanced cost reporting, Client Focused Reforms, access to advice, investor protection and operational resilience.", publishedDate: "2025-04-10" },
+  { title: "2026 investment management outlook", url: "https://www.deloitte.com/us/en/insights/industry/financial-services/financial-services-industry-outlooks/investment-management-industry-outlook.html", source: "Deloitte", mediaType: "report", description: "Reviews the 2026 investment-management outlook, highlighting private-market growth, wealth transfer, consolidation, expanded planning capabilities and the scaling of AI across the enterprise.", publishedDate: "2025-11-05" },
+  { title: "Next-Gen Investors: A Guide for Wealth Managers & Financial Advisers", url: "https://rpc.cfainstitute.org/research/reports/2026/next-gen-investors", source: "CFA Institute", mediaType: "report", description: "Shows how Gen Z and millennial investors are reshaping advice through hybrid human-and-digital service, frequent communication, personalized portfolios, alternative assets and new definitions of trust.", publishedDate: "2026-03-23" },
+  { title: "2025 Wealth Trends", url: "https://www.msci.com/research-and-insights/research-reports/2025-wealth-trends", source: "MSCI", mediaType: "report", description: "Connects personalization, transparency and technology as the central forces changing wealth management, while exposing gaps in mobile capability, private-market analysis and scalable portfolio customization.", publishedDate: "2025-01-01" },
+  { title: "Asset and Wealth Management Revolution North America", url: "https://www.pwc.com/us/en/industries/financial-services/library/asset-management-universal-asset-access/awm-revolution.html", source: "PwC", mediaType: "report", description: "Explains why North American asset and wealth managers must pursue sharper strategic focus, technology-led transformation and profitable growth as assets rise but margins remain pressured.", publishedDate: "2026-06-25" },
+  { title: "Balancing relevance and returns in a profitability paradox", url: "https://www.pwc.com/gx/en/1/issues/reinvention/asset-wealth-management-revolution.html", source: "PwC", mediaType: "report", description: "Frames the industry's profitability paradox: assets and revenues are growing while fee competition and operating costs force firms to reinvent business models, personalize at scale and deploy AI.", publishedDate: "2025-11-24" },
+];
+
+const INVESTMENT_ADVISOR_ROLE_INSIGHTS = [
+  { title: "Ask an Advisor: How Technology Is Changing Advisors' Routines in 2026", url: "https://www.financial-planning.com/list/how-ai-is-changing-advisor-routines-in-2026-ask-an-advisor", source: "Financial Planning", mediaType: "article", description: "Captures how advisors are using AI and automation for meeting notes, follow-ups, workflows, financial-planning preparation and reduced administrative friction.", publishedDate: "2026-01-06" },
+  { title: "Advisor Priorities for 2026: Growth, Succession and the Evolving Role of Technology", url: "https://www.wealthmanagement.com/growth-strategies/advisor-priorities-for-2026-growth-succession-and-the-evolving-role-of-technology", source: "WealthManagement.com", mediaType: "article", description: "Identifies four immediate advisor priorities: organic growth, succession planning, technology adoption and advanced planning that integrates income, tax, estate and wealth-transfer needs.", publishedDate: "2025-12-19" },
+  { title: "What the Best Financial Advisors Are Doing Differently in 2026", url: "https://jump.ai/advisor-trends/firm-management/best-financial-advisors", source: "Jump", mediaType: "article", description: "Highlights operating habits used by leading advisors to improve meeting preparation, documentation, follow-through, client experience and practice management.", publishedDate: "2026-02-04" },
+  { title: "How AI Drives Financial Advisor Growth Today", url: "https://www.blackrock.com/us/financial-professionals/insights/how-ai-accelerates-advisor-growth", source: "BlackRock", mediaType: "article", description: "Connects practical AI adoption with higher advisor productivity, deeper personalization, stronger client relationships and increased capacity for business development.", publishedDate: "2026-02-01" },
+  { title: "Seven Strategic Wealth Management Trends You Need To Know About – Episode 42", url: "https://www.cegworldwide.com/blog/preeminent-financial-advisor-042-axdwx", source: "CEG Worldwide", mediaType: "podcast", description: "Translates major wealth-management shifts into advisor-level implications for client expectations, technology, alternative investments, differentiation and practice strategy.", publishedDate: "2025-04-28" },
+  { title: "2025 RIA Benchmarking Survey: Annual Findings on Practices, Sentiments and Services", url: "https://www.raymondjames.com/-/media/rj/dotcom/files/rcs-benchmarking/ria-annual-benchmarking-report.pdf", source: "Raymond James", mediaType: "report", description: "Provides practice-level findings on client experience, service offerings, hiring, talent development, succession, marketing, technology and operational capacity for growth.", publishedDate: "2025-07-01" },
+  { title: "2025 RIA Benchmarking Study", url: "https://www.aboutschwab.com/ria-benchmarking-study-2025", source: "Charles Schwab", mediaType: "study", description: "Benchmarks advisory practices across asset and revenue growth, new-client sources, pricing, staffing, compensation, marketing, technology and overall financial performance.", publishedDate: "2025-07-01" },
+  { title: "2025 Voice of the Client Study: What Americans Really Think About Their Financial Advisors", url: "https://wealthtender.com/advisors/marketing/voice-of-the-client-study/", source: "Wealthtender", mediaType: "study", description: "Analyzes thousands of client reviews to show how trust, communication, responsiveness, expertise and personal attention shape perceived advisor value.", publishedDate: "2025-05-01" },
+  { title: "Wealth Management Firms' Investment in AI, Social Media and Branding Become Key to Capturing the Next Generation of Advisor Talent, JD Power Finds", url: "https://www.jdpower.com/business/press-releases/2025-us-financial-advisor-satisfaction-study/", source: "J.D. Power", mediaType: "study", description: "Shows what advisors increasingly expect from their firms, including AI-enabled lead generation, personalized marketing, stronger digital branding and better social-media support.", publishedDate: "2025-07-16" },
+  { title: "Advisor Trends Survey", url: "https://www.blackrock.com/us/financial-professionals/insights/inside-the-practice/advisor-trends-survey", source: "BlackRock", mediaType: "survey", description: "Explains how advisors are moving upmarket, strengthening high-net-worth capabilities and adapting their practices to attract and serve wealthier clients.", publishedDate: "2026-02-01" },
+];
+
+export async function seedIndustriesAndRolesIfEmpty() {
+  const [{ n: industryCount }] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(industriesTable);
+
+  if (industryCount > 0) {
+    console.log("Industries and roles already seeded. Skipping.");
+    return;
+  }
+
+  // Seed Wealth Management industry
+  const [wealthMgmt] = await db
+    .insert(industriesTable)
+    .values({
+      name: "Wealth Management",
+      description: "Wealth Management is the professional management of an individual's investments and broader financial affairs, combining portfolio strategy, financial planning, tax and estate considerations, and other advisory services to help clients preserve and grow their wealth.",
+    })
+    .returning({ id: industriesTable.id });
+
+  // Seed Investment Advisor role
+  const [investmentAdvisor] = await db
+    .insert(rolesTable)
+    .values({
+      name: "Investment Advisor",
+      description: "An Investment Advisor helps clients build, manage, and protect their wealth by recommending investment strategies aligned with their financial goals, risk tolerance, and time horizon.",
+    })
+    .returning({ id: rolesTable.id });
+
+  // Seed industry insights
+  await db.insert(industryInsightsTable).values(
+    WEALTH_MANAGEMENT_INDUSTRY_INSIGHTS.map((i) => ({ industryId: wealthMgmt.id, ...i }))
+  );
+
+  // Seed role insights
+  await db.insert(roleInsightsTable).values(
+    INVESTMENT_ADVISOR_ROLE_INSIGHTS.map((i) => ({ roleId: investmentAdvisor.id, ...i }))
+  );
+
+  // Set Ahmed Hassan's industry and role
+  const [ahmed] = await db
+    .select({ id: contactsTable.id })
+    .from(contactsTable)
+    .where(and(eq(contactsTable.firstName, "Ahmed"), eq(contactsTable.lastName, "Hassan")))
+    .limit(1);
+
+  if (ahmed) {
+    await db
+      .update(contactsTable)
+      .set({ industryId: wealthMgmt.id, roleId: investmentAdvisor.id })
+      .where(eq(contactsTable.id, ahmed.id));
+  }
+
+  console.log("Seeded Wealth Management industry, Investment Advisor role, and 20 insights. Ahmed Hassan updated.");
 }

@@ -26,7 +26,7 @@ export interface ContactInsight {
 
 export interface IndustryInsight {
   id: number;
-  contactId: number;
+  industryId: number;
   title: string;
   url: string;
   source: string;
@@ -37,7 +37,7 @@ export interface IndustryInsight {
 
 export interface RoleInsight {
   id: number;
-  contactId: number;
+  roleId: number;
   title: string;
   url: string;
   source: string;
