@@ -144,12 +144,12 @@ const TEMPLATES: TemplateConfig[] = [
     label: "Industry Insights",
     description: "Define industry classifications. Each record gets its own unique industry_id which companies can reference via their industryId field.",
     columns: [
-      { name: "title",        required: true,  type: "text",   example: "B2B SaaS",                             notes: "Industry name or label — this becomes the industry_id reference" },
-      { name: "url",          required: false, type: "url",    example: "https://gartner.com/...",               notes: "Reference or research URL (optional)" },
-      { name: "source",       required: false, type: "text",   example: "Gartner",                              notes: "Publication or source name (optional)" },
-      { name: "mediaType",    required: false, type: "text",   example: "report",                               notes: "article, podcast, video, press_release, report, social" },
+      { name: "title",        required: true,  type: "text",   example: "B2B SaaS",                                notes: "Industry name or label — this becomes the industry_id reference" },
+      { name: "url",          required: true,  type: "url",    example: "https://gartner.com/saas-report-2024",    notes: "Source URL — required, all insight data is drawn from here" },
+      { name: "source",       required: false, type: "text",   example: "Gartner",                                notes: "Publication or source name" },
+      { name: "mediaType",    required: false, type: "text",   example: "report",                                 notes: "article, podcast, video, press_release, report, social" },
       { name: "description",  required: false, type: "text",   example: "Cloud-based software sold to businesses", notes: "Description of the industry" },
-      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                           notes: "ISO date YYYY-MM-DD" },
+      { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                             notes: "ISO date YYYY-MM-DD" },
     ],
   },
   {
@@ -158,8 +158,8 @@ const TEMPLATES: TemplateConfig[] = [
     description: "Define role classifications. Each record gets its own unique role_id which contacts can reference via their roleId field.",
     columns: [
       { name: "title",        required: true,  type: "text",   example: "VP of Sales",                            notes: "Role name or label — this becomes the role_id reference" },
-      { name: "url",          required: false, type: "url",    example: "https://linkedin.com/jobs/...",           notes: "Reference or job post URL (optional)" },
-      { name: "source",       required: false, type: "text",   example: "LinkedIn",                               notes: "Publication or source name (optional)" },
+      { name: "url",          required: true,  type: "url",    example: "https://linkedin.com/jobs/vp-sales-123", notes: "Source URL — required, all insight data is drawn from here" },
+      { name: "source",       required: false, type: "text",   example: "LinkedIn",                               notes: "Publication or source name" },
       { name: "mediaType",    required: false, type: "text",   example: "social",                                 notes: "article, podcast, video, press_release, social" },
       { name: "description",  required: false, type: "text",   example: "Leads revenue and GTM strategy",         notes: "Description of the role" },
       { name: "publishedDate",required: false, type: "date",   example: "2024-06-15",                             notes: "ISO date YYYY-MM-DD" },
@@ -330,14 +330,15 @@ router.post("/:table", upload.single("file"), async (req, res) => {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       const title = r.title?.trim();
-      if (!title) {
-        results.errors.push({ row: i + 2, reason: "Missing required field: title" });
+      const url = r.url?.trim();
+      if (!title || !url) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: title and/or url" });
         continue;
       }
       try {
         await db.insert(industryInsightsTable).values({
           title,
-          url: r.url?.trim() || null,
+          url,
           source: r.source?.trim() || null,
           mediaType: r.mediaType?.trim() || null,
           description: r.description || null,
@@ -352,14 +353,15 @@ router.post("/:table", upload.single("file"), async (req, res) => {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       const title = r.title?.trim();
-      if (!title) {
-        results.errors.push({ row: i + 2, reason: "Missing required field: title" });
+      const url = r.url?.trim();
+      if (!title || !url) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: title and/or url" });
         continue;
       }
       try {
         await db.insert(roleInsightsTable).values({
           title,
-          url: r.url?.trim() || null,
+          url,
           source: r.source?.trim() || null,
           mediaType: r.mediaType?.trim() || null,
           description: r.description || null,
