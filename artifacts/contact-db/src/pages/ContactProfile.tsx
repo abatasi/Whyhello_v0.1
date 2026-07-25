@@ -1311,7 +1311,7 @@ function InsightDetailView({
           )}
           <iframe
             key={iframeKey}
-            src={item.url}
+            src={`/api/proxy?url=${encodeURIComponent(item.url)}`}
             title={item.title}
             className={cn("absolute inset-0 w-full h-full border-0 transition-opacity duration-300", iframeLoaded && !iframeError ? "opacity-100" : "opacity-0")}
             sandbox="allow-scripts allow-same-origin allow-popups allow-forms"

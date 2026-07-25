@@ -25,6 +25,7 @@ import emailAccountsRouter from "./email-accounts";
 import bulkUploadRouter from "./bulk-upload";
 import industriesRouter from "./industries";
 import rolesRouter from "./roles";
+import proxyRouter from "./proxy";
 
 const router: IRouter = Router();
 
@@ -55,5 +56,6 @@ router.use("/email-accounts", emailAccountsRouter);
 router.use("/industries", industriesRouter);
 router.use("/roles", rolesRouter);
 router.use("/bulk-upload", bulkUploadRouter);
+router.use("/proxy", proxyRouter);
 
 export default router;
