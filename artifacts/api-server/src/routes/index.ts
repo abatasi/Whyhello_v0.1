@@ -26,6 +26,7 @@ import bulkUploadRouter from "./bulk-upload";
 import industriesRouter from "./industries";
 import rolesRouter from "./roles";
 import proxyRouter from "./proxy";
+import metaRouter from "./meta";
 
 const router: IRouter = Router();
 
@@ -57,5 +58,7 @@ router.use("/industries", industriesRouter);
 router.use("/roles", rolesRouter);
 router.use("/bulk-upload", bulkUploadRouter);
 router.use("/proxy", proxyRouter);
+router.use("/meta", metaRouter);
+router.use("/meta", metaRouter);
 
 export default router;
