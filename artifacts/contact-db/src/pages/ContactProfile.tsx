@@ -1304,20 +1304,26 @@ function InsightDetailView({
             </div>
           )}
           {iframeError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6 z-10">
-              <Globe className="h-10 w-10 text-muted-foreground/20" />
-              <p className="text-xs font-semibold text-muted-foreground">Preview unavailable</p>
-              <p className="text-[10px] text-muted-foreground/60 leading-snug max-w-[180px]">
-                This site blocks embedding. Open it in a new tab to read the full article.
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-center px-6 z-10">
+              <p className="text-sm font-semibold text-foreground">Trouble connecting with this page 🫠</p>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Try{" "}
+                <button
+                  onClick={() => { setIframeLoaded(false); setIframeError(false); setIframeKey(k => k + 1); }}
+                  className="underline underline-offset-2 hover:text-foreground transition-colors"
+                >
+                  refreshing
+                </button>
+                {" "}or{" "}
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground transition-colors"
+                >
+                  open in a new tab
+                </a>
               </p>
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-semibold hover:bg-primary/90 transition-colors"
-              >
-                Open in new tab <ExternalLink className="h-3 w-3" />
-              </a>
             </div>
           )}
           <iframe
