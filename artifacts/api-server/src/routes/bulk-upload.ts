@@ -201,7 +201,8 @@ router.get("/template/:table", (req, res) => {
   if (!tpl) { res.status(404).json({ error: "Unknown table" }); return; }
 
   const headers = tpl.columns.map(c => c.name);
-  const examples = tpl.columns.map(c => c.example);
+  const csvCell = (v: string) => /[,"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  const examples = tpl.columns.map(c => csvCell(c.example));
   const csv = [headers.join(","), examples.join(",")].join("\n");
 
   res.setHeader("Content-Type", "text/csv");
