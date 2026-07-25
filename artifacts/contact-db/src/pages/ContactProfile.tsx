@@ -26,7 +26,7 @@ import {
   Lock, Zap, AlertCircle, Send, User, TrendingUp,
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
-  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw,
+  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -1092,6 +1092,7 @@ function InsightDetailView({
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
+  const [browserExpanded, setBrowserExpanded] = useState(false);
 
   const cfg = getMediaConfig(item.mediaType);
   const MIcon = cfg.icon;
@@ -1223,34 +1224,36 @@ function InsightDetailView({
           </div>
         </div>
 
-        {/* Key Insights */}
-        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
-            <Zap className="h-3.5 w-3.5 text-amber-500" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Key Insights</span>
+        {/* Key Insights — hidden when browser is expanded */}
+        {!browserExpanded && (
+          <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
+              <Zap className="h-3.5 w-3.5 text-amber-500" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Key Insights</span>
+            </div>
+            <div className="px-4 py-3.5">
+              {aiLoading ? (
+                <div className="flex flex-col gap-3">
+                  {[80, 95, 70, 85].map((w, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-muted mt-1.5 flex-shrink-0" />
+                      <div className="h-3 bg-muted rounded-full animate-pulse" style={{ width: `${w}%` }} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {(aiData?.keyInsights ?? []).map((insight, i) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <div className={cn("h-1.5 w-1.5 rounded-full mt-[5px] flex-shrink-0", category.accentBg)} style={{ minWidth: "6px" }} />
+                      <span className="text-xs text-foreground leading-snug">{insight}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-          <div className="px-4 py-3.5">
-            {aiLoading ? (
-              <div className="flex flex-col gap-3">
-                {[80, 95, 70, 85].map((w, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-muted mt-1.5 flex-shrink-0" />
-                    <div className="h-3 bg-muted rounded-full animate-pulse" style={{ width: `${w}%` }} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {(aiData?.keyInsights ?? []).map((insight, i) => (
-                  <li key={i} className="flex items-start gap-2.5">
-                    <div className={cn("h-1.5 w-1.5 rounded-full mt-[5px] flex-shrink-0", category.accentBg)} style={{ minWidth: "6px" }} />
-                    <span className="text-xs text-foreground leading-snug">{insight}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* ── Lite browser — grows to fill all remaining vertical space ── */}
@@ -1272,6 +1275,13 @@ function InsightDetailView({
             className="h-6 w-6 flex items-center justify-center rounded border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors flex-shrink-0"
           >
             <RefreshCw className="h-3 w-3" />
+          </button>
+          <button
+            title={browserExpanded ? "Collapse browser" : "Expand browser"}
+            onClick={() => setBrowserExpanded(e => !e)}
+            className="h-6 w-6 flex items-center justify-center rounded border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors flex-shrink-0"
+          >
+            {browserExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
           </button>
           <a
             href={item.url}
