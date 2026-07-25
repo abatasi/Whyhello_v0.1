@@ -65,19 +65,24 @@ router.post("/", async (req, res) => {
     }
     const selectedIds = parseSelectedIds(req.body);
 
-    const [[contact], personal, industry, role, colleague, counterpart] = await Promise.all([
-      db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1),
-      db.select().from(contactInsightsTable).where(and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.category, "personal"))),
-      db.select().from(industryInsightsTable).where(eq(industryInsightsTable.contactId, contactId)),
-      db.select().from(roleInsightsTable).where(eq(roleInsightsTable.contactId, contactId)),
-      db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, contactId)),
-      db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, contactId)),
-    ]);
+    const [contact] = await db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1);
 
     if (!contact) {
       res.status(404).json({ error: "Contact not found" });
       return;
     }
+
+    const [personal, industry, role, colleague, counterpart] = await Promise.all([
+      db.select().from(contactInsightsTable).where(and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.category, "personal"))),
+      contact.industryId
+        ? db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, contact.industryId))
+        : Promise.resolve([]),
+      contact.roleId
+        ? db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId))
+        : Promise.resolve([]),
+      db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, contactId)),
+      db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, contactId)),
+    ]);
 
     let company: typeof companiesTable.$inferSelect | null = null;
     let companyIns: typeof companyInsightsTable.$inferSelect[] = [];
