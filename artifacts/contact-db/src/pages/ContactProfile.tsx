@@ -26,7 +26,7 @@ import {
   Lock, Zap, AlertCircle, Send, User, TrendingUp,
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
-  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen,
+  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -1091,6 +1091,7 @@ function InsightDetailView({
   const [aiLoading, setAiLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
 
   const cfg = getMediaConfig(item.mediaType);
   const MIcon = cfg.icon;
@@ -1265,6 +1266,13 @@ function InsightDetailView({
             <Lock className="h-2.5 w-2.5 text-muted-foreground/50 flex-shrink-0" />
             <span className="text-[10px] text-muted-foreground truncate flex-1">{displayUrl}</span>
           </div>
+          <button
+            title="Refresh preview"
+            onClick={() => { setIframeLoaded(false); setIframeError(false); setIframeKey(k => k + 1); }}
+            className="h-6 w-6 flex items-center justify-center rounded border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors flex-shrink-0"
+          >
+            <RefreshCw className="h-3 w-3" />
+          </button>
           <a
             href={item.url}
             target="_blank"
@@ -1302,6 +1310,7 @@ function InsightDetailView({
             </div>
           )}
           <iframe
+            key={iframeKey}
             src={item.url}
             title={item.title}
             className={cn("absolute inset-0 w-full h-full border-0 transition-opacity duration-300", iframeLoaded && !iframeError ? "opacity-100" : "opacity-0")}
