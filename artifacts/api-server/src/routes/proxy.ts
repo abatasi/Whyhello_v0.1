@@ -11,6 +11,115 @@ const BLOCKED_HEADERS = new Set([
   "cross-origin-resource-policy",
 ]);
 
+/**
+ * Convert any URL found in HTML to an absolute URL.
+ * - Already absolute → unchanged
+ * - Protocol-relative //domain/path → https://domain/path
+ * - Root-relative /path → origin + /path
+ * - Relative path → basePath + path
+ * - data:, javascript:, #, mailto: → unchanged
+ */
+function absify(url: string, origin: string, basePath: string): string {
+  if (!url) return url;
+  const trimmed = url.trim();
+  if (
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("javascript:") ||
+    trimmed.startsWith("#") ||
+    trimmed.startsWith("mailto:") ||
+    trimmed.startsWith("blob:")
+  ) return url;
+  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) return url;
+  if (trimmed.startsWith("//")) return "https:" + trimmed;
+  if (trimmed.startsWith("/")) return origin + trimmed;
+  return basePath + trimmed;
+}
+
+function rewriteUrls(html: string, origin: string, basePath: string): string {
+  const abs = (u: string) => absify(u, origin, basePath);
+
+  // Rewrite href, src, action, poster, data-src on HTML tags
+  html = html.replace(
+    /(\b(?:href|src|action|poster|data-src|data-lazy-src|data-original)\s*=\s*)(["'])([^"'#][^"']*?|)\2/gi,
+    (_, attr, q, url) => attr + q + abs(url) + q
+  );
+
+  // srcset="url 2x, url2 3x"
+  html = html.replace(
+    /(\bsrcset\s*=\s*)(["'])([^"']*)\2/gi,
+    (_, attr, q, srcset) => {
+      const rewritten = srcset.split(",").map((part: string) => {
+        const trimmed = part.trim();
+        const space = trimmed.search(/\s/);
+        if (space === -1) return abs(trimmed);
+        return abs(trimmed.slice(0, space)) + trimmed.slice(space);
+      }).join(", ");
+      return attr + q + rewritten + q;
+    }
+  );
+
+  // Inline style url('/path') and url(/path)
+  html = html.replace(
+    /\burl\(\s*(["']?)([^)"'\s]+)\1\s*\)/gi,
+    (_, q, url) => `url(${q}${abs(url)}${q})`
+  );
+
+  return html;
+}
+
+/**
+ * Injected into every proxied page. Runs synchronously before paint:
+ * 1. Applies CSS zoom so wide desktop layouts scale to fit the iframe width.
+ * 2. Patches window.location so JS URL construction uses the real origin.
+ */
+function buildInjection(targetUrl: string, origin: string): string {
+  return `<script data-proxy-inject="1">
+(function(){
+  /* ── 1. Zoom desktop layouts to fit the iframe width ── */
+  var TARGET_W = 1280;
+  var zoomStyle = document.createElement('style');
+  zoomStyle.id = '_proxy_zoom';
+  document.currentScript.parentNode.insertBefore(zoomStyle, document.currentScript.nextSibling);
+  function applyZoom() {
+    var w = document.documentElement.clientWidth || window.innerWidth;
+    if (w > 0 && w < TARGET_W) {
+      zoomStyle.textContent = 'html { zoom: ' + (w / TARGET_W).toFixed(5) + ' !important; }';
+    } else {
+      zoomStyle.textContent = '';
+    }
+  }
+  applyZoom();
+  window.addEventListener('resize', applyZoom);
+
+  /* ── 2. Patch location so JS URL construction resolves against the real origin ── */
+  try {
+    var _realOrigin = ${JSON.stringify(origin)};
+    var _realHref   = ${JSON.stringify(targetUrl)};
+    var _realUrl    = new URL(_realHref);
+    Object.defineProperty(window, '_proxyOrigin', { value: _realOrigin, writable: false });
+
+    /* Override fetch so root-relative /path requests hit the real origin */
+    var _nativeFetch = window.fetch;
+    window.fetch = function(input, init) {
+      if (typeof input === 'string' && input.startsWith('/') && !input.startsWith('//')) {
+        input = _realOrigin + input;
+      }
+      return _nativeFetch.call(this, input, init);
+    };
+
+    /* Override XMLHttpRequest.open for the same reason */
+    var _nativeOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+      if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) {
+        url = _realOrigin + url;
+      }
+      return _nativeOpen.apply(this, arguments);
+    };
+  } catch(e) { /* non-critical, ignore */ }
+})();
+</script>`;
+}
+
 router.get("/", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.query["url"]) ? req.query["url"][0] : req.query["url"];
   const targetUrl = typeof raw === "string" ? raw : "";
@@ -41,6 +150,7 @@ router.get("/", async (req, res): Promise<void> => {
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Cache-Control": "no-cache",
+        Referer: parsed.origin + "/",
       },
       redirect: "follow",
     });
@@ -48,10 +158,15 @@ router.get("/", async (req, res): Promise<void> => {
 
     const contentType = upstream.headers.get("content-type") ?? "text/html";
 
-    // Forward non-HTML resources (images, css, fonts, js) untouched
+    // Forward non-HTML resources (css, js, images, fonts) untouched but strip blocking headers
     if (!contentType.includes("text/html")) {
+      upstream.headers.forEach((value, key) => {
+        const k = key.toLowerCase();
+        if (BLOCKED_HEADERS.has(k)) return;
+        if (k === "transfer-encoding") return;
+        try { res.setHeader(key, value); } catch { /* skip */ }
+      });
       res.status(upstream.status);
-      res.setHeader("content-type", contentType);
       const buf = await upstream.arrayBuffer();
       res.send(Buffer.from(buf));
       return;
@@ -59,29 +174,39 @@ router.get("/", async (req, res): Promise<void> => {
 
     let html = await upstream.text();
 
-    // Inject a <base> tag so relative URLs resolve against the original origin
-    const base = `${parsed.protocol}//${parsed.host}`;
+    const origin   = `${parsed.protocol}//${parsed.host}`;
     const basePath = parsed.href.substring(0, parsed.href.lastIndexOf("/") + 1);
-    const baseTag = `<base href="${basePath}" target="_self">`;
+
+    // 1. Rewrite all static resource URLs to absolute
+    html = rewriteUrls(html, origin, basePath);
+
+    // 2. Remove existing <base> tags to avoid conflicts
+    html = html.replace(/<base[^>]*>/gi, "");
+
+    // 3. Insert our own <base> tag + zoom + fetch-patch injection right after <head>
+    const injection =
+      `<base href="${basePath}" target="_self">` +
+      buildInjection(targetUrl, origin);
 
     if (/<head[\s>]/i.test(html)) {
-      html = html.replace(/(<head[^>]*>)/i, `$1${baseTag}`);
+      html = html.replace(/(<head[^>]*>)/i, `$1${injection}`);
     } else {
-      html = baseTag + html;
+      html = injection + html;
     }
 
-    // Remove or rewrite meta/http-equiv refresh that could break nav
+    // 4. Strip meta refresh
     html = html.replace(/<meta[^>]+http-equiv=["']?refresh["']?[^>]*>/gi, "");
 
-    // Forward response, stripping the blocking headers
+    // Forward upstream headers, stripping the blocking ones
     upstream.headers.forEach((value, key) => {
-      if (BLOCKED_HEADERS.has(key.toLowerCase())) return;
-      if (key.toLowerCase() === "transfer-encoding") return;
-      try { res.setHeader(key, value); } catch { /* skip bad header names */ }
+      const k = key.toLowerCase();
+      if (BLOCKED_HEADERS.has(k)) return;
+      if (k === "transfer-encoding") return;
+      try { res.setHeader(key, value); } catch { /* skip */ }
     });
 
     res.setHeader("content-type", "text/html; charset=utf-8");
-    res.setHeader("x-frame-options", "SAMEORIGIN"); // allow our own iframe
+    res.setHeader("x-frame-options", "SAMEORIGIN");
     res.status(upstream.status).send(html);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
