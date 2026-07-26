@@ -38,16 +38,24 @@ async function runGeneration(jobId: number) {
   const params = job.params as { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData };
   const selectedSet = new Set(params.selectedInsightKeys ?? []);
 
-  const [[contact], personal, industry, role, colleague, counterpart] = await Promise.all([
+  const [[contact], personal, colleague, counterpart] = await Promise.all([
     db.select().from(contactsTable).where(eq(contactsTable.id, job.contactId)).limit(1),
     db.select().from(contactInsightsTable).where(and(eq(contactInsightsTable.contactId, job.contactId), eq(contactInsightsTable.category, "personal"))),
-    db.select().from(industryInsightsTable).where(eq(industryInsightsTable.contactId, job.contactId)),
-    db.select().from(roleInsightsTable).where(eq(roleInsightsTable.contactId, job.contactId)),
     db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, job.contactId)),
     db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, job.contactId)),
   ]);
 
   if (!contact) throw new Error("Contact not found");
+
+  // industry_insights and role_insights are keyed by industryId/roleId, not contactId
+  const [industry, role] = await Promise.all([
+    contact.industryId
+      ? db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, contact.industryId))
+      : Promise.resolve([]),
+    contact.roleId
+      ? db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId))
+      : Promise.resolve([]),
+  ]);
 
   let company: typeof companiesTable.$inferSelect | null = null;
   let companyIns: typeof companyInsightsTable.$inferSelect[] = [];
