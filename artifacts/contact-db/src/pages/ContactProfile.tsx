@@ -1085,6 +1085,19 @@ function getYouTubeEmbedUrl(url: string): string | null {
   return null;
 }
 
+// ── Apple Podcasts embed helper ────────────────────────────────────────────
+
+function getApplePodcastEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname === "podcasts.apple.com" || u.hostname === "www.podcasts.apple.com") {
+      u.hostname = "embed.podcasts.apple.com";
+      return u.toString();
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 // ── InsightDetailView ──────────────────────────────────────────────────────
 
 function InsightDetailView({
@@ -1123,7 +1136,8 @@ function InsightDetailView({
   } catch { /* keep original */ }
 
   const youtubeEmbedUrl = getYouTubeEmbedUrl(item.url);
-  const iframeSrc = youtubeEmbedUrl ?? `/api/proxy?url=${encodeURIComponent(item.url)}`;
+  const applePodcastEmbedUrl = getApplePodcastEmbedUrl(item.url);
+  const iframeSrc = youtubeEmbedUrl ?? applePodcastEmbedUrl ?? `/api/proxy?url=${encodeURIComponent(item.url)}`;
 
   useEffect(() => {
     setAiLoading(true);
