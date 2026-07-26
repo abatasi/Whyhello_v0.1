@@ -799,6 +799,29 @@ function CustomerCard({
                     </select>
                   </div>
                 </div>
+
+                {/* Natural language confirmation */}
+                {eb.description.trim() && (
+                  <div className={cn(
+                    "rounded-lg px-3.5 py-2.5 flex items-start gap-2 border",
+                    eb.type === "pain"
+                      ? "bg-rose-50/60 border-rose-200/70"
+                      : "bg-emerald-50/60 border-emerald-200/70"
+                  )}>
+                    <CheckCircle2 className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", eb.type === "pain" ? "text-rose-400" : "text-emerald-500")} />
+                    <p className={cn("text-xs leading-relaxed", eb.type === "pain" ? "text-rose-700" : "text-emerald-700")}>
+                      <span className="font-semibold">{customer.customerProfile?.split(" ").slice(0, 3).join(" ") || "This customer"}</span>
+                      {" "}experienced{" "}
+                      <span className="italic">{eb.description.trim()}</span>
+                      {eb.amount.trim() && (
+                        <>{" — "}<span className="font-semibold">{eb.amount.trim()}</span></>
+                      )}
+                      {eb.unit.trim() && <> {eb.unit.trim()}</>}
+                      {eb.frequency && <>, {eb.frequency}</>}
+                      {"."}
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -2137,6 +2160,29 @@ export default function HQ() {
                             </select>
                           </div>
                         </div>
+
+                        {/* Natural language confirmation */}
+                        {eb.description.trim() && (
+                          <div className={cn(
+                            "rounded-lg px-3.5 py-2.5 flex items-start gap-2 border",
+                            eb.type === "pain"
+                              ? "bg-rose-50/60 border-rose-200/70"
+                              : "bg-emerald-50/60 border-emerald-200/70"
+                          )}>
+                            <CheckCircle2 className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", eb.type === "pain" ? "text-rose-400" : "text-emerald-500")} />
+                            <p className={cn("text-xs leading-relaxed", eb.type === "pain" ? "text-rose-700" : "text-emerald-700")}>
+                              <span className="font-semibold">{product.name || "This offering"}</span>
+                              {" "}helps Buyers{" "}
+                              <span className="italic">{eb.description.trim()}</span>
+                              {eb.amount.trim() && (
+                                <>{" — "}<span className="font-semibold">{eb.amount.trim()}</span></>
+                              )}
+                              {eb.unit.trim() && <> {eb.unit.trim()}</>}
+                              {eb.frequency && <>, {eb.frequency}</>}
+                              {"."}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
