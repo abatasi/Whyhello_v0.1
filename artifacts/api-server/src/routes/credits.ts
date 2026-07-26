@@ -10,7 +10,7 @@ function getUserId(req: Request): string | null {
 }
 
 const TIER_LIMITS: Record<string, number | null> = {
-  freemium: 25,
+  freemium: 1000,
   professional: 10000,
   enterprise: null,
 };
