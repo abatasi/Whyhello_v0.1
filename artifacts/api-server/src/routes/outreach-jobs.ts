@@ -10,6 +10,7 @@ import {
   colleagueInsightsTable,
   counterpartInsightsTable,
   outreachJobsTable,
+  messagesTable,
 } from "@workspace/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
@@ -148,6 +149,19 @@ ${toneRule}`;
   await db.update(outreachJobsTable)
     .set({ status: "completed", result, prompt: systemPrompt, sources: usedKeys, updatedAt: new Date() })
     .where(eq(outreachJobsTable.id, jobId));
+
+  // Save a draft to the Message Center automatically
+  if (job.userId && contact.email) {
+    await db.insert(messagesTable).values({
+      userId: job.userId,
+      contactId: job.contactId,
+      toEmail: contact.email,
+      toName: `${contact.firstName} ${contact.lastName}`.trim(),
+      subject: job.title,
+      body: result,
+      status: "draft",
+    });
+  }
 }
 
 contactJobsRouter.get("/", async (req, res) => {
@@ -170,8 +184,10 @@ contactJobsRouter.post("/", async (req, res) => {
     const { type, title, params } = req.body ?? {};
     if (!type || !title || !params) { res.status(400).json({ error: "type, title, and params are required" }); return; }
 
+    const userId = (req as typeof req & { user?: { id: string } }).user?.id ?? null;
+
     const [job] = await db.insert(outreachJobsTable)
-      .values({ contactId, type, title, params, status: "generating" })
+      .values({ contactId, userId, type, title, params, status: "generating" })
       .returning();
 
     res.status(201).json(job);

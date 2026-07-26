@@ -4,6 +4,7 @@ import { contactsTable } from "./contacts";
 export const outreachJobsTable = pgTable("outreach_jobs", {
   id: serial("id").primaryKey(),
   contactId: integer("contact_id").notNull().references(() => contactsTable.id),
+  userId: text("user_id"),
   type: varchar("type", { length: 50 }).notNull(),
   status: varchar("status", { length: 20 }).notNull().default("generating"),
   title: varchar("title", { length: 255 }).notNull(),
