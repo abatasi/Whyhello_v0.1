@@ -125,13 +125,23 @@ GENERATION PARAMETERS
 - Tone: ${tone === "my_voice_profile" ? "Sender's custom voice profile (see rule 8)" : tone}
 
 RULES
-1. Write ONLY the email body — no subject line, no "Subject:", no headers
-2. Open with a hyper-specific, personalised hook that references one of the intelligence items above
-3. Never open with "I hope this email finds you well" or any variation of that cliché
-4. Tie the sender's value prop naturally to ${contact.firstName}'s context — don't pitch generically
-5. One clear CTA at the end — suggest a 15-min call or reply to explore fit
-6. ${tone === "my_voice_profile" ? `Sign off using the sender's preferred closing phrase from their voice profile (see rule 8) followed by "[Your Name]" — do NOT invent a different closing` : `Sign off with "[Your Name]" as a placeholder signature`}
-7. Respect the length parameter strictly
+1. Output format — EXACTLY two sections, nothing else:
+   Line 1:   Subject: <your subject line>
+   Line 2:   (blank line)
+   Line 3+:  The email body
+   Do NOT add any other headers, labels, or preamble.
+2. Subject line rules (all must be satisfied):
+   a. Under 50 characters — be ruthlessly brief
+   b. Provocative or curiosity-driving — make them want to open it
+   c. Reference something hyper-specific to ${contact.firstName} (their work, company news, a shared context) — no generic "quick question" or "following up"
+   d. Sound like it came from a real person, not marketing — sentence case, no ALL CAPS, no excessive punctuation
+   e. Establish familiarity or relevance in the first 3 words where possible
+3. Open the body with a hyper-specific, personalised hook that references one of the intelligence items above
+4. Never open with "I hope this email finds you well" or any variation of that cliché
+5. Tie the sender's value prop naturally to ${contact.firstName}'s context — don't pitch generically
+6. One clear CTA at the end — suggest a 15-min call or reply to explore fit
+7. ${tone === "my_voice_profile" ? `Sign off using the sender's preferred closing phrase from their voice profile (see rule 8) followed by "[Your Name]" — do NOT invent a different closing` : `Sign off with "[Your Name]" as a placeholder signature`}
+8. Respect the length parameter strictly (body only, not counting the subject line)
 ${toneRule}`;
 
   const completion = await openai.chat.completions.create({
@@ -152,16 +162,29 @@ ${toneRule}`;
 
   // Save a draft to the Message Center automatically
   if (job.userId && contact.email) {
+    const { subject: parsedSubject, body: parsedBody } = parseEmailResult(result);
     await db.insert(messagesTable).values({
       userId: job.userId,
       contactId: job.contactId,
       toEmail: contact.email,
       toName: `${contact.firstName} ${contact.lastName}`.trim(),
-      subject: job.title,
-      body: result,
+      subject: parsedSubject || job.title,
+      body: parsedBody,
       status: "draft",
     });
   }
+}
+
+/** Extract subject and body from AI output that starts with "Subject: ..." */
+function parseEmailResult(result: string): { subject: string; body: string } {
+  const firstNewline = result.indexOf("\n");
+  if (firstNewline === -1) return { subject: "", body: result };
+  const firstLine = result.slice(0, firstNewline).trim();
+  const rest = result.slice(firstNewline).replace(/^\n+/, "");
+  if (firstLine.toLowerCase().startsWith("subject:")) {
+    return { subject: firstLine.slice("subject:".length).trim(), body: rest };
+  }
+  return { subject: "", body: result };
 }
 
 contactJobsRouter.get("/", async (req, res) => {

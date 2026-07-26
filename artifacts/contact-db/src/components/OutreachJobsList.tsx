@@ -97,9 +97,24 @@ function RenameDialog({ job, onClose, onSave }: { job: Job; onClose: () => void;
 
 type ViewTab = "result" | "prompt" | "sources";
 
+/** Split "Subject: ...\n\nbody" into parts. Works for both old and new results. */
+function parseEmailResult(raw: string): { subject: string; body: string } {
+  const firstNewline = raw.indexOf("\n");
+  if (firstNewline === -1) return { subject: "", body: raw };
+  const firstLine = raw.slice(0, firstNewline).trim();
+  const rest = raw.slice(firstNewline).replace(/^\n+/, "");
+  if (firstLine.toLowerCase().startsWith("subject:")) {
+    return { subject: firstLine.slice("subject:".length).trim(), body: rest };
+  }
+  return { subject: "", body: raw };
+}
+
 function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onClose: () => void; initialTab?: ViewTab }) {
   const [tab, setTab] = useState<ViewTab>(initialTab);
   const [copied, setCopied] = useState(false);
+
+  const { subject, body } = parseEmailResult(job.result ?? "");
+  const fullText = job.result ?? "";
 
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text).then(() => {
@@ -142,7 +157,7 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
               <Button
                 variant="outline" size="sm"
                 className="h-7 gap-1.5 text-xs"
-                onClick={() => copyToClipboard(job.result ?? "")}
+                onClick={() => copyToClipboard(fullText)}
               >
                 {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                 {copied ? "Copied" : "Copy"}
@@ -150,7 +165,7 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
               <Button
                 variant="outline" size="sm"
                 className="h-7 gap-1.5 text-xs"
-                onClick={() => downloadText(job.result ?? "", `${job.title.replace(/\s+/g, "-").toLowerCase()}.txt`)}
+                onClick={() => downloadText(fullText, `${job.title.replace(/\s+/g, "-").toLowerCase()}.txt`)}
               >
                 <Download className="h-3 w-3" />
                 Download
@@ -178,8 +193,16 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
 
         <div className="flex-1 overflow-y-auto px-7 py-5">
           {tab === "result" && (
-            <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-              {job.result ?? "No content generated."}
+            <div className="space-y-4">
+              {subject ? (
+                <div className="flex items-baseline gap-2 pb-4 border-b border-border/50">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex-shrink-0">Subject</span>
+                  <span className="text-sm font-semibold text-foreground">{subject}</span>
+                </div>
+              ) : null}
+              <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                {body || "No content generated."}
+              </div>
             </div>
           )}
           {tab === "prompt" && (
