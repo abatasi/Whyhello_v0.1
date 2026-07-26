@@ -21,36 +21,56 @@ const upload = multer({
 });
 
 // ── CSV parser ────────────────────────────────────────────────────────────────
-
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let inQuotes = false;
-  let current = "";
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
-      else { inQuotes = !inQuotes; }
-    } else if (ch === "," && !inQuotes) {
-      result.push(current);
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-  result.push(current);
-  return result;
-}
+// Parses the full file character-by-character so that newlines inside quoted
+// fields are treated as part of the field value, not as row separators.
 
 function parseCSV(buffer: Buffer): Record<string, string>[] {
   const text = buffer.toString("utf-8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  const lines = text.trim().split("\n").filter(l => l.trim());
-  if (lines.length < 2) return [];
-  const headers = parseCSVLine(lines[0]).map(h => h.trim());
-  return lines.slice(1).map(line => {
-    const vals = parseCSVLine(line);
+
+  const rows: string[][] = [];
+  let fields: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (inQuotes) {
+      if (ch === '"') {
+        // Escaped quote ("") → literal "
+        if (text[i + 1] === '"') { current += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        current += ch; // newlines inside quotes are kept as-is
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        fields.push(current.trim());
+        current = "";
+      } else if (ch === "\n") {
+        fields.push(current.trim());
+        current = "";
+        // Only emit a row if it has at least one non-empty field
+        if (fields.some(f => f !== "")) rows.push(fields);
+        fields = [];
+      } else {
+        current += ch;
+      }
+    }
+  }
+
+  // Flush the last field / row
+  fields.push(current.trim());
+  if (fields.some(f => f !== "")) rows.push(fields);
+
+  if (rows.length < 2) return [];
+
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1).map(row => {
     const obj: Record<string, string> = {};
-    headers.forEach((h, i) => { obj[h] = (vals[i] ?? "").trim(); });
+    headers.forEach((h, i) => { obj[h] = (row[i] ?? "").trim(); });
     return obj;
   });
 }
