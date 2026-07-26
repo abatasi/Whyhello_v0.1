@@ -71,8 +71,8 @@ function mergeDNA(parsed: StoredDNA): DNAData {
     ...parsed,
     voice: { ...d.voice, ...(parsed.voice ?? {}) },
     company: { ...d.company, ...(parsed.company ?? {}) },
-    products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: p.economicBenefits ?? [] })),
-    customers: (parsed.customers ?? []).map(c => ({ ...c, economicBenefits: c.economicBenefits ?? [] })),
+    products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: (p.economicBenefits ?? []).map(eb => ({ label: "", ...eb })) })),
+    customers: (parsed.customers ?? []).map(c => ({ ...c, economicBenefits: (c.economicBenefits ?? []).map(eb => ({ label: "", ...eb })) })),
     marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
     competitors: parsed.competitors ?? [],
     buyingCenters: mergeBuyingCenters(parsed.buyingCenters, parsed.buyingCenter),
@@ -90,6 +90,72 @@ function loadDNA(): DNAData {
 
 function saveDNA(data: DNAData) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function frequencyPhrase(freq: string): string {
+  switch (freq) {
+    case "yearly":          return "each year";
+    case "monthly":         return "each month";
+    case "weekly":          return "each week";
+    case "one-time":        return "as a one-time benefit";
+    case "per-transaction": return "per transaction";
+    default:                return freq;
+  }
+}
+
+function buildProductEBSummary(productName: string, eb: EconomicBenefit): string {
+  const desc = eb.description.trim();
+  if (!desc) return "";
+  const name = productName.trim() || "This offering";
+  // Strip leading "Per"/"per" from unit so it reads: "$9,000 per $1M …"
+  const unit = eb.unit.trim().replace(/^[Pp]er\s+/, "per ");
+  const freq = eb.frequency ? frequencyPhrase(eb.frequency) : "";
+
+  if (eb.type === "gain") {
+    // "[Name] helps Buyers realize [desc] — $X per Y, each year."
+    let s = `${name} helps Buyers realize ${desc}`;
+    if (eb.amount.trim()) {
+      s += ` — ${eb.amount.trim()}`;
+      if (unit) s += ` ${unit}`;
+      if (freq) s += `, ${freq}`;
+    }
+    return s + ".";
+  } else {
+    // "[Name] helps Buyers eliminate [desc], saving $X per Y each year."
+    let s = `${name} helps Buyers eliminate ${desc}`;
+    if (eb.amount.trim()) {
+      s += `, saving ${eb.amount.trim()}`;
+      if (unit) s += ` ${unit}`;
+      if (freq) s += ` ${freq}`;
+    }
+    return s + ".";
+  }
+}
+
+function buildCustomerEBSummary(customerName: string, eb: EconomicBenefit): string {
+  const desc = eb.description.trim();
+  if (!desc) return "";
+  const name = customerName.trim() || "This customer";
+  const unit = eb.unit.trim().replace(/^[Pp]er\s+/, "per ");
+  const freq = eb.frequency ? frequencyPhrase(eb.frequency) : "";
+
+  if (eb.type === "gain") {
+    let s = `${name} realized ${desc}`;
+    if (eb.amount.trim()) {
+      s += ` — ${eb.amount.trim()}`;
+      if (unit) s += ` ${unit}`;
+      if (freq) s += `, ${freq}`;
+    }
+    return s + ".";
+  } else {
+    let s = `${name} eliminated ${desc}`;
+    if (eb.amount.trim()) {
+      s += `, saving ${eb.amount.trim()}`;
+      if (unit) s += ` ${unit}`;
+      if (freq) s += ` ${freq}`;
+    }
+    return s + ".";
+  }
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -801,7 +867,7 @@ function CustomerCard({
                 </div>
 
                 {/* Natural language confirmation */}
-                {eb.description.trim() && (
+                {buildCustomerEBSummary(customer.customerProfile, eb) && (
                   <div className={cn(
                     "rounded-lg px-3.5 py-2.5 flex items-start gap-2 border",
                     eb.type === "pain"
@@ -809,16 +875,8 @@ function CustomerCard({
                       : "bg-emerald-50/60 border-emerald-200/70"
                   )}>
                     <CheckCircle2 className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", eb.type === "pain" ? "text-rose-400" : "text-emerald-500")} />
-                    <p className={cn("text-xs leading-relaxed", eb.type === "pain" ? "text-rose-700" : "text-emerald-700")}>
-                      <span className="font-semibold">{customer.customerProfile?.split(" ").slice(0, 3).join(" ") || "This customer"}</span>
-                      {" "}experienced{" "}
-                      <span className="italic">{eb.description.trim()}</span>
-                      {eb.amount.trim() && (
-                        <>{" — "}<span className="font-semibold">{eb.amount.trim()}</span></>
-                      )}
-                      {eb.unit.trim() && <> {eb.unit.trim()}</>}
-                      {eb.frequency && <>, {eb.frequency}</>}
-                      {"."}
+                    <p className={cn("text-xs leading-relaxed italic", eb.type === "pain" ? "text-rose-700" : "text-emerald-700")}>
+                      {buildCustomerEBSummary(customer.customerProfile, eb)}
                     </p>
                   </div>
                 )}
@@ -2162,7 +2220,7 @@ export default function HQ() {
                         </div>
 
                         {/* Natural language confirmation */}
-                        {eb.description.trim() && (
+                        {buildProductEBSummary(product.name, eb) && (
                           <div className={cn(
                             "rounded-lg px-3.5 py-2.5 flex items-start gap-2 border",
                             eb.type === "pain"
@@ -2170,16 +2228,8 @@ export default function HQ() {
                               : "bg-emerald-50/60 border-emerald-200/70"
                           )}>
                             <CheckCircle2 className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", eb.type === "pain" ? "text-rose-400" : "text-emerald-500")} />
-                            <p className={cn("text-xs leading-relaxed", eb.type === "pain" ? "text-rose-700" : "text-emerald-700")}>
-                              <span className="font-semibold">{product.name || "This offering"}</span>
-                              {" "}helps Buyers{" "}
-                              <span className="italic">{eb.description.trim()}</span>
-                              {eb.amount.trim() && (
-                                <>{" — "}<span className="font-semibold">{eb.amount.trim()}</span></>
-                              )}
-                              {eb.unit.trim() && <> {eb.unit.trim()}</>}
-                              {eb.frequency && <>, {eb.frequency}</>}
-                              {"."}
+                            <p className={cn("text-xs leading-relaxed italic", eb.type === "pain" ? "text-rose-700" : "text-emerald-700")}>
+                              {buildProductEBSummary(product.name, eb)}
                             </p>
                           </div>
                         )}
