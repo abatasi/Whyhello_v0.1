@@ -279,16 +279,33 @@ router.post("/:table", upload.single("file"), async (req, res) => {
       }
     }
   } else if (tableKey === "contacts") {
+    // Pre-load valid FK IDs once so invalid references are nulled out rather than failing the row
+    const [validRoleIds, validIndustryIds, validCompanyIds] = await Promise.all([
+      db.select({ id: rolesTable.id }).from(rolesTable).then(rs => new Set(rs.map(r => r.id))),
+      db.select({ id: industriesTable.id }).from(industriesTable).then(rs => new Set(rs.map(r => r.id))),
+      db.select({ id: companiesTable.id }).from(companiesTable).then(rs => new Set(rs.map(r => r.id))),
+    ]);
+
+    // Treat "N/A", "n/a", "-" etc. as blank
+    const val = (v: string | undefined) => {
+      const s = v?.trim() ?? "";
+      return /^(n\/a|-+|none|null|undefined)$/i.test(s) ? null : s || null;
+    };
+    const fkInt = (v: string | undefined, validSet: Set<number>) => {
+      const n = parseInt(v ?? "");
+      return !isNaN(n) && validSet.has(n) ? n : null;
+    };
+
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
-      const firstName = r.firstName?.trim();
-      const lastName = r.lastName?.trim();
+      const firstName = val(r.firstName);
+      const lastName = val(r.lastName);
       if (!firstName || !lastName) {
         results.errors.push({ row: i + 2, reason: "Missing required fields: firstName and/or lastName" });
         continue;
       }
       try {
-        const email = r.email?.trim() || null;
+        const email = val(r.email);
         if (email) {
           const existing = await db.select({ id: contactsTable.id }).from(contactsTable)
             .where(eq(contactsTable.email, email)).limit(1);
@@ -296,23 +313,24 @@ router.post("/:table", upload.single("file"), async (req, res) => {
         }
         await db.insert(contactsTable).values({
           firstName, lastName,
-          roleId: r.roleId ? (parseInt(r.roleId) || null) : null,
-          jobTitle: r.jobTitle || null,
-          department: r.department || null,
-          seniority: r.seniority || null,
+          roleId:     fkInt(r.roleId, validRoleIds),
+          industryId: fkInt(r.industryId, validIndustryIds),
+          companyId:  fkInt(r.companyId, validCompanyIds),
+          jobTitle:      val(r.jobTitle),
+          department:    val(r.department),
+          seniority:     val(r.seniority),
           email,
-          phone: r.phone || null,
-          location: r.location || null,
-          country: r.country || null,
-          linkedinUrl: r.linkedinUrl || null,
-          twitterHandle: r.twitterHandle || null,
-          bio: r.bio || null,
-          companyId: r.companyId ? (parseInt(r.companyId) || null) : null,
-          industryId: r.industryId ? (parseInt(r.industryId) || null) : null,
+          phone:         val(r.phone),
+          location:      val(r.location),
+          country:       val(r.country),
+          linkedinUrl:   val(r.linkedinUrl),
+          twitterHandle: val(r.twitterHandle),
+          bio:           val(r.bio),
         });
         results.inserted++;
-      } catch (err) {
-        results.errors.push({ row: i + 2, reason: String(err) });
+      } catch (err: any) {
+        const cause = err?.cause?.message ?? err?.cause ?? "";
+        results.errors.push({ row: i + 2, reason: String(err) + (cause ? ` | PG: ${cause}` : "") });
       }
     }
   } else if (tableKey === "contact_insights") {

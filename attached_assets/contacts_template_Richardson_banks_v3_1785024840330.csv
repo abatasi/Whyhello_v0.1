@@ -1,0 +1,458 @@
+firstName,lastName,roleId,industryId,jobTitle,department,seniority,email,phone,location,country,linkedinUrl,twitterHandle,bio,companyId
+Faisal,Karmali,2,1,"Portfolio Manager, Investment Advisor, First Vice President
+",N/A,N/A,faisal.karmali@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/faisal-karmali-6b913a166/,N/A,N/A,26
+Damien,Tsang,2,1,Senior Investment Advisor,N/A,N/A,damien.tsang@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/damientsang,N/A,N/A,24
+Borzo,Salehi,2,1,Associate Investment Advisor,N/A,N/A,borzo.salehi@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/borzo-salehi-1096535a,N/A,N/A,24
+Maria,Mantzios,2,1,Senior Investment Advisor,N/A,N/A,maria.mantzios@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/maria-mantzios-29686020,N/A,N/A,24
+James,Mackie,2,1,Investment Advisor,N/A,N/A,james.mackie@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/james-mackie-cfp%c2%ae-37531843,N/A,N/A,24
+Sam,Cesare,2,1,"Senior Portfolio Manager, Senior Investment Advisor With Gardner Di Cesare Wealth Advisory Group",N/A,N/A,sam.dicesare@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/sam-di-cesare-043403a,N/A,N/A,24
+Christopher,Au,2,1,Senior Investment Advisor at TD,N/A,N/A,christopher.au@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/auchristopher,N/A,N/A,24
+John,Naas,2,1,"Portfolio Manager and Senior Investment Advisor, TD",N/A,N/A,john.naas@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/johnnaas,N/A,N/A,24
+Gloria,Malek,2,1,Associate Portfolio Manager & Investment Advisor,N/A,N/A,gloria.malek@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/gloriamalek,N/A,N/A,24
+Errol,Scott,2,1,Senior Investment Advisor at TD,N/A,N/A,errol.scott@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/errol-duke-scott-cim%c2%ae-fma-fcsi%c2%ae-69825320,N/A,N/A,24
+Brian,McIntyre,2,1,"Investment Advisor, Portfolio Manager",N/A,N/A,brian.mcintyre@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/brian-mcintyre-365a5548,N/A,N/A,24
+Jennifer,Parry,2,1,National Director of Advisor Enablement for Investment & Retirement Planning,N/A,N/A,jennifer.parry@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/rbcjenniferwillard,N/A,N/A,25
+Wendy,Chui,2,1,Senior Investment Advisor at TD,N/A,N/A,wendy.chui@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/wendy-chui-aa5629121,N/A,N/A,24
+Jonathan,Freeman,2,1,Senior Investment Advisor & Associate Portfolio Manager,N/A,N/A,jonathan.freeman@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jonathan-freeman-cfa-mba-7a6b2b33,N/A,N/A,24
+Trevor,Church,2,1,Investment Advisor With Smith-Church Wealth Management Group at TD,N/A,N/A,trevor.church@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/trevor-church-cim%c2%ae-05278822,N/A,N/A,24
+Rajin,Bains,2,1,Investment Advisor,N/A,N/A,rajin.bains@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/rajin-bains-70a96024a,N/A,N/A,25
+Jean-Samuel,Pariseau,2,1,Portfolio Manager & Senior Investment Advisor | Cossette Pariseau & Associates,N/A,N/A,jean-samuel.pariseau@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jeansamuelpariseau-cfa,N/A,N/A,24
+Sylvia,Faria,2,1,Senior Investment Advisor at TD,N/A,N/A,sylvia.faria@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/sylvia-faria-cfp%c2%ae-fma-71738532,N/A,N/A,24
+Duncan,McEachran,2,1,Investment Advisor,N/A,N/A,duncan.mceachran@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/duncan-mceachran-24663b11,N/A,N/A,24
+Glorious,Chan,2,1,Senior Investment Advisor at TD,N/A,N/A,glorious.chan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/glorious-chan-cim%c2%ae-cfp%c2%ae-cea-fcsi%c2%ae-38691627,N/A,N/A,24
+Dao,Le,2,1,Senior Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,dao.le@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/dao-le-cfa-57731219,N/A,N/A,24
+Enzo,Figliomeni,2,1,Senior Investment Advisor at TD,N/A,N/A,enzo.figliomeni@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/enzo-figliomeni-330a0122,N/A,N/A,24
+Maz,Al-Samadi,2,1,"Investment Advisor, TD",N/A,N/A,maz.al-samadi@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mazalsamadi,N/A,N/A,24
+John,Shushkevich,2,1,Investment Advisor at TD,N/A,N/A,john.shushkevich@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/john-shushkevich-67459877,N/A,N/A,24
+Ben,So,2,1,Associate Investment Advisor,N/A,N/A,ben.so@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/ben-so,N/A,N/A,24
+Alex,Martin,2,1,Senior Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,alex.martin@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/martinintegratedwealthplanning,N/A,N/A,24
+Siddharth,Thakkar,2,1,Investment Advisor,N/A,N/A,siddharth.thakkar@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/siddharth-thakkar-821995126,N/A,N/A,25
+Andrea,Korre,2,1,Associate Investment Advisor at TD,N/A,N/A,andrea.korre@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/andrea-korre-7236b81a2,N/A,N/A,24
+Sumaiyya,Shahnawaz,2,1,Expert Banking Advisor : Credit and Investment,N/A,N/A,sumaiyya.shahnawaz@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/sumaiyyashahnawaz,N/A,N/A,25
+Adam,Decaria,2,1,Investment Advisor at TD,N/A,N/A,adam.decaria@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/adamdecaria,N/A,N/A,24
+Matt,Lane,2,1,Investment Advisor TD Private Wealth Management,N/A,N/A,matthew.lane@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/matt-lane-84982882,N/A,N/A,24
+Jason,Paulsen,2,1,Senior Investment Advisor,N/A,N/A,jason.paulsen@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jason-paulsen-b10aba33,N/A,N/A,24
+Dugan,Batten,2,1,Investment Advisor,N/A,N/A,dugan.batten@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/dugan-batten,N/A,N/A,24
+Gordon,Srdoc,2,1,Vice President and Investment Advisor,N/A,N/A,gordon.srdoc@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/gordon-srdoc-876362157,N/A,N/A,24
+Todd,Cfp,2,1,Senior Investment Advisor at TD,N/A,N/A,todd.schopp@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/todd-schopp-cfp%c2%ae-cim%c2%ae-fcsi%c2%ae-0596677,N/A,N/A,24
+Thien,Phuong,2,1,Investment Advisor,N/A,N/A,thien.phuong@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/thien-phuong-a9936221,N/A,N/A,24
+Harneet,Kaur,2,1,Investment Advisor,N/A,N/A,harneet.kaur@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/harneet-kaur-3a481214a,N/A,N/A,25
+Ian,Hart,2,1,Senior Investment Advisor,N/A,N/A,ian.hart@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/ihart,N/A,N/A,24
+Samuel,Eribake,2,1,Investment Advisor,N/A,N/A,samuel.eribake@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/samuel-eribake,N/A,N/A,25
+Scott,Kendall,2,1,Senior Investment Advisor,N/A,N/A,scott.kendall@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/scott-kendall-1a30a04b,N/A,N/A,24
+Benjamin,Ho,2,1,Associate Investment Advisor,N/A,N/A,benjamin.ho@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/benjaminhocalgary,N/A,N/A,24
+John,Lu,2,1,Senior Investment Advisor at TD,N/A,N/A,johnz.lu@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/john-lu-cfp%c2%ae-pfp%c2%ae-34299484,N/A,N/A,24
+Scott,Kocher,2,1,Senior Investment Advisor at TD,N/A,N/A,scott.kocher@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/scottkocher,N/A,N/A,24
+Waleed,Khan,2,1,Associate Investment Advisor - TD,N/A,N/A,waleed.khan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/waleed-khan-cfa-2b9544a9,N/A,N/A,24
+Keith,Davis,2,1,Associate Investment Advisor at TD,N/A,N/A,keith.davis@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/keith-davis-8790b316,N/A,N/A,24
+Chad,Fink,2,1,Associate Investment Advisor | TD,N/A,N/A,chad.fink@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/chad-finkelstein-79b63025,N/A,N/A,24
+Michael,Gesualdi,2,1,Senior Investment Advisor at TD,N/A,N/A,michael.gesualdi@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michael-gesualdi-37896924,N/A,N/A,24
+Gunther,Rappl,2,1,Investment Advisor at TD,N/A,N/A,gunther.rappl@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/gunther-rappl-harbourstone-wealth-management,N/A,N/A,24
+Michael,Patino,2,1,Associate Investment Advisor at TD,N/A,N/A,michael.patino@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/patinomichael,N/A,N/A,24
+Brian,Healey,2,1,Investment Advisor,N/A,N/A,brian.healey@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/brianhealey4,N/A,N/A,24
+Daniel,Macdonald,2,1,Senior Investment Advisor at TD,N/A,N/A,daniel.macdonald@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/daniel-macdonald-7baaa4245,N/A,N/A,24
+Jason,Sonoda,2,1,Investment Advisor,N/A,N/A,jason.sonoda@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jasonsonoda,N/A,N/A,24
+Navjot,Kaur,2,1,Investment Advisor,N/A,N/A,navjot.kaur@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/navjot-kaur-75965315a,N/A,N/A,25
+Vishali,Khurana,2,1,Invest by Phone Advisor,N/A,N/A,vishali.khurana@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/vishali-khurana,N/A,N/A,25
+Emily,Gu,2,1,Private Investment Advisor - TD Wealth,N/A,N/A,emily.gu@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/emily-gu-a5bb64141,N/A,N/A,24
+Chad,Neureuther,2,1,Investment Advisor,N/A,N/A,chad.neureuther@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/chad-neureuther-cfa-87716a29,N/A,N/A,24
+Jody,Cloutier,2,1,Investment Advisor,N/A,N/A,jody.cloutier@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jody-cloutier-729a5933,N/A,N/A,24
+Christine,Coverdale,2,1,Investment Advisor & Portfolio Manager,N/A,N/A,christine.coverdale@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/christine-coverdale-474a67159,N/A,N/A,24
+Tyson,Macmillan,2,1,Investment Advisor at TD,N/A,N/A,tyson.macmillan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/tyson-macmillan-cfp%c2%ae-cfa-8573a140,N/A,N/A,24
+Jason,Knowles,2,1,Investment Advisor at TD,N/A,N/A,jason.knowles@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jason-knowles-38237480,N/A,N/A,24
+Mohini,Sharma,2,1,Invest by Phone Advisor,N/A,N/A,mohini.sharma@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/mohini-sharma22,N/A,N/A,25
+Rocco,Cacciacarro,2,1,Senior Investment Advisor,N/A,N/A,rocco.cacciacarro@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/rocco-cacciacarro-7b2b3810,N/A,N/A,24
+Jerome,So,2,1,"Investment Advisor, Chartered Investment Manager (CIM), Certified Retirement Specialist",N/A,N/A,jerome.so@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jerome-so-42761363,N/A,N/A,24
+Kevin,Neill,2,1,Investment Advisor,N/A,N/A,kevin.neill@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/kevin-neill-cim-97914150,N/A,N/A,24
+Tara,Biro,2,1,Investment Advisor at TD,N/A,N/A,tara.biro@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/tara-biro-5069b68,N/A,N/A,24
+Ryan,Ormerod,2,1,Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,ryan.ormerod@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/ryan-ormerod-9351895b,N/A,N/A,24
+Alex,Stemmler,2,1,Associate Investment Advisor | Magnify Wealth Management | TD,N/A,N/A,alexander.stemmler@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/alex-stemmler-cfp%c2%ae-cim%c2%ae-tep-a6324559,N/A,N/A,24
+Craig,Loveys,2,1,Senior Investment Advisor,N/A,N/A,craig.loveys@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/craigloveys,N/A,N/A,24
+Philippe,Dumas,2,1,Senior Investment Advisor,N/A,N/A,philippe.dumas@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/philippe-dumas-0a206a49,N/A,N/A,24
+Rocky,Mazzaferro,2,1,Investment Advisor at TD,N/A,N/A,rocky.mazzaferro@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/rocky-mazzaferro-7717483b,N/A,N/A,24
+Cliff,Rutledge,2,1,Investment Advisor at TD,N/A,N/A,cliff.rutledge@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/cliff-rutledge-cfp%c2%ae-3a78424b,N/A,N/A,24
+Scott,Keeping,2,1,"Senior Portfolio Manager, Senior Investment Advisor at TD",N/A,N/A,scott.keeping@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/scottkeeping,N/A,N/A,24
+Eugene,Wong,2,1,Senior Investment Advisor and Senior Portfolio Manager,N/A,N/A,eugene.wong@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/eugenewongtd,N/A,N/A,24
+Natasha,Kansara,2,1,Investment Advisor,N/A,N/A,natasha.kansara@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/natasha-kansara-415897193,N/A,N/A,25
+Rene,Kormos,2,1,Senior Investment Advisor at TD,N/A,N/A,rene.kormos@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/rene-kormos-07477812,N/A,N/A,24
+Lawrence,Lee,2,1,Senior Portfolio Manager and Senior Investment Advisor,N/A,N/A,lawrence.lee@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/lawrencelhlee,N/A,N/A,24
+Doug,McPhee,2,1,Investment Advisor,N/A,N/A,doug.mcphee@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/doug-mcphee-a4082819,N/A,N/A,24
+Deepak,Nijjer,2,1,Associate Investment Advisor at TD,N/A,N/A,deepak.nijjer@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/deepak-nijjer-5b7706125,N/A,N/A,24
+Kehinde,Ojumu,2,1,Investment and Credit Advisor,N/A,N/A,kehinde.ojumu@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/kehinde-ojumu-883134114,N/A,N/A,25
+Akshat,Parikh,2,1,Investment Specialist Advisor,N/A,N/A,akshat.parikh@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/akshatparikh15,N/A,N/A,25
+Craig,Toms,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,craig.toms@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/robert-craig-toms-mba-cpa-cim%c2%ae-1b4a8,N/A,N/A,24
+Nathaniel,Friedenthal,2,1,"Associate Investment Advisor, TD",N/A,N/A,nathaniel.friedenthal@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/nathaniel-friedenthal-cim%c2%ae-7598a838,N/A,N/A,24
+Nithin,Benny,2,1,Investment Advisor,N/A,N/A,nithin.benny@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/nithin-benny-a4a2a7113,N/A,N/A,25
+Amanda,Spear,2,1,Investment Advisor,N/A,N/A,amanda.spear@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/amanda-spear-68571954,N/A,N/A,25
+Harpreet,Kaur,2,1,Investment Advisor,N/A,N/A,harpreet.kaur@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/harpreet-kaur-33b0161ba,N/A,N/A,25
+Julie,Fitzpatrick,2,1,Associate Portfolio Manager and Investment Advisor at TD,N/A,N/A,julie.fitzpatrick@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/julie-fitzpatrick-cpa-ca,N/A,N/A,24
+Paul,Belanger,2,1,Senior Investment Advisor,N/A,N/A,paul.belanger@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/paul-belanger-1b3b16a,N/A,N/A,24
+Catherine,Shiu,2,1,Associate Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,catherine.shiu@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/catherine-shiu-cim%c2%ae-cfp%c2%ae-fma-pfp%c2%ae-8476b91b4,N/A,N/A,24
+Scott,Prins,2,1,Investment Advisor,N/A,N/A,sprins@sympatico.ca,N/A,N/A,N/A,http://www.linkedin.com/in/scott-prins-b8804319,N/A,N/A,24
+Amir,Pourdad,2,1,Associate Portfolio Manager & Investment Advisor at TD,N/A,N/A,amir.pourdad@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/amirpourdad,N/A,N/A,24
+Cory,Garlock,2,1,Senior Investment Advisor,N/A,N/A,cory.garlock@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/corygarlock,N/A,N/A,24
+Aidan,Mullen,2,1,Investment Advisor,N/A,N/A,aidan.mullen@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/aidan-mullen-a2601815,N/A,N/A,24
+Roman,Bartko,2,1,Investment Advisor,N/A,N/A,roman.bartko@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/roman-bartko-495a42b3,N/A,N/A,24
+Fabio,Madonna,2,1,Investment Advisor,N/A,N/A,fabio.madonna@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/fabio-madonna-cfa-3ba08130,N/A,N/A,24
+Lindsay,Brekelmans,2,1,Associate Investment Advisor at TD,N/A,N/A,lindsay.brekelmans@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/lindsay-brekelmans-9a2319363,N/A,N/A,24
+Mark,Marlow,2,1,"Portfolio Manager and Senior Investment Advisor, TD",N/A,N/A,mark.marlow@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mark-marlow-cfp%c2%ae-cim%c2%ae-35339b15,N/A,N/A,24
+Adam,Liberti,2,1,Investment Advisor at TD,N/A,N/A,adam.liberti@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/adamliberti,N/A,N/A,24
+Anita,Cfp,2,1,Senior Investment Advisor at TD,N/A,N/A,anita.chow@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/anita-chow-cfp%c2%ae-cim%c2%ae-60540240,N/A,N/A,24
+Pierre,Natividad,2,1,Senior Investment Advisor at TD,N/A,N/A,pierre.natividad@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/pierrenatividad,N/A,N/A,24
+Bradley,Hayes,2,1,Senior Investment Advisor at TD,N/A,N/A,bradley.hayes@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/bradley-hayes-cim%c2%ae-fcsi%c2%ae-223b5930,N/A,N/A,24
+Kevin,Daley,2,1,Senior Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,kevin.daley@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/kevin-daley-714a7613,N/A,N/A,24
+Benjamin,Lee,2,1,Senior Investment Advisor & Senior Portfolio Manager at TD,N/A,N/A,benjamin.a.lee@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/benjaminalee,N/A,N/A,24
+Alexandros,Giorgas,2,1,"Private Investment Advice, Client Service Associate",N/A,N/A,alexandros.giorgas@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/alexandros-giorgas,N/A,N/A,24
+Natalie,Tsoi,2,1,Investment Advisor CSA | TD,N/A,N/A,kaying.tsoi@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/natalie-tsoi,N/A,N/A,24
+Clifford,Noonoo,2,1,Senior Investment Advisor,N/A,N/A,clifford.noonoo@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/cliffordnoonoo,N/A,N/A,24
+Tin,Lam,2,1,Investment Advisor,N/A,N/A,tin.lam@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/tin-lam-5b14842b,N/A,N/A,24
+Candice,Keays,2,1,Investment Advisor at TD,N/A,N/A,candice.keays@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/candicekeays,N/A,N/A,24
+Alain,Kamel,2,1,Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,alain.kamel@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/alain-kamel-cpa-f-pl-cim%c2%ae-1394a745,N/A,N/A,24
+Jarrett,Mykytiuk,2,1,Investment Advisor at TD,N/A,N/A,jarrett.mykytiuk@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jarrett-mykytiuk-7a51191a,N/A,N/A,24
+Curtis,Bortis,2,1,Associate Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,curtis.bortis@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/curtis-bortis-cfp%c2%ae-cim%c2%ae-6615b8b4,N/A,N/A,24
+Bill,Maclean,2,1,Senior Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,bill.maclean@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/macleanwealthmanagementgroup,N/A,N/A,24
+Yu,Li,2,1,Invest By Phone Advisor,N/A,N/A,yu.li@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/yu-li-grace0221,N/A,N/A,25
+Dan,Galbraith,2,1,Investment Advisor,N/A,N/A,dan.galbraith@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/dangalbraithcim,N/A,N/A,24
+Gary,Davies,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,gary.davies@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/gary-davies-700678b,N/A,N/A,24
+Blanche,Nassim,2,1,Credit and Investment Advisor,N/A,N/A,blanche.nassim@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/blanche-nassim-88370640,N/A,N/A,25
+Glenda,Reid,2,1,Investment Advisor,N/A,N/A,glenda.reid@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/glenda-reid-ab17b149,N/A,N/A,25
+Leanne,Boyer,2,1,Investment and Retirement Planning Associate Advisor,N/A,N/A,leanne.boyer@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/leanne-boyer-95540993,N/A,N/A,25
+Darrel,Hebner,2,1,"Senior Investment Advisor With Northern Shores Wealth Management, TD Wealth PIA",N/A,N/A,darrel.hebner@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/darrel-hebner-cfp%c2%ae-cim%c2%ae-fcsi%c2%ae-98784944,N/A,N/A,24
+Michael,Marcovitz,2,1,Senior Investment Advisor at TD,N/A,N/A,michael.marcovitz@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michaelmarcovitz,N/A,N/A,24
+Diganshi,Bhardwaj,2,1,Mortgage and Investment Advisor,N/A,N/A,diganshi.bhardwaj@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/diganshi-bhardwaj,N/A,N/A,24
+Lee,Howarth,2,1,Associate Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,lee.howarth@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/lee-howarth-cfp%c2%ae-cim%c2%ae-fcsi%c2%ae-32a0896,N/A,N/A,24
+Alex,Bu,2,1,Private Investment Advisor at TD Wealth,N/A,N/A,alex.bu@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/alex-bu-cfp%c2%ae-cim%c2%ae-296aa7a9,N/A,N/A,24
+Ainsley,Dacres,2,1,Investment Advisor Client Service Associate,N/A,N/A,ainsley.dacres@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/ainsleydacres,N/A,N/A,24
+Jenna,Pellerin,2,1,Private Investment Advice Client Associate,N/A,N/A,jenna.pellerin@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jenna-pellerin-299aa4143,N/A,N/A,24
+Gregory,Mills,2,1,Senior Investment Advisor at TD,N/A,N/A,gregory.mills@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/gregory-mills-0113831ab,N/A,N/A,24
+Douglas,Findlay,2,1,Branch Manager and Investment Advisor,N/A,N/A,douglas.findlay@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/douglas-findlay-98874417,N/A,N/A,24
+Abisola,Olakanmi,2,1,Investment Advisor,N/A,N/A,abisola.olakanmi@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/olakanmiabisola,N/A,N/A,25
+Warren,Schneider,2,1,Senior Investment Advisor at TD,N/A,N/A,warren.schneider@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/warren-schneider-537b1021,N/A,N/A,24
+Shamus,Rickerby,2,1,Associate Investment Advisor,N/A,N/A,shamus.rickerby@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/shamus-rickerby-933205b3,N/A,N/A,24
+Eric,Bergerud,2,1,Investment Advisor at TD,N/A,N/A,eric.bergerud@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/eric-bergerud-cfp%c2%ae-cim-fcsi-534508ba,N/A,N/A,24
+Wanyi,Chen,2,1,Investment-by-phone Advisor,N/A,N/A,wanyi.chen@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/wanyi-chen-1459861aa,N/A,N/A,25
+Julie,Viglasky,2,1,Senior Portfolio Manager and Investment Advisor at RBC Wealth Management,N/A,N/A,julie.viglasky@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/julieviglasky,N/A,N/A,25
+Ilhem,Bedrane,2,1,Credit and Investment Advisor,N/A,N/A,ilhem.bedrane@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/ilhem-bedrane,N/A,N/A,25
+Lynne,Salvail,2,1,Associate Investment Advisor,N/A,N/A,lynne.salvail@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/lynne-salvail-bidmead,N/A,N/A,24
+Steven,Rye,2,1,Senior Investment Advisor at TD,N/A,N/A,steven.rye@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/steven-rye-cfa-46a26234,N/A,N/A,24
+Dean,Wright,2,1,Associate Investment Advisor,N/A,N/A,dean.wright@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/dean-wright-cim%c2%ae-07187b55,N/A,N/A,24
+Michael,Zhang,2,1,Investment Advisor at TD,N/A,N/A,michael.zhang@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michaelzhangtd,N/A,N/A,24
+Michael,Partipilo,2,1,Senior Investment Advisor at TD,N/A,N/A,michael.partipilo@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michael-partipilo-b770b941,N/A,N/A,24
+Chris,Divjak,2,1,Associate Investment Advisor,N/A,N/A,chris.divjak@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/chris-divjak-32406b84,N/A,N/A,24
+Puneet,Bambha,2,1,"Lead - Strategy / Analytics & Insights - Investment Advice + Specialized Services, TD Wealth",N/A,N/A,puneet.bambha@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/puneetbambha,N/A,N/A,24
+Kate,Epps,2,1,Investment Advisor at TD,N/A,N/A,kate.epps@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/kate-epps-11a33179,N/A,N/A,24
+Jeff,Macdonald,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,jeff.macdonald@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jeffsmacdonald,N/A,N/A,24
+Kevin,Lush,2,1,Senior Investment Advisor at TD,N/A,N/A,kevin.lush@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/kevin-lush,N/A,N/A,24
+Brian,Sonoda,2,1,Senior Investment Advisor at TD,N/A,N/A,brian.sonoda@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/briansonoda,N/A,N/A,24
+Tony,Buonaguro,2,1,Senior Portfolio Manager and Senior Investment Advisor,N/A,N/A,tony.buonaguro@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/tonybuonaguro,N/A,N/A,24
+Robert,Kennington,2,1,Senior Investment Advisor at TD,N/A,N/A,robert.kennington@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/robert-kennington-6574b120,N/A,N/A,24
+Jeremy,Wong,2,1,Senior Investment Advisor at TD,N/A,N/A,jeremy.wong@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jeremy-wong-cim%c2%ae-36238143,N/A,N/A,24
+Pamela,Churchill,2,1,Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,pam.churchill@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/pamelachurchill1,N/A,N/A,24
+Greg,Mailo,2,1,Senior Investment Advisor at TD,N/A,N/A,greg.mailo@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/greg-mailo-a3623a6,N/A,N/A,24
+Bradley,Colas,2,1,Group Investment Advisor,N/A,N/A,bradley.colas@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/bradley-colas-1a4950171,N/A,N/A,25
+Arturo,Rivas,2,1,Advanced Investment Advisor,N/A,N/A,arturo.rivas@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/arturo-rivas-4614172a5,N/A,N/A,25
+Jamie,Mutch,2,1,Senior Portfolio Manager and Senior Investment Advisor,N/A,N/A,jamie.mutch@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jamie-mutch-5916148,N/A,N/A,24
+Phil,Mikhail,2,1,Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,phil.mikhail@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/philmikhail,N/A,N/A,24
+Catherine,Kong,2,1,Senior Investment Advisor,N/A,N/A,catherine.kong@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/catherinekong-td,N/A,N/A,24
+Michael,Stone,2,1,Senior Investment Advisor at TD,N/A,N/A,michael.gm.stone@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michael-stone-16972310,N/A,N/A,24
+Pierre,Girouard,2,1,Investment Advisor at TD,N/A,N/A,pierre.girouard@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/pierre-girouard-a1978a4,N/A,N/A,24
+Mike,Villa,2,1,"Associate Investment Advisor, TD",N/A,N/A,mike.villa@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mrmvilla,N/A,N/A,24
+Matthew,Desmarais,2,1,Senior Investment Advisor,N/A,N/A,matthew.desmarais@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/matthewdesmaraistd,N/A,N/A,24
+Greg,McLachlan,2,1,Investment Advisor,N/A,N/A,greg.mclachlan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/greg-mclachlan-a266a1155,N/A,N/A,24
+Alessandro,Garofalo,2,1,Operations Enablement Advisor - Investments,N/A,N/A,alessandro.garofalo@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/alegaro,N/A,N/A,25
+John,Mackinnon,2,1,Investment Advisor,N/A,N/A,john.mackinnon@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/john-mackinnon-035205b,N/A,N/A,24
+Catherine,Morton,2,1,Investment Advisor at TD,N/A,N/A,catherine.morton@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/catherine-morton-53316465,N/A,N/A,24
+Alexander,Volkovskis,2,1,Associate Investment Advisor,N/A,N/A,alexander.volkovskis@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/alexander-volkovskis-56ab3a148,N/A,N/A,24
+Agnes,Krause,2,1,Senior Investment Advisor at TD,N/A,N/A,agnes.krause@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/agnes-krause-a03b838,N/A,N/A,24
+Taeho,Ha,2,1,Investment Advisor,N/A,N/A,taeho.ha@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/taeho-ha-86323a23,N/A,N/A,25
+Drew,Hooch-Antink,2,1,Associate Investment Advisor at TD,N/A,N/A,drew.hooch-antink@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/drew-hooch-antink-8848a7150,N/A,N/A,24
+Alan,Hamilton,2,1,Investment Advisor at TD,N/A,N/A,alan.hamilton@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/alan-hamilton-b-sc-pfp%c2%ae-57837812a,N/A,N/A,24
+Zeljka,Walker,2,1,Portfolio Manager and Senior Investment Advisor,N/A,N/A,zeljka.walker@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/zeljkawalker,N/A,N/A,24
+Jeffrey,Jakobsen,2,1,Senior Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,jeffrey.jakobsen@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jeffrey-jakobsen,N/A,N/A,24
+Roy,Christensen,2,1,Senior Investment Advisor & Associate Portfolio Manager at TD Wealth,N/A,N/A,roy.christensen@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/roy-christensen-b9b46613,N/A,N/A,24
+Keshia,Murdoch,2,1,Invest by Phone Advisor,N/A,N/A,keshia.murdoch@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/keshia-murdoch-b12753114,N/A,N/A,25
+Michael,Little,2,1,Investment Advisor,N/A,N/A,michael.little@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michael-little-cfp-75054141,N/A,N/A,24
+Brian,Porter,2,1,Associate Investment Advisor,N/A,N/A,brian.porter@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/brian-porter-15895222b,N/A,N/A,24
+Andy,Kim,2,1,"Senior Investment Advisor, TD",N/A,N/A,andy.kim@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/andykimwealthadvisory,N/A,N/A,24
+Tanya,Harb,2,1,Senior Investment Advisor at TD,N/A,N/A,tanya.harb@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/tanya-harb-b-comm-cfp%c2%ae-fcsi%c2%ae-68b2a955,N/A,N/A,24
+Rosanna,Toscano,2,1,"Associate Investment Advisor, TD",N/A,N/A,rosanna.toscano@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/rosanna-toscano-ciwm-pfp%c2%ae-cea-83b28220,N/A,N/A,24
+Marco,Marin,2,1,Associate Portfolio Manager and Senior Investment Advisor,N/A,N/A,marco.marin@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/marco-marin-cfp%c2%ae-cim%c2%ae-fcsi%c2%ae-b9a61889,N/A,N/A,24
+Michael,Thakkar,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,michael.thakkar@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michaelthakkar,N/A,N/A,24
+Djonatan,Buissereth,2,1,Investment Advisor,N/A,N/A,djonatan.buissereth@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/djonatan-buissereth-248172128,N/A,N/A,25
+Mario,Barbaro,2,1,Senior Portfolio Manager & Senior Investment Advisor,N/A,N/A,mario.barbaro@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mario-barbaro-cfp%c2%ae-cim%c2%ae-fcsi%c2%ae-73551652,N/A,N/A,24
+Fraser,Brothers,2,1,Senior Investment Advisor at TD,N/A,N/A,fraser.brothers@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/fraser-brothers-36297b12,N/A,N/A,24
+Gaurav,Sharma,2,1,Senior Investment Advisor at TD,N/A,N/A,gaurav.sharma@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/gaurav-sharma-cfp%c2%ae-cim%c2%ae-fma-fcsi%c2%ae-b3991119,N/A,N/A,24
+Steve,Dwek,2,1,Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,steve.dwek@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/steve-dwek-cim%c2%ae-334a1a7,N/A,N/A,24
+Mauro,Garofalo,2,1,Senior Investment Advisor at TD,N/A,N/A,mauro.garofalo@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mauro-garofalo-cfp%c2%ae-fma-cea-b0156149,N/A,N/A,24
+Justin,Bell,2,1,Associate Investment Advisor at TD,N/A,N/A,justin.bell@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/justin-bell-748285224,N/A,N/A,24
+Erick,Alvarado,2,1,Investment Advisor,N/A,N/A,erick.alvarado@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/erick-alvarado-13313a49,N/A,N/A,24
+Dina,Williams,2,1,"Senior Investment Advisor BA, CFP",N/A,N/A,dina.williams@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/dina-williams-ba-cfp-b6124867,N/A,N/A,24
+Annette,Pennings,2,1,Investment Advisor at TD,N/A,N/A,annette.pennings@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/annette-pennings-cfp%c2%ae-cim%c2%ae-fma-fcsi%c2%ae-36309bb1,N/A,N/A,24
+James,Blackwell,2,1,Investment Advisor at TD,N/A,N/A,james.blackwell@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jamesmblackwell,N/A,N/A,24
+Mike,Hehir,2,1,Investment Advisor,N/A,N/A,mike.hehir@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mike-hehir-87a78b28,N/A,N/A,24
+David,Lee,2,1,Investment Advisor at TD,N/A,N/A,david.t.lee@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/david-lee-cim%c2%ae-cfp%c2%ae-7006299a,N/A,N/A,24
+Robert,Krasilowez,2,1,"Portfolio Manager & Group Investment, The Ballendine Thakkar Advisor",N/A,N/A,robert.krasilowez@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/robert-krasilowez-4131b436,N/A,N/A,24
+Janice,Lui,2,1,Investment Advisor at TD,N/A,N/A,janice.lui@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/janicelui-td,N/A,N/A,24
+Channing,Chang,2,1,Senior Investment Advisor,N/A,N/A,channing.chang@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/channing-chang-46ab51135,N/A,N/A,24
+Michael,Chen,2,1,Invest by Phone Advisor,N/A,N/A,michael.mc.chen@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/michael-chen-60a20165,N/A,N/A,25
+Stephen,Dockrill,2,1,Investment Advisor,N/A,N/A,stephen.dockrill@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/stephen-dockrill-9646216b,N/A,N/A,24
+Mike,Jefferies,2,1,Senior Investment Advisor,N/A,N/A,mike.jefferies@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mike-jefferies-cfp-31a11959,N/A,N/A,24
+Andrew,Clayton,2,1,Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,andrew.clayton@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/andrew-j-clayton-b6414474,N/A,N/A,24
+Christopher,Jaworski,2,1,Senior Investment Advisor,N/A,N/A,chris.jaworski@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/christopher-jaworski-cfp-fma-fcsi-b26750ab,N/A,N/A,24
+Samir,Shah,2,1,Senior Investment Advisor at TD,N/A,N/A,samir.i.shah@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/samir-shah-cfa-7818bb16,N/A,N/A,24
+Anitha,Castelino,2,1,Senior Investment Advisor,N/A,N/A,anitha.castelino@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/anitha-castelino-cfp%c2%ae-mcom-fma-689985b0,N/A,N/A,24
+Matthew,Karam,2,1,Investment TD Advisor,N/A,N/A,matthew.karam@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/matthew-karam-cfa-tep-cfp%c2%ae-4085b085,N/A,N/A,24
+William,Dunn,2,1,"Senior Investment Advisor, TD",N/A,N/A,william.dunn@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/william-dunn-0598a3101,N/A,N/A,24
+Dimple,Walia,2,1,IBP (invest by Phone) Advisor,N/A,N/A,dimple.walia@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/dimple-walia-b78599212,N/A,N/A,25
+Anna,Vasylko,2,1,Invest-by-Phone Advisor,N/A,N/A,anna.vasylko@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/anna-vasylko-414974254,N/A,N/A,25
+Stephen,Pym,2,1,Senior Investment Advisor at TD,N/A,N/A,stephen.pym@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/stephen-pym-cim%c2%ae-6396aa17,N/A,N/A,24
+Giacomo,Gelmo,2,1,Senior Investment Advisor at TD,N/A,N/A,giac.gelmo@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/giacomo-gelmo-61a94111,N/A,N/A,24
+Jonathan,Lund,2,1,"Branch Manager, Associate Portfolio Manager & Senior Investment Advisor | TD Wealth PIA",N/A,N/A,jonathan.lund@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jonathanlundtd,N/A,N/A,24
+Demo,Dovolos,2,1,Senior Investment Advisor,N/A,N/A,demo.dovolos@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/demo-dovolos-pfp%c2%ae-ab14b957,N/A,N/A,24
+Marc,Larente,2,1,Senior Investment Advisor With Larente Baksh & Associates at TD,N/A,N/A,marc.larente@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/marclarente,N/A,N/A,24
+Jon,Ferrara,2,1,Senior Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,jonathan.ferrara@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jon-ferrara,N/A,N/A,24
+Russ,Clamp,2,1,Investment Advisor,N/A,N/A,russ.clamp@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/russ-clamp-1a634716,N/A,N/A,24
+George,Marsh,2,1,Senior Portfolio Manager & Senior Investment Advisor,N/A,N/A,george.marsh@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/marshgeorge,N/A,N/A,24
+Aly,Ajani,2,1,Senior Investment Advisor at TD,N/A,N/A,aly.ajani@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/alyajani,N/A,N/A,24
+Julien,Proulx,2,1,Conseiller en Placement Associé,N/A,N/A,julien.proulx@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/julien-proulx,N/A,N/A,24
+Jeff,Schacter,2,1,"Senior Portfolio Manager and Senior Investment Advisor, TD",N/A,N/A,jeff.schacter@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jeff-schacter-9452187a,N/A,N/A,24
+Nicole,Mai,2,1,Senior Investment Advisor at TD,N/A,N/A,nicole.mai@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/tdwealthnicolemai,N/A,N/A,24
+Brad,Myers,2,1,Associate Investment Advisor,N/A,N/A,brad.myers@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/brad-myers-192b5214,N/A,N/A,24
+Kathryn,Greco,2,1,Senior Investment Advisor,N/A,N/A,kathryn.delgreco@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/kathryn-del-greco,N/A,N/A,24
+Richard,Morris,2,1,Senior Investment Advisor,N/A,N/A,richard.morris@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/richardmorristd,N/A,N/A,24
+Don,Minarik,2,1,"Investment Advisor, CIM, FEA",N/A,N/A,donald.minarik@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/donminarik,N/A,N/A,24
+Kathryn,McNeil,2,1,Associate Portfolio Manager and Senior Investment Advisor,N/A,N/A,kathryn.mcneil@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/kathrynmcneiltd,N/A,N/A,24
+Jessica,Gardner,2,1,Senior Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,jessica.gardner@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jessica-gardner-cim%c2%ae-a1ba6423,N/A,N/A,24
+Mayuri,Sahai,2,1,Investment Advisor,N/A,N/A,mayuri.sahai@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/mayuri-sahai-1652261b1,N/A,N/A,25
+Daryl,Danchek,2,1,Investment Advisor,N/A,N/A,daryl.danchek@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/daryl-danchek-8804b548,N/A,N/A,24
+Adama,Sall,2,1,Investment Advisor,N/A,N/A,adama.sall@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/adama-sall-95707290,N/A,N/A,25
+Jim,Hilborn,2,1,Investment Advisor,N/A,N/A,james.hilborn@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jim-hilborn-cfp%c2%ae-3a0488186,N/A,N/A,24
+Shelby,Forbes,2,1,Senior Investment Advisor at TD,N/A,N/A,shelby.v.smith@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/shelbyforbes,N/A,N/A,24
+Syed,Raahim,2,1,Investment Advisor,N/A,N/A,syed.raahim@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/syraahim,N/A,N/A,24
+Debbie,Hudson,2,1,Senior Investment Advisor,N/A,N/A,debbie.hudson@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/debbie-hudson-cfp%c2%ae-cim%c2%ae-55538437,N/A,N/A,24
+Trung,Oan,2,1,"Senior Investment Advisor, TD",N/A,N/A,trung.oan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/trungoan,N/A,N/A,24
+Aubrey,D'Souza,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,aubrey.dsouza@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/aubrey-d-souza-cim%c2%ae-8871b828,N/A,N/A,24
+Kristy,Macdonald,2,1,Senior Investment Advisor at TD,N/A,N/A,kristy.macdonald@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/kristy-m-macdonald-harbourstone-wealth,N/A,N/A,24
+John,Stergiu,2,1,Senior Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,john.stergiu@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/john-stergiu-26496822,N/A,N/A,24
+Jason,Casagrande,2,1,Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,jason.casagrande@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jasoncasagrande,N/A,N/A,24
+Tim,Roscoe,2,1,"Portfolio Manager, Senior Investment Advisor at TD",N/A,N/A,tim.roscoe@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/tim-roscoe-67565b24,N/A,N/A,24
+Glen,Hunter,2,1,Senior Investment Advisor at TD,N/A,N/A,glen.hunter@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/glen-hunter-cfp%c2%ae-cim%c2%ae-29907b13,N/A,N/A,24
+Andrew,Cooper,2,1,"Senior Investment Advisor, TD",N/A,N/A,andrew.cooper@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/andrew-cooper-ab33b159,N/A,N/A,24
+Tyler,Jones,2,1,Investment Advisor,N/A,N/A,tyler.jones@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/tyler-jones-cfp-cim-67ab5466,N/A,N/A,24
+Kitty,Leung,2,1,Advisor Enablement Coach (Invest by Phone and Credit),N/A,N/A,kitty.leung@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/kitty-h-w-leung-413617b5,N/A,N/A,25
+George,Nenos,2,1,Senior Investment Advisor at TD,N/A,N/A,george.nenos@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/george-nenos-17a9272,N/A,N/A,24
+Paul,Richardson,2,1,Senior Investment Advisor,N/A,N/A,paul.richardson@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/paul-richardson-8bbb9a11,N/A,N/A,24
+Cydney,Hope,2,1,Investment Advisor at TD,N/A,N/A,cydney.hope@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/cydney-hope-611468160,N/A,N/A,24
+Marley,Snow,2,1,Senior Investment Advisor & Senior Portfolio Manager,N/A,N/A,marley.snow@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/marley-snow-fma-ciwm-cim%c2%ae-1563b77,N/A,N/A,24
+Manpreet,Kaur,2,1,Investment Advisor,N/A,N/A,manpreet.d.kaur@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/manpreet-kaur-6a4644150,N/A,N/A,25
+Sam,Salem,2,1,"Portfolio Manager, Senior Investment Advisor",N/A,N/A,sam.salem@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/sam-salem-1a235227,N/A,N/A,24
+Todd,Cook,2,1,Investment Advisor,N/A,N/A,todd.cook@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/todd-cook-b3598446,N/A,N/A,24
+Brendan,Woods,2,1,Associate Investment Advisor,N/A,N/A,brendan.woods@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/brendan-woods-cfp%c2%ae-cim%c2%ae-90a07213b,N/A,N/A,24
+Isaac,Sousa,2,1,Investment Advisor at TD,N/A,N/A,isaac.sousa@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/isaac-sousa-cfa-0337a61b,N/A,N/A,24
+Robert,Jungwirth,2,1,Senior Investment Advisor at TD,N/A,N/A,robert.jungwirth@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/robert-jungwirth-4891b08a,N/A,N/A,24
+Shaun,Rickerby,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,shaun.rickerby@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/shaunrickerby,N/A,N/A,24
+Colin,Wright,2,1,"Associate Portfolio Manager, Investment Advisor at TD",N/A,N/A,colin.wright@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/colinwright-td,N/A,N/A,24
+Katrina,Young,2,1,Investment Advisor With RiverKeeper Wealth Management at TD,N/A,N/A,katrina.young@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/katrina-young-td,N/A,N/A,24
+Martin,Pepin,2,1,Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,martin.pepin@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/martin-p%c3%a9pin-438b3611,N/A,N/A,24
+Liping,Han,2,1,Senior Investment Advisor and Associate Portfolio Manager at TD,N/A,N/A,liping.han@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/liping-han-b-comm-cim%c2%ae-7153841b,N/A,N/A,24
+Joshua,Ralph,2,1,"Investment Advisor, Vice President",N/A,N/A,joshua.ralph@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/joshua-ralph-bb036922,N/A,N/A,24
+Naman,Ajmera,2,1,Invest By Phone Advisor,N/A,N/A,naman.ajmera@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/namanajmera15,N/A,N/A,25
+Shawn,Long,2,1,Associate Portfolio Manager and Investment Advisor at TD,N/A,N/A,shawn.long@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/shawn-long-cfp%c2%ae-cim%c2%ae-rrc%c2%ae-6520531,N/A,N/A,24
+Bryan,Wells,2,1,Investment Advisor at TD,N/A,N/A,bryan.wells@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/bryan-wells-195991311,N/A,N/A,24
+Olivier,Besnard,2,1,Investment Advisor - TD,N/A,N/A,olivier.besnard@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/olivier-besnard-339674166,N/A,N/A,24
+Connie,Yuen,2,1,Associate Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,connie.yuen@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/connieyuentd,N/A,N/A,24
+Dan,Muncan,2,1,Investment Advisor,N/A,N/A,dan.muncan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/dan-muncan-6bbb0693,N/A,N/A,24
+Russell,Chew,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,russell.chew@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/russell-chew-02904a57,N/A,N/A,24
+Ahmed,Elhakim,2,1,Investment Advisor,N/A,N/A,ahmed.elhakim@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/ahmed-elhakim-6a7a34153,N/A,N/A,25
+Courtney,Usborne,2,1,Associate Investment Advisor at TD,N/A,N/A,courtney.usborne@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/courtney-usborne-016426255,N/A,N/A,24
+Adam,Oberman,2,1,Senior Investment Advisor at TD,N/A,N/A,adam.oberman@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/adam-oberman-cim%c2%ae-fcsi%c2%ae-b3a15013,N/A,N/A,24
+Andrew,Grieve,2,1,Investment Advisor,N/A,N/A,andrew.grieve@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/andrew-j-e-grieve-99744512,N/A,N/A,24
+Robert,Sager,2,1,"Associate Portfolio Manager, Senior Investment Advisor at TD",N/A,N/A,robert.sager@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/robert-sager-70a26913,N/A,N/A,24
+John,Kneeshaw,2,1,Investment Advisor at TD,N/A,N/A,john.kneeshaw@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/john-kneeshaw-99a499a9,N/A,N/A,24
+John,Fitzpatrick,2,1,Investment Advisor With TD,N/A,N/A,johnc.fitzpatrick@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/john-fitzpatrick-9b6a072b,N/A,N/A,24
+Haitham,Arafah,2,1,Investment Advisor,N/A,N/A,haitham.arafah@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/haitham-arafah-b359a479,N/A,N/A,25
+Alexander,Rojansky,2,1,Portfolio Manager and Senior Investment Advisor,N/A,N/A,alexander.rojansky@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/alexander-rojansky-600ab078,N/A,N/A,24
+Gillian,Martin,2,1,Senior Investment Advisor at TD,N/A,N/A,gillian.martin@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/gillianmartin,N/A,N/A,24
+Alex,Lau,2,1,Senior Investment Advisor,N/A,N/A,alex.lau@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/alex-lau-179b2b17,N/A,N/A,24
+Jeff,Ruszkowski,2,1,Investment Advisor,N/A,N/A,jeff.ruszkowski@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/jeff-ruszkowski-8ab390174,N/A,N/A,25
+Tristan,Gresland,2,1,"Investment Advisor, Partner | TD - Larente Baksh & Associates",N/A,N/A,tristan.gresland@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/tristan-g,N/A,N/A,24
+Bev,Kumar,2,1,Senior Investment Advisor at TD,N/A,N/A,bev.kumar@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/bev-kumar-cfp%c2%ae-1b325a7,N/A,N/A,24
+Mark,Heenan,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,mark.heenan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mark-heenan-cfp%c2%ae-cfa-10026059,N/A,N/A,24
+Liam,Rivet,2,1,Associate Investment Advisor at TD,N/A,N/A,liam.rivet@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/liam-rivet,N/A,N/A,24
+Rileigh,Perin,2,1,Associate Investment Advisor at TD,N/A,N/A,rileigh.perin@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/rileigh-perin-62218b18b,N/A,N/A,24
+Christopher,Szalacsi,2,1,Senior Select Investment and Group Advantage Advisor,N/A,N/A,christopher.szalacsi@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/christopher-szalacsi-1aab20126,N/A,N/A,25
+Vincent,Yuen,2,1,Associate Portfolio Manager and Senior Investment Advisor,N/A,N/A,vincent.yuen@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/vincent-yuen-cfp%c2%ae-cim%c2%ae-fcsi%c2%ae-7360361b,N/A,N/A,24
+Andrew,Jewell,2,1,Senior Portfolio Manager & Senior Investment Advisor,N/A,N/A,andrew.jewell@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/andrew-jewell-cim%c2%ae-72b6326,N/A,N/A,24
+Trevor,Mullin,2,1,"Associate Investment Advisor, TD",N/A,N/A,trevor.mullin@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/trevor-mullin-8233606a,N/A,N/A,24
+Luke,Glombick,2,1,Associate Investment Advisor | TD,N/A,N/A,luke.glombick@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/luke-glombick-b90064135,N/A,N/A,24
+Madhumita,Mitra,2,1,Invest By Phone Advisor,N/A,N/A,madhumita.mitra@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/madhumita-mitra-8b86aa101,N/A,N/A,25
+Robert,Gibson,2,1,Senior Investment Advisor,N/A,N/A,robert.gibson@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/robert-gibson-6b40a7302,N/A,N/A,24
+Curtis,Mangione,2,1,Senior Investment Advisor at TD,N/A,N/A,curtis.mangione@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/curtismangione,N/A,N/A,24
+Eric,Isabelle,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,eric.isabelle@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/eric-isabelle-1207b9162,N/A,N/A,24
+Asif,Islam,2,1,Investment Advisor,N/A,N/A,asif.islam@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/islamasif,N/A,N/A,25
+David,Ferryman,2,1,Senior Investment Advisor at TD,N/A,N/A,david.ferryman@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/dferryman,N/A,N/A,24
+Heidi,Bradley,2,1,Associate Investment Advisor at TD,N/A,N/A,heidi.bradley@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/heidibradley,N/A,N/A,24
+Crystal,Landry,2,1,Invest by Phone Advisor,N/A,N/A,crystal.landry@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/crystal-landry-4117951b7,N/A,N/A,25
+Muskan,Muskan,2,1,Technical Support and Digital Investment Advisor,N/A,N/A,muskan.muskan@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/muskan-muskan-09730121a,N/A,N/A,25
+Matthew,Harpwood,2,1,Investment Advisor at TD Waterhouse Private Investment Advice,N/A,N/A,matthew.harpwood@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/matthewharpwood,N/A,N/A,24
+Harpreet,Kaur,2,1,Investment Advisor,N/A,N/A,harpreet.kaur@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/harpreet-kaur-82a5ab194,N/A,N/A,24
+Albert,Mason,2,1,Investment Advisor at TD,N/A,N/A,albert.mason@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/albertmason1,N/A,N/A,24
+Christopher,Kalafatis,2,1,Investment Advisor at TD,N/A,N/A,christopher.kalafatis@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/christopher-kalafatis-aba28177,N/A,N/A,24
+Michele,Gomes,2,1,Senior Investment Advisor at TD,N/A,N/A,michele.gomes@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michele-e-gomes-a2b26214,N/A,N/A,24
+Andreea,Muncan,2,1,Associate Investment Advisor at TD,N/A,N/A,andreea.muncan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/andreeamuncan,N/A,N/A,24
+James,Morton,2,1,"Senior Portfolio Manager, Senior Investment Advisor at TD",N/A,N/A,james.morton@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/james-morton-a06b2057,N/A,N/A,24
+Masanobu,Hayashi,2,1,Senior Investment Advisor at TD,N/A,N/A,masanobu.hayashi@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/masanobu-hayashi-cfp%c2%ae-31aba210,N/A,N/A,24
+Darrell,Turnbull,2,1,Senior Investment Advisor,N/A,N/A,darrell.turnbull@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/darrell-turnbull-cfp%c2%ae-a826983,N/A,N/A,24
+David,Duquette,2,1,Senior Portfolio Manager & Senior Investment Advisor - TD,N/A,N/A,david.duquette@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/duquettedavid,N/A,N/A,24
+Owen,Russell,2,1,Associate Investment Advisor,N/A,N/A,owen.russell@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/owen-russell-a17a80170,N/A,N/A,24
+Jason,McLean,2,1,Investment Advisor at TD,N/A,N/A,jason.mclean@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jason-mclean-29a1b827,N/A,N/A,24
+Geet,Chawla,2,1,"Investment Advisor, TD",N/A,N/A,geet.chawla@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/geetchawla-cpa,N/A,N/A,24
+Robert,Sacco,2,1,Investment Advisor - Investment Advice Centre - TD,N/A,N/A,robert.sacco@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/robert-sacco-cfa-40312423,N/A,N/A,24
+Esyel,Keskin,2,1,"Financial Advisor (PB), Investment Specialist, Mortgage Advisor",N/A,N/A,esyel.keskin@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/esyelkeskin,N/A,N/A,24
+Jonathan,Grant,2,1,Associate Portfolio Manager and Investment Advisor at TD,N/A,N/A,jonathan.grant@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jonathan-grant-6358871aa,N/A,N/A,24
+Grant,Ackerman,2,1,"Senior Portfolio Manager & Senior Investment Advisor, TD",N/A,N/A,grant.ackerman@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/grant-ackerman-64819011,N/A,N/A,24
+Alex,Kwan,2,1,Investment Advisor,N/A,N/A,akwan@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/alex-kwan-145a91b,N/A,N/A,25
+Ryan,Smith,2,1,Investment Advisor at TD,N/A,N/A,ryan.smith3@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/ryan-d-smith-91445a70,N/A,N/A,24
+Eric,Bae,2,1,Invest By Phone Advisor,N/A,N/A,eric.bae@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/eric-bae-32b8ab189,N/A,N/A,25
+Dwayne,Palchewich,2,1,Senior Investment Advisor at TD,N/A,N/A,dwayne.palchewich@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/dwayne-palchewich-5bb92614,N/A,N/A,24
+Sheikh,Melisa,2,1,Investment Advisor,N/A,N/A,sheikh.melisa@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/sheikh-melisa,N/A,N/A,24
+Jamie,May,2,1,"Senior Investment Advisor, TD",N/A,N/A,jamie.may@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jamie-may-2b46b110,N/A,N/A,24
+Roberto,Pasion,2,1,"Associate Portfolio Manager and Senior Investment Advisor, TD",N/A,N/A,roberto.pasion@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/roberto-b-pasion-cfp%c2%ae-cim%c2%ae-fcsi%c2%ae-fma-a148a75,N/A,N/A,24
+Peter,Porfiris,2,1,Senior Investment Advisor at TD,N/A,N/A,peter.porfiris@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/peter-porfiris,N/A,N/A,24
+Philip,Dupuis,2,1,Senior Portfolio Manager and Investment Advisor,N/A,N/A,philip.dupuis@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/philip-jeremy-dupuis-8b041912,N/A,N/A,24
+Chizoma,Oghor,2,1,Credit & Investment Advisor,N/A,N/A,chizoma.oghor@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/chizoma-oghor-nee-agoha-86a4a915a,N/A,N/A,25
+Jennifer,Nelson,2,1,Senior Investment Advisor at TD,N/A,N/A,jennifer.tretinanelson@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jennifer-tretina-nelson-17810140,N/A,N/A,24
+Hugh,Gleason,2,1,Investment Advisor,N/A,N/A,hugh.gleason@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/hugh-gleason-6117166,N/A,N/A,24
+Derek,Stewart,2,1,Senior Investment Advisor at TD,N/A,N/A,derek.stewart@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/derek-stewart-5673a018a,N/A,N/A,24
+Liz,Desjardins,2,1,Senior Portfolio Manager and Senior Investment Advisor,N/A,N/A,elizabeth.desjardins@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/lizdesjardins,N/A,N/A,24
+Douglas,Orford,2,1,Investment Advisor,N/A,N/A,doug.orford@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/douglas-orford-99102141,N/A,N/A,24
+Michael,Currie,2,1,Senior Investment Advisor at TD,N/A,N/A,michael.currie@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jmichaelcurrie,N/A,N/A,24
+Adam,Sonoda,2,1,Investment Advisor at TD,N/A,N/A,adam.sonoda@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/adamsonoda,N/A,N/A,24
+Paul,Danesi,2,1,Associate Investment Advisor - Veltri Wealth Management,N/A,N/A,paul.danesi@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/pauldanesi,N/A,N/A,24
+Matthew,Phillips,2,1,Associate Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,matthew.phillips@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/matthew-phillips-b498b3196,N/A,N/A,24
+Jasmine,Xu,2,1,Senior Investment Advisor at TD,N/A,N/A,jasmine.xu@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jasmine-xu-b-comm-mba-cfp%c2%ae-cim%c2%ae-872a1824,N/A,N/A,24
+Matt,Solberg,2,1,Senior Investment Advisor at TD,N/A,N/A,matt.solberg@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/matt-solberg-8b52447a,N/A,N/A,24
+Momodou,Sanyang,2,1,Investment Advisor,N/A,N/A,momodou.sanyang@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/momodou-sanyang-80726b77,N/A,N/A,25
+Ayodele,Adeluola,2,1,Investment Advisor,N/A,N/A,ayodele.adeluola@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/ayodele-adeluola-9656218a,N/A,N/A,25
+Dimitri,Pinto,2,1,Investment Advisor Centralized Client Service,N/A,N/A,dimitri.pinto@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/dimitri-pinto-23b54218,N/A,N/A,24
+Abdo,Sadek,2,1,Invest By Phone Advisor,N/A,N/A,gycoupa@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/abdosadek,N/A,N/A,25
+Jonathan,Dunn,2,1,Associate Investment Advisor,N/A,N/A,jonathan.dunn@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jonathan-dunn-cfp-a5779091,N/A,N/A,24
+David,Smart,2,1,Investment Advisor,N/A,N/A,david.smart@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/david-smart-aa0111127,N/A,N/A,24
+Mario,Nunnaro,2,1,TD Private Wealth Investment Advisor,N/A,N/A,mario.nunnaro@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mario-nunnaro-b0a30249,N/A,N/A,24
+John,Bahen,2,1,Senior Investment Advisor,N/A,N/A,john.bahen@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/john-bahen-0bb34310,N/A,N/A,24
+Allison,Hay,2,1,Associate Investment Advisor,N/A,N/A,allison.hay@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/allison-alli-hay-b386b460,N/A,N/A,24
+Paul,Debanne,2,1,Vice President & Investment Advisor,N/A,N/A,paul.debanne@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/paul-debann%c3%a9-mba-cim%c2%ae-fcsi%c2%ae-02a37115,N/A,N/A,24
+Caelan,Large,2,1,Associate Investment Advisor at TD,N/A,N/A,caelan.large@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/caelan-large-cim%c2%ae-a15758156,N/A,N/A,24
+Jessica,Molinaro,2,1,Investment Advisor at TD,N/A,N/A,jessica.molinaro@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jessica-molinaro-06704599,N/A,N/A,24
+Vito,Perri,2,1,Investment Advisor,N/A,N/A,vito.perri@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/vito-perri-104a9574,N/A,N/A,24
+Daniel,Wellbelove,2,1,Associate Investment Advisor,N/A,N/A,daniel.wellbelove@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/daniel-wellbelove,N/A,N/A,24
+Christie,Bartram,2,1,Associate Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,christie.bartram@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/christiebartram,N/A,N/A,24
+Paul,Kwan,2,1,Senior Investment Advisor at TD,N/A,N/A,paul.kwan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/paulkwantdwealth,N/A,N/A,24
+Stephen,Bell,2,1,Investment Associate & TD Advisor,N/A,N/A,stephen.bell@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/stephenhbell,N/A,N/A,24
+Douglas,Wigle,2,1,Investment Advisor,N/A,N/A,douglas.wigle@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/douglas-wigle-41aa361b,N/A,N/A,24
+Suneel,Manhas,2,1,RBC Wealth Management - Associate Branch Director & Investment Advisor,N/A,N/A,suneel.manhas@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/suneelmanhas,N/A,N/A,25
+Zoe,Kiousis,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,zoe.kiousis@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/zoe-joyce-kiousis-cim%c2%ae-fcsi%c2%ae-a240802b,N/A,N/A,24
+Mariella,Khalaimov,2,1,Associate Investment Advisor,N/A,N/A,mariella.bugeja@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/mariella-khalaimov-4306a9b5,N/A,N/A,24
+May,Wang,2,1,Financial Advisor Investment and Retirement Planning,N/A,N/A,may.wang@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/may-wang-5b0b71b1,N/A,N/A,25
+Steven,Frendo-Jones,2,1,"Senior Investment Advisor, The Everest Group at TD",N/A,N/A,steven.frendo-jones@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/steven-frendo-jones-cim%c2%ae-53603617,N/A,N/A,24
+Jean,Reeves,2,1,Senior Investment Advisor & Senior Portfolio Manager at TD,N/A,N/A,jean.reeves@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jean-reeves-cim%c2%ae-15537015,N/A,N/A,24
+Robert,Komlos,2,1,"Senior Investment Advisor, TD",N/A,N/A,robert.komlos@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/robert-komlos-21911549,N/A,N/A,24
+Coulson,Wiggan,2,1,Associate Investment Advisor,N/A,N/A,coulson.wiggan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/coulson-wiggan-8413ba197,N/A,N/A,24
+Gil,Dominique,2,1,Investment Advisor,N/A,N/A,gil.dominique@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/gil-dominique-65b919180,N/A,N/A,25
+Jamie,Mundt,2,1,Associate Investment Advisor,N/A,N/A,jamie.mundt@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jamie-mundt-cfa-6b3111150,N/A,N/A,24
+Carrie,Lentz,2,1,Investment Advisor,N/A,N/A,carrie.lentz@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/carrie-ring-lentz,N/A,N/A,24
+Scott,Smith,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,scott.g.smith@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/scottgsmithtd,N/A,N/A,24
+Kenneth,Cheung,2,1,Investment Advisor,N/A,N/A,kenneth.cheung@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/kenneth-cheung-3598b851,N/A,N/A,24
+Randy,Ponte,2,1,Investment Advisor at TD,N/A,N/A,randy.ponte@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/randy-ponte-84002610b,N/A,N/A,24
+Peter,Karalis,2,1,Senior Portfolio Manager and Senior Investment Advisor,N/A,N/A,peter.karalis@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/peter-karalis-797a474b,N/A,N/A,24
+Cameron,Byrne,2,1,Associate Investment Advisor at TD,N/A,N/A,cameron.byrne@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/cameron-byrne-239a582b2,N/A,N/A,24
+Namra,Shah,2,1,Investment and Credit Advisor,N/A,N/A,namra.shah@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/namra-shah-598aa139,N/A,N/A,25
+Jon,McIntosh,2,1,Associate Investment Advisor at TD,N/A,N/A,jon.mcintosh@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jon-mcintosh-a9712848,N/A,N/A,24
+John,Ngo,2,1,Associate Investment Advisor,N/A,N/A,john.ngo@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/john-ngo,N/A,N/A,24
+Angela,Zheng,2,1,Associate Investment Advisor at TD,N/A,N/A,angela.zheng@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/angela-zheng-cim%c2%ae-fcsi%c2%ae-a62a68201,N/A,N/A,24
+Jason,Rietze,2,1,Associate Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,jason.rietze@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jason-rietze-21787951,N/A,N/A,24
+Chitsimran,Kaur,2,1,Senior Investment Advisor,N/A,N/A,chitsimran.kaur@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/chitsimrankaur,N/A,N/A,25
+Chris,Barnes,2,1,Associate Investment Advisor,N/A,N/A,chris.barnes@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/chris-barnes-,N/A,N/A,24
+Eric,Wilson,2,1,Investment Advisor With L&L Group at TD,N/A,N/A,eric.wilson@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/eric-wilson-cim%c2%ae-651955a,N/A,N/A,24
+Rocsana,Filip,2,1,"Associate Portfolio Manager & Senior Investment Advisor, TD",N/A,N/A,rocsana.filip@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/rocsana-filip-cfp%c2%ae-cim%c2%ae-tep-1149a572,N/A,N/A,24
+Craig,Henry,2,1,Investment Advisor,N/A,N/A,craig.henry@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/craig-henry-8455951b,N/A,N/A,24
+Roxxena,Farid,2,1,Investment Advisor at TD,N/A,N/A,roxxena.farid@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/roxxena-farid-b-comm-cfp%c2%ae-cim%c2%ae-87024816a,N/A,N/A,24
+Michael,Smith,2,1,Portfolio Manager & Investment Advisor,N/A,N/A,michael.b.smith@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michael-smith-b-admin-cim-426841151,N/A,N/A,24
+Chris,Nicol,2,1,Investment Advisor at TD,N/A,N/A,christopher.nicol@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/chris-nicol-13322255,N/A,N/A,24
+Jun,Yan,2,1,"Portfolio Manager, Senior Investment Advisor",N/A,N/A,jun.yan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jun-yan-cim%c2%ae-fcsi%c2%ae-m-econ-61753743,N/A,N/A,24
+Hanan,Duchon,2,1,Senior Portfolio Manager & Senior Investment Advisor With BRiTE Wealth Management,N/A,N/A,hanan.duchon@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/hananduchon,N/A,N/A,24
+Jillian,Bryan,2,1,Senior Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,jillian.bryan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/jillian-bryan-a6245315,N/A,N/A,24
+Michael,Kawchuk,2,1,Investment Advisor at TD,N/A,N/A,michael.kawchuk@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/michael-kawchuk-cfa-cfp%c2%ae-21515148,N/A,N/A,24
+Audrey,Kwan,2,1,Portfolio Manager and Senior Investment Advisor at TD,N/A,N/A,audrey.kwan@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/audreykwantdwealth,N/A,N/A,24
+Gurvinder,Kaur,2,1,Investment Advisor,N/A,N/A,gurvinder.kaur@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/gurvinder-kaur-489109238,N/A,N/A,25
+Irina,Kalyupa,2,1,Investment Advisor,N/A,N/A,irina.kalyupa@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/irina-kalyupa-93789a79,N/A,N/A,25
+Nino,Fasulo,2,1,Associate Investment Advisor at TD,N/A,N/A,nino.fasulo@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/nino-fasulo-62a8b945,N/A,N/A,24
+Christopher,Galberg,2,1,Senior Investment Advisor at TD,N/A,N/A,chris.galberg@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/christopher-galberg-0930162,N/A,N/A,24
+Paul,Crake,2,1,Senior Portfolio Manager & Senior Investment Advisor at TD,N/A,N/A,paul.crake@td.com,N/A,N/A,N/A,http://www.linkedin.com/in/paul-d-crake-696a1933,N/A,N/A,24
+Afolake,Onifade,2,1,Investment Advisor,N/A,N/A,afolake.onifade@rbc.com,N/A,N/A,N/A,http://www.linkedin.com/in/afolake-atoyebi-onifade-0a28186a,N/A,N/A,25
+Adam,Bain,2,1,Senior Portfolio Manager,N/A,N/A,adam.bain@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/adam-bain/,N/A,N/A,25
+Andrea,McCubbin,2,1,Investment Advisor,N/A,N/A,andrea.mccubbin@nbpcd.com,N/A,N/A,N/A,https://www.linkedin.com/in/andrea-mccubbin-07560a17/,N/A,N/A,27
+Ben,Hong,2,1,Senior Wealth Advisor and Portfolio Manager,N/A,N/A,ben.hong@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/ben-hong-6b85834b/,N/A,N/A,27
+Brad,Madigan,2,1,"Wealth Advisor, Portfolio Manager",N/A,N/A,brad.madigan@scotiabank.com,N/A,N/A,N/A,https://www.linkedin.com/in/brad-madigan/,N/A,N/A,28
+Brahm,Satov,2,1,"Investment Advisor, Portfolio Manager",N/A,N/A,brahm.satov@cibc.ca,N/A,N/A,N/A,https://www.linkedin.com/in/brahm-robert-satov-a704643/,N/A,N/A,26
+Brendan,Somers,2,1,Private Wealth Advisor / Team Lead,N/A,N/A,brendan.somers@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/brendansomers/,N/A,N/A,25
+Calvin,Tenenhouse,2,1,Associate Investment Advisor,N/A,N/A,calvin.tenenhouse@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/calvin-tenenhouse-cim%C2%AE-8b164a12b/,N/A,N/A,26
+Carla,Barichello,2,1,Investment Advisor & Financial Planner,N/A,N/A,carla.barichello@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/carla-barichello-cfp-rrc-a4b68b153/,N/A,N/A,27
+Carolina,Calvo,2,1,Investment Advisor,N/A,N/A,carolina.calvo@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/carolina-calvo-cim%C2%AE-a3b25b51/,N/A,N/A,25
+Chantal,McNeily,2,1,Investment Advisor,N/A,N/A,chantal.mcneily@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/chantalmcneily/,N/A,N/A,25
+Christine,Morin,2,1,Wealth Advisor / Team Lead,N/A,N/A,christine.morin@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/christinemorinmwp/,N/A,N/A,25
+Christopher,Loy,2,1,Senior Portfolio Manager & Senior Investment Advisor,N/A,N/A,christopher.loy@nbpcd.com,N/A,N/A,N/A,https://www.linkedin.com/in/christopherl2/,N/A,N/A,27
+Daniel,Kardo,2,1,International Investment Advisor,N/A,N/A,daniel.kardo@scotiabank.com,N/A,N/A,N/A,https://www.linkedin.com/in/danielkardo/,N/A,N/A,28
+Dan,MacMillan,2,1,Investment Advisor,N/A,N/A,dan.macmillan@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/daniel-macmillan-ottawa/,N/A,N/A,27
+David,Servinis,2,1,"Senior Wealth Advisor, Portfolio Manager, Senior Investment Advisor",N/A,N/A,david.servinis@cibc.ca,N/A,N/A,N/A,https://www.linkedin.com/in/david-servinis-a5b529131/,N/A,N/A,26
+Dennis,Graves,2,1,Investment Advisor / Team Lead,N/A,N/A,dennis.graves@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/denniswgraves/,N/A,N/A,26
+David,Predovich,2,1,"Senior Portfolio Manager, Senior Investment Advisor",N/A,N/A,david.predovich@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/dpredovich/,N/A,N/A,26
+Gene,Piccoli,2,1,"Portfolio Manager, Investment Advisor",N/A,N/A,gene.piccoli@cibc.ca,N/A,N/A,N/A,https://www.linkedin.com/in/gene-piccoli-33519a22/,N/A,N/A,26
+George,Ripoll,2,1,Investment Advisor,N/A,N/A,george.ripoll@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/george-ripoll-caia-cfa-mba-6760978b/,N/A,N/A,27
+Gerald,Rudnick,2,1,Senior Investment Advisor,N/A,N/A,gerry.rudnick@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/gerald-rudnick-5772b21a4/,N/A,N/A,25
+Graeme,Schuss,2,1,Investment Advisor,N/A,N/A,graeme.schuss@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/graeme-schuss-cfa-cfp-20744bb5/,N/A,N/A,26
+Ian,Farrell,2,1,Investment Advisor,N/A,N/A,ian.farrell@td.com,N/A,N/A,N/A,https://www.linkedin.com/in/ian-farrell-8a81b1389/,N/A,N/A,24
+Inder,Arya,2,1,Investment Advisor / Team Lead,N/A,N/A,inder.arya@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/inder-arya-162b401a/,N/A,N/A,25
+James,Piccoli,2,1,Associate Investment Advisor,N/A,N/A,james.piccoli@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/james-piccoli-b1749384/,N/A,N/A,26
+Jan,Pryde,2,1,Senior Wealth Advisor,N/A,N/A,jan.pryde@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/jan-pryde-a260a631/,N/A,N/A,26
+Jason,Polsinelli,2,1,Investment Advisor / Team Lead,N/A,N/A,jason.polsinelli@scotiabank.com,N/A,N/A,N/A,https://www.linkedin.com/in/jason-polsinelli-mba-pfp-sti-cfds-cim-926b48130/,N/A,N/A,28
+Jeff,Hill,2,1,"Market Leader, Senior Investment Advisor",N/A,N/A,jeff.hill@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/jeffrphill/,N/A,N/A,27
+Jeremy,Miao,2,1,Investment Advisor,N/A,N/A,jeremy.miao@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/jeremy-miao-cfa-mba-cim-financialadvisor-millenials-taxefficiency-growthinvesting-financialplanning/,N/A,N/A,27
+John,Greenwood,2,1,Investment Advisor,N/A,N/A,john.s.f.greenwood@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/john-greenwood-a1513a166/,N/A,N/A,26
+John,Taddeo,2,1,"Investment Advisor, Portfolio Manager",N/A,N/A,john.taddeo@td.com,N/A,N/A,N/A,https://www.linkedin.com/in/john-taddeo-306574/,N/A,N/A,24
+Jonathan,Fliss,2,1,Investment Advisor,N/A,N/A,jonathan.fliss@td.com,N/A,N/A,N/A,https://www.linkedin.com/in/jonathan-fliss-25131564/,N/A,N/A,24
+Julia,Hayhoe,2,1,Wealth Advisor,N/A,N/A,julia.hayhoe@scotiabank.com,N/A,N/A,N/A,https://www.linkedin.com/in/julia-hayhoe-17a7b324/,N/A,N/A,28
+Lawrence,Shimizu,2,1,Vice President & Market Leader,N/A,N/A,lawrence.shimizu@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/lawrence-shimizu-855783b6/,N/A,N/A,27
+Luciano,Blandi,2,1,Vice President & Market Leader,N/A,N/A,luciano.blandi@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/luciano-blandi-4a547126/,N/A,N/A,27
+Marvin,Schmidt,2,1,"Principal, First Vice-President, Senior Investment Advisor",N/A,N/A,marvin.schmidt@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/marvin-j-schmidt/,N/A,N/A,26
+Mathieu,Ouellette,2,1,Investment Advisor,N/A,N/A,mathieu.ouellette@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/mathieuouellettecfa/,N/A,N/A,27
+Michael,Francella,2,1,Investment Advisor,N/A,N/A,michael.francella@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/michaelfrancella/,N/A,N/A,25
+Michael,Yhip,2,1,Senior Portfolio Manager & Wealth Advisor,N/A,N/A,michael.yhip@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/michaelyhip/,N/A,N/A,25
+Michael,Kelly,2,1,Investment Advisor,N/A,N/A,michael.kelly@td.com,N/A,N/A,N/A,https://www.linkedin.com/in/mike-kelly-1528b1101/,N/A,N/A,24
+Ayush,Agarwal,2,1,Investment Advisor,N/A,N/A,ayush.agarwal@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/mrayushagarwal/,N/A,N/A,25
+Nadine,Bernier,2,1,Associate Wealth and Investment Advisor,N/A,N/A,nadine.bernier@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/nadinebernierrbc/,N/A,N/A,25
+Nastassja,Celej,2,1,Investment Advisor,N/A,N/A,nastassja.celej@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/nastassja-celej-cpa-cfp-923797144/,N/A,N/A,25
+Natalie,Ferebee,2,1,Senior Investment and Wealth Advisor,N/A,N/A,natalie.ferebee@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/natalie-ferebee-fma-7730832a/,N/A,N/A,25
+Neil,Pope,2,1,"Portfolio Manager, Senior Investment Advisor",N/A,N/A,neil.pope@cibc.ca,N/A,N/A,N/A,https://www.linkedin.com/in/neil-pope-64862717/,N/A,N/A,26
+Noah,Latimer,2,1,Associate Investment Advisor,N/A,N/A,noah.latimer@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/noahlatimer/,N/A,N/A,26
+Paul,Whelan,2,1,Portfolio Manager,N/A,N/A,paul.whelan@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/paul-whelan-cfa-ma-88171a107/,N/A,N/A,26
+Peter,Brennan,2,1,"Portfolio Manager, Senior Wealth Advisor",N/A,N/A,peter.brennan@cibc.ca,N/A,N/A,N/A,https://www.linkedin.com/in/peter-brennan-0aa610/,N/A,N/A,26
+Peter,White,2,1,"Portfolio Manager, Investment Advisor",N/A,N/A,peter.white@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/peter-white-cfa-06a30b18/,N/A,N/A,26
+Philip,De Souza,2,1,Senior Portfolio Manager & Investment Advisor,N/A,N/A,phil.desouza@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/philip-de-souza-31b843186/,N/A,N/A,25
+Rick,Aulik,2,1,"Senior Investment Advisor, Associate Portfolio Manager",N/A,N/A,rick.aulik@cibc.ca,N/A,N/A,N/A,https://www.linkedin.com/in/rickaulik/,N/A,N/A,26
+Riley,Gorman,2,1,Investment Advisor,N/A,N/A,riley.gorman@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/riley-gorman-cfa-43379565/,N/A,N/A,26
+Robert,Thomson,2,1,"Senior Portfolio Manager, Investment Advisor & Financial Planner",N/A,N/A,robert.thomson@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/rob-thomson-84836918/,N/A,N/A,25
+Russell,Arksey,2,1,Branch Manager / Wealth Advisor,N/A,N/A,russell.arksey@scotiabank.com,N/A,N/A,N/A,https://www.linkedin.com/in/russell-arksey-7b7235141/,N/A,N/A,28
+Saverio,Veltri,2,1,Investment Advisor,N/A,N/A,saverio.veltri@td.com,N/A,N/A,N/A,https://www.linkedin.com/in/saverio-veltri-cfa-cfp%C2%AE-108361109/,N/A,N/A,24
+Shahan Farooq,Oosman,2,1,Investment Advisor,N/A,N/A,shahan.farooq@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/shahan-farooq-oosman/,N/A,N/A,25
+Sierra,Nunno,2,1,Wealth Advisor,N/A,N/A,sierra.nunno@scotiabank.com,N/A,N/A,N/A,https://www.linkedin.com/in/sierra-nunno/,N/A,N/A,28
+Stephen,Pietro,2,1,Investment Advisor,N/A,N/A,stephen.pietro@scotiabank.com,N/A,N/A,N/A,https://www.linkedin.com/in/stephen-pietro-2435172a/,N/A,N/A,28
+Susan,Senio,2,1,Investment Advisor,N/A,N/A,susan.senio@rbc.com,N/A,N/A,N/A,https://www.linkedin.com/in/sue-senio-3b0154130/,N/A,N/A,25
+Susan,Christie,2,1,Portfolio Manager,N/A,N/A,susan.christie@cibc.ca,N/A,N/A,N/A,https://www.linkedin.com/in/susan-christie-42244044/,N/A,N/A,26
+Syed,Naqvi,2,1,TD Wealth Family Office Advisor,N/A,N/A,syed.naqvi@td.com,N/A,N/A,N/A,https://www.linkedin.com/in/syed-sarem-naqvi-070b2438/,N/A,N/A,24
+Thalia,Kingsford,2,1,Vice-President and Senior Investment Advisor,N/A,N/A,thalia.kingsford@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/thaliakingsford/,N/A,N/A,27
+William,Aziz,2,1,Investment Advisor,N/A,N/A,william.aziz@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/william-aziz-199715208/,N/A,N/A,27
+Natalie,Jamison,2,1,Senior Wealth Advisor,N/A,N/A,natalie.jamison@scotiabank.com,N/A,N/A,N/A,https://www.linkedin.com/in/womenandwealth/,N/A,N/A,28
+Christine,Fortin,2,1,Senior Wealth Advisor,N/A,N/A,christine.fortin@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/christinedfortin/,N/A,N/A,27
+Tara,Kelly,2,1,Senior Investment Advisor & Financial Planner,N/A,N/A,tara.kelly@bmo.com,N/A,N/A,N/A,https://www.linkedin.com/in/tarakellyinvest/,N/A,N/A,27
+Penny,Omell,2,1,"Portfolio Manager, Senior Wealth Advisor",N/A,N/A,penny.omell@cibc.com,N/A,N/A,N/A,https://www.linkedin.com/in/theomellfinancialgroup/,N/A,N/A,26
