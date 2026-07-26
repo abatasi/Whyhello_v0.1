@@ -1069,6 +1069,22 @@ export default function ContactProfile() {
   );
 }
 
+// ── YouTube embed helper ───────────────────────────────────────────────────
+
+function getYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    let videoId: string | null = null;
+    if (u.hostname === "youtu.be") {
+      videoId = u.pathname.slice(1).split("?")[0];
+    } else if (u.hostname === "youtube.com" || u.hostname === "www.youtube.com") {
+      videoId = u.searchParams.get("v");
+    }
+    if (videoId) return `https://www.youtube.com/embed/${videoId}?rel=0`;
+  } catch { /* ignore */ }
+  return null;
+}
+
 // ── InsightDetailView ──────────────────────────────────────────────────────
 
 function InsightDetailView({
@@ -1105,6 +1121,9 @@ function InsightDetailView({
     const u = new URL(item.url);
     displayUrl = u.hostname + (u.pathname !== "/" ? u.pathname : "");
   } catch { /* keep original */ }
+
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(item.url);
+  const iframeSrc = youtubeEmbedUrl ?? `/api/proxy?url=${encodeURIComponent(item.url)}`;
 
   useEffect(() => {
     setAiLoading(true);
@@ -1328,10 +1347,12 @@ function InsightDetailView({
           )}
           <iframe
             key={iframeKey}
-            src={`/api/proxy?url=${encodeURIComponent(item.url)}`}
+            src={iframeSrc}
             title={item.title}
             className={cn("absolute inset-0 w-full h-full border-0 transition-opacity duration-300", iframeLoaded && !iframeError ? "opacity-100" : "opacity-0")}
-            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
             onLoad={() => setIframeLoaded(true)}
             onError={() => setIframeError(true)}
           />
