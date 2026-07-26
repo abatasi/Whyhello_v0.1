@@ -97,6 +97,7 @@ function saveDNA(data: DNAData) {
 interface EconomicBenefit {
   id: string;
   type: "pain" | "gain";
+  label: string;
   description: string;
   amount: string;
   unit: string;
@@ -771,17 +772,21 @@ function CustomerCard({
                   </button>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{eb.type === "pain" ? "Cost or risk reduced" : "Value or upside created"}</label>
-                  <textarea value={eb.description} onChange={e => onUpdateEB(eb.id, { description: e.target.value })} rows={2} placeholder={eb.type === "pain" ? "e.g. Eliminated manual research time per rep" : "e.g. Increased qualified pipeline per quarter"} className="w-full resize-none rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 leading-relaxed transition-colors" />
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Economic benefit</label>
+                  <input type="text" value={eb.label} onChange={e => onUpdateEB(eb.id, { label: e.target.value })} placeholder={eb.type === "pain" ? "e.g. Reduced compliance overhead" : "e.g. Net-new asset growth"} className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors" />
                 </div>
-                <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{eb.type === "pain" ? "Cost or risk reduced" : "Value or upside created"}</label>
+                  <textarea value={eb.description} onChange={e => onUpdateEB(eb.id, { description: e.target.value })} rows={2} placeholder={eb.type === "pain" ? "e.g. Eliminated manual research time per rep" : "e.g. Recurring revenue generated from new client assets"} className="w-full resize-none rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 leading-relaxed transition-colors" />
+                </div>
+                <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-end">
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Amount</label>
-                    <input type="text" value={eb.amount} onChange={e => onUpdateEB(eb.id, { amount: e.target.value })} placeholder="e.g. 50,000" className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors" />
+                    <input type="text" value={eb.amount} onChange={e => onUpdateEB(eb.id, { amount: e.target.value })} placeholder="e.g. $9,000" className="h-9 w-28 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors" />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Unit</label>
-                    <input type="text" value={eb.unit} onChange={e => onUpdateEB(eb.id, { unit: e.target.value })} placeholder="$" className="h-9 w-20 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors text-center" />
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Unit of measurement</label>
+                    <input type="text" value={eb.unit} onChange={e => onUpdateEB(eb.id, { unit: e.target.value })} placeholder="e.g. Per $1M of net-new AUM" className="h-9 w-full rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors" />
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Frequency</label>
@@ -1511,7 +1516,7 @@ export default function HQ() {
     setData(d => ({ ...d, products: d.products.filter(p => p.id !== id) }));
   }
   function addEconomicBenefit(productId: string) {
-    const eb: EconomicBenefit = { id: crypto.randomUUID(), type: "pain", description: "", amount: "", unit: "$", frequency: "yearly" };
+    const eb: EconomicBenefit = { id: crypto.randomUUID(), type: "pain", label: "", description: "", amount: "", unit: "", frequency: "yearly" };
     setData(d => ({ ...d, products: d.products.map(p => p.id === productId ? { ...p, economicBenefits: [...(p.economicBenefits ?? []), eb] } : p) }));
   }
   function updateEconomicBenefit(productId: string, benefitId: string, patch: Partial<EconomicBenefit>) {
@@ -1532,7 +1537,7 @@ export default function HQ() {
     setData(d => ({ ...d, customers: d.customers.filter(c => c.id !== id) }));
   }
   function addCustomerEB(customerId: string) {
-    const eb: EconomicBenefit = { id: crypto.randomUUID(), type: "gain", description: "", amount: "", unit: "$", frequency: "yearly" };
+    const eb: EconomicBenefit = { id: crypto.randomUUID(), type: "gain", label: "", description: "", amount: "", unit: "", frequency: "yearly" };
     setData(d => ({ ...d, customers: d.customers.map(c => c.id === customerId ? { ...c, economicBenefits: [...(c.economicBenefits ?? []), eb] } : c) }));
   }
   function updateCustomerEB(customerId: string, benefitId: string, patch: Partial<EconomicBenefit>) {
@@ -2067,6 +2072,18 @@ export default function HQ() {
                           </button>
                         </div>
 
+                        {/* Economic benefit label */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Economic benefit</label>
+                          <input
+                            type="text"
+                            value={eb.label}
+                            onChange={e => updateEconomicBenefit(product.id, eb.id, { label: e.target.value })}
+                            placeholder={eb.type === "pain" ? "e.g. Reduced compliance overhead" : "e.g. Net-new asset growth"}
+                            className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors"
+                          />
+                        </div>
+
                         {/* Description */}
                         <div className="flex flex-col gap-1">
                           <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
@@ -2078,31 +2095,31 @@ export default function HQ() {
                             rows={2}
                             placeholder={eb.type === "pain"
                               ? "e.g. Eliminates manual prospect research time per rep"
-                              : "e.g. Increases qualified pipeline generated per quarter"}
+                              : "e.g. Recurring revenue generated from new client assets"}
                             className="w-full resize-none rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 leading-relaxed transition-colors"
                           />
                         </div>
 
-                        {/* Amount + Unit + Frequency */}
-                        <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
+                        {/* Amount + Unit of measurement + Frequency */}
+                        <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-end">
                           <div className="flex flex-col gap-1">
                             <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Amount</label>
                             <input
                               type="text"
                               value={eb.amount}
                               onChange={e => updateEconomicBenefit(product.id, eb.id, { amount: e.target.value })}
-                              placeholder="e.g. 50,000"
-                              className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors"
+                              placeholder="e.g. $9,000"
+                              className="h-9 w-28 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors"
                             />
                           </div>
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Unit</label>
+                            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Unit of measurement</label>
                             <input
                               type="text"
                               value={eb.unit}
                               onChange={e => updateEconomicBenefit(product.id, eb.id, { unit: e.target.value })}
-                              placeholder="$"
-                              className="h-9 w-20 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors text-center"
+                              placeholder="e.g. Per $1M of net-new AUM"
+                              className="h-9 w-full rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors"
                             />
                           </div>
                           <div className="flex flex-col gap-1">
