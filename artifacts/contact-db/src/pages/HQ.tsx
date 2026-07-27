@@ -249,51 +249,66 @@ function descriptionToVerbPhrase(rawDesc: string, tense: "present" | "past"): st
   return null; // pure noun phrase
 }
 
-function buildProductEBSummary(productName: string, eb: EconomicBenefit): string {
-  const desc = eb.description.trim();
-  if (!desc) return "";
-  const name = productName.trim() || "This offering";
-  const unit = eb.unit.trim().replace(/^[Pp][Ee][Rr]\s+/, "per ");
-  const freq = eb.frequency ? frequencyPhrase(eb.frequency) : "";
-
-  const verbPhrase = descriptionToVerbPhrase(desc, "present");
-  const predicate = verbPhrase
-    ? verbPhrase
-    : (eb.type === "gain" ? "generates" : "reduces") + " " + desc.toLowerCase();
-
-  let s = `${name} ${predicate}`;
-  if (eb.amount.trim()) {
-    s += eb.type === "gain"
-      ? ` — ${eb.amount.trim()}`
-      : `, saving ${eb.amount.trim()}`;
-    if (unit) s += ` ${unit}`;
-    if (freq) s += `, ${freq}`;
-  }
-  return s + ".";
+interface EBSummaryParts {
+  subject: string;
+  predicate: string;
+  amount: string;
+  unit: string;
+  freq: string;
+  type: "pain" | "gain";
 }
 
-function buildCustomerEBSummary(customerName: string, eb: EconomicBenefit): string {
+function buildProductEBParts(productName: string, eb: EconomicBenefit): EBSummaryParts | null {
   const desc = eb.description.trim();
-  if (!desc) return "";
-  const name = customerName.trim() || "This customer";
-  const unit = eb.unit.trim().replace(/^[Pp][Ee][Rr]\s+/, "per ");
-  const freq = eb.frequency ? frequencyPhrase(eb.frequency) : "";
+  if (!desc) return null;
+  const verbPhrase = descriptionToVerbPhrase(desc, "present");
+  return {
+    subject: productName.trim() || "This offering",
+    predicate: verbPhrase ?? (eb.type === "gain" ? "generates" : "reduces") + " " + desc.toLowerCase(),
+    amount: eb.amount.trim(),
+    unit: eb.unit.trim().replace(/^[Pp][Ee][Rr]\s+/, "per "),
+    freq: eb.frequency ? frequencyPhrase(eb.frequency) : "",
+    type: eb.type,
+  };
+}
 
-  // Customer stories are proof points — use simple past tense
+function buildCustomerEBParts(customerName: string, eb: EconomicBenefit): EBSummaryParts | null {
+  const desc = eb.description.trim();
+  if (!desc) return null;
   const verbPhrase = descriptionToVerbPhrase(desc, "past");
-  const predicate = verbPhrase
-    ? verbPhrase
-    : (eb.type === "gain" ? "generated" : "reduced") + " " + desc.toLowerCase();
+  return {
+    subject: customerName.trim() || "This customer",
+    predicate: verbPhrase ?? (eb.type === "gain" ? "generated" : "reduced") + " " + desc.toLowerCase(),
+    amount: eb.amount.trim(),
+    unit: eb.unit.trim().replace(/^[Pp][Ee][Rr]\s+/, "per "),
+    freq: eb.frequency ? frequencyPhrase(eb.frequency) : "",
+    type: eb.type,
+  };
+}
 
-  let s = `${name} ${predicate}`;
-  if (eb.amount.trim()) {
-    s += eb.type === "gain"
-      ? ` — ${eb.amount.trim()}`
-      : `, saving ${eb.amount.trim()}`;
-    if (unit) s += ` ${unit}`;
-    if (freq) s += `, ${freq}`;
-  }
-  return s + ".";
+function EBSummary({ parts, colorClass, iconClass }: {
+  parts: EBSummaryParts;
+  colorClass: string;
+  iconClass: string;
+}) {
+  const hasAmount = !!parts.amount;
+  const quantifier = hasAmount
+    ? <strong className="not-italic font-semibold">{parts.amount}{parts.unit ? ` ${parts.unit}` : ""}</strong>
+    : null;
+
+  return (
+    <div className={cn("rounded-lg px-3.5 py-2.5 flex items-start gap-2 border", colorClass)}>
+      <CheckCircle2 className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", iconClass)} />
+      <p className={cn("text-xs leading-relaxed italic", colorClass.includes("rose") ? "text-rose-700" : "text-emerald-700")}>
+        <span className="not-italic">{parts.subject} </span>
+        <strong className="not-italic font-semibold">{parts.predicate}</strong>
+        {hasAmount && parts.type === "gain" && <> — {quantifier}</>}
+        {hasAmount && parts.type === "pain" && <>, saving {quantifier}</>}
+        {parts.freq && <span className="not-italic">, {parts.freq}</span>}
+        <span className="not-italic">.</span>
+      </p>
+    </div>
+  );
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -1005,19 +1020,16 @@ function CustomerCard({
                 </div>
 
                 {/* Natural language confirmation */}
-                {buildCustomerEBSummary(customer.customerProfile, eb) && (
-                  <div className={cn(
-                    "rounded-lg px-3.5 py-2.5 flex items-start gap-2 border",
-                    eb.type === "pain"
-                      ? "bg-rose-50/60 border-rose-200/70"
-                      : "bg-emerald-50/60 border-emerald-200/70"
-                  )}>
-                    <CheckCircle2 className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", eb.type === "pain" ? "text-rose-400" : "text-emerald-500")} />
-                    <p className={cn("text-xs leading-relaxed italic", eb.type === "pain" ? "text-rose-700" : "text-emerald-700")}>
-                      {buildCustomerEBSummary(customer.customerProfile, eb)}
-                    </p>
-                  </div>
-                )}
+                {(() => {
+                  const parts = buildCustomerEBParts(customer.customerProfile, eb);
+                  return parts ? (
+                    <EBSummary
+                      parts={parts}
+                      colorClass={eb.type === "pain" ? "bg-rose-50/60 border-rose-200/70" : "bg-emerald-50/60 border-emerald-200/70"}
+                      iconClass={eb.type === "pain" ? "text-rose-400" : "text-emerald-500"}
+                    />
+                  ) : null;
+                })()}
               </div>
             ))}
           </div>
@@ -2358,19 +2370,16 @@ export default function HQ() {
                         </div>
 
                         {/* Natural language confirmation */}
-                        {buildProductEBSummary(product.name, eb) && (
-                          <div className={cn(
-                            "rounded-lg px-3.5 py-2.5 flex items-start gap-2 border",
-                            eb.type === "pain"
-                              ? "bg-rose-50/60 border-rose-200/70"
-                              : "bg-emerald-50/60 border-emerald-200/70"
-                          )}>
-                            <CheckCircle2 className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", eb.type === "pain" ? "text-rose-400" : "text-emerald-500")} />
-                            <p className={cn("text-xs leading-relaxed italic", eb.type === "pain" ? "text-rose-700" : "text-emerald-700")}>
-                              {buildProductEBSummary(product.name, eb)}
-                            </p>
-                          </div>
-                        )}
+                        {(() => {
+                          const parts = buildProductEBParts(product.name, eb);
+                          return parts ? (
+                            <EBSummary
+                              parts={parts}
+                              colorClass={eb.type === "pain" ? "bg-rose-50/60 border-rose-200/70" : "bg-emerald-50/60 border-emerald-200/70"}
+                              iconClass={eb.type === "pain" ? "text-rose-400" : "text-emerald-500"}
+                            />
+                          ) : null;
+                        })()}
                       </div>
                     ))}
                   </div>
