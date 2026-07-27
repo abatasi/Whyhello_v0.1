@@ -104,11 +104,12 @@ function frequencyPhrase(freq: string): string {
 }
 
 function buildProductEBSummary(productName: string, eb: EconomicBenefit): string {
-  const desc = eb.description.trim();
+  const desc = eb.description.trim().toLowerCase();
   if (!desc) return "";
   const name = productName.trim() || "This offering";
   // Strip leading "Per"/"per" from unit so it reads: "$9,000 per $1M …"
-  const unit = eb.unit.trim().replace(/^[Pp]er\s+/, "per ");
+  // Strip leading "Per"/"PER" but preserve the rest (e.g. "$1M", "AUM")
+  const unit = eb.unit.trim().replace(/^[Pp][Ee][Rr]\s+/, "per ");
   const freq = eb.frequency ? frequencyPhrase(eb.frequency) : "";
 
   if (eb.type === "gain") {
@@ -133,10 +134,10 @@ function buildProductEBSummary(productName: string, eb: EconomicBenefit): string
 }
 
 function buildCustomerEBSummary(customerName: string, eb: EconomicBenefit): string {
-  const desc = eb.description.trim();
+  const desc = eb.description.trim().toLowerCase();
   if (!desc) return "";
   const name = customerName.trim() || "This customer";
-  const unit = eb.unit.trim().replace(/^[Pp]er\s+/, "per ");
+  const unit = eb.unit.trim().replace(/^[Pp][Ee][Rr]\s+/, "per ");
   const freq = eb.frequency ? frequencyPhrase(eb.frequency) : "";
 
   if (eb.type === "gain") {
