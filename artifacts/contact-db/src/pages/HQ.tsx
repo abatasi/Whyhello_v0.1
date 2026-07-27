@@ -103,60 +103,164 @@ function frequencyPhrase(freq: string): string {
   }
 }
 
+// Maps any common verb form (past participle, gerund, base, 3sg present)
+// → [present-3sg, simple-past] so we can pick the right tense per context.
+const VERB_FORMS: Record<string, [string, string]> = {
+  // Gain verbs
+  generate: ["generates","generated"], generates: ["generates","generated"],
+  generated: ["generates","generated"], generating: ["generates","generated"],
+  grow: ["grows","grew"], grows: ["grows","grew"],
+  grown: ["grows","grew"], growing: ["grows","grew"],
+  create: ["creates","created"], creates: ["creates","created"],
+  created: ["creates","created"], creating: ["creates","created"],
+  increase: ["increases","increased"], increases: ["increases","increased"],
+  increased: ["increases","increased"], increasing: ["increases","increased"],
+  boost: ["boosts","boosted"], boosts: ["boosts","boosted"],
+  boosted: ["boosts","boosted"], boosting: ["boosts","boosted"],
+  drive: ["drives","drove"], drives: ["drives","drove"],
+  driven: ["drives","drove"], driving: ["drives","drove"],
+  unlock: ["unlocks","unlocked"], unlocks: ["unlocks","unlocked"],
+  unlocked: ["unlocks","unlocked"], unlocking: ["unlocks","unlocked"],
+  produce: ["produces","produced"], produces: ["produces","produced"],
+  produced: ["produces","produced"], producing: ["produces","produced"],
+  deliver: ["delivers","delivered"], delivers: ["delivers","delivered"],
+  delivered: ["delivers","delivered"], delivering: ["delivers","delivered"],
+  enable: ["enables","enabled"], enables: ["enables","enabled"],
+  enabled: ["enables","enabled"], enabling: ["enables","enabled"],
+  accelerate: ["accelerates","accelerated"], accelerates: ["accelerates","accelerated"],
+  accelerated: ["accelerates","accelerated"], accelerating: ["accelerates","accelerated"],
+  expand: ["expands","expanded"], expands: ["expands","expanded"],
+  expanded: ["expands","expanded"], expanding: ["expands","expanded"],
+  improve: ["improves","improved"], improves: ["improves","improved"],
+  improved: ["improves","improved"], improving: ["improves","improved"],
+  build: ["builds","built"], builds: ["builds","built"],
+  built: ["builds","built"], building: ["builds","built"],
+  capture: ["captures","captured"], captures: ["captures","captured"],
+  captured: ["captures","captured"], capturing: ["captures","captured"],
+  develop: ["develops","developed"], develops: ["develops","developed"],
+  developed: ["develops","developed"], developing: ["develops","developed"],
+  earn: ["earns","earned"], earns: ["earns","earned"],
+  earned: ["earns","earned"], earning: ["earns","earned"],
+  attract: ["attracts","attracted"], attracts: ["attracts","attracted"],
+  attracted: ["attracts","attracted"], attracting: ["attracts","attracted"],
+  retain: ["retains","retained"], retains: ["retains","retained"],
+  retained: ["retains","retained"], retaining: ["retains","retained"],
+  acquire: ["acquires","acquired"], acquires: ["acquires","acquired"],
+  acquired: ["acquires","acquired"], acquiring: ["acquires","acquired"],
+  compound: ["compounds","compounded"], compounds: ["compounds","compounded"],
+  compounded: ["compounds","compounded"], compounding: ["compounds","compounded"],
+  // Pain verbs
+  reduce: ["reduces","reduced"], reduces: ["reduces","reduced"],
+  reduced: ["reduces","reduced"], reducing: ["reduces","reduced"],
+  eliminate: ["eliminates","eliminated"], eliminates: ["eliminates","eliminated"],
+  eliminated: ["eliminates","eliminated"], eliminating: ["eliminates","eliminated"],
+  remove: ["removes","removed"], removes: ["removes","removed"],
+  removed: ["removes","removed"], removing: ["removes","removed"],
+  prevent: ["prevents","prevented"], prevents: ["prevents","prevented"],
+  prevented: ["prevents","prevented"], preventing: ["prevents","prevented"],
+  minimize: ["minimizes","minimized"], minimizes: ["minimizes","minimized"],
+  minimized: ["minimizes","minimized"], minimizing: ["minimizes","minimized"],
+  avoid: ["avoids","avoided"], avoids: ["avoids","avoided"],
+  avoided: ["avoids","avoided"], avoiding: ["avoids","avoided"],
+  lower: ["lowers","lowered"], lowers: ["lowers","lowered"],
+  lowered: ["lowers","lowered"], lowering: ["lowers","lowered"],
+  save: ["saves","saved"], saves: ["saves","saved"],
+  saved: ["saves","saved"], saving: ["saves","saved"],
+  decrease: ["decreases","decreased"], decreases: ["decreases","decreased"],
+  decreased: ["decreases","decreased"], decreasing: ["decreases","decreased"],
+  mitigate: ["mitigates","mitigated"], mitigates: ["mitigates","mitigated"],
+  mitigated: ["mitigates","mitigated"], mitigating: ["mitigates","mitigated"],
+  resolve: ["resolves","resolved"], resolves: ["resolves","resolved"],
+  resolved: ["resolves","resolved"], resolving: ["resolves","resolved"],
+  address: ["addresses","addressed"], addresses: ["addresses","addressed"],
+  addressed: ["addresses","addressed"], addressing: ["addresses","addressed"],
+  limit: ["limits","limited"], limits: ["limits","limited"],
+  limited: ["limits","limited"], limiting: ["limits","limited"],
+  cut: ["cuts","cut"], cuts: ["cuts","cut"], cutting: ["cuts","cut"],
+};
+
+/**
+ * Extracts the core verb from a free-text description and returns a verb phrase
+ * in the requested tense. Returns null when no verb can be identified.
+ *
+ * Handles four cases:
+ *  1. Description starts with a known verb form: "generates recurring revenue"
+ *  2. Description starts with a past participle at first position: "reduced overhead"
+ *  3. Embedded past participle after a noun: "revenue generated from assets"
+ *     → restructured to "generates revenue from assets"
+ *  4. Pure noun phrase ("net-new asset growth") → returns null
+ */
+function descriptionToVerbPhrase(rawDesc: string, tense: "present" | "past"): string | null {
+  const words = rawDesc.trim().split(/\s+/);
+  if (!words.length) return null;
+  const idx = tense === "present" ? 0 : 1;
+
+  const firstLower = words[0].toLowerCase();
+  const rest = words.slice(1).map(w => w.toLowerCase()).join(" ");
+
+  // Case 1 & 2: verb (in any form) is the first word
+  if (VERB_FORMS[firstLower]) {
+    return VERB_FORMS[firstLower][idx] + (rest ? " " + rest : "");
+  }
+
+  // Case 3: embedded verb later in the phrase — find the first known verb word
+  for (let i = 1; i < words.length; i++) {
+    const w = words[i].toLowerCase();
+    if (VERB_FORMS[w]) {
+      const before = words.slice(0, i).map(x => x.toLowerCase()).join(" ");
+      const after  = words.slice(i + 1).map(x => x.toLowerCase()).join(" ");
+      return `${VERB_FORMS[w][idx]} ${before}${after ? " " + after : ""}`;
+    }
+  }
+
+  return null; // pure noun phrase
+}
+
 function buildProductEBSummary(productName: string, eb: EconomicBenefit): string {
-  const desc = eb.description.trim().toLowerCase();
+  const desc = eb.description.trim();
   if (!desc) return "";
   const name = productName.trim() || "This offering";
-  // Strip leading "Per"/"per" from unit so it reads: "$9,000 per $1M …"
-  // Strip leading "Per"/"PER" but preserve the rest (e.g. "$1M", "AUM")
   const unit = eb.unit.trim().replace(/^[Pp][Ee][Rr]\s+/, "per ");
   const freq = eb.frequency ? frequencyPhrase(eb.frequency) : "";
 
-  if (eb.type === "gain") {
-    // "[Name] helps Buyers realize [desc] — $X per Y, each year."
-    let s = `${name} helps Buyers realize ${desc}`;
-    if (eb.amount.trim()) {
-      s += ` — ${eb.amount.trim()}`;
-      if (unit) s += ` ${unit}`;
-      if (freq) s += `, ${freq}`;
-    }
-    return s + ".";
-  } else {
-    // "[Name] helps Buyers eliminate [desc], saving $X per Y each year."
-    let s = `${name} helps Buyers eliminate ${desc}`;
-    if (eb.amount.trim()) {
-      s += `, saving ${eb.amount.trim()}`;
-      if (unit) s += ` ${unit}`;
-      if (freq) s += ` ${freq}`;
-    }
-    return s + ".";
+  const verbPhrase = descriptionToVerbPhrase(desc, "present");
+  const predicate = verbPhrase
+    ? verbPhrase
+    : (eb.type === "gain" ? "generates" : "reduces") + " " + desc.toLowerCase();
+
+  let s = `${name} ${predicate}`;
+  if (eb.amount.trim()) {
+    s += eb.type === "gain"
+      ? ` — ${eb.amount.trim()}`
+      : `, saving ${eb.amount.trim()}`;
+    if (unit) s += ` ${unit}`;
+    if (freq) s += `, ${freq}`;
   }
+  return s + ".";
 }
 
 function buildCustomerEBSummary(customerName: string, eb: EconomicBenefit): string {
-  const desc = eb.description.trim().toLowerCase();
+  const desc = eb.description.trim();
   if (!desc) return "";
   const name = customerName.trim() || "This customer";
   const unit = eb.unit.trim().replace(/^[Pp][Ee][Rr]\s+/, "per ");
   const freq = eb.frequency ? frequencyPhrase(eb.frequency) : "";
 
-  if (eb.type === "gain") {
-    let s = `${name} realized ${desc}`;
-    if (eb.amount.trim()) {
-      s += ` — ${eb.amount.trim()}`;
-      if (unit) s += ` ${unit}`;
-      if (freq) s += `, ${freq}`;
-    }
-    return s + ".";
-  } else {
-    let s = `${name} eliminated ${desc}`;
-    if (eb.amount.trim()) {
-      s += `, saving ${eb.amount.trim()}`;
-      if (unit) s += ` ${unit}`;
-      if (freq) s += ` ${freq}`;
-    }
-    return s + ".";
+  // Customer stories are proof points — use simple past tense
+  const verbPhrase = descriptionToVerbPhrase(desc, "past");
+  const predicate = verbPhrase
+    ? verbPhrase
+    : (eb.type === "gain" ? "generated" : "reduced") + " " + desc.toLowerCase();
+
+  let s = `${name} ${predicate}`;
+  if (eb.amount.trim()) {
+    s += eb.type === "gain"
+      ? ` — ${eb.amount.trim()}`
+      : `, saving ${eb.amount.trim()}`;
+    if (unit) s += ` ${unit}`;
+    if (freq) s += `, ${freq}`;
   }
+  return s + ".";
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
