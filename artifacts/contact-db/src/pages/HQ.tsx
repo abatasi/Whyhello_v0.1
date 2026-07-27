@@ -74,7 +74,13 @@ function mergeDNA(parsed: StoredDNA): DNAData {
     products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: (p.economicBenefits ?? []).map(eb => ({ label: "", ...eb })) })),
     customers: (parsed.customers ?? []).map(c => ({ ...c, economicBenefits: (c.economicBenefits ?? []).map(eb => ({ label: "", ...eb })) })),
     marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
-    competitors: parsed.competitors ?? [],
+    competitors: (parsed.competitors ?? []).map(c => ({
+      ...c,
+      // Migrate legacy single-string category to array
+      category: Array.isArray(c.category)
+        ? c.category
+        : c.category ? [c.category] : [],
+    })),
     buyingCenters: mergeBuyingCenters(parsed.buyingCenters, parsed.buyingCenter),
     targetMarkets: mergeTargetMarkets(parsed.targetMarkets, parsed.targetMarket),
   };
@@ -361,7 +367,7 @@ interface Competitor {
   name: string;
   website: string;
   productCompared: string;
-  category: string;
+  category: string[];
   marketSegments: string;
   dealFrequency: string;
   notes: string;
@@ -1101,17 +1107,21 @@ function CompetitorCard({
         <div className="grid grid-cols-2 gap-4">
           <Field label="Competitive category">
             <div className="flex flex-wrap gap-1.5">
-              {["Direct", "Indirect", "Substitute", "Status quo"].map(opt => (
-                <button
-                  key={opt}
-                  onClick={() => onUpdate({ category: opt === competitor.category ? "" : opt })}
-                  className={cn("px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all",
-                    competitor.category === opt ? "bg-orange-100 border-orange-300 text-orange-700" : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/60"
-                  )}
-                >
-                  {opt}
-                </button>
-              ))}
+              {["Direct", "Indirect", "Substitute", "Status quo"].map(opt => {
+                const cats = competitor.category ?? [];
+                const active = cats.includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => onUpdate({ category: active ? cats.filter(c => c !== opt) : [...cats, opt] })}
+                    className={cn("px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all",
+                      active ? "bg-orange-100 border-orange-300 text-orange-700" : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/60"
+                    )}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
           </Field>
           <Field label="How often in deals">
@@ -1783,7 +1793,7 @@ export default function HQ() {
   }
   // ── Competitor helpers ──
   function addCompetitor() {
-    const c: Competitor = { id: crypto.randomUUID(), name: "", website: "", productCompared: "", category: "", marketSegments: "", dealFrequency: "", notes: "", theirStrengths: "", buyersPreferThem: "", theyAreBetterWhen: "", avoidClaiming: "", ourStrengths: "", problemsExposingWeakness: "", buyersPreferUs: "", advantagesOverTime: "" };
+    const c: Competitor = { id: crypto.randomUUID(), name: "", website: "", productCompared: "", category: [], marketSegments: "", dealFrequency: "", notes: "", theirStrengths: "", buyersPreferThem: "", theyAreBetterWhen: "", avoidClaiming: "", ourStrengths: "", problemsExposingWeakness: "", buyersPreferUs: "", advantagesOverTime: "" };
     setData(d => ({ ...d, competitors: [...d.competitors, c] }));
   }
   function updateCompetitor(id: string, patch: Partial<Competitor>) {
