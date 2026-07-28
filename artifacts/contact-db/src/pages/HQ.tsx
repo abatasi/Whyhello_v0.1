@@ -80,6 +80,8 @@ function mergeDNA(parsed: StoredDNA): DNAData {
       category: Array.isArray(c.category)
         ? c.category
         : c.category ? [c.category] : [],
+      // Migrate legacy records that predate companyId
+      companyId: c.companyId ?? null,
     })),
     buyingCenters: mergeBuyingCenters(parsed.buyingCenters, parsed.buyingCenter),
     targetMarkets: mergeTargetMarkets(parsed.targetMarkets, parsed.targetMarket),
@@ -364,6 +366,7 @@ interface MarketPosition {
 
 interface Competitor {
   id: string;
+  companyId: number | null;
   name: string;
   website: string;
   productCompared: string;
@@ -1060,6 +1063,110 @@ function CustomerCard({
   );
 }
 
+// ── CompanySearchField ────────────────────────────────────────────────────────
+
+interface CompanyOption { id: number; name: string; website: string | null; industry: string | null; }
+
+function CompanySearchField({
+  name, companyId, onSelect, onClear,
+}: {
+  name: string;
+  companyId: number | null;
+  onSelect: (c: CompanyOption) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState(name);
+  const [results, setResults] = useState<CompanyOption[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Keep input text in sync when external name changes (e.g. on load)
+  useEffect(() => { setQuery(name); }, [name]);
+
+  // Debounced search
+  useEffect(() => {
+    if (companyId) return; // already linked — don't search
+    const q = query.trim();
+    if (!q) { setResults([]); setOpen(false); return; }
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/companies?search=${encodeURIComponent(q)}&limit=8`);
+        const json = await res.json();
+        setResults(json.data ?? []);
+        setOpen(true);
+      } catch { /* ignore */ } finally { setLoading(false); }
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [query, companyId]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  if (companyId) {
+    // Linked state — show name as read-only pill with an unlink button
+    return (
+      <div className="flex items-center gap-1.5 h-10 px-3 rounded-xl border border-primary/30 bg-primary/5 text-sm">
+        <Building2 className="h-3.5 w-3.5 text-primary/60 shrink-0" />
+        <span className="flex-1 truncate text-foreground font-medium">{name}</span>
+        <button
+          onClick={onClear}
+          title="Unlink company"
+          className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none" />
+        {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 animate-spin" />}
+        <input
+          type="text"
+          value={query}
+          onChange={e => { setQuery(e.target.value); }}
+          onFocus={() => { if (results.length > 0) setOpen(true); }}
+          placeholder="Search companies…"
+          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+        />
+      </div>
+      {open && results.length > 0 && (
+        <div className="absolute z-50 top-full mt-1 w-full rounded-xl border border-border bg-popover shadow-lg overflow-hidden">
+          {results.map(c => (
+            <button
+              key={c.id}
+              onMouseDown={e => { e.preventDefault(); onSelect(c); setOpen(false); }}
+              className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-accent transition-colors"
+            >
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-foreground truncate">{c.name}</div>
+                {c.industry && <div className="text-[11px] text-muted-foreground truncate">{c.industry}</div>}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+      {open && !loading && results.length === 0 && query.trim().length > 1 && (
+        <div className="absolute z-50 top-full mt-1 w-full rounded-xl border border-border bg-popover shadow-lg px-3 py-3 text-sm text-muted-foreground">
+          No companies found
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── CompetitorCard ────────────────────────────────────────────────────────────
 
 function CompetitorCard({
@@ -1083,8 +1190,13 @@ function CompetitorCard({
       <div className="p-4 flex flex-col gap-4">
         {/* Basic info */}
         <div className="grid grid-cols-3 gap-3">
-          <Field label="Competitor name">
-            <Input value={competitor.name} onChange={v => onUpdate({ name: v })} placeholder="e.g. Outreach.io" />
+          <Field label="Company">
+            <CompanySearchField
+              name={competitor.name}
+              companyId={competitor.companyId}
+              onSelect={c => onUpdate({ companyId: c.id, name: c.name, website: c.website ?? "" })}
+              onClear={() => onUpdate({ companyId: null, name: "", website: "" })}
+            />
           </Field>
           <Field label="Website">
             <div className="relative">
@@ -1793,7 +1905,7 @@ export default function HQ() {
   }
   // ── Competitor helpers ──
   function addCompetitor() {
-    const c: Competitor = { id: crypto.randomUUID(), name: "", website: "", productCompared: "", category: [], marketSegments: "", dealFrequency: "", notes: "", theirStrengths: "", buyersPreferThem: "", theyAreBetterWhen: "", avoidClaiming: "", ourStrengths: "", problemsExposingWeakness: "", buyersPreferUs: "", advantagesOverTime: "" };
+    const c: Competitor = { id: crypto.randomUUID(), companyId: null, name: "", website: "", productCompared: "", category: [], marketSegments: "", dealFrequency: "", notes: "", theirStrengths: "", buyersPreferThem: "", theyAreBetterWhen: "", avoidClaiming: "", ourStrengths: "", problemsExposingWeakness: "", buyersPreferUs: "", advantagesOverTime: "" };
     setData(d => ({ ...d, competitors: [...d.competitors, c] }));
   }
   function updateCompetitor(id: string, patch: Partial<Competitor>) {
