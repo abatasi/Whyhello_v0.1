@@ -1066,6 +1066,7 @@ function CustomerCard({
 // ── CompanySearchField ────────────────────────────────────────────────────────
 
 interface CompanyOption { id: number; name: string; website: string | null; industry: string | null; }
+interface CompanySample { id: number; name: string; industry: string | null; size: string | null; location: string | null; }
 
 function CompanySearchField({
   name, companyId, onSelect, onClear,
@@ -1840,6 +1841,9 @@ export default function HQ() {
   );
   const [renamingTmId, setRenamingTmId] = useState<string | null>(null);
   const [renameTmValue, setRenameTmValue] = useState<string>("");
+  const [tmSampleCompanies, setTmSampleCompanies] = useState<CompanySample[]>([]);
+  const [tmSampleTotal, setTmSampleTotal] = useState<number | null>(null);
+  const [tmSampleLoading, setTmSampleLoading] = useState(false);
 
   useEffect(() => {
     setTmOptionsLoading(true);
@@ -1855,6 +1859,34 @@ export default function HQ() {
       .catch(() => {})
       .finally(() => setTmOptionsLoading(false));
   }, []);
+
+  // Derive the active target market at component level so the effect can watch it
+  const activeTmForEffect = data.targetMarkets.find(t => t.id === activeTargetMarketId) ?? data.targetMarkets[0] ?? null;
+  const tmFilterKey = [
+    activeTmForEffect?.id ?? "",
+    activeTmForEffect?.industries.join("|") ?? "",
+    activeTmForEffect?.companySizes.join("|") ?? "",
+    activeTmForEffect?.locations.join("|") ?? "",
+  ].join("__");
+
+  useEffect(() => {
+    const tm = activeTmForEffect;
+    if (!tm) return;
+    const params = new URLSearchParams({ limit: "3", page: "1" });
+    if (tm.industries.length > 0)    params.set("industry", tm.industries.join(","));
+    if (tm.companySizes.length > 0)  params.set("size",     tm.companySizes.join(","));
+    if (tm.locations.length > 0)     params.set("location", tm.locations.join(","));
+    setTmSampleLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/companies?${params}`);
+        const json = await res.json();
+        setTmSampleCompanies(json.data ?? []);
+        setTmSampleTotal(json.total ?? 0);
+      } catch { /* ignore */ } finally { setTmSampleLoading(false); }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [tmFilterKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeBc = data.buyingCenters.find(bc => bc.id === activeBuyingCenterId) ?? data.buyingCenters[0] ?? null;
 
@@ -3010,9 +3042,21 @@ export default function HQ() {
 
                 {(activeTm.industries.length > 0 || activeTm.companySizes.length > 0 || activeTm.locations.length > 0) && (
                   <div className="rounded-xl bg-teal-50 border border-teal-200 p-4 flex flex-col gap-2.5">
-                    <p className="text-[11px] font-semibold text-teal-700 uppercase tracking-wide">
-                      ICP summary — {activeTm.name}
-                    </p>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <p className="text-[11px] font-semibold text-teal-700 uppercase tracking-wide">
+                        ICP summary — {activeTm.name}
+                      </p>
+                      {tmSampleLoading ? (
+                        <span className="flex items-center gap-1.5 text-[10px] font-semibold text-teal-600 bg-white border border-teal-200 rounded-full px-2.5 py-0.5">
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                          counting…
+                        </span>
+                      ) : tmSampleTotal !== null ? (
+                        <span className="text-[10px] font-semibold text-teal-700 bg-white border border-teal-200 rounded-full px-2.5 py-0.5">
+                          {tmSampleTotal.toLocaleString()} {tmSampleTotal === 1 ? "company" : "companies"} in your database
+                        </span>
+                      ) : null}
+                    </div>
                     <div className="flex flex-wrap gap-1.5">
                       {activeTm.industries.map(v => (
                         <span key={`ind-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
@@ -3030,6 +3074,57 @@ export default function HQ() {
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Company examples */}
+                {(activeTm.industries.length > 0 || activeTm.companySizes.length > 0 || activeTm.locations.length > 0) && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-semibold text-foreground">Example companies</p>
+                    {tmSampleLoading ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {[0,1,2].map(i => (
+                          <div key={i} className="flex flex-col gap-2 p-3 rounded-xl border border-border/40 bg-secondary/20 animate-pulse">
+                            <div className="h-7 w-7 rounded-lg bg-border/60" />
+                            <div className="h-2.5 w-3/4 bg-border/60 rounded" />
+                            <div className="h-2 w-1/2 bg-border/40 rounded" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : tmSampleCompanies.length === 0 ? (
+                      <div className="flex items-center gap-2 p-3 rounded-xl border border-border/40 bg-secondary/20">
+                        <Building2 className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                        <p className="text-xs text-muted-foreground">No companies in your database match these criteria</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        {tmSampleCompanies.map(c => (
+                          <div key={c.id} className="flex flex-col gap-2 p-3 rounded-xl border border-border/40 bg-secondary/20 min-w-0">
+                            <div className="h-7 w-7 rounded-lg bg-teal-100 border border-teal-200 flex items-center justify-center shrink-0">
+                              <Building2 className="h-3.5 w-3.5 text-teal-600" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-foreground leading-snug truncate">{c.name}</p>
+                              {c.industry && (
+                                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{c.industry}</p>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-auto">
+                              {c.size && (
+                                <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-teal-100 border border-teal-200 text-teal-700 truncate max-w-full">
+                                  {c.size}
+                                </span>
+                              )}
+                              {c.location && (
+                                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-secondary/80 border border-border/40 text-muted-foreground truncate max-w-full">
+                                  {c.location}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </>
