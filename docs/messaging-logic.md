@@ -10,20 +10,20 @@ Whyhello generates outbound messages by combining two independent signal streams
 
 ```
 OUTSIDE-IN                          INSIDE-OUT
-─────────────────                   ────────────────────────────
-Contact signals          ╮          Company DNA (HQ)
-  · Role / title         │          · Value wedge
-  · Seniority            ├──────►   · Positioning statement
-  · Department           │  BLEND   · Messaging pillars
-Company signals          │          · Product economic benefits
-  · Industry             │          · Customer proof points
-  · Size / stage         │          · Voice & tone profile
-  · Location             │          · Competitive positioning
-Industry signals         │          · Target market fit
-Role-level signals       ╯          · Buying center map
-  · Known priorities
-  · Common pains
-  · Regulatory context
+─────────────────────────────       ────────────────────────────
+Contact signals              ╮      Company DNA (HQ)
+  · Personal Insights         │      · Value wedge
+    (news, quotes, content    ├──►   · Positioning statement
+     linked to the contact)   │      · Messaging pillars
+Company signals              │BLEND · Product economic benefits
+  · Company Insights          │      · Customer proof points
+    (news, events, content    │      · Voice & tone profile
+     linked to the company)   │      · Competitive positioning
+Industry signals             │      · Target market fit
+  · InsightItems type:        │      · Buying center map
+    "industry"               │
+Role-level signals           ╯
+  · InsightItems type: "role"
 ```
 
 **Inside-out** answers: *Who are we, what do we do, and why does it matter?*  
@@ -173,27 +173,36 @@ These are used to **match** a contact to the correct buying center seat and targ
 
 ---
 
-## 3. Outside-In Inputs: External Signal Types
+## 3. Outside-In Inputs: Platform Signal Types
 
-Outside-in data arrives from contact enrichment, news feeds, and platform intelligence. It is read-only from a messaging perspective — it informs selection, not content.
+Outside-in data is sourced entirely from within the Whyhello platform — from the Personal Insights attached to each contact and the Company Insights attached to each company. No external enrichment or third-party data feeds are used at this stage. All signals are read-only from a messaging perspective — they inform selection, not content.
 
 ### 3.1 Contact Signals
 
-| Signal | Source | Messaging Use |
+Contact signals come from the **Personal Insights** associated with each contact record in the platform. These are `InsightItem` records of `type: "contact"` — articles, interviews, posts, or other content directly linked to that individual.
+
+| Signal | How it is read | Messaging Use |
 |---|---|---|
-| Role / title | CRM / enrichment | Select product persona match; determine seniority frame |
-| Department | CRM | Infer functional priorities; choose EB type (revenue vs. cost) |
-| Seniority | Inferred from title | Choose message register (strategic vs. operational) |
-| Buying center seat | Matched from HQ config | Activate relevant product + EB set |
+| Role / title | Stored on the contact record (`jobTitle`) | Select product persona match; determine seniority frame |
+| Department | Stored on the contact record (`department`) | Infer functional priorities; choose EB type (revenue vs. cost) |
+| Seniority | Stored on the contact record (`seniority`) | Choose message register (strategic vs. operational) |
+| Buying center seat | Matched from HQ `BuyingCenterConfig` against role + department | Activate relevant product + EB set |
+| Personal Insights | `InsightItem[]` of `type: "contact"` linked to this contact | Hook — open the message with something specific to this person |
+
+Personal Insights are the highest-value contact signal because they provide a specific, timely, attributable reference — a quote, a post the person wrote, a panel they spoke on — that makes an opener feel researched rather than templated.
 
 ### 3.2 Company Signals
 
-| Signal | Source | Messaging Use |
+Company signals come from the **Company Insights** associated with each company record in the platform. These are `InsightItem` records linked to that company — news coverage, press releases, earnings commentary, or other content about the organisation.
+
+| Signal | How it is read | Messaging Use |
 |---|---|---|
-| Industry | Enrichment | Match target market; select relevant social proof |
-| Company size / stage | Enrichment | Confirm target market fit; adjust scale of EB numbers |
-| Location | Enrichment | Regulatory context; regional references |
-| Recent funding / M&A | News feed | Trigger event-based hook |
+| Industry | Stored on the company record (`industry`) | Match target market; select relevant social proof |
+| Company size | Stored on the company record (`size`) | Confirm target market fit; adjust scale of EB numbers |
+| Location | Stored on the company record (`location`) | Regional context; regulatory framing |
+| Company Insights | `InsightItem[]` linked to this company | Hook — open with a recent event or development at their organisation |
+
+Company Insights convert a generic pitch into a timely one. A funding round, a leadership change, a product launch, or a market entry noted in the company's insight feed provides a natural opening before pivoting to the inside-out value proposition.
 
 ### 3.3 Industry Signals
 
@@ -253,8 +262,8 @@ Once a product is selected, choose an EB using:
 | Seniority = Director / Manager | Lead with pain EB; support with gain EB |
 | Department = Finance / CFO | Prefer gain EBs with `unit` containing "$" or "%" |
 | Department = Operations | Prefer pain EBs (cost, time, risk reduction) |
-| Recent funding event | Prefer gain EBs (growth narrative) |
-| Cost-cutting signal | Prefer pain EBs (efficiency narrative) |
+| Company Insight signals growth (funding, expansion, new hire) | Prefer gain EBs (growth narrative) |
+| Company Insight signals pressure (restructure, cost news, missed targets) | Prefer pain EBs (efficiency narrative) |
 
 If no signal match, default to the first gain EB, then the first pain EB.
 
