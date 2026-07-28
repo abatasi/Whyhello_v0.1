@@ -1490,6 +1490,16 @@ function BuyingCenterTile({ seat, onClick }: { seat: BuyingCenterSeat; onClick: 
 
 // ── BuyingCenterModal ─────────────────────────────────────────────────────────
 
+interface ContactSample {
+  id: number;
+  firstName: string | null;
+  lastName: string | null;
+  jobTitle: string | null;
+  seniority: string | null;
+  department: string | null;
+  companyName: string | null;
+}
+
 function BuyingCenterModal({ seatName, seniorities, departments, onUpdate, open, onClose }: {
   seatName: string;
   seniorities: string[];
@@ -1506,9 +1516,38 @@ function BuyingCenterModal({ seatName, seniorities, departments, onUpdate, open,
   const toggleSeniority = (s: string) =>
     onUpdate({ seniorities: seniorities.includes(s) ? seniorities.filter(x => x !== s) : [...seniorities, s] });
 
+  // ── Contact preview ──────────────────────────────────────────────────────────
+  const [sampleContacts, setSampleContacts] = useState<ContactSample[]>([]);
+  const [sampleTotal, setSampleTotal] = useState<number>(0);
+  const [sampleLoading, setSampleLoading] = useState(false);
+  const hasFilter = seniorities.length > 0 || departments.length > 0;
+
+  useEffect(() => {
+    if (!open || !hasFilter) { setSampleContacts([]); setSampleTotal(0); return; }
+    const params = new URLSearchParams({ limit: "3", page: "1" });
+    if (seniorities.length > 0) params.set("seniority", seniorities.join(","));
+    if (departments.length > 0) params.set("department", departments.join(","));
+    setSampleLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/contacts?${params}`);
+        const json = await res.json();
+        setSampleContacts(json.data ?? []);
+        setSampleTotal(json.total ?? 0);
+      } catch { /* ignore */ } finally { setSampleLoading(false); }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [seniorities.join(","), departments.join(","), open]);
+
+  const initials = (c: ContactSample) => {
+    const f = (c.firstName ?? "").charAt(0).toUpperCase();
+    const l = (c.lastName ?? "").charAt(0).toUpperCase();
+    return f + l || "?";
+  };
+
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-[480px]">
+      <DialogContent className="max-w-[500px]">
         <div className="flex flex-col gap-5 pt-1">
 
           {/* Header */}
@@ -1559,6 +1598,69 @@ function BuyingCenterModal({ seatName, seniorities, departments, onUpdate, open,
             </div>
             <DeptSelector selected={departments} onChange={v => onUpdate({ departments: v })} />
           </div>
+
+          {/* Contact preview */}
+          {(hasFilter || sampleLoading) && (
+            <div className="flex flex-col gap-2">
+              <div className="h-px bg-border/50" />
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-foreground">Example contacts</p>
+                {!sampleLoading && sampleTotal > 0 && (
+                  <span className="text-[10px] font-semibold text-muted-foreground bg-secondary/60 border border-border/60 px-2 py-0.5 rounded-full">
+                    {sampleTotal.toLocaleString()} match{sampleTotal === 1 ? "" : "es"} in your database
+                  </span>
+                )}
+              </div>
+
+              {sampleLoading ? (
+                <div className="flex flex-col gap-2">
+                  {[0,1,2].map(i => (
+                    <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl border border-border/40 bg-secondary/20 animate-pulse">
+                      <div className="h-8 w-8 rounded-full bg-border/60 shrink-0" />
+                      <div className="flex-1 flex flex-col gap-1.5">
+                        <div className="h-2.5 w-32 bg-border/60 rounded" />
+                        <div className="h-2 w-24 bg-border/40 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : sampleContacts.length === 0 ? (
+                <div className="flex items-center gap-2 p-3 rounded-xl border border-border/40 bg-secondary/20">
+                  <Users className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  <p className="text-xs text-muted-foreground">No contacts in your database match these criteria</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {sampleContacts.map(c => (
+                    <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-border/40 bg-secondary/20">
+                      <div className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 border",
+                        colors.iconBg, colors.border, colors.iconColor
+                      )}>
+                        {initials(c)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground leading-snug truncate">
+                          {[c.firstName, c.lastName].filter(Boolean).join(" ") || "—"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground leading-snug truncate mt-0.5">
+                          {[c.jobTitle, c.companyName].filter(Boolean).join(" · ") || "—"}
+                        </p>
+                      </div>
+                      {c.seniority && (
+                        <span className={cn(
+                          "text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0",
+                          colors.chipBg, colors.chipBorder, colors.chipText
+                        )}>
+                          {c.seniority === "Individual Contributor" ? "IC" : c.seniority}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Footer */}
           <div className="flex justify-end border-t border-border/40 pt-3 -mb-1">
