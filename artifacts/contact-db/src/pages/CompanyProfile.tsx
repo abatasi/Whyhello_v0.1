@@ -1,6 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useEffect } from "react";
-import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
+import { CompetitorBadge, VillainIcon, useCompetitorIds } from "@/components/CompetitorBadge";
 import {
   useGetCompany,
   useGetCompanyInsights,
@@ -182,7 +182,21 @@ export default function CompanyProfile() {
 
         {/* Company Header Card */}
         <div className="bg-card rounded-3xl shadow-sm border border-border/60 overflow-hidden mb-8">
-           <div className="h-24 bg-gradient-to-r from-slate-100 to-indigo-50 border-b border-border/50"></div>
+           {competitorIds.has(id) ? (
+             <div className="relative h-24 bg-gradient-to-r from-slate-900 via-slate-800 to-rose-950 border-b border-rose-900/40 overflow-hidden">
+               {/* ambient glow */}
+               <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(ellipse at 15% 50%, #ef444466 0%, transparent 55%), radial-gradient(ellipse at 85% 50%, #1e103a66 0%, transparent 55%)" }} />
+               <div className="relative flex items-center gap-3.5 h-full px-7">
+                 <VillainIcon size={44} />
+                 <div>
+                   <p className="text-white font-bold text-sm leading-none tracking-wide">Identified Competitor</p>
+                   <p className="text-rose-300/80 text-xs mt-1 leading-none">Tagged in your HQ profile</p>
+                 </div>
+               </div>
+             </div>
+           ) : (
+             <div className="h-24 bg-gradient-to-r from-slate-100 to-indigo-50 border-b border-border/50" />
+           )}
            <div className="px-8 pb-8">
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <div className="-mt-12">
@@ -192,10 +206,7 @@ export default function CompanyProfile() {
                 </div>
                 <div className="flex-1 pt-2 flex justify-between items-start w-full">
                   <div>
-                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <h1 className="text-3xl font-display font-bold text-foreground">{company.name}</h1>
-                      {competitorIds.has(id) && <CompetitorBadge className="mt-0.5" />}
-                    </div>
+                    <h1 className="text-3xl font-display font-bold text-foreground mb-2">{company.name}</h1>
                     <div className="flex flex-wrap items-center gap-3 text-sm">
                       {company.industry && <Badge variant="secondary">{company.industry}</Badge>}
                       {company.location && (

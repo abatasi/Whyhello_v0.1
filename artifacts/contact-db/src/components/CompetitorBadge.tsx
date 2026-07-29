@@ -37,7 +37,7 @@ export function useCompetitorIds(): Set<number> {
 
 // ── Villain SVG ───────────────────────────────────────────────────────────────
 
-function VillainIcon({ size = 20 }: { size?: number }) {
+export function VillainIcon({ size = 20 }: { size?: number }) {
   return (
     <svg
       width={size}
