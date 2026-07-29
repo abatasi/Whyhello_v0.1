@@ -198,27 +198,37 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
 function buildHqSummary(profile: Record<string, unknown>): string {
   const lines: string[] = [];
 
+  function toStringArray(val: unknown): string[] {
+    if (Array.isArray(val)) return val.filter((x): x is string => typeof x === "string");
+    if (typeof val === "string" && val) return [val];
+    return [];
+  }
+  function toObjArray(val: unknown): Record<string, unknown>[] {
+    if (Array.isArray(val)) return val.filter((x): x is Record<string, unknown> => x !== null && typeof x === "object");
+    return [];
+  }
+
   const company = (profile.company ?? {}) as Record<string, unknown>;
   if (company.name) lines.push(`Seller: ${company.name}`);
   if (company.valueWedge) lines.push(`Core value proposition: ${company.valueWedge}`);
   if (company.positioning) lines.push(`Positioning: ${company.positioning}`);
-  const diffs = company.differentiators as string[] | undefined;
-  if (diffs?.length) lines.push(`Key differentiators: ${diffs.join(" | ")}`);
-  const pillars = company.pillars as Array<Record<string, unknown>> | undefined;
-  if (pillars?.length) {
+  const diffs = toStringArray(company.differentiators);
+  if (diffs.length) lines.push(`Key differentiators: ${diffs.join(" | ")}`);
+  const pillars = toObjArray(company.pillars);
+  if (pillars.length) {
     lines.push(`Messaging pillars: ${pillars.map((p) => `${p.name}: ${p.description ?? ""}`).join("; ")}`);
   }
 
-  const products = (profile.products ?? []) as Array<Record<string, unknown>>;
+  const products = toObjArray(profile.products);
   if (products.length) {
     lines.push("");
     lines.push("Products / Services:");
     for (const p of products) {
       lines.push(`  ${p.name}${p.tagline ? ": " + p.tagline : ""}`);
-      const outcomes = p.outcomes as string[] | undefined;
-      if (outcomes?.length) lines.push(`    Outcomes: ${outcomes.slice(0, 4).join(", ")}`);
-      const ebs = p.economicBenefits as Array<Record<string, unknown>> | undefined;
-      if (ebs?.length) {
+      const outcomes = toStringArray(p.outcomes);
+      if (outcomes.length) lines.push(`    Outcomes: ${outcomes.slice(0, 4).join(", ")}`);
+      const ebs = toObjArray(p.economicBenefits);
+      if (ebs.length) {
         const ebText = ebs
           .map((eb) => `${eb.description}${eb.amount ? ` (${eb.amount} ${eb.unit} ${eb.frequency})` : ""}`)
           .join("; ");
@@ -227,7 +237,7 @@ function buildHqSummary(profile: Record<string, unknown>): string {
     }
   }
 
-  const customers = (profile.customers ?? []) as Array<Record<string, unknown>>;
+  const customers = toObjArray(profile.customers);
   if (customers.length) {
     lines.push("");
     lines.push("Proof points:");

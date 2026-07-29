@@ -555,6 +555,19 @@ export default function ContactProfile() {
   const [jobRefetchTrigger, setJobRefetchTrigger] = useState(0);
   const { data: relevanceData = [], refetch: refetchRelevance } = useGetInsightRelevance(id, { query: { enabled: !!id } });
   const relevanceMutation = useTriggerInsightRelevance();
+  const hasAutoScoredRef = useRef(false);
+
+  // Auto-score once when insights are loaded and no scores exist yet
+  useEffect(() => {
+    if (!id || hasAutoScoredRef.current || relevanceMutation.isPending) return;
+    if (relevanceData.length > 0) return; // already have scores
+    const total = personalInsights.length + industryInsights.length + roleInsights.length +
+      colleagueInsights.length + counterpartInsights.length + companyInsights.length;
+    if (total === 0) return; // wait for insights to load
+    hasAutoScoredRef.current = true;
+    relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() });
+  }, [id, relevanceData.length, personalInsights.length, industryInsights.length, roleInsights.length,
+    colleagueInsights.length, counterpartInsights.length, companyInsights.length]);
 
   const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => {
     const lengthLabel = params.length.charAt(0).toUpperCase() + params.length.slice(1);
@@ -740,13 +753,26 @@ export default function ContactProfile() {
                       </button>
                     </div>
                   </div>
-                  <InsightRelevanceBar
-                    hasScores={relevanceMap.size > 0}
-                    sortByRelevance={sortByRelevance}
-                    onToggleSort={() => setSortByRelevance(v => !v)}
-                    isScoring={relevanceMutation.isPending}
-                    onScore={() => relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() })}
-                  />
+                  {relevanceMutation.isPending && (
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Loader2 className="h-2.5 w-2.5 animate-spin" /> Scoring relevance…
+                    </div>
+                  )}
+                  {relevanceMap.size > 0 && !relevanceMutation.isPending && (
+                    <button
+                      onClick={() => setSortByRelevance(v => !v)}
+                      title={sortByRelevance ? "Restore default order" : "Sort signals by relevance score"}
+                      className={cn(
+                        "flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold transition-all",
+                        sortByRelevance
+                          ? "border-primary/30 bg-primary/8 text-primary"
+                          : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-primary"
+                      )}
+                    >
+                      <ArrowUpDown className="h-2.5 w-2.5" />
+                      {sortByRelevance ? "Sorted: Relevance" : "Sort: Relevance"}
+                    </button>
+                  )}
                 </div>
 
                 {INSIGHT_CATEGORIES.map((cat) => {
@@ -817,13 +843,26 @@ export default function ContactProfile() {
                           </button>
                         </div>
                       </div>
-                      <InsightRelevanceBar
-                        hasScores={relevanceMap.size > 0}
-                        sortByRelevance={sortByRelevance}
-                        onToggleSort={() => setSortByRelevance(v => !v)}
-                        isScoring={relevanceMutation.isPending}
-                        onScore={() => relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() })}
-                      />
+                      {relevanceMutation.isPending && (
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" /> Scoring relevance…
+                        </div>
+                      )}
+                      {relevanceMap.size > 0 && !relevanceMutation.isPending && (
+                        <button
+                          onClick={() => setSortByRelevance(v => !v)}
+                          title={sortByRelevance ? "Restore default order" : "Sort signals by relevance score"}
+                          className={cn(
+                            "flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold transition-all",
+                            sortByRelevance
+                              ? "border-primary/30 bg-primary/8 text-primary"
+                              : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-primary"
+                          )}
+                        >
+                          <ArrowUpDown className="h-2.5 w-2.5" />
+                          {sortByRelevance ? "Sorted: Relevance" : "Sort: Relevance"}
+                        </button>
+                      )}
                     </div>
                     <div className="flex-1 overflow-y-scroll scroll-thin pr-1 pt-1 flex flex-col gap-4">
                       {INSIGHT_CATEGORIES.map((cat) => {
@@ -1718,66 +1757,6 @@ function InsightCardExpanded({
           </a>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ── InsightRelevanceBar ───────────────────────────────────────────────────
-
-function InsightRelevanceBar({
-  hasScores,
-  sortByRelevance,
-  onToggleSort,
-  isScoring,
-  onScore,
-}: {
-  hasScores: boolean;
-  sortByRelevance: boolean;
-  onToggleSort: () => void;
-  isScoring: boolean;
-  onScore: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-1.5">
-      {/* Score / Re-score button */}
-      <button
-        onClick={onScore}
-        disabled={isScoring}
-        title={hasScores ? "Re-score relevance against your HQ profile" : "Score all signals for relevance against your HQ profile"}
-        className={cn(
-          "flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold transition-all",
-          isScoring
-            ? "border-primary/20 bg-primary/5 text-primary/60 cursor-wait"
-            : hasScores
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-              : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5"
-        )}
-      >
-        {isScoring ? (
-          <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Scoring…</>
-        ) : hasScores ? (
-          <><Sparkles className="h-2.5 w-2.5" /> Scored</>
-        ) : (
-          <><Sparkles className="h-2.5 w-2.5" /> Score Relevance</>
-        )}
-      </button>
-
-      {/* Sort toggle — only visible when scores exist */}
-      {hasScores && (
-        <button
-          onClick={onToggleSort}
-          title={sortByRelevance ? "Restore default order" : "Sort by relevance score"}
-          className={cn(
-            "flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold transition-all",
-            sortByRelevance
-              ? "border-primary/30 bg-primary/8 text-primary"
-              : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-primary"
-          )}
-        >
-          <ArrowUpDown className="h-2.5 w-2.5" />
-          {sortByRelevance ? "Sorted: Relevance" : "Sort: Relevance"}
-        </button>
-      )}
     </div>
   );
 }
