@@ -141,6 +141,15 @@ interface VoiceProfileData {
   suppressionNotes: string;
 }
 
+function loadHqCompanyName(): string | null {
+  try {
+    const raw = localStorage.getItem(DNA_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { company?: { name?: string } };
+    return parsed.company?.name?.trim() || null;
+  } catch { return null; }
+}
+
 function loadVoiceProfile(): VoiceProfileData | null {
   try {
     const raw = localStorage.getItem(DNA_STORAGE_KEY);
@@ -1488,7 +1497,9 @@ function InsightDetailView({
         <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Relevance to Your HQ</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">
+              {(() => { const n = loadHqCompanyName(); return n ? `Relevance to ${n}` : "Relevance"; })()}
+            </span>
           </div>
           <div className="p-4">
             {relevance ? (() => {

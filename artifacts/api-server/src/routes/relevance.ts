@@ -134,10 +134,12 @@ SCORING RUBRIC (0–100):
 - 20-39: Weak connection — only tangential overlap
 - 0-19: No meaningful connection to the seller's offering
 
-For each signal, write a 1–2 sentence description explaining WHAT in the HQ profile this signal connects to and WHY that linkage matters for outreach relevance.
+For each signal:
+- Write a 1–2 sentence description explaining WHAT in the HQ profile this signal connects to and WHY that linkage matters for outreach relevance.
+- In "matchedHqSignals", list the SPECIFIC named items from the HQ profile that this signal touches — use the actual product names, exact differentiator phrases, pillar names, or customer profile types as they appear in the profile above. Do NOT return generic category labels like "value proposition" or "product". Return the real names and phrases (e.g. "Wealth Optimization Platform", "UHNW Family Office focus", "fee-only fiduciary model").
 
 Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
-[{ "signalType": "...", "signalId": ..., "score": ..., "description": "...", "matchedHqSignals": ["value proposition", "product name", "differentiator", etc.] }]`;
+[{ "signalType": "...", "signalId": ..., "score": ..., "description": "...", "matchedHqSignals": ["<specific named HQ item>", "<another specific item>"] }]`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
