@@ -2,6 +2,7 @@ import app from "./app";
 import { seedIfEmpty, seedInsightsIfEmpty, seedCompanyInsightsIfEmpty, seedCategoryInsightsIfEmpty, seedIndustriesAndRolesIfEmpty } from "./lib/seed";
 import { seedProductionContactsIfNeeded } from "./lib/seed-contacts";
 import { seedProductionContactInsightsIfNeeded } from "./lib/seed-contact-insights";
+import { seedFaisalKarmali } from "./lib/seed-faisal";
 
 const rawPort = process.env["PORT"];
 
@@ -26,6 +27,7 @@ app.listen(port, () => {
     .then(() => seedIndustriesAndRolesIfEmpty())
     .then(() => seedProductionContactsIfNeeded())
     .then(() => seedProductionContactInsightsIfNeeded())
+    .then(() => seedFaisalKarmali())
     .catch((err) => {
       console.error("Seed failed:", err);
     });

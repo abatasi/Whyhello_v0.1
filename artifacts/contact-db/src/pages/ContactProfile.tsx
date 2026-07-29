@@ -1,5 +1,5 @@
 import { useRoute, Link } from "wouter";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   useGetContact,
   useGetContactInsights,
@@ -16,6 +16,9 @@ import {
   useCreateChatMessage,
   useClearChatMessages,
   useInsightMeta,
+  useGetInsightRelevance,
+  useTriggerInsightRelevance,
+  type InsightRelevanceScore,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
@@ -28,7 +31,7 @@ import {
   Lock, Zap, AlertCircle, Send, User, TrendingUp,
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
-  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp,
+  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp, ArrowUpDown,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -51,6 +54,34 @@ const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; col
 
 function getMediaConfig(type: string) {
   return MEDIA_CONFIG[type] ?? { label: type, icon: ExternalLink, color: "text-muted-foreground", bg: "bg-secondary border-border" };
+}
+
+// ── RelevanceBadge ─────────────────────────────────────────────────────────
+
+function RelevanceBadge({ score, description, size = "sm" }: { score: number; description: string; size?: "xs" | "sm" }) {
+  const colorClass =
+    score >= 75 ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+    score >= 50 ? "bg-amber-50 text-amber-700 border-amber-200" :
+    score >= 25 ? "bg-orange-50 text-orange-700 border-orange-200" :
+                  "bg-slate-50 text-slate-500 border-slate-200";
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={cn(
+          "inline-flex items-center gap-0.5 rounded border font-bold cursor-default flex-shrink-0 leading-none select-none",
+          size === "xs" ? "px-1 py-px text-[9px]" : "px-1.5 py-0.5 text-[10px]",
+          colorClass
+        )}>
+          <Sparkles className={size === "xs" ? "h-1.5 w-1.5" : "h-2 w-2"} />
+          {score}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={4} className="max-w-[260px] p-3">
+        <p className="text-[10px] font-bold text-foreground mb-1">Relevance: {score}/100</p>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">{description}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 // ── Insight category definitions ───────────────────────────────────────────
@@ -522,6 +553,8 @@ export default function ContactProfile() {
   const revealMutation = useRevealContact();
   const createJobMutation = useCreateOutreachJob();
   const [jobRefetchTrigger, setJobRefetchTrigger] = useState(0);
+  const { data: relevanceData = [], refetch: refetchRelevance } = useGetInsightRelevance(id, { query: { enabled: !!id } });
+  const relevanceMutation = useTriggerInsightRelevance();
 
   const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => {
     const lengthLabel = params.length.charAt(0).toUpperCase() + params.length.slice(1);
@@ -546,6 +579,7 @@ export default function ContactProfile() {
   type InsightsMode = "normal" | "collapsed" | "expanded";
   const [composeOpen, setComposeOpen] = useState(false);
   const [insightsMode, setInsightsMode] = useState<InsightsMode>("normal");
+  const [sortByRelevance, setSortByRelevance] = useState(false);
   const [outreachCollapsed, setOutreachCollapsed] = useState(false);
   const [selectedInsight, setSelectedInsight] = useState<{ item: InsightItem; category: InsightCategory } | null>(null);
   const [activeOutput, setActiveOutput] = useState<string | null>(null);
@@ -611,6 +645,25 @@ export default function ContactProfile() {
     company:      companyInsights as InsightItem[],
   };
 
+  const relevanceMap = useMemo(() => {
+    const m = new Map<string, InsightRelevanceScore>();
+    for (const s of relevanceData) m.set(`${s.signalType}-${s.signalId}`, s);
+    return m;
+  }, [relevanceData]);
+
+  const sortedCategoryData = useMemo(() => {
+    if (!sortByRelevance || relevanceMap.size === 0) return categoryData;
+    const result: Record<string, InsightItem[]> = {};
+    for (const [catId, items] of Object.entries(categoryData)) {
+      result[catId] = [...items].sort((a, b) => {
+        const sa = relevanceMap.get(`${catId}-${a.id}`)?.score ?? -1;
+        const sb = relevanceMap.get(`${catId}-${b.id}`)?.score ?? -1;
+        return sb - sa;
+      });
+    }
+    return result;
+  }, [categoryData, sortByRelevance, relevanceMap]);
+
   if (isLoading) {
     return (
       <Shell>
@@ -664,31 +717,40 @@ export default function ContactProfile() {
             {/* ── NORMAL left column ── */}
             {insightsMode === "normal" && (
               <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
-                <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
-                  <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                      {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
-                    </span>
-                    <button
-                      onClick={() => setInsightsMode("expanded")}
-                      title="Expand insights panel"
-                      className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                    >
-                      <Maximize2 className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={() => setInsightsMode("collapsed")}
-                      title="Collapse insights panel"
-                      className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" />
-                    </button>
+                <div className="sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                        {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
+                      </span>
+                      <button
+                        onClick={() => setInsightsMode("expanded")}
+                        title="Expand insights panel"
+                        className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <Maximize2 className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => setInsightsMode("collapsed")}
+                        title="Collapse insights panel"
+                        className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
+                  <InsightRelevanceBar
+                    hasScores={relevanceMap.size > 0}
+                    sortByRelevance={sortByRelevance}
+                    onToggleSort={() => setSortByRelevance(v => !v)}
+                    isScoring={relevanceMutation.isPending}
+                    onScore={() => relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() })}
+                  />
                 </div>
 
                 {INSIGHT_CATEGORIES.map((cat) => {
-                  const items = categoryData[cat.id] ?? [];
+                  const items = sortedCategoryData[cat.id] ?? [];
                   const isLocked = cat.id === "personal" && !isRevealed;
                   return (
                     <InsightCategoryPanel
@@ -703,6 +765,7 @@ export default function ContactProfile() {
                       checkedIds={checkedIds}
                       onToggle={toggleInsight}
                       onToggleAll={toggleCategory}
+                      relevanceMap={relevanceMap}
                       onCardClick={(item) => {
                         setSelectedInsight({ item, category: cat });
                         setInsightsMode("expanded");
@@ -731,31 +794,40 @@ export default function ContactProfile() {
                 ) : (
                   /* ── Card grid view ── */
                   <>
-                    <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0 pr-1">
-                      <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                          {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
-                        </span>
-                        <button
-                          onClick={() => setInsightsMode("normal")}
-                          title="Restore insights panel"
-                          className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                        >
-                          <Minimize2 className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={() => setInsightsMode("collapsed")}
-                          title="Collapse insights panel"
-                          className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                        >
-                          <ChevronLeft className="h-3.5 w-3.5" />
-                        </button>
+                    <div className="sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0 pr-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                            {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
+                          </span>
+                          <button
+                            onClick={() => setInsightsMode("normal")}
+                            title="Restore insights panel"
+                            className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                          >
+                            <Minimize2 className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => setInsightsMode("collapsed")}
+                            title="Collapse insights panel"
+                            className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
+                      <InsightRelevanceBar
+                        hasScores={relevanceMap.size > 0}
+                        sortByRelevance={sortByRelevance}
+                        onToggleSort={() => setSortByRelevance(v => !v)}
+                        isScoring={relevanceMutation.isPending}
+                        onScore={() => relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() })}
+                      />
                     </div>
                     <div className="flex-1 overflow-y-scroll scroll-thin pr-1 pt-1 flex flex-col gap-4">
                       {INSIGHT_CATEGORIES.map((cat) => {
-                        const items = categoryData[cat.id] ?? [];
+                        const items = sortedCategoryData[cat.id] ?? [];
                         const isLocked = cat.id === "personal" && !isRevealed;
                         return (
                           <InsightCategoryPanel
@@ -771,6 +843,7 @@ export default function ContactProfile() {
                             onToggle={toggleInsight}
                             onToggleAll={toggleCategory}
                             expanded
+                            relevanceMap={relevanceMap}
                             onCardClick={(item) => setSelectedInsight({ item, category: cat })}
                           />
                         );
@@ -1509,12 +1582,14 @@ function InsightCardExpanded({
   category,
   checked,
   onToggle,
+  relevance,
   onCardClick,
 }: {
   item: InsightItem;
   category: InsightCategory;
   checked: boolean;
   onToggle: () => void;
+  relevance?: InsightRelevanceScore;
   onCardClick?: () => void;
 }) {
   const key = `${category.id}-${item.id}`;
@@ -1601,38 +1676,108 @@ function InsightCardExpanded({
         )}
       </div>
 
-      {/* ── Actions ── */}
-      <div className="flex items-center gap-2 px-3 pb-3">
+      {/* ── Actions + Relevance ── */}
+      <div className="flex flex-col gap-1.5 px-3 pb-3">
+        {relevance && (
+          <TooltipProvider delayDuration={200}>
+            <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-secondary/40 border border-border/40">
+              <RelevanceBadge score={relevance.score} description={relevance.description} />
+              <p className="text-[10px] text-muted-foreground leading-snug flex-1 line-clamp-2">{relevance.description}</p>
+            </div>
+          </TooltipProvider>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            title={checked ? "Remove from context" : "Add to context"}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-[10px] font-semibold transition-all",
+              checked
+                ? cn(category.accentBg, category.accentBorder, category.color)
+                : "bg-background border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+            )}
+          >
+            {checked ? (
+              <>
+                <svg viewBox="0 0 10 10" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                In context
+              </>
+            ) : "Add to context"}
+          </button>
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open source"
+            onClick={(e) => e.stopPropagation()}
+            className="h-7 w-7 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border transition-colors flex-shrink-0"
+          >
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── InsightRelevanceBar ───────────────────────────────────────────────────
+
+function InsightRelevanceBar({
+  hasScores,
+  sortByRelevance,
+  onToggleSort,
+  isScoring,
+  onScore,
+}: {
+  hasScores: boolean;
+  sortByRelevance: boolean;
+  onToggleSort: () => void;
+  isScoring: boolean;
+  onScore: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {/* Score / Re-score button */}
+      <button
+        onClick={onScore}
+        disabled={isScoring}
+        title={hasScores ? "Re-score relevance against your HQ profile" : "Score all signals for relevance against your HQ profile"}
+        className={cn(
+          "flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold transition-all",
+          isScoring
+            ? "border-primary/20 bg-primary/5 text-primary/60 cursor-wait"
+            : hasScores
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+              : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5"
+        )}
+      >
+        {isScoring ? (
+          <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Scoring…</>
+        ) : hasScores ? (
+          <><Sparkles className="h-2.5 w-2.5" /> Scored</>
+        ) : (
+          <><Sparkles className="h-2.5 w-2.5" /> Score Relevance</>
+        )}
+      </button>
+
+      {/* Sort toggle — only visible when scores exist */}
+      {hasScores && (
         <button
-          onClick={(e) => { e.stopPropagation(); onToggle(); }}
-          title={checked ? "Remove from context" : "Add to context"}
+          onClick={onToggleSort}
+          title={sortByRelevance ? "Restore default order" : "Sort by relevance score"}
           className={cn(
-            "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-[10px] font-semibold transition-all",
-            checked
-              ? cn(category.accentBg, category.accentBorder, category.color)
-              : "bg-background border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+            "flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold transition-all",
+            sortByRelevance
+              ? "border-primary/30 bg-primary/8 text-primary"
+              : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-primary"
           )}
         >
-          {checked ? (
-            <>
-              <svg viewBox="0 0 10 10" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              In context
-            </>
-          ) : "Add to context"}
+          <ArrowUpDown className="h-2.5 w-2.5" />
+          {sortByRelevance ? "Sorted: Relevance" : "Sort: Relevance"}
         </button>
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Open source"
-          onClick={(e) => e.stopPropagation()}
-          className="h-7 w-7 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border transition-colors flex-shrink-0"
-        >
-          <ExternalLink className="h-3 w-3" />
-        </a>
-      </div>
+      )}
     </div>
   );
 }
@@ -1651,6 +1796,7 @@ function InsightCategoryPanel({
   onToggle,
   onToggleAll,
   expanded = false,
+  relevanceMap,
   onCardClick,
 }: {
   category: InsightCategory;
@@ -1664,6 +1810,7 @@ function InsightCategoryPanel({
   onToggle: (key: string) => void;
   onToggleAll: (categoryId: string, catItems: InsightItem[]) => void;
   expanded?: boolean;
+  relevanceMap?: Map<string, InsightRelevanceScore>;
   onCardClick?: (item: InsightItem) => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -1763,6 +1910,7 @@ function InsightCategoryPanel({
                     category={category}
                     checked={checkedIds.has(key)}
                     onToggle={() => onToggle(key)}
+                    relevance={relevanceMap?.get(`${category.id}-${item.id}`)}
                     onCardClick={onCardClick ? () => onCardClick(item) : undefined}
                   />
                 );
@@ -1776,6 +1924,7 @@ function InsightCategoryPanel({
                 const MIcon = cfg.icon;
                 const key = `${category.id}-${item.id}`;
                 const checked = checkedIds.has(key);
+                const rel = relevanceMap?.get(`${category.id}-${item.id}`);
                 return (
                   <div
                     key={item.id}
@@ -1813,6 +1962,11 @@ function InsightCategoryPanel({
                         </p>
                       </div>
                     </button>
+                    {rel && (
+                      <TooltipProvider delayDuration={200}>
+                        <RelevanceBadge score={rel.score} description={rel.description} size="xs" />
+                      </TooltipProvider>
+                    )}
                     <a
                       href={item.url}
                       target="_blank"
