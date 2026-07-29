@@ -811,6 +811,7 @@ export default function ContactProfile() {
                   <InsightDetailView
                     item={selectedInsight.item}
                     category={selectedInsight.category}
+                    relevance={relevanceMap.get(`${selectedInsight.category.id}-${selectedInsight.item.id}`)}
                     onBack={() => setSelectedInsight(null)}
                     checkedIds={checkedIds}
                     onToggle={toggleInsight}
@@ -1340,6 +1341,7 @@ function getApplePodcastEmbedUrl(url: string): string | null {
 function InsightDetailView({
   item,
   category,
+  relevance,
   onBack,
   checkedIds,
   onToggle,
@@ -1348,6 +1350,7 @@ function InsightDetailView({
 }: {
   item: InsightItem;
   category: InsightCategory;
+  relevance?: InsightRelevanceScore;
   onBack: () => void;
   checkedIds: Set<string>;
   onToggle: (key: string) => void;
@@ -1467,30 +1470,46 @@ function InsightDetailView({
                 </>
               )}
             </div>
-            {item.description && (
+            {(relevance?.description ?? item.description) && (
               <p className="text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-2.5">
-                {item.description}
+                {relevance?.description ?? item.description}
               </p>
             )}
           </div>
         </div>
 
-        {/* AI Summary */}
+        {/* Relevance card (replaces Summary) */}
         <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Summary</span>
-            {aiLoading && <Loader2 className="h-3 w-3 text-muted-foreground/60 animate-spin ml-auto" />}
+            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Relevance</span>
+            {relevance && (
+              <div className="ml-auto">
+                <TooltipProvider delayDuration={200}>
+                  <RelevanceBadge score={relevance.score} description={relevance.description} />
+                </TooltipProvider>
+              </div>
+            )}
           </div>
           <div className="px-4 py-3.5">
-            {aiLoading ? (
-              <div className="flex flex-col gap-2">
-                <div className="h-3 bg-muted rounded-full animate-pulse w-full" />
-                <div className="h-3 bg-muted rounded-full animate-pulse w-[90%]" />
-                <div className="h-3 bg-muted rounded-full animate-pulse w-[75%]" />
+            {relevance ? (
+              <div className="flex flex-col gap-2.5">
+                <p className="text-xs text-foreground leading-relaxed">{relevance.description}</p>
+                {relevance.matchedHqSignals && relevance.matchedHqSignals.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {relevance.matchedHqSignals.map((sig, i) => (
+                      <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/8 border border-primary/15 text-primary font-medium">
+                        {sig}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
-              <p className="text-xs text-foreground leading-relaxed">{aiData?.summary}</p>
+              <div className="flex flex-col gap-2">
+                <div className="h-3 bg-muted rounded-full animate-pulse w-full" />
+                <div className="h-3 bg-muted rounded-full animate-pulse w-[85%]" />
+              </div>
             )}
           </div>
         </div>
