@@ -571,26 +571,22 @@ export default function ContactProfile() {
   const [showLostFriendo, setShowLostFriendo] = useState(false);
   const { data: topContact } = useGetTopRelevantContact(id, showLostFriendo);
 
-  // Auto-score once when insights are loaded and no scores exist yet
+  // Effect 1: show toast whenever scores are settled and max ≤ 50
+  useEffect(() => {
+    if (relevanceData.length === 0 || relevanceMutation.isPending) return;
+    const maxScore = Math.max(...relevanceData.map(s => s.score), 0);
+    if (maxScore <= 50) setShowLostFriendo(true);
+  }, [relevanceData, relevanceMutation.isPending]);
+
+  // Effect 2: auto-trigger scoring once when insights load and no scores exist yet
   useEffect(() => {
     if (!id || hasAutoScoredRef.current || relevanceMutation.isPending) return;
-    if (relevanceData.length > 0) {
-      // Scores already exist — check if all are below 50
-      const maxScore = Math.max(...relevanceData.map(s => s.score), 0);
-      if (maxScore <= 50) setShowLostFriendo(true);
-      return;
-    }
+    if (relevanceData.length > 0) return; // scores already exist — Effect 1 handles the toast
     const total = personalInsights.length + industryInsights.length + roleInsights.length +
       colleagueInsights.length + counterpartInsights.length + companyInsights.length;
-    if (total === 0) return; // wait for insights to load
+    if (total === 0) return;
     hasAutoScoredRef.current = true;
-    relevanceMutation.mutate(id, {
-      onSuccess: (scores) => {
-        refetchRelevance();
-        const maxScore = Math.max(...scores.map((s: InsightRelevanceScore) => s.score), 0);
-        if (maxScore <= 50) setShowLostFriendo(true);
-      },
-    });
+    relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() });
   }, [id, relevanceData.length, personalInsights.length, industryInsights.length, roleInsights.length,
     colleagueInsights.length, counterpartInsights.length, companyInsights.length]);
 
