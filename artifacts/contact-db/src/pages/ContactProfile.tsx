@@ -577,7 +577,7 @@ export default function ContactProfile() {
     if (relevanceData.length > 0) {
       // Scores already exist — check if all are below 50
       const maxScore = Math.max(...relevanceData.map(s => s.score), 0);
-      if (maxScore < 50) setShowLostFriendo(true);
+      if (maxScore <= 50) setShowLostFriendo(true);
       return;
     }
     const total = personalInsights.length + industryInsights.length + roleInsights.length +
@@ -588,7 +588,7 @@ export default function ContactProfile() {
       onSuccess: (scores) => {
         refetchRelevance();
         const maxScore = Math.max(...scores.map((s: InsightRelevanceScore) => s.score), 0);
-        if (maxScore < 50) setShowLostFriendo(true);
+        if (maxScore <= 50) setShowLostFriendo(true);
       },
     });
   }, [id, relevanceData.length, personalInsights.length, industryInsights.length, roleInsights.length,
