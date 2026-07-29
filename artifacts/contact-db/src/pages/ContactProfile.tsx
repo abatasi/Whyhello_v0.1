@@ -390,6 +390,117 @@ function IntroEmailModal({
   );
 }
 
+// ── BattlecardModal ──────────────────────────────────────────────────────────
+
+function BattlecardModal({ open, onClose, contactId, contactName }: {
+  open: boolean;
+  onClose: () => void;
+  contactId: number;
+  contactName: string;
+}) {
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+
+  // Reset when modal opens
+  useEffect(() => { if (open) setStatus("idle"); }, [open]);
+
+  async function handleGenerate() {
+    setStatus("loading");
+    try {
+      const res = await fetch(`/api/contacts/${contactId}/battlecard`);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `battlecard_${contactName.replace(/\s+/g, "_").toLowerCase()}.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus("done");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center border flex-shrink-0 bg-rose-50 border-rose-200">
+              <Shield className="h-5 w-5 text-rose-600" />
+            </div>
+            <div>
+              <DialogTitle className="text-base">Battlecard</DialogTitle>
+              <DialogDescription className="text-xs mt-0.5 leading-snug">
+                A one-page PowerPoint overview of this contact — ready to download.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* What's included */}
+        <div className="flex flex-col gap-2">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">What's included</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: "Contact details",  desc: "Name, title, company, email, phone, location" },
+              { label: "Personal insight", desc: "A signal from the contact's own content" },
+              { label: "Company insight",  desc: "A recent development at their organisation" },
+              { label: "Industry insight", desc: "A relevant sector trend or publication" },
+              { label: "Role insight",     desc: "Content relevant to their function" },
+            ].map(({ label, desc }) => (
+              <div key={label} className="flex flex-col gap-0.5 rounded-lg border border-border/50 bg-secondary/30 px-3 py-2">
+                <p className="text-xs font-semibold text-foreground leading-snug">{label}</p>
+                <p className="text-[10px] text-muted-foreground leading-snug">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Status feedback */}
+        {status === "done" && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+            <div className="h-6 w-6 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
+              <svg className="h-3.5 w-3.5 text-emerald-600" viewBox="0 0 12 9" fill="none">
+                <path d="M1 4.5l3 3 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <p className="text-xs font-medium text-emerald-700">Battlecard downloaded — check your downloads folder.</p>
+          </div>
+        )}
+        {status === "error" && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5">
+            <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
+            <p className="text-xs font-medium text-rose-700">Something went wrong. Please try again.</p>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2 sm:gap-2">
+          <DialogClose asChild>
+            <Button variant="outline" size="sm">Cancel</Button>
+          </DialogClose>
+          <Button
+            size="sm"
+            disabled={status === "loading"}
+            onClick={status === "done" ? handleGenerate : handleGenerate}
+            className="gap-1.5 bg-rose-600 hover:bg-rose-700 text-white border-0"
+          >
+            {status === "loading" ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Building battlecard…</>
+            ) : status === "done" ? (
+              <><Shield className="h-3.5 w-3.5" /> Download again</>
+            ) : (
+              <><Shield className="h-3.5 w-3.5" /> Generate Battlecard</>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function ContactProfile() {
@@ -1005,9 +1116,18 @@ export default function ContactProfile() {
         categoryData={categoryData}
       />
 
+      {/* ── Battlecard modal ── */}
+      <BattlecardModal
+        open={activeOutput === "battlecard"}
+        onClose={() => setActiveOutput(null)}
+        contactId={id}
+        contactName={[contact.firstName, contact.lastName].filter(Boolean).join(" ")}
+      />
+
       {/* ── Generic outreach modal (coming soon) ── */}
       {(() => {
         if (activeOutput === "intro_email") return null;
+        if (activeOutput === "battlecard") return null;
         const output = OUTPUT_TYPES.find(o => o.id === activeOutput);
         if (!output) return null;
         const Icon = output.icon;
