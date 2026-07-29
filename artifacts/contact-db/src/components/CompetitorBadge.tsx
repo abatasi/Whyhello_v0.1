@@ -9,7 +9,7 @@ let _inflight: Promise<Set<number>> | null = null;
 async function loadCompetitorIds(): Promise<Set<number>> {
   if (_cache) return _cache;
   if (_inflight) return _inflight;
-  _inflight = fetch("/api/dna/competitor-ids")
+  _inflight = fetch("/api/hq/competitor-ids")
     .then(r => (r.ok ? r.json() : { ids: [] }))
     .then((data: { ids?: number[] }) => {
       _cache = new Set(data.ids ?? []);
