@@ -578,17 +578,28 @@ export default function ContactProfile() {
     if (maxScore <= 50) setShowLostFriendo(true);
   }, [relevanceData, relevanceMutation.isPending]);
 
-  // Effect 2: auto-trigger scoring once when insights load and no scores exist yet
+  // Effect 2: auto-trigger scoring once only for insights that don't yet have a score
   useEffect(() => {
     if (!id || hasAutoScoredRef.current || relevanceMutation.isPending) return;
-    if (relevanceData.length > 0) return; // scores already exist — Effect 1 handles the toast
-    const total = personalInsights.length + industryInsights.length + roleInsights.length +
-      colleagueInsights.length + counterpartInsights.length + companyInsights.length;
-    if (total === 0) return;
+
+    const allInsightKeys = [
+      ...personalInsights.map(i => `personal-${i.id}`),
+      ...companyInsights.map(i => `company-${i.id}`),
+      ...industryInsights.map(i => `industry-${i.id}`),
+      ...roleInsights.map(i => `role-${i.id}`),
+      ...colleagueInsights.map(i => `colleague-${i.id}`),
+      ...counterpartInsights.map(i => `counterpart-${i.id}`),
+    ];
+    if (allInsightKeys.length === 0) return; // insights not loaded yet
+
+    const scoredKeys = new Set(relevanceData.map(s => `${s.signalType}-${s.signalId}`));
+    const allScored = allInsightKeys.every(k => scoredKeys.has(k));
+    if (allScored) return; // every insight already has a score — Effect 1 handles the toast
+
     hasAutoScoredRef.current = true;
     relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() });
-  }, [id, relevanceData.length, personalInsights.length, industryInsights.length, roleInsights.length,
-    colleagueInsights.length, counterpartInsights.length, companyInsights.length]);
+  }, [id, relevanceData, personalInsights, companyInsights, industryInsights, roleInsights,
+    colleagueInsights, counterpartInsights, relevanceMutation.isPending]);
 
   const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => {
     const lengthLabel = params.length.charAt(0).toUpperCase() + params.length.slice(1);
