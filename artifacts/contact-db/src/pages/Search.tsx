@@ -22,6 +22,7 @@ import {
   useRevealContact,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
+import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -129,6 +130,8 @@ export default function Search() {
     companySize: parseArrayParam(searchParams.get("companySize")),
     location: parseArrayParam(searchParams.get("location")),
   });
+
+  const competitorIds = useCompetitorIds();
 
   const [contactSort, setContactSort] = useState<SortConfig | null>(null);
   const [companySort, setCompanySort] = useState<SortConfig | null>(null);
@@ -835,6 +838,9 @@ export default function Search() {
                                     <span className="font-medium text-foreground group-hover:text-primary transition-colors">
                                       {company.name}
                                     </span>
+                                    {competitorIds.has(company.id) && (
+                                      <CompetitorBadge />
+                                    )}
                                   </div>
                                 </td>
                                 <td className="px-4 py-3 text-muted-foreground">{company.industry ?? "—"}</td>

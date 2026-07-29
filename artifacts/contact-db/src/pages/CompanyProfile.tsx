@@ -1,5 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useEffect } from "react";
+import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
 import {
   useGetCompany,
   useGetCompanyInsights,
@@ -111,6 +112,7 @@ export default function CompanyProfile() {
   const { data: company, isLoading, isError } = useGetCompany(id, {
     query: { enabled: !!id }
   });
+  const competitorIds = useCompetitorIds();
   const { data: insights = [] } = useGetCompanyInsights(id, {
     query: { enabled: !!id }
   });
@@ -190,7 +192,10 @@ export default function CompanyProfile() {
                 </div>
                 <div className="flex-1 pt-2 flex justify-between items-start w-full">
                   <div>
-                    <h1 className="text-3xl font-display font-bold text-foreground mb-2">{company.name}</h1>
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                      <h1 className="text-3xl font-display font-bold text-foreground">{company.name}</h1>
+                      {competitorIds.has(id) && <CompetitorBadge className="mt-0.5" />}
+                    </div>
                     <div className="flex flex-wrap items-center gap-3 text-sm">
                       {company.industry && <Badge variant="secondary">{company.industry}</Badge>}
                       {company.location && (

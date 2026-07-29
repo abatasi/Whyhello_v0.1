@@ -18,6 +18,7 @@ import {
   useInsightMeta,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
+import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
 import { ComposeDrawer } from "@/components/ComposeDrawer";
 import { OutreachJobsList } from "@/components/OutreachJobsList";
 import {
@@ -508,6 +509,7 @@ export default function ContactProfile() {
   const id = parseInt(params?.id || "0");
 
   const { data: contact, isLoading, isError } = useGetContact(id, { query: { enabled: !!id } });
+  const competitorIds = useCompetitorIds();
   const { data: personalInsights = [] } = useGetContactInsights(id, { query: { enabled: !!id } });
   const { data: industryInsights = [] } = useGetContactIndustryInsights(id, { query: { enabled: !!id } });
   const { data: roleInsights = [] } = useGetContactRoleInsights(id, { query: { enabled: !!id } });
@@ -916,6 +918,9 @@ export default function ContactProfile() {
                           {contact.company.name}
                           <ChevronRight className="h-3 w-3" />
                         </Link>
+                        {competitorIds.has(contact.company.id) && (
+                          <CompetitorBadge />
+                        )}
                       </>
                     )}
                   </div>

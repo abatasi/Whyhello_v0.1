@@ -21,6 +21,27 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 },
 });
 
+// ── GET /api/dna/competitor-ids ──────────────────────────────────────────────
+// Returns the set of company IDs that appear in the competitor list of the
+// current user's DNA profile. Used to badge competitor companies across the UI.
+
+router.get("/competitor-ids", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  try {
+    const [row] = await db.select().from(dnaProfilesTable).where(eq(dnaProfilesTable.userId, userId));
+    if (!row) { res.json({ ids: [] }); return; }
+    const profile = JSON.parse(row.data) as { competitors?: { companyId?: number | null }[] };
+    const ids = (profile.competitors ?? [])
+      .map(c => c.companyId)
+      .filter((id): id is number => typeof id === "number" && id > 0);
+    res.json({ ids: [...new Set(ids)] });
+  } catch (err) {
+    console.error("DNA competitor-ids error:", err);
+    res.status(500).json({ error: "Failed to load competitor IDs" });
+  }
+});
+
 // ── GET /api/dna/profile ─────────────────────────────────────────────────────
 
 router.get("/profile", async (req, res) => {
