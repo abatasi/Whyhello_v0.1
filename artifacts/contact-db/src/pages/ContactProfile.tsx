@@ -1470,45 +1470,60 @@ function InsightDetailView({
                 </>
               )}
             </div>
-            {(relevance?.description ?? item.description) && (
-              <p className="text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-2.5">
-                {relevance?.description ?? item.description}
-              </p>
-            )}
+            <div className="border-t border-border/40 pt-2.5">
+              {aiLoading ? (
+                <div className="flex flex-col gap-2">
+                  <div className="h-3 bg-muted rounded-full animate-pulse w-full" />
+                  <div className="h-3 bg-muted rounded-full animate-pulse w-[90%]" />
+                  <div className="h-3 bg-muted rounded-full animate-pulse w-[75%]" />
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground leading-relaxed">{aiData?.summary}</p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Relevance card (replaces Summary) */}
+        {/* Relevance card */}
         <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Relevance</span>
-            {relevance && (
-              <div className="ml-auto">
-                <TooltipProvider delayDuration={200}>
-                  <RelevanceBadge score={relevance.score} description={relevance.description} />
-                </TooltipProvider>
-              </div>
-            )}
+            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Relevance to Your HQ</span>
           </div>
-          <div className="px-4 py-3.5">
-            {relevance ? (
-              <div className="flex flex-col gap-2.5">
-                <p className="text-xs text-foreground leading-relaxed">{relevance.description}</p>
-                {relevance.matchedHqSignals && relevance.matchedHqSignals.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-0.5">
-                    {relevance.matchedHqSignals.map((sig, i) => (
-                      <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/8 border border-primary/15 text-primary font-medium">
-                        {sig}
-                      </span>
-                    ))}
+          <div className="p-4">
+            {relevance ? (() => {
+              const s = relevance.score;
+              const scoreColor = s >= 75 ? "text-emerald-600" : s >= 50 ? "text-amber-500" : s >= 25 ? "text-orange-500" : "text-slate-400";
+              const scoreBg   = s >= 75 ? "bg-emerald-50 border-emerald-200" : s >= 50 ? "bg-amber-50 border-amber-200" : s >= 25 ? "bg-orange-50 border-orange-200" : "bg-slate-50 border-slate-200";
+              return (
+                <div className="flex gap-4">
+                  {/* Score column — 25% */}
+                  <div className={cn("flex flex-col items-center justify-center rounded-xl border px-3 py-3 flex-shrink-0 w-[25%]", scoreBg)}>
+                    <span className={cn("text-4xl font-black leading-none tracking-tight", scoreColor)}>{s}</span>
+                    <span className={cn("text-[10px] font-bold mt-1 opacity-70", scoreColor)}>/&nbsp;100</span>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <div className="h-3 bg-muted rounded-full animate-pulse w-full" />
-                <div className="h-3 bg-muted rounded-full animate-pulse w-[85%]" />
+                  {/* Description + tags column — 75% */}
+                  <div className="flex flex-col gap-2 flex-1 min-w-0">
+                    <p className="text-xs text-foreground leading-relaxed">{relevance.description}</p>
+                    {relevance.matchedHqSignals && relevance.matchedHqSignals.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {relevance.matchedHqSignals.map((sig, i) => (
+                          <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/8 border border-primary/15 text-primary font-medium">
+                            {sig}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })() : (
+              <div className="flex gap-4">
+                <div className="w-[25%] h-16 bg-muted rounded-xl animate-pulse flex-shrink-0" />
+                <div className="flex-1 flex flex-col gap-2 justify-center">
+                  <div className="h-3 bg-muted rounded-full animate-pulse w-full" />
+                  <div className="h-3 bg-muted rounded-full animate-pulse w-[85%]" />
+                </div>
               </div>
             )}
           </div>
