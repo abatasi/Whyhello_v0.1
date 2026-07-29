@@ -18,8 +18,11 @@ import {
   useInsightMeta,
   useGetInsightRelevance,
   useTriggerInsightRelevance,
+  useGetTopRelevantContact,
   type InsightRelevanceScore,
+  type TopRelevantContact,
 } from "@workspace/api-client-react";
+import lostFriendoImg from "@/assets/lost-friendo.png";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
 import { ComposeDrawer } from "@/components/ComposeDrawer";
@@ -565,16 +568,29 @@ export default function ContactProfile() {
   const { data: relevanceData = [], refetch: refetchRelevance } = useGetInsightRelevance(id, { query: { enabled: !!id } });
   const relevanceMutation = useTriggerInsightRelevance();
   const hasAutoScoredRef = useRef(false);
+  const [showLostFriendo, setShowLostFriendo] = useState(false);
+  const { data: topContact } = useGetTopRelevantContact(id, showLostFriendo);
 
   // Auto-score once when insights are loaded and no scores exist yet
   useEffect(() => {
     if (!id || hasAutoScoredRef.current || relevanceMutation.isPending) return;
-    if (relevanceData.length > 0) return; // already have scores
+    if (relevanceData.length > 0) {
+      // Scores already exist — check if all are below 50
+      const maxScore = Math.max(...relevanceData.map(s => s.score), 0);
+      if (maxScore < 50) setShowLostFriendo(true);
+      return;
+    }
     const total = personalInsights.length + industryInsights.length + roleInsights.length +
       colleagueInsights.length + counterpartInsights.length + companyInsights.length;
     if (total === 0) return; // wait for insights to load
     hasAutoScoredRef.current = true;
-    relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() });
+    relevanceMutation.mutate(id, {
+      onSuccess: (scores) => {
+        refetchRelevance();
+        const maxScore = Math.max(...scores.map((s: InsightRelevanceScore) => s.score), 0);
+        if (maxScore < 50) setShowLostFriendo(true);
+      },
+    });
   }, [id, relevanceData.length, personalInsights.length, industryInsights.length, roleInsights.length,
     colleagueInsights.length, counterpartInsights.length, companyInsights.length]);
 
@@ -1312,7 +1328,87 @@ export default function ContactProfile() {
           companyInsights={companyInsights}
         />
       )}
+
+      {/* ── Lost Friendo overlay ── */}
+      {showLostFriendo && (
+        <LostFriendoCard
+          topContact={topContact ?? null}
+          onDismiss={() => setShowLostFriendo(false)}
+        />
+      )}
     </Shell>
+  );
+}
+
+// ── LostFriendoCard ────────────────────────────────────────────────────────
+
+function LostFriendoCard({
+  topContact,
+  onDismiss,
+}: {
+  topContact: TopRelevantContact | null | undefined;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      className="fixed bottom-5 right-5 z-50 w-[380px] rounded-2xl border border-border/60 bg-card shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300"
+      role="status"
+      aria-live="polite"
+    >
+      {/* Amber accent stripe */}
+      <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-orange-400 to-red-400" />
+
+      <div className="flex gap-4 p-4">
+        {/* Cartoon */}
+        <img
+          src={lostFriendoImg}
+          alt="Lost friendo"
+          className="h-20 w-20 rounded-xl object-cover flex-shrink-0 border border-border/40"
+        />
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-sm font-black text-foreground leading-tight">
+              Are you lost, friend-o?
+            </h3>
+            <button
+              onClick={onDismiss}
+              className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 -mt-0.5"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            None of this contact's signals scored above 50 against your HQ profile — this might not be your ideal prospect right now.
+          </p>
+
+          {topContact ? (
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Someone who might be a better fit:{" "}
+              <Link
+                href={`/contacts/${topContact.contactId}`}
+                onClick={onDismiss}
+                className="font-semibold text-primary hover:underline"
+              >
+                {topContact.firstName} {topContact.lastName}
+              </Link>
+              {topContact.title && (
+                <span className="text-muted-foreground/70"> · {topContact.title}</span>
+              )}
+              <span className="ml-1.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+                avg {topContact.avgScore}
+              </span>
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground/60 italic leading-snug">
+              Score more contacts to unlock a better recommendation.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

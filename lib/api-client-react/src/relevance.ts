@@ -10,6 +10,16 @@ export interface InsightRelevanceScore {
   computedAt: string;
 }
 
+export interface TopRelevantContact {
+  contactId: number;
+  firstName: string;
+  lastName: string;
+  title: string | null;
+  companyName: string | null;
+  avgScore: number;
+  maxScore: number;
+}
+
 export function useGetInsightRelevance(
   contactId: number,
   options?: { query?: { enabled?: boolean } }
@@ -20,6 +30,18 @@ export function useGetInsightRelevance(
       customFetch<InsightRelevanceScore[]>(`/api/contacts/${contactId}/insights/relevance`),
     enabled: options?.query?.enabled !== false && contactId > 0,
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useGetTopRelevantContact(contactId: number, enabled = true) {
+  return useQuery<TopRelevantContact | null>({
+    queryKey: ["contacts", contactId, "insights", "relevance", "top-contact"],
+    queryFn: () =>
+      customFetch<TopRelevantContact | null>(
+        `/api/contacts/${contactId}/insights/relevance/top-contact`
+      ),
+    enabled: enabled && contactId > 0,
+    staleTime: 10 * 60_000,
   });
 }
 

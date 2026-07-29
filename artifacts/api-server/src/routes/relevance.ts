@@ -11,7 +11,7 @@ import {
   dnaProfilesTable,
   insightRelevanceScoresTable,
 } from "@workspace/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, ne, gt, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 
 type AuthedReq = Request & { user: { id: string } };
@@ -192,6 +192,58 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
   } catch (err) {
     console.error("Relevance score error:", err);
     res.status(500).json({ error: "Failed to score relevance" });
+  }
+});
+
+// ── GET /api/contacts/:contactId/insights/relevance/top-contact ───────────────
+// Returns the most relevant OTHER contact (highest avg relevance score), so the
+// "Are you lost?" toast can link the user somewhere more useful.
+
+router.get("/relevance/top-contact", async (req, res) => {
+  try {
+    const currentContactId = parseInt(req.params.contactId);
+    if (isNaN(currentContactId)) { res.status(400).json({ error: "Invalid contact ID" }); return; }
+
+    // Aggregate scores per contact, excluding the current one, requiring avg > 50
+    const rows = await db
+      .select({
+        contactId: insightRelevanceScoresTable.contactId,
+        avgScore: sql<number>`round(avg(${insightRelevanceScoresTable.score}))`.as("avg_score"),
+        maxScore: sql<number>`max(${insightRelevanceScoresTable.score})`.as("max_score"),
+      })
+      .from(insightRelevanceScoresTable)
+      .where(ne(insightRelevanceScoresTable.contactId, currentContactId))
+      .groupBy(insightRelevanceScoresTable.contactId)
+      .orderBy(sql`avg_score desc`)
+      .limit(1);
+
+    if (rows.length === 0) { res.json(null); return; }
+
+    const top = rows[0];
+    const [contact] = await db
+      .select({
+        id: contactsTable.id,
+        firstName: contactsTable.firstName,
+        lastName: contactsTable.lastName,
+        title: contactsTable.title,
+      })
+      .from(contactsTable)
+      .where(eq(contactsTable.id, top.contactId))
+      .limit(1);
+
+    if (!contact) { res.json(null); return; }
+
+    res.json({
+      contactId: contact.id,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      title: contact.title ?? null,
+      avgScore: top.avgScore,
+      maxScore: top.maxScore,
+    });
+  } catch (err) {
+    console.error("Top contact error:", err);
+    res.status(500).json({ error: "Failed to find top contact" });
   }
 });
 
