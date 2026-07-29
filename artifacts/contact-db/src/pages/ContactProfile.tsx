@@ -1498,7 +1498,7 @@ function InsightDetailView({
               return (
                 <div className="flex gap-4">
                   {/* Score column — 25% */}
-                  <div className={cn("flex flex-col items-center justify-center rounded-xl border px-3 py-3 flex-shrink-0 w-[25%]", scoreBg)}>
+                  <div className={cn("flex flex-col items-center justify-center rounded-xl border px-3 py-3 flex-shrink-0 w-[13%]", scoreBg)}>
                     <span className={cn("text-4xl font-black leading-none tracking-tight", scoreColor)}>{s}</span>
                     <span className={cn("text-[10px] font-bold mt-1 opacity-70", scoreColor)}>/&nbsp;100</span>
                   </div>
