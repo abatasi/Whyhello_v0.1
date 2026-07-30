@@ -54,9 +54,15 @@ router.get("/options", async (_req, res) => {
           .orderBy(contactsTable.location),
       ]);
 
+    const STATIC_DEPARTMENTS = ["Investment Advisor"];
+    const dbDepartments = departments.map((r) => r.value).filter(Boolean) as string[];
+    const mergedDepartments = [...new Set([...dbDepartments, ...STATIC_DEPARTMENTS])].sort((a, b) =>
+      a.localeCompare(b)
+    );
+
     res.json({
       industries: industries.map((r) => r.value).filter(Boolean),
-      departments: departments.map((r) => r.value).filter(Boolean),
+      departments: mergedDepartments,
       seniorities: seniorities.map((r) => r.value).filter(Boolean),
       companySizes: sortCompanySizes(companySizes.map((r) => r.value).filter(Boolean) as string[]),
       countries: countries.map((r) => r.value).filter(Boolean),

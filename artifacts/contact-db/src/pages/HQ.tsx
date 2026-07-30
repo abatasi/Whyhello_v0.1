@@ -509,7 +509,7 @@ const SENIORITY_OPTIONS = [
 const DEPARTMENT_OPTIONS = [
   "Business Development", "Claims", "Clinical", "Consulting", "Content", "Creative",
   "Customer Experience", "Customer Success", "Data", "Design", "Development", "Digital",
-  "Education", "Engineering", "Executive", "Finance", "Investments", "Legal", "Marketing",
+  "Education", "Engineering", "Executive", "Finance", "Investment Advisor", "Investments", "Legal", "Marketing",
   "Medical", "Merchandising", "Operations", "Product", "Production", "Programs", "R&D",
   "Research", "Revenue", "Risk", "Sales", "Security", "Underwriting",
 ];
