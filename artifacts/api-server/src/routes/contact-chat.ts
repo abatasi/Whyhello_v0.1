@@ -14,6 +14,7 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 const router: IRouter = Router({ mergeParams: true });
 
 type RawMessage = { role: string; content: string };
+type SourceRef = { signalType: string; id: number; title: string; source: string; publishedDate?: string | null };
 
 function parseMessages(body: unknown): { role: "user" | "assistant"; content: string }[] | null {
   if (!body || typeof body !== "object") return null;
@@ -42,11 +43,34 @@ function filterBySelected<T extends { id: number }>(items: T[], prefix: string, 
   return items.filter(i => selected.has(`${prefix}-${i.id}`));
 }
 
-function fmt(items: Array<{ title: string; source: string; publishedDate?: string | null; description?: string | null }>) {
+// Build a numbered reference list for the system prompt.
+// Returns the formatted text block and populates the shared index array (1-based).
+function buildRefSection(
+  items: Array<{ id: number; title: string; source: string; publishedDate?: string | null; description?: string | null }>,
+  signalType: string,
+  index: SourceRef[],
+): string {
   if (!items.length) return "  None available.";
-  return items
-    .map((i) => `  • "${i.title}" (${i.source}${i.publishedDate ? ", " + i.publishedDate : ""})\n    ${i.description ?? ""}`)
-    .join("\n");
+  return items.map((i) => {
+    index.push({ signalType, id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate ?? null });
+    const n = index.length; // 1-based ref number
+    return `  [${n}] "${i.title}" (${i.source}${i.publishedDate ? ", " + i.publishedDate : ""})\n    ${i.description ?? ""}`;
+  }).join("\n");
+}
+
+// Parse [CITED: 1, 3, 5] from the tail of the accumulated response.
+function parseCitations(content: string): number[] {
+  const match = content.match(/\[CITED:\s*([\d,\s]+)\]\s*$/);
+  if (!match) return [];
+  return match[1]
+    .split(",")
+    .map(s => parseInt(s.trim(), 10))
+    .filter(n => !isNaN(n) && n > 0);
+}
+
+// Strip the [CITED: …] line from the end of content.
+function stripCitation(content: string): string {
+  return content.replace(/\n*\[CITED:[^\]]*\]\s*$/, "").trimEnd();
 }
 
 router.post("/", async (req, res) => {
@@ -131,16 +155,14 @@ router.post("/", async (req, res) => {
     const fct = filterBySelected(counterpart, "counterpart", selectedIds);
     const fci = filterBySelected(companyIns,  "company",     selectedIds);
 
-    // ── Build the sources list for the post-stream event ─────────────────
-    type SourceRef = { signalType: string; id: number; title: string; source: string; publishedDate?: string | null };
-    const allSources: SourceRef[] = [
-      ...fp.map(i  => ({ signalType: "personal",    id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
-      ...fci.map(i => ({ signalType: "company",     id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
-      ...fi.map(i  => ({ signalType: "industry",    id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
-      ...fr.map(i  => ({ signalType: "role",        id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
-      ...fc.map(i  => ({ signalType: "colleague",   id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
-      ...fct.map(i => ({ signalType: "counterpart", id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
-    ];
+    // ── Build numbered source index (1-based) for citation tracking ───────
+    const sourceIndex: SourceRef[] = [];
+    const personalSection    = buildRefSection(fp,  "personal",    sourceIndex);
+    const industrySection    = buildRefSection(fi,  "industry",    sourceIndex);
+    const roleSection        = buildRefSection(fr,  "role",        sourceIndex);
+    const colleagueSection   = buildRefSection(fc,  "colleague",   sourceIndex);
+    const counterpartSection = buildRefSection(fct, "counterpart", sourceIndex);
+    const companySection     = buildRefSection(fci, "company",     sourceIndex);
 
     const systemPrompt = `You are an AI contact intelligence assistant embedded in Whyhello, a B2B relationship intelligence platform. Help the user deeply understand and engage with their contact.
 
@@ -153,22 +175,22 @@ Seniority: ${contact.seniority ?? "Not specified"}
 Bio: ${contact.bio ?? "Not available"}
 
 PERSONAL INSIGHTS (content directly about ${contact.firstName}):
-${fmt(fp)}
+${personalSection}
 
 INDUSTRY INSIGHTS (sector trends they operate in):
-${fmt(fi)}
+${industrySection}
 
 ROLE INSIGHTS (content relevant to their function):
-${fmt(fr)}
+${roleSection}
 
 COLLEAGUE INSIGHTS (their team and peers):
-${fmt(fc)}
+${colleagueSection}
 
 COUNTERPART INSIGHTS (competitor and partner perspectives):
-${fmt(fct)}
+${counterpartSection}
 
 COMPANY INSIGHTS (${company?.name ?? "their company"} news and press):
-${fmt(fci)}
+${companySection}
 
 Your role:
 - Answer any question about this contact's priorities, background, and professional context
@@ -177,7 +199,12 @@ Your role:
 - Summarise their recent activity and what it signals about their agenda
 - Identify common ground and angles for building rapport
 
-Be concise, specific, and actionable. Tie every response to the actual data above. Do not invent information not present in the profile.`;
+Be concise, specific, and actionable. Tie every response to the actual data above. Do not invent information not present in the profile.
+
+CITATION REQUIREMENT:
+After your response, on a new line by itself, write exactly this — and nothing else on that line:
+[CITED: N, M, ...]
+Replace N, M, ... with the reference numbers (shown in [brackets] above) of the specific sources you drew from for this answer. Only include sources you actually used. If you used none, write [CITED: ].`;
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -190,15 +217,24 @@ Be concise, specific, and actionable. Tie every response to the actual data abov
       stream: true,
     });
 
+    // Stream content to client while buffering server-side for citation parsing
+    let accumulated = "";
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content ?? "";
-      if (content) res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      if (content) {
+        accumulated += content;
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
     }
 
-    // Emit sources before done so the client can attach them to the message
-    if (allSources.length > 0) {
-      res.write(`data: ${JSON.stringify({ sources: allSources })}\n\n`);
-    }
+    // Parse which sources the AI actually cited
+    const citedNums = parseCitations(accumulated);
+    const citedSources: SourceRef[] = citedNums
+      .map(n => sourceIndex[n - 1])
+      .filter((s): s is SourceRef => !!s);
+
+    // Tell the client the citation tag text to strip, plus the cited sources
+    res.write(`data: ${JSON.stringify({ sources: citedSources, citationTag: accumulated.match(/\n*\[CITED:[^\]]*\]\s*$/)?.[0] ?? "" })}\n\n`);
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
   } catch (err) {

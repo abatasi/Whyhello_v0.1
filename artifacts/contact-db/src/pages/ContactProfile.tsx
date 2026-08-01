@@ -2634,6 +2634,7 @@ function ContactChat({
 
     let assistantContent = "";
     let pendingSources: ChatSourceRef[] | undefined;
+    let citationTag = "";
 
     try {
       const resp = await fetch(`/api/contacts/${id}/chat`, {
@@ -2659,8 +2660,9 @@ function ContactChat({
           try {
             const data = JSON.parse(line.slice(6));
             if (data.done) break;
-            if (data.sources) {
+            if (data.sources !== undefined) {
               pendingSources = data.sources as ChatSourceRef[];
+              citationTag = (data.citationTag as string) ?? "";
             }
             if (data.content) {
               assistantContent += data.content;
@@ -2676,18 +2678,25 @@ function ContactChat({
         }
       }
 
-      // Attach sources to the completed assistant message
-      if (pendingSources) {
-        setLocalMessages((prev) => {
-          const next = [...prev];
-          next[next.length - 1] = { ...next[next.length - 1], sources: pendingSources };
-          return next;
-        });
-      }
+      // Strip the raw [CITED: …] line the AI appended, then attach sources.
+      // Do this in one setState so the message never flickers with the tag visible.
+      const cleanContent = citationTag
+        ? assistantContent.replace(citationTag, "").trimEnd()
+        : assistantContent;
 
-      // Persist completed assistant response
-      if (assistantContent) {
-        persistMessage.mutate({ id, data: { role: "assistant", content: assistantContent } });
+      setLocalMessages((prev) => {
+        const next = [...prev];
+        next[next.length - 1] = {
+          ...next[next.length - 1],
+          content: cleanContent,
+          ...(pendingSources ? { sources: pendingSources } : {}),
+        };
+        return next;
+      });
+
+      // Persist the clean content (no citation tag)
+      if (cleanContent) {
+        persistMessage.mutate({ id, data: { role: "assistant", content: cleanContent } });
       }
     } catch {
       const errMsg = "Sorry, something went wrong. Please try again.";
