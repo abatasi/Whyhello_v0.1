@@ -1733,6 +1733,46 @@ function InsightDetailView({
               <span className={cn("text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border", category.accentBg, category.accentBorder, category.color)}>
                 {category.label}
               </span>
+
+              {/* ── Colleague source contact chip ── */}
+              {category.id === "colleague" && item.sourceContact && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border bg-sky-50 border-sky-200">
+                  <div className="h-4 w-4 rounded-full bg-sky-200 border border-sky-300 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[8px] font-bold text-sky-700 uppercase leading-none select-none">
+                      {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-sky-800 leading-none">{item.sourceContact.name}</span>
+                  {(item.sourceContact.jobTitle || item.sourceContact.companyName) && (
+                    <span className="text-[9px] text-sky-600/80 leading-none">
+                      {[item.sourceContact.jobTitle, item.sourceContact.companyName].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* ── Counterpart source contact chip ── */}
+              {category.id === "counterpart" && item.sourceContact && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border bg-rose-50 border-rose-200">
+                  <div className="h-4 w-4 rounded-full bg-rose-200 border border-rose-300 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[8px] font-bold text-rose-700 uppercase leading-none select-none">
+                      {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-rose-800 leading-none">{item.sourceContact.name}</span>
+                  {(item.sourceContact.jobTitle || item.sourceContact.companyName) && (
+                    <span className="text-[9px] text-rose-600/80 leading-none">
+                      {[item.sourceContact.jobTitle, item.sourceContact.companyName].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                  {item.counterpartGroup != null && (
+                    <span className="text-[8px] font-bold text-rose-500 uppercase tracking-wide leading-none border-l border-rose-200 pl-1.5 ml-0.5">
+                      G{item.counterpartGroup}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-semibold", cfg.bg)}>
                 <MIcon className={cn("h-2.5 w-2.5", cfg.color)} />
                 <span className={cfg.color}>{cfg.label}</span>
