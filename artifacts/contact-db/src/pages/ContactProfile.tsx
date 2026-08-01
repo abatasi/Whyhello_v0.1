@@ -744,6 +744,18 @@ export default function ContactProfile() {
     return m;
   }, [relevanceData]);
 
+  // The live set of all insight IDs currently displayed in the panel.
+  // Used to guard against stale ghost IDs that accumulate in checkedIds
+  // when insight data changes between fetches (e.g. relevance-score updates
+  // shift the round-robin selection for colleague/counterpart insights).
+  const currentInsightIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const [cat, items] of Object.entries(categoryData)) {
+      for (const item of items) s.add(`${cat}-${item.id}`);
+    }
+    return s;
+  }, [categoryData]);
+
   const sortedCategoryData = useMemo(() => {
     if (!sortByRelevance || relevanceMap.size === 0) return categoryData;
     const result: Record<string, InsightItem[]> = {};
@@ -1220,7 +1232,7 @@ export default function ContactProfile() {
               </div>
 
               {/* ── Strategy Assistant (live chatbot) ── */}
-              <ContactChat id={id} contact={contact} checkedIds={checkedIds} highlightedInsight={selectedInsight} />
+              <ContactChat id={id} contact={contact} checkedIds={checkedIds} currentIds={currentInsightIds} highlightedInsight={selectedInsight} />
             </main>
 
             {/* ══════════════════════════════════════════════════════════════
@@ -2560,11 +2572,12 @@ const STARTERS = (firstName: string) => [
 ];
 
 function ContactChat({
-  id, contact, checkedIds, highlightedInsight,
+  id, contact, checkedIds, currentIds, highlightedInsight,
 }: {
   id: number;
   contact: { firstName: string };
   checkedIds: Set<string>;
+  currentIds: Set<string>;
   highlightedInsight?: { item: InsightItem; category: InsightCategory } | null;
 }) {
   const { data: savedMessages = [], isLoading: historyLoading } = useListChatMessages(id);
@@ -2584,12 +2597,14 @@ function ContactChat({
     setUseOnlyHighlighted(false);
   }, [highlightedInsight?.item.id]);
 
-  // Effective source IDs sent to the API
+  // Effective source IDs sent to the API.
+  // Intersect checkedIds with currentIds so ghost IDs (stale entries from
+  // previous fetches that are no longer displayed) are never counted or sent.
   const effectiveIds = (() => {
     if (highlightedInsight && useOnlyHighlighted) {
       return [`${highlightedInsight.category.id}-${highlightedInsight.item.id}`];
     }
-    return Array.from(checkedIds);
+    return Array.from(checkedIds).filter(id => currentIds.has(id));
   })();
 
   // Hydrate from DB on first load
