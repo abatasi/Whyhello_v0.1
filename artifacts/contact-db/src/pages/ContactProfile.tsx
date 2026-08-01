@@ -93,7 +93,7 @@ function RelevanceBadge({ score, description, size = "sm" }: { score: number; de
 // ── Insight category definitions ───────────────────────────────────────────
 
 type InsightSourceContact = { name: string; jobTitle?: string | null; companyName?: string | null };
-type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null; sourceContact?: InsightSourceContact | null };
+type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null; sourceContact?: InsightSourceContact | null; counterpartGroup?: 1 | 2 | null };
 
 interface InsightCategory {
   id: string;
@@ -2062,6 +2062,28 @@ function InsightCardExpanded({
               {[item.sourceContact.jobTitle, item.sourceContact.companyName].filter(Boolean).join(" · ")}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* ── Counterpart attribution ── */}
+      {category.id === "counterpart" && item.sourceContact && (
+        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200">
+          <div className="h-5 w-5 rounded-full bg-rose-200 border border-rose-300 flex items-center justify-center flex-shrink-0">
+            <span className="text-[9px] font-bold text-rose-700 uppercase leading-none select-none">
+              {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-semibold text-rose-800 truncate leading-tight">{item.sourceContact.name}</p>
+            <p className="text-[10px] text-rose-600/80 truncate leading-tight">
+              {[item.sourceContact.jobTitle, item.sourceContact.companyName].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+          {item.counterpartGroup != null && (
+            <span className="flex-shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-rose-600 uppercase tracking-wide">
+              G{item.counterpartGroup}
+            </span>
+          )}
         </div>
       )}
 

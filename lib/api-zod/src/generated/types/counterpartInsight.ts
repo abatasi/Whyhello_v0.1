@@ -6,6 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export interface CounterpartInsightSourceContact {
+  name: string;
+  jobTitle: string | null;
+  companyName: string | null;
+}
+
 export interface CounterpartInsight {
   id: number;
   contactId: number;
@@ -15,4 +21,7 @@ export interface CounterpartInsight {
   mediaType: string;
   description?: string | null;
   publishedDate?: string | null;
+  /** 1 = same role + same industry, different company; 2 = same role + different industry, different company */
+  counterpartGroup?: 1 | 2 | null;
+  sourceContact?: CounterpartInsightSourceContact | null;
 }

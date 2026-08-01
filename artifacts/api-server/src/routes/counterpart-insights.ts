@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import {
   contactInsightsTable,
   contactsTable,
+  companiesTable,
   insightRelevanceScoresTable,
 } from "@workspace/db/schema";
 import { and, eq, inArray, ne } from "drizzle-orm";
@@ -12,13 +13,16 @@ const router: IRouter = Router({ mergeParams: true });
 /**
  * GET /contacts/:contactId/counterpart-insights
  *
- * Returns up to 10 personal insights drawn from contacts who work in the same
- * industry as the given contact but at a different company — i.e. their
- * professional counterparts in the market.
+ * Returns up to 10 personal insights drawn from professional counterparts —
+ * contacts who share the same role (role_id) but work at a different company.
  *
- * Sorting: ranked by relevance score (signalType='counterpart') descending.
- * Diversity bias: round-robin across counterpart buckets so no single
- * counterpart dominates the list.
+ * Two groups:
+ *   Group 1 — same role + same industry + different company  (closest peers)
+ *   Group 2 — same role + different industry + different company  (cross-sector peers)
+ *
+ * Selection: diversity-biased round-robin across contact buckets, Group 1
+ * buckets listed first so they get priority pick. Each insight is tagged with
+ * counterpartGroup (1 or 2) and sourceContact metadata.
  */
 router.get("/", async (req, res) => {
   try {
@@ -28,49 +32,66 @@ router.get("/", async (req, res) => {
       return;
     }
 
-    // ── 1. Resolve industry + company for the given contact ───────────────
+    // ── 1. Resolve role + industry + company for the given contact ────────
     const [contact] = await db
       .select({
+        roleId:     contactsTable.roleId,
         industryId: contactsTable.industryId,
-        companyId: contactsTable.companyId,
+        companyId:  contactsTable.companyId,
       })
       .from(contactsTable)
       .where(eq(contactsTable.id, contactId));
 
-    if (!contact?.industryId) {
+    if (!contact?.roleId) {
       res.json([]);
       return;
     }
 
-    // ── 2. Find counterparts (same industry, different company) ───────────
-    const counterparts = await db
-      .select({ id: contactsTable.id })
+    // ── 2. Find all contacts: same role, different company ────────────────
+    const allCounterparts = await db
+      .select({
+        id:         contactsTable.id,
+        firstName:  contactsTable.firstName,
+        lastName:   contactsTable.lastName,
+        jobTitle:   contactsTable.jobTitle,
+        industryId: contactsTable.industryId,
+        companyId:  contactsTable.companyId,
+      })
       .from(contactsTable)
       .where(
         and(
-          eq(contactsTable.industryId, contact.industryId),
+          eq(contactsTable.roleId, contact.roleId),
           ne(contactsTable.id, contactId),
-          // Exclude colleagues (same company) — those live in Colleague Insights
-          ...(contact.companyId
-            ? [ne(contactsTable.companyId, contact.companyId)]
-            : [])
+          ...(contact.companyId ? [ne(contactsTable.companyId, contact.companyId)] : [])
         )
       );
 
-    if (counterparts.length === 0) {
+    if (allCounterparts.length === 0) {
       res.json([]);
       return;
     }
 
-    const counterpartIds = counterparts.map((c) => c.id);
+    // ── 3. Split into Group 1 (same industry) and Group 2 (diff industry) ─
+    const group1Ids = new Set(
+      allCounterparts
+        .filter(c => contact.industryId != null && c.industryId === contact.industryId)
+        .map(c => c.id)
+    );
+    const group2Ids = new Set(
+      allCounterparts
+        .filter(c => !group1Ids.has(c.id))
+        .map(c => c.id)
+    );
 
-    // ── 3. Pull their personal insights ──────────────────────────────────
+    const allCounterpartIds = allCounterparts.map(c => c.id);
+
+    // ── 4. Pull their personal insights ──────────────────────────────────
     const insights = await db
       .select()
       .from(contactInsightsTable)
       .where(
         and(
-          inArray(contactInsightsTable.contactId, counterpartIds),
+          inArray(contactInsightsTable.contactId, allCounterpartIds),
           eq(contactInsightsTable.category, "personal")
         )
       );
@@ -80,12 +101,12 @@ router.get("/", async (req, res) => {
       return;
     }
 
-    // ── 4. Load relevance scores (signalType='counterpart') ───────────────
-    const insightIds = insights.map((i) => i.id);
+    // ── 5. Load relevance scores ───────────────────────────────────────────
+    const insightIds = insights.map(i => i.id);
     const scores = await db
       .select({
         signalId: insightRelevanceScoresTable.signalId,
-        score: insightRelevanceScoresTable.score,
+        score:    insightRelevanceScoresTable.score,
       })
       .from(insightRelevanceScoresTable)
       .where(
@@ -96,9 +117,9 @@ router.get("/", async (req, res) => {
         )
       );
 
-    const scoreMap = new Map<number, number>(scores.map((s) => [s.signalId, s.score]));
+    const scoreMap = new Map<number, number>(scores.map(s => [s.signalId, s.score]));
 
-    // ── 5. Group insights by counterpart, sort each group by score desc ───
+    // ── 6. Group insights by contact, sort each bucket by score desc ──────
     const buckets = new Map<number, typeof insights>();
     for (const insight of insights) {
       if (!buckets.has(insight.contactId)) buckets.set(insight.contactId, []);
@@ -108,40 +129,69 @@ router.get("/", async (req, res) => {
       items.sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
     }
 
-    // Sort counterpart buckets by their best insight's score
-    const orderedBuckets = Array.from(buckets.values()).sort(
-      (a, b) => (scoreMap.get(b[0]?.id ?? -1) ?? 0) - (scoreMap.get(a[0]?.id ?? -1) ?? 0)
-    );
+    // ── 7. Order buckets: Group 1 first (same industry), then Group 2 ─────
+    // Within each group, sort buckets by their best insight's score desc.
+    const sortBucketsByScore = (ids: Set<number>) =>
+      Array.from(buckets.entries())
+        .filter(([cid]) => ids.has(cid))
+        .sort(([, a], [, b]) => (scoreMap.get(b[0]?.id ?? -1) ?? 0) - (scoreMap.get(a[0]?.id ?? -1) ?? 0))
+        .map(([, items]) => items);
 
-    // ── 6. Diversity-biased round-robin selection (up to 10) ──────────────
+    const orderedBuckets = [
+      ...sortBucketsByScore(group1Ids),
+      ...sortBucketsByScore(group2Ids),
+    ];
+
+    // ── 8. Diversity-biased round-robin selection (up to 10) ──────────────
     const selected: typeof insights = [];
     let round = 0;
     while (selected.length < 10) {
       let anyAdded = false;
       for (const bucket of orderedBuckets) {
         if (selected.length >= 10) break;
-        if (round < bucket.length) {
-          selected.push(bucket[round]);
-          anyAdded = true;
-        }
+        if (round < bucket.length) { selected.push(bucket[round]); anyAdded = true; }
       }
       if (!anyAdded) break;
       round++;
     }
 
-    // ── 7. Final sort by relevance score desc ─────────────────────────────
+    // ── 9. Final sort by relevance score desc ─────────────────────────────
     selected.sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
 
-    // ── 8. Shape response to match CounterpartInsight API contract ─────────
-    const result = selected.map((i) => ({
-      id: i.id,
-      contactId,           // the contact whose profile this is (API compatibility)
-      title: i.title,
-      url: i.url,
-      source: i.source,
-      mediaType: i.mediaType,
-      description: i.description,
-      publishedDate: i.publishedDate,
+    // ── 10. Build counterpart metadata lookup ─────────────────────────────
+    const uniqueCompanyIds = [
+      ...new Set(allCounterparts.map(c => c.companyId).filter(Boolean)),
+    ] as number[];
+    const companies = uniqueCompanyIds.length > 0
+      ? await db
+          .select({ id: companiesTable.id, name: companiesTable.name })
+          .from(companiesTable)
+          .where(inArray(companiesTable.id, uniqueCompanyIds))
+      : [];
+    const companyNameMap = new Map(companies.map(c => [c.id, c.name]));
+    const counterpartMetaMap = new Map(
+      allCounterparts.map(c => [
+        c.id,
+        {
+          name:        [c.firstName, c.lastName].filter(Boolean).join(" "),
+          jobTitle:    c.jobTitle ?? null,
+          companyName: c.companyId ? (companyNameMap.get(c.companyId) ?? null) : null,
+        },
+      ])
+    );
+
+    // ── 11. Shape response ─────────────────────────────────────────────────
+    const result = selected.map(i => ({
+      id:             i.id,
+      contactId,
+      title:          i.title,
+      url:            i.url,
+      source:         i.source,
+      mediaType:      i.mediaType,
+      description:    i.description,
+      publishedDate:  i.publishedDate,
+      counterpartGroup: group1Ids.has(i.contactId) ? 1 : 2,
+      sourceContact:  counterpartMetaMap.get(i.contactId) ?? null,
     }));
 
     res.json(result);

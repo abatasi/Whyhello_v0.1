@@ -78,11 +78,15 @@ router.post("/relevance/score", async (req, res) => {
           .where(and(eq(contactsTable.companyId, contact.companyId), ne(contactsTable.id, contactId)))
       : Promise.resolve([]);
 
-    const counterpartContactsPromise = contact.industryId
+    // Counterparts: same role_id, different company (Group 1: same industry; Group 2: different industry)
+    const counterpartContactsPromise = contact.roleId
       ? db.select({ id: contactsTable.id })
           .from(contactsTable)
-          .where(and(eq(contactsTable.industryId, contact.industryId), ne(contactsTable.id, contactId),
-            ...(contact.companyId ? [ne(contactsTable.companyId, contact.companyId)] : [])))
+          .where(and(
+            eq(contactsTable.roleId, contact.roleId),
+            ne(contactsTable.id, contactId),
+            ...(contact.companyId ? [ne(contactsTable.companyId, contact.companyId)] : [])
+          ))
       : Promise.resolve([]);
 
     const [personal, company, industry, role, colleagueContacts, counterpartContacts] = await Promise.all([
