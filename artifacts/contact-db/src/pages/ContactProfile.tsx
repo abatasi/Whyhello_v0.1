@@ -2774,7 +2774,9 @@ function ContactChat({
           placeholder={
             highlightedInsight && useOnlyHighlighted
               ? `Ask about this source…`
-              : `Ask about ${contact.firstName}…`
+              : !showEmpty
+                ? `Ask about ${contact.firstName} using ${effectiveIds.length} source${effectiveIds.length === 1 ? "" : "s"}…`
+                : `Ask about ${contact.firstName}…`
           }
           rows={1}
           className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/50 disabled:opacity-50"
