@@ -186,34 +186,51 @@ const EMAIL_LENGTHS = [
 
 const EMAIL_TONES = ["Professional", "Friendly", "Direct", "Warm", "Authoritative"];
 
+const EMPTY_RELEVANCE_MAP = new Map<string, InsightRelevanceScore>();
+
 function IntroEmailModal({
-  open, onClose, onGenerate, checkedIds, categoryData,
+  open, onClose, onGenerate, checkedIds, categoryData, relevanceMap = EMPTY_RELEVANCE_MAP,
 }: {
   open: boolean;
   onClose: () => void;
   onGenerate: (params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => void;
   checkedIds: Set<string>;
   categoryData: Record<string, InsightItem[]>;
+  relevanceMap?: Map<string, InsightRelevanceScore>;
 }) {
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
   const [tone, setTone] = useState("professional");
   const [selectedInsights, setSelectedInsights] = useState<Set<string>>(new Set());
   const [voiceProfile, setVoiceProfile] = useState<VoiceProfileData | null>(null);
 
+  const availableInsights = useMemo(() => {
+    const items = INSIGHT_CATEGORIES.flatMap(cat =>
+      (categoryData[cat.id] ?? [])
+        .filter(item => checkedIds.has(`${cat.id}-${item.id}`))
+        .map(item => ({ ...item, key: `${cat.id}-${item.id}`, category: cat }))
+    );
+    // Sort by relevance score descending, unscored items go to the bottom
+    return items.sort((a, b) => {
+      const sa = relevanceMap.get(a.key)?.score ?? -1;
+      const sb = relevanceMap.get(b.key)?.score ?? -1;
+      return sb - sa;
+    });
+  }, [categoryData, checkedIds, relevanceMap]);
+
   useEffect(() => {
     if (open) {
       setLength("medium");
       setTone("professional");
-      setSelectedInsights(new Set());
       setVoiceProfile(loadVoiceProfile());
+      // Auto-select the single highest-scored insight
+      if (availableInsights.length > 0) {
+        const top = availableInsights[0];
+        setSelectedInsights(new Set([top.key]));
+      } else {
+        setSelectedInsights(new Set());
+      }
     }
-  }, [open]);
-
-  const availableInsights = INSIGHT_CATEGORIES.flatMap(cat =>
-    (categoryData[cat.id] ?? [])
-      .filter(item => checkedIds.has(`${cat.id}-${item.id}`))
-      .map(item => ({ ...item, key: `${cat.id}-${item.id}`, category: cat }))
-  );
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleInsight(key: string) {
     setSelectedInsights(prev => {
@@ -228,7 +245,7 @@ function IntroEmailModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="p-0 gap-0 overflow-hidden" style={{ width: "50vw", maxWidth: "50vw", maxHeight: "85vh", display: "flex", flexDirection: "column" }}>
+      <DialogContent className="p-0 gap-0 overflow-hidden" style={{ width: "75vw", maxWidth: "75vw", maxHeight: "85vh", display: "flex", flexDirection: "column" }}>
 
         {/* ── Header ── */}
         <div className="flex items-center gap-4 px-7 py-5 border-b border-border/60 bg-gradient-to-r from-blue-50/60 to-background">
@@ -358,11 +375,12 @@ function IntroEmailModal({
                   <p className="text-xs leading-snug max-w-[200px]">No insights checked in the left panel yet. Select some to include them here.</p>
                 </div>
               ) : (
-                <div className="overflow-y-auto scroll-thin border border-border/60 rounded-xl divide-y divide-border/40" style={{ maxHeight: "260px" }}>
+                <div className="overflow-y-auto scroll-thin border border-border/60 rounded-xl divide-y divide-border/40" style={{ maxHeight: "320px" }}>
                   {availableInsights.map(({ key, title, source, mediaType, category }) => {
                     const cfg = getMediaConfig(mediaType);
                     const MIcon = cfg.icon;
                     const isSelected = selectedInsights.has(key);
+                    const rel = relevanceMap.get(key);
                     return (
                       <button
                         key={key}
@@ -387,9 +405,14 @@ function IntroEmailModal({
                           <p className="text-xs font-medium text-foreground truncate">{title}</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">{cfg.label} · {source}</p>
                         </div>
-                        <span className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0", category.accentBg, category.color)}>
-                          {category.label}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {rel && (
+                            <RelevanceBadge score={rel.score} description={rel.description} size="xs" />
+                          )}
+                          <span className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded-full", category.accentBg, category.color)}>
+                            {category.label}
+                          </span>
+                        </div>
                       </button>
                     );
                   })}
@@ -1309,6 +1332,7 @@ export default function ContactProfile() {
         onGenerate={handleGenerateIntroEmail}
         checkedIds={checkedIds}
         categoryData={categoryData}
+        relevanceMap={relevanceMap}
       />
 
       {/* ── Battlecard modal ── */}
