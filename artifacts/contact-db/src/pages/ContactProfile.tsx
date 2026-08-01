@@ -92,7 +92,8 @@ function RelevanceBadge({ score, description, size = "sm" }: { score: number; de
 
 // ── Insight category definitions ───────────────────────────────────────────
 
-type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null };
+type InsightSourceContact = { name: string; jobTitle?: string | null; companyName?: string | null };
+type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null; sourceContact?: InsightSourceContact | null };
 
 interface InsightCategory {
   id: string;
@@ -2045,8 +2046,25 @@ function InsightCardExpanded({
         )}
       </div>
 
+      {/* ── Colleague attribution ── */}
+      {category.id === "colleague" && item.sourceContact && (
+        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-sky-50 border border-sky-200">
+          <div className="h-5 w-5 rounded-full bg-sky-200 border border-sky-300 flex items-center justify-center flex-shrink-0">
+            <span className="text-[9px] font-bold text-sky-700 uppercase leading-none select-none">
+              {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-semibold text-sky-800 truncate leading-tight">{item.sourceContact.name}</p>
+            <p className="text-[10px] text-sky-600/80 truncate leading-tight">
+              {[item.sourceContact.jobTitle, item.sourceContact.companyName].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Actions + Relevance ── */}
-      <div className="flex flex-col gap-1.5 px-3 pb-3">
+      <div className="flex flex-col gap-1.5 px-3 pb-3 mt-1.5">
         {relevance && (
           <TooltipProvider delayDuration={200}>
             <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-secondary/40 border border-border/40">

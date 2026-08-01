@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import {
   contactInsightsTable,
   contactsTable,
+  companiesTable,
   insightRelevanceScoresTable,
 } from "@workspace/db/schema";
 import { and, eq, inArray, ne } from "drizzle-orm";
@@ -41,7 +42,13 @@ router.get("/", async (req, res) => {
 
     // ── 2. Find colleagues (same company, different contact) ──────────────
     const colleagues = await db
-      .select({ id: contactsTable.id })
+      .select({
+        id: contactsTable.id,
+        firstName: contactsTable.firstName,
+        lastName: contactsTable.lastName,
+        jobTitle: contactsTable.jobTitle,
+        companyId: contactsTable.companyId,
+      })
       .from(contactsTable)
       .where(
         and(
@@ -128,7 +135,27 @@ router.get("/", async (req, res) => {
     // ── 7. Final sort by relevance score desc ─────────────────────────────
     selected.sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
 
-    // ── 8. Shape response to match ColleagueInsight API contract ──────────
+    // ── 8. Build colleague metadata lookup (name, title, company) ─────────
+    const uniqueCompanyIds = [...new Set(colleagues.map((c) => c.companyId).filter(Boolean))] as number[];
+    const companies = uniqueCompanyIds.length > 0
+      ? await db
+          .select({ id: companiesTable.id, name: companiesTable.name })
+          .from(companiesTable)
+          .where(inArray(companiesTable.id, uniqueCompanyIds))
+      : [];
+    const companyNameMap = new Map(companies.map((c) => [c.id, c.name]));
+    const colleagueMetaMap = new Map(
+      colleagues.map((c) => [
+        c.id,
+        {
+          name: [c.firstName, c.lastName].filter(Boolean).join(" "),
+          jobTitle: c.jobTitle ?? null,
+          companyName: c.companyId ? (companyNameMap.get(c.companyId) ?? null) : null,
+        },
+      ])
+    );
+
+    // ── 9. Shape response to match ColleagueInsight API contract ──────────
     const result = selected.map((i) => ({
       id: i.id,
       contactId,           // the contact whose profile this is (API compatibility)
@@ -138,6 +165,7 @@ router.get("/", async (req, res) => {
       mediaType: i.mediaType,
       description: i.description,
       publishedDate: i.publishedDate,
+      sourceContact: colleagueMetaMap.get(i.contactId) ?? null,
     }));
 
     res.json(result);
