@@ -7,11 +7,10 @@ import {
   companyInsightsTable,
   industryInsightsTable,
   roleInsightsTable,
-  colleagueInsightsTable,
-  counterpartInsightsTable,
 } from "@workspace/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
+
 const router: IRouter = Router({ mergeParams: true });
 
 type RawMessage = { role: string; content: string };
@@ -66,13 +65,29 @@ router.post("/", async (req, res) => {
     const selectedIds = parseSelectedIds(req.body);
 
     const [contact] = await db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1);
-
     if (!contact) {
       res.status(404).json({ error: "Contact not found" });
       return;
     }
 
-    const [personal, industry, role, colleague, counterpart] = await Promise.all([
+    // ── Resolve colleague + counterpart contacts dynamically ──────────────
+    const colleagueContactsPromise = contact.companyId
+      ? db.select({ id: contactsTable.id })
+          .from(contactsTable)
+          .where(and(eq(contactsTable.companyId, contact.companyId), ne(contactsTable.id, contactId)))
+      : Promise.resolve([]);
+
+    const counterpartContactsPromise = contact.roleId
+      ? db.select({ id: contactsTable.id })
+          .from(contactsTable)
+          .where(and(
+            eq(contactsTable.roleId, contact.roleId),
+            ne(contactsTable.id, contactId),
+            ...(contact.companyId ? [ne(contactsTable.companyId, contact.companyId)] : [])
+          ))
+      : Promise.resolve([]);
+
+    const [personal, industry, role, colleagueContacts, counterpartContacts] = await Promise.all([
       db.select().from(contactInsightsTable).where(and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.category, "personal"))),
       contact.industryId
         ? db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, contact.industryId))
@@ -80,8 +95,22 @@ router.post("/", async (req, res) => {
       contact.roleId
         ? db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId))
         : Promise.resolve([]),
-      db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, contactId)),
-      db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, contactId)),
+      colleagueContactsPromise,
+      counterpartContactsPromise,
+    ]);
+
+    const colleagueIds = colleagueContacts.map(c => c.id);
+    const counterpartIds = counterpartContacts.map(c => c.id);
+
+    const [colleague, counterpart] = await Promise.all([
+      colleagueIds.length > 0
+        ? db.select().from(contactInsightsTable)
+            .where(and(inArray(contactInsightsTable.contactId, colleagueIds), eq(contactInsightsTable.category, "personal")))
+        : Promise.resolve([]),
+      counterpartIds.length > 0
+        ? db.select().from(contactInsightsTable)
+            .where(and(inArray(contactInsightsTable.contactId, counterpartIds), eq(contactInsightsTable.category, "personal")))
+        : Promise.resolve([]),
     ]);
 
     let company: typeof companiesTable.$inferSelect | null = null;
@@ -95,12 +124,23 @@ router.post("/", async (req, res) => {
       companyIns = ci;
     }
 
-    const fp = filterBySelected(personal, "personal", selectedIds);
-    const fi = filterBySelected(industry, "industry", selectedIds);
-    const fr = filterBySelected(role, "role", selectedIds);
-    const fc = filterBySelected(colleague, "colleague", selectedIds);
+    const fp  = filterBySelected(personal,    "personal",    selectedIds);
+    const fi  = filterBySelected(industry,    "industry",    selectedIds);
+    const fr  = filterBySelected(role,        "role",        selectedIds);
+    const fc  = filterBySelected(colleague,   "colleague",   selectedIds);
     const fct = filterBySelected(counterpart, "counterpart", selectedIds);
-    const fci = filterBySelected(companyIns, "company", selectedIds);
+    const fci = filterBySelected(companyIns,  "company",     selectedIds);
+
+    // ── Build the sources list for the post-stream event ─────────────────
+    type SourceRef = { signalType: string; id: number; title: string; source: string; publishedDate?: string | null };
+    const allSources: SourceRef[] = [
+      ...fp.map(i  => ({ signalType: "personal",    id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
+      ...fci.map(i => ({ signalType: "company",     id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
+      ...fi.map(i  => ({ signalType: "industry",    id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
+      ...fr.map(i  => ({ signalType: "role",        id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
+      ...fc.map(i  => ({ signalType: "colleague",   id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
+      ...fct.map(i => ({ signalType: "counterpart", id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate })),
+    ];
 
     const systemPrompt = `You are an AI contact intelligence assistant embedded in Whyhello, a B2B relationship intelligence platform. Help the user deeply understand and engage with their contact.
 
@@ -153,6 +193,11 @@ Be concise, specific, and actionable. Tie every response to the actual data abov
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content ?? "";
       if (content) res.write(`data: ${JSON.stringify({ content })}\n\n`);
+    }
+
+    // Emit sources before done so the client can attach them to the message
+    if (allSources.length > 0) {
+      res.write(`data: ${JSON.stringify({ sources: allSources })}\n\n`);
     }
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();

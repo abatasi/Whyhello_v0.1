@@ -2499,9 +2499,58 @@ function ContactDetailField({
   );
 }
 
+// ── ChatSourcesPanel ───────────────────────────────────────────────────────
+
+type ChatSourceRef = { signalType: string; id: number; title: string; source: string; publishedDate?: string | null };
+
+const SIGNAL_TYPE_META: Record<string, { label: string; className: string }> = {
+  personal:    { label: "Personal",    className: "bg-violet-50 border-violet-200 text-violet-700" },
+  company:     { label: "Company",     className: "bg-blue-50 border-blue-200 text-blue-700" },
+  industry:    { label: "Industry",    className: "bg-amber-50 border-amber-200 text-amber-700" },
+  role:        { label: "Role",        className: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+  colleague:   { label: "Colleague",   className: "bg-sky-50 border-sky-200 text-sky-700" },
+  counterpart: { label: "Counterpart", className: "bg-rose-50 border-rose-200 text-rose-700" },
+};
+
+function ChatSourcesPanel({ sources }: { sources: ChatSourceRef[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="ml-8 max-w-[82%] w-full">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <BookOpen className="h-3 w-3" />
+        {sources.length} source{sources.length === 1 ? "" : "s"} referenced
+        <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
+      </button>
+      {open && (
+        <div className="mt-1.5 flex flex-col gap-1">
+          {sources.map((s, i) => {
+            const meta = SIGNAL_TYPE_META[s.signalType] ?? { label: s.signalType, className: "bg-secondary border-border text-muted-foreground" };
+            return (
+              <div key={i} className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/50 border border-border/40">
+                <span className={cn("flex-shrink-0 text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border mt-0.5", meta.className)}>
+                  {meta.label}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-medium text-foreground leading-tight line-clamp-1">{s.title}</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                    {s.source}{s.publishedDate ? ` · ${s.publishedDate}` : ""}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── ContactChat ────────────────────────────────────────────────────────────
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+type ChatMessage = { role: "user" | "assistant"; content: string; sources?: ChatSourceRef[] };
 
 const STARTERS = (firstName: string) => [
   `What are ${firstName}'s key professional priorities right now?`,
@@ -2569,6 +2618,7 @@ function ContactChat({
     persistMessage.mutate({ id, data: { role: "user", content: text } });
 
     let assistantContent = "";
+    let pendingSources: ChatSourceRef[] | undefined;
 
     try {
       const resp = await fetch(`/api/contacts/${id}/chat`, {
@@ -2594,6 +2644,9 @@ function ContactChat({
           try {
             const data = JSON.parse(line.slice(6));
             if (data.done) break;
+            if (data.sources) {
+              pendingSources = data.sources as ChatSourceRef[];
+            }
             if (data.content) {
               assistantContent += data.content;
               setLocalMessages((prev) => {
@@ -2606,6 +2659,15 @@ function ContactChat({
             // skip malformed chunk
           }
         }
+      }
+
+      // Attach sources to the completed assistant message
+      if (pendingSources) {
+        setLocalMessages((prev) => {
+          const next = [...prev];
+          next[next.length - 1] = { ...next[next.length - 1], sources: pendingSources };
+          return next;
+        });
       }
 
       // Persist completed assistant response
@@ -2694,30 +2756,37 @@ function ContactChat({
         ) : (
           <div className="space-y-4">
             {messages.map((msg, i) => (
-              <div key={i} className={cn("flex gap-2.5", msg.role === "user" ? "justify-end" : "justify-start")}>
-                {msg.role === "assistant" && (
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
-                    <Sparkles className="h-3 w-3 text-primary" />
+              <div key={i} className={cn("flex flex-col gap-1.5", msg.role === "user" ? "items-end" : "items-start")}>
+                <div className={cn("flex gap-2.5 w-full", msg.role === "user" ? "justify-end" : "justify-start")}>
+                  {msg.role === "assistant" && (
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Sparkles className="h-3 w-3 text-primary" />
+                    </div>
+                  )}
+                  <div
+                    className={cn(
+                      "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground rounded-tr-sm"
+                        : "bg-secondary text-foreground rounded-tl-sm",
+                    )}
+                  >
+                    {msg.content || (
+                      isStreaming && i === messages.length - 1 ? (
+                        <span className="inline-flex gap-1 items-center">
+                          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </span>
+                      ) : null
+                    )}
                   </div>
-                )}
-                <div
-                  className={cn(
-                    "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-tr-sm"
-                      : "bg-secondary text-foreground rounded-tl-sm",
-                  )}
-                >
-                  {msg.content || (
-                    isStreaming && i === messages.length - 1 ? (
-                      <span className="inline-flex gap-1 items-center">
-                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "300ms" }} />
-                      </span>
-                    ) : null
-                  )}
                 </div>
+
+                {/* Sources panel — shown beneath completed assistant messages */}
+                {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
+                  <ChatSourcesPanel sources={msg.sources} />
+                )}
               </div>
             ))}
             <div ref={messagesEndRef} />
