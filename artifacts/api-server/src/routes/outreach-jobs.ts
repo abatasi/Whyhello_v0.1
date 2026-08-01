@@ -12,6 +12,7 @@ import {
   outreachJobsTable,
   messagesTable,
   dnaProfilesTable,
+  insightQuotesTable,
 } from "@workspace/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
@@ -118,12 +119,13 @@ async function runGeneration(jobId: number) {
   const params = job.params as { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData };
   const selectedSet = new Set(params.selectedInsightKeys ?? []);
 
-  const [[contact], personal, colleague, counterpart, dna] = await Promise.all([
+  const [[contact], personal, colleague, counterpart, dna, quotes] = await Promise.all([
     db.select().from(contactsTable).where(eq(contactsTable.id, job.contactId)).limit(1),
     db.select().from(contactInsightsTable).where(and(eq(contactInsightsTable.contactId, job.contactId), eq(contactInsightsTable.category, "personal"))),
     db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, job.contactId)),
     db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, job.contactId)),
     fetchSellerDNA(job.userId),
+    db.select().from(insightQuotesTable).where(eq(insightQuotesTable.contactId, job.contactId)),
   ]);
 
   if (!contact) throw new Error("Contact not found");
@@ -183,6 +185,14 @@ async function runGeneration(jobId: number) {
     ? allSelected.map(i => fmtInsight(i)).join("\n")
     : "  No specific insights selected — use general professional context about their role and company.";
 
+  const quotesSection = quotes.length > 0
+    ? quotes.map((q, i) => {
+        const bridge = q.hqBridge ? `\n    HQ Bridge: ${q.hqBridge}` : "";
+        const role = q.attributionRole ? `, ${q.attributionRole}` : "";
+        return `[${i + 1}] "${q.quote}"\n    — ${q.attribution}${role}${bridge}`;
+      }).join("\n\n")
+    : null;
+
   const sellerContext = buildSellerContext(dna);
 
   function buildVoiceGuide(v: NonNullable<typeof vp>): string {
@@ -201,10 +211,22 @@ async function runGeneration(jobId: number) {
     ? buildVoiceGuide(vp)
     : `Tone: ${tone} — let this govern word choice, sentence rhythm, and sign-off style.`;
 
+  const quotesPromptBlock = quotesSection ? `
+═══════════════════════════════════════════
+ATTRIBUTABLE QUOTES  (use in OBSERVE when it fits)
+═══════════════════════════════════════════
+The following quotes are directly attributed to the buyer or people in their orbit.
+When one fits naturally, open OBSERVE with it — e.g. "Came across your line on [topic]: '[quote]'..." or
+"Noticed you said '[quote]' — that landed." The HQ Bridge below each quote hints at how to transition
+into BRIDGE/VALUE. Only use a quote when it genuinely elevates the message; never force it.
+
+${quotesSection}
+` : "";
+
   const systemPrompt = `You are the AI message engine inside Whyhello, a B2B relationship intelligence platform.
 
 Your job is to write a first-touch outreach email using the OIBEO™ Messaging Framework — a proprietary architecture that bridges outside-in intelligence (what we know about the buyer's world) with inside-out messaging (what the seller offers and why it matters).
-
+${quotesPromptBlock}
 ═══════════════════════════════════════════
 BUYER CONTEXT  (outside-in intelligence)
 ═══════════════════════════════════════════

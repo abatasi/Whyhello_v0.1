@@ -19,8 +19,11 @@ import {
   useGetInsightRelevance,
   useTriggerInsightRelevance,
   useGetTopRelevantContact,
+  useGetInsightQuotes,
+  useExtractInsightQuotes,
   type InsightRelevanceScore,
   type TopRelevantContact,
+  type InsightQuote,
 } from "@workspace/api-client-react";
 import lostFriendoImg from "@/assets/lost-friendo.png";
 import { Shell } from "@/components/layout/Shell";
@@ -34,7 +37,7 @@ import {
   Lock, Zap, AlertCircle, Send, User, TrendingUp,
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
-  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp, ArrowUpDown,
+  Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp, ArrowUpDown, Quote,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -570,6 +573,9 @@ export default function ContactProfile() {
   const hasAutoScoredRef = useRef(false);
   const [showLostFriendo, setShowLostFriendo] = useState(false);
   const { data: topContact } = useGetTopRelevantContact(id, showLostFriendo);
+  const { data: quotesData = [], refetch: refetchQuotes } = useGetInsightQuotes(id, { query: { enabled: !!id } });
+  const quotesMutation = useExtractInsightQuotes();
+  const hasAutoExtractedQuotesRef = useRef(false);
 
   // Effect 1: show toast whenever scores are settled and max ≤ 50
   useEffect(() => {
@@ -600,6 +606,22 @@ export default function ContactProfile() {
     relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() });
   }, [id, relevanceData, personalInsights, companyInsights, industryInsights, roleInsights,
     colleagueInsights, counterpartInsights, relevanceMutation.isPending]);
+
+  // Effect 3: auto-extract quotes once when insights load and no quotes exist yet
+  useEffect(() => {
+    if (!id || hasAutoExtractedQuotesRef.current || quotesMutation.isPending) return;
+    if (quotesData.length > 0) return; // already have quotes
+
+    const totalInsights = personalInsights.length + companyInsights.length +
+      industryInsights.length + roleInsights.length +
+      colleagueInsights.length + counterpartInsights.length;
+    if (totalInsights === 0) return;
+
+    hasAutoExtractedQuotesRef.current = true;
+    quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
+  }, [id, quotesData.length, personalInsights.length, companyInsights.length,
+    industryInsights.length, roleInsights.length, colleagueInsights.length,
+    counterpartInsights.length, quotesMutation.isPending]);
 
   const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => {
     const lengthLabel = params.length.charAt(0).toUpperCase() + params.length.slice(1);
@@ -807,6 +829,18 @@ export default function ContactProfile() {
                   )}
                 </div>
 
+                {/* Quotes panel — normal sidebar */}
+                {(quotesData.length > 0 || quotesMutation.isPending) && (
+                  <QuotesPanel
+                    quotes={quotesData}
+                    isPending={quotesMutation.isPending}
+                    onReExtract={() => {
+                      hasAutoExtractedQuotesRef.current = true;
+                      quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
+                    }}
+                  />
+                )}
+
                 {INSIGHT_CATEGORIES.map((cat) => {
                   const items = sortedCategoryData[cat.id] ?? [];
                   const isLocked = cat.id === "personal" && !isRevealed;
@@ -898,6 +932,17 @@ export default function ContactProfile() {
                       )}
                     </div>
                     <div className="flex-1 overflow-y-scroll scroll-thin pr-1 pt-1 flex flex-col gap-4">
+                      {/* Quotes panel — expanded sidebar */}
+                      {(quotesData.length > 0 || quotesMutation.isPending) && (
+                        <QuotesPanel
+                          quotes={quotesData}
+                          isPending={quotesMutation.isPending}
+                          onReExtract={() => {
+                            hasAutoExtractedQuotesRef.current = true;
+                            quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
+                          }}
+                        />
+                      )}
                       {INSIGHT_CATEGORIES.map((cat) => {
                         const items = sortedCategoryData[cat.id] ?? [];
                         const isLocked = cat.id === "personal" && !isRevealed;
@@ -1344,6 +1389,119 @@ export default function ContactProfile() {
         />
       )}
     </Shell>
+  );
+}
+
+// ── QuotesPanel ────────────────────────────────────────────────────────────
+
+const SIGNAL_TYPE_LABEL: Record<string, string> = {
+  personal: "Personal", company: "Company", industry: "Industry",
+  role: "Role", colleague: "Colleague", counterpart: "Counterpart",
+};
+
+function QuotesPanel({
+  quotes,
+  isPending,
+  onReExtract,
+}: {
+  quotes: InsightQuote[];
+  isPending: boolean;
+  onReExtract: () => void;
+}) {
+  const [expanded, setExpanded] = useState(true);
+
+  return (
+    <div className="rounded-xl border border-violet-200 bg-violet-50/60 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-2">
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="flex items-center gap-1.5 text-left min-w-0"
+        >
+          <Quote className="h-3 w-3 text-violet-500 flex-shrink-0" />
+          <span className="text-[11px] font-bold text-violet-700 uppercase tracking-wider">Quotables</span>
+          {quotes.length > 0 && (
+            <span className="text-[9px] font-bold bg-violet-200 text-violet-700 rounded-full px-1.5 py-px ml-0.5">
+              {quotes.length}
+            </span>
+          )}
+          {isPending && <Loader2 className="h-2.5 w-2.5 animate-spin text-violet-400 flex-shrink-0" />}
+        </button>
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onReExtract}
+                disabled={isPending}
+                className="h-5 w-5 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors disabled:opacity-40"
+              >
+                <RefreshCw className="h-2.5 w-2.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={4}>
+              <p className="text-[11px]">Re-extract quotes</p>
+            </TooltipContent>
+          </Tooltip>
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="h-5 w-5 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 transition-colors"
+          >
+            {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Quote list */}
+      {expanded && (
+        <div className="px-3 pb-3 space-y-2.5">
+          {isPending && quotes.length === 0 && (
+            <p className="text-[11px] text-violet-400 italic">Scanning signals for attributable quotes…</p>
+          )}
+          {!isPending && quotes.length === 0 && (
+            <p className="text-[11px] text-violet-400/70 italic">No attributable quotes found in current signals.</p>
+          )}
+          {quotes.map((q) => (
+            <div key={q.id} className="rounded-lg border border-violet-200/70 bg-white/70 p-2.5 space-y-1.5">
+              {/* Quote text */}
+              <p className="text-[11px] text-foreground leading-relaxed">
+                <Quote className="h-2.5 w-2.5 text-violet-400 inline mr-0.5 -mt-0.5" />
+                {q.quote}
+              </p>
+              {/* Attribution row */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-semibold text-foreground">{q.attribution}</span>
+                {q.attributionRole && (
+                  <span className="text-[10px] text-muted-foreground">· {q.attributionRole}</span>
+                )}
+                <span className={cn(
+                  "text-[9px] font-semibold uppercase tracking-wide px-1.5 py-px rounded-full border ml-auto",
+                  "bg-violet-50 text-violet-600 border-violet-200"
+                )}>
+                  {SIGNAL_TYPE_LABEL[q.signalType] ?? q.signalType}
+                </span>
+              </div>
+              {/* HQ bridge */}
+              {q.hqBridge && (
+                <p className="text-[10px] text-violet-700 bg-violet-50 border border-violet-100 rounded px-2 py-1 leading-snug">
+                  <Sparkles className="h-2 w-2 inline mr-1 text-violet-400" />
+                  {q.hqBridge}
+                </p>
+              )}
+              {/* Matched HQ signals */}
+              {q.matchedHqSignals.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {q.matchedHqSignals.map((tag, i) => (
+                    <span key={i} className="text-[9px] bg-violet-100/80 text-violet-700 border border-violet-200/60 rounded-full px-1.5 py-px font-medium">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

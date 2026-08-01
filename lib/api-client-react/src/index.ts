@@ -8,3 +8,4 @@ export * from "./saved-searches";
 export * from "./insight-drops";
 export * from "./insight-meta";
 export * from "./relevance";
+export * from "./quotes";
