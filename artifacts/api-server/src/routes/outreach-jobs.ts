@@ -173,9 +173,9 @@ async function runGeneration(jobId: number) {
   ];
 
   const lengthMap: Record<string, string> = {
-    short: "~100 words body (subject excluded) — one tight Observe→Interpret→Bridge→Offer arc",
-    medium: "~200 words body — full OIBEO arc with one proof point",
-    long: "~350 words body — complete OIBEO arc with developed Bridge, Educate, and Offer",
+    short:  "~100 words body — HOOK + BRIDGE + VALUE + CTA; omit PROOF or compress to one EB clause",
+    medium: "~200 words body — full HOOK / BRIDGE / VALUE / PROOF / CTA arc with one EB sentence",
+    long:   "~350 words body — complete arc with an expanded VALUE paragraph, full PROOF with customer reference and EB, and a tailored CTA",
   };
   const lengthDesc = lengthMap[params.length] ?? "~200 words body";
   const tone = params.tone ?? "professional";
@@ -187,9 +187,9 @@ async function runGeneration(jobId: number) {
 
   const quotesSection = quotes.length > 0
     ? quotes.map((q, i) => {
-        const bridge = q.hqBridge ? `\n    HQ Bridge: ${q.hqBridge}` : "";
-        const role = q.attributionRole ? `, ${q.attributionRole}` : "";
-        return `[${i + 1}] "${q.quote}"\n    — ${q.attribution}${role}${bridge}`;
+        const bridgeLine = q.hqBridge ? `\n    HQ Bridge: ${q.hqBridge}` : "";
+        const roleLine = q.attributionRole ? `, ${q.attributionRole}` : "";
+        return `[${i + 1}] "${q.quote}"\n    — ${q.attribution}${roleLine}${bridgeLine}`;
       }).join("\n\n")
     : null;
 
@@ -211,97 +211,121 @@ async function runGeneration(jobId: number) {
     ? buildVoiceGuide(vp)
     : `Tone: ${tone} — let this govern word choice, sentence rhythm, and sign-off style.`;
 
-  const quotesPromptBlock = quotesSection ? `
+  const quotesBlock = quotesSection ? `
 ═══════════════════════════════════════════
-ATTRIBUTABLE QUOTES  (use in OBSERVE when it fits)
+ATTRIBUTABLE QUOTES  (highest-priority HOOK material)
 ═══════════════════════════════════════════
-The following quotes are directly attributed to the buyer or people in their orbit.
-When one fits naturally, open OBSERVE with it — e.g. "Came across your line on [topic]: '[quote]'..." or
-"Noticed you said '[quote]' — that landed." The HQ Bridge below each quote hints at how to transition
-into BRIDGE/VALUE. Only use a quote when it genuinely elevates the message; never force it.
+These are verbatim quotes from the buyer or people in their orbit. When one fits, open the HOOK with it:
+  "Came across your line on [topic]: '[quote]' — that's a real tension."
+  "Noticed you said '[quote]' — that's the crux of it."
+The HQ Bridge note below each quote shows how to transition into VALUE.
+Only use a quote when it genuinely elevates the message; never force one.
 
 ${quotesSection}
 ` : "";
 
+  // Seniority/department framing hints for PROOF layer
+  const seniority = contact.seniority ?? "";
+  const dept = contact.department ?? "";
+  const ebFramingHint = (() => {
+    if (/c.suite|ceo|coo|cfo|cto|chief/i.test(seniority + contact.jobTitle)) return "lead with the highest-magnitude GAIN EB (strategic, revenue or growth framing)";
+    if (/vp|vice president/i.test(seniority + contact.jobTitle)) return "lead with a GAIN EB; keep it concise and outcome-focused";
+    if (/director|manager/i.test(seniority)) return "lead with a PAIN EB (efficiency, cost, or risk framing)";
+    if (/finance|cfo|accounting/i.test(dept + contact.jobTitle)) return "prefer a $ or % GAIN EB";
+    if (/operations|ops/i.test(dept)) return "prefer a PAIN EB (time, cost, or risk reduction)";
+    return "use the most relevant EB from the seller context; default to gain before pain";
+  })();
+
   const systemPrompt = `You are the AI message engine inside Whyhello, a B2B relationship intelligence platform.
 
-Your job is to write a first-touch outreach email using the OIBEO™ Messaging Framework — a proprietary architecture that bridges outside-in intelligence (what we know about the buyer's world) with inside-out messaging (what the seller offers and why it matters).
-${quotesPromptBlock}
+Your job is to write a first-touch outreach email following the Whyhello Cold Outreach Framework — five ordered layers that move from a specific outside-in observation to a concrete inside-out value claim, backed by proof and closed with a precise ask.
+${quotesBlock}
 ═══════════════════════════════════════════
-BUYER CONTEXT  (outside-in intelligence)
+BUYER CONTEXT  (outside-in)
 ═══════════════════════════════════════════
-Name: ${contact.firstName} ${contact.lastName}
-Title: ${contact.jobTitle ?? "Unknown"}${contact.department ? " — " + contact.department : ""}
-Company: ${company?.name ?? "Unknown"}${company?.industry ? " (" + company.industry + ")" : ""}
+Name:     ${contact.firstName} ${contact.lastName}
+Title:    ${contact.jobTitle ?? "Unknown"}${dept ? " — " + dept : ""}
+Seniority:${seniority || " Not specified"}
+Company:  ${company?.name ?? "Unknown"}${company?.industry ? " (" + company.industry + ")" : ""}
 Location: ${[contact.location, contact.country].filter(Boolean).join(", ") || "Not specified"}
-Bio: ${contact.bio ?? "Not available"}
+Bio:      ${contact.bio ?? "Not available"}
 
-SELECTED INTELLIGENCE (the raw material for OBSERVE and INTERPRET layers):
+SELECTED SIGNALS — choose your HOOK from here (personal quote > personal insight > company insight > industry > role):
 ${insightsSection}
 
 ═══════════════════════════════════════════
-SELLER CONTEXT  (inside-out intelligence)
+SELLER CONTEXT  (inside-out)
 ═══════════════════════════════════════════
 ${sellerContext}
 
 ═══════════════════════════════════════════
-THE OIBEO™ MESSAGING FRAMEWORK
+THE WHYHELLO COLD OUTREACH FRAMEWORK
 ═══════════════════════════════════════════
-Every email you write must follow this five-layer structure in order.
-Each layer has a distinct job — do not skip or collapse any of them.
+Write the email in exactly these five layers in order. Do not label them in the output.
 
-LAYER 1 — OBSERVE  (Interrupt)
-  Purpose : Earn attention by opening with one specific, verifiable fact from the
-            selected intelligence above. Something ${contact.firstName} would immediately
-            recognise as true about their world.
-  Rules   : No opinions. No "I". Pure observation.
-            Starters: "Saw...", "I noticed...", "One thing that stood out...",
-            "Interesting to see...", "It was striking that..."
+LAYER 1 — HOOK  (outside-in lead — 1 sentence)
+  Purpose : Open with the single most specific signal you have. Something ${contact.firstName}
+            would immediately recognise as true of their world right now.
+  Priority: 1. A direct quote attributed to ${contact.firstName} (from Attributable Quotes above)
+            2. A personal insight — something they published, said on stage, or was featured on
+            3. A company insight — a recent event (funding, launch, M&A, earnings beat/miss)
+            4. An industry signal — a sector shift or regulatory move they are living inside
+            5. A role-level truth — a structural pressure facing this function right now
+  Rules   : Exactly one sentence. No "I". No opinion. Purely observational.
+            Quote starters: "Came across your line on [topic]: '[quote]'..."
+            Signal starters: "Noticed...", "Saw that...", "Interesting timing on...", "One thing that stood out..."
 
-LAYER 2 — INTERPRET  (Engage)
-  Purpose : Show understanding. Explain why that observation matters in their world —
-            the business implication, the pressure it creates, the decision it forces.
-  Rules   : Still zero self-reference. Talk about them.
-            Starters: "That usually signals...", "I imagine that creates...",
-            "Most [role]s at this stage find...", "That pace often introduces..."
+LAYER 2 — BRIDGE  (connect hook to the contact's implied priority)
+  Purpose : Show that you understand the business consequence of the HOOK — the pressure it
+            represents, the decision it forces, or the tension it creates for ${contact.firstName}.
+  Rules   : Zero self-reference. Still entirely about them.
+            Starters: "That usually means...", "For most ${contact.jobTitle ?? "leaders"} at this stage...",
+            "That pace typically surfaces...", "The challenge that tends to follow..."
 
-LAYER 3 — BRIDGE  (Educate — transition)
-  Purpose : Connect their reality to your expertise without pitching yet.
-            Translate the observation into a pattern you've seen across other buyers.
-  Rules   : Introduce a useful mental model or market observation.
-            DO NOT mention your product or company name yet.
-            Starters: "One pattern we've been seeing across...",
-            "The firms that navigate this best tend to...",
-            "What's interesting is that once [observation], the real constraint shifts to..."
+LAYER 3 — VALUE  (inside-out: value wedge or activated pillar)
+  Purpose : Introduce the seller as the natural resolution to what BRIDGE surfaced.
+            Lead with the value wedge, or the messaging pillar most aligned with ${contact.firstName}'s implied priority.
+  Rules   : Name the company. Speak in outcomes, not features. One or two sentences.
+            Starters: "That's exactly what [Company] was built for...",
+            "We help [persona] [achieve outcome]...", "The reason [type of firm] comes to us is..."
 
-LAYER 4 — VALUE  (Educate — resolution)
-  Purpose : Only NOW introduce the seller. Not features — value.
-            The company becomes a natural continuation of the conversation.
-  Rules   : Use the seller context above. Be specific about the outcome, not the mechanism.
-            Starters: "That's exactly the problem [Company] was built for...",
-            "We help [persona] [achieve outcome] without [friction]...",
-            "What we've seen with firms like [customer profile] is..."
+LAYER 4 — PROOF  (EB sentence + optional customer reference)
+  Purpose : Back the value claim with one quantified economic benefit sentence.
+            Add a customer reference sentence if a proof point closely matches ${contact.firstName}'s profile.
+  EB framing for this contact: ${ebFramingHint}
+  Gain EB format : "[label] [verb phrase] — [amount] [unit], [frequency]."
+  Pain EB format : "[label] [verb phrase], saving [amount] [unit] [frequency]."
+  Customer ref   : "[Similar firm type] [transformation] — [customer quote if available]."
+  Rules   : Only use EBs and proof points from the seller context above. Never fabricate numbers.
 
-LAYER 5 — OFFER  (Offer)
-  Purpose : A low-friction next step that advances the conversation without demanding commitment.
-  Rules   : NEVER say "Book a demo" or "Schedule a call".
-            Instead: "Happy to share how other firms are approaching this if useful.",
-            "Worth a quick exchange?", "I'd be glad to share some examples.",
-            "We recently put together a benchmark — happy to send it over."
+LAYER 5 — CTA  (specific, low-friction ask)
+  Purpose : One precise next step that advances the conversation without demanding commitment.
+            Make it specific to the topic raised in HOOK or BRIDGE.
+  Rules   : NEVER say "Book a demo", "Schedule a call", or "Get started".
+            Options: "Happy to share how other [role type]s are handling [specific challenge] if useful.",
+            "Worth a quick exchange on [topic from HOOK]?",
+            "We recently put together a [resource] on [topic] — happy to send it over.",
+            "If [challenge from BRIDGE] is on your radar, I'd be glad to share what we're seeing."
 
 ═══════════════════════════════════════════
-OUTPUT FORMAT
+OUTPUT FORMAT — produce exactly two blocks
 ═══════════════════════════════════════════
-Line 1:   Subject: <subject line>
-Line 2:   (blank)
-Line 3+:  Email body (OIBEO layers in order, no section labels)
+BLOCK 1 — The email:
+  Line 1:   Subject: <subject line>
+  Line 2:   (blank)
+  Line 3+:  Email body (five layers in order, no section labels, no separators)
+
+BLOCK 2 — The structure (append on a new line immediately after the email sign-off):
+  [STRUCTURE_JSON]{"hook":"<verbatim HOOK sentence(s) from the email>","bridge":"<verbatim BRIDGE text>","value":"<verbatim VALUE text>","proof":"<verbatim PROOF text>","cta":"<verbatim CTA sentence>"}[/STRUCTURE_JSON]
+
+  The JSON values must be verbatim extracts from the email body — not summaries or paraphrases.
 
 SUBJECT LINE RULES
   • Under 50 characters — ruthlessly brief
-  • Curiosity-driving — make them want to open it
-  • Hyper-specific to ${contact.firstName}: reference their work, company news, or a shared context
+  • Curiosity-driving — make ${contact.firstName} want to open it
+  • Hyper-specific: reference their work, company news, or a shared context
   • Sentence case, no ALL CAPS, minimal punctuation — sounds like a real person
-  • Opens with familiarity or relevance in the first 2–3 words where possible
+  • Opens with familiarity or relevance in the first 2–3 words
 
 LENGTH: ${lengthDesc}
 
@@ -312,14 +336,14 @@ ${voiceSection}
 ABSOLUTE PROHIBITIONS
   • Never open with "I hope this email finds you well" or any variant
   • Never open the body with "I" as the first word
-  • Never add section labels (OBSERVE:, BRIDGE:, etc.) to the output
+  • Never add section labels (HOOK:, BRIDGE:, etc.) to the email body
   • Never fabricate statistics or claim specific results unless drawn from the seller context above`;
 
   const completion = await openai.chat.completions.create({
     model: "gpt-5-mini",
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Write the OIBEO™ email to ${contact.firstName} ${contact.lastName}.` },
+      { role: "user", content: `Write the outreach email to ${contact.firstName} ${contact.lastName}.` },
     ],
     stream: false,
   });
@@ -346,16 +370,22 @@ ABSOLUTE PROHIBITIONS
   }
 }
 
+/** Strip the [STRUCTURE_JSON]...[/STRUCTURE_JSON] block from the raw AI result */
+function stripStructureBlock(raw: string): string {
+  return raw.replace(/\s*\[STRUCTURE_JSON\][\s\S]*?\[\/STRUCTURE_JSON\]/g, "").trimEnd();
+}
+
 /** Extract subject and body from AI output that starts with "Subject: ..." */
 function parseEmailResult(result: string): { subject: string; body: string } {
-  const firstNewline = result.indexOf("\n");
-  if (firstNewline === -1) return { subject: "", body: result };
-  const firstLine = result.slice(0, firstNewline).trim();
-  const rest = result.slice(firstNewline).replace(/^\n+/, "");
+  const clean = stripStructureBlock(result);
+  const firstNewline = clean.indexOf("\n");
+  if (firstNewline === -1) return { subject: "", body: clean };
+  const firstLine = clean.slice(0, firstNewline).trim();
+  const rest = clean.slice(firstNewline).replace(/^\n+/, "");
   if (firstLine.toLowerCase().startsWith("subject:")) {
     return { subject: firstLine.slice("subject:".length).trim(), body: rest };
   }
-  return { subject: "", body: result };
+  return { subject: "", body: clean };
 }
 
 contactJobsRouter.get("/", async (req, res) => {

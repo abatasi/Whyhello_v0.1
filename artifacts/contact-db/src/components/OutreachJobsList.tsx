@@ -19,7 +19,8 @@ import {
 import {
   CheckCircle2, XCircle, Eye, Share2, Download,
   Trash2, PenLine, FileText, ChevronDown, ChevronUp,
-  Copy, Check, MoreVertical, BookOpen,
+  Copy, Check, MoreVertical, BookOpen, Layers,
+  Anchor, ArrowRight, Sparkles, ShieldCheck, MousePointerClick,
 } from "lucide-react";
 
 type Job = {
@@ -36,6 +37,80 @@ type Job = {
   updatedAt: string;
 };
 
+// ── Message structure types ────────────────────────────────────────────────
+
+interface MessageStructure {
+  hook: string;
+  bridge: string;
+  value: string;
+  proof: string;
+  cta: string;
+}
+
+const STRUCTURE_LAYERS: {
+  key: keyof MessageStructure;
+  label: string;
+  sublabel: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  border: string;
+  dot: string;
+}[] = [
+  {
+    key: "hook",
+    label: "Hook",
+    sublabel: "Outside-in lead — 1 sentence",
+    icon: Anchor,
+    color: "text-sky-700",
+    bg: "bg-sky-50",
+    border: "border-sky-200",
+    dot: "bg-sky-400",
+  },
+  {
+    key: "bridge",
+    label: "Bridge",
+    sublabel: "Connect hook to the contact's implied priority",
+    icon: ArrowRight,
+    color: "text-amber-700",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    dot: "bg-amber-400",
+  },
+  {
+    key: "value",
+    label: "Value",
+    sublabel: "Inside-out: value wedge or activated pillar",
+    icon: Sparkles,
+    color: "text-violet-700",
+    bg: "bg-violet-50",
+    border: "border-violet-200",
+    dot: "bg-violet-400",
+  },
+  {
+    key: "proof",
+    label: "Proof",
+    sublabel: "EB sentence (gain or pain) + optional customer reference",
+    icon: ShieldCheck,
+    color: "text-emerald-700",
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    dot: "bg-emerald-400",
+  },
+  {
+    key: "cta",
+    label: "CTA",
+    sublabel: "Specific, low-friction ask",
+    icon: MousePointerClick,
+    color: "text-rose-700",
+    bg: "bg-rose-50",
+    border: "border-rose-200",
+    dot: "bg-rose-400",
+  },
+];
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const m = Math.floor(diff / 60000);
@@ -45,6 +120,39 @@ function timeAgo(dateStr: string) {
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
+
+/** Strip the [STRUCTURE_JSON]...[/STRUCTURE_JSON] block and return clean email text */
+function stripStructureBlock(raw: string): string {
+  return raw.replace(/\s*\[STRUCTURE_JSON\][\s\S]*?\[\/STRUCTURE_JSON\]/g, "").trimEnd();
+}
+
+/** Parse the [STRUCTURE_JSON] block out of the raw result */
+function parseStructure(raw: string): MessageStructure | null {
+  const match = raw.match(/\[STRUCTURE_JSON\]([\s\S]*?)\[\/STRUCTURE_JSON\]/);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(match[1].trim());
+    if (parsed.hook && parsed.bridge && parsed.value && parsed.proof && parsed.cta) {
+      return parsed as MessageStructure;
+    }
+  } catch { /* fall through */ }
+  return null;
+}
+
+/** Split "Subject: ...\n\nbody" into parts. Works for both old and new results. */
+function parseEmailResult(raw: string): { subject: string; body: string } {
+  const clean = stripStructureBlock(raw);
+  const firstNewline = clean.indexOf("\n");
+  if (firstNewline === -1) return { subject: "", body: clean };
+  const firstLine = clean.slice(0, firstNewline).trim();
+  const rest = clean.slice(firstNewline).replace(/^\n+/, "");
+  if (firstLine.toLowerCase().startsWith("subject:")) {
+    return { subject: firstLine.slice("subject:".length).trim(), body: rest };
+  }
+  return { subject: "", body: clean };
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────
 
 function GeneratingBars() {
   return (
@@ -95,26 +203,71 @@ function RenameDialog({ job, onClose, onSave }: { job: Job; onClose: () => void;
   );
 }
 
-type ViewTab = "result" | "prompt" | "sources";
+type ViewTab = "result" | "structure" | "prompt" | "sources";
 
-/** Split "Subject: ...\n\nbody" into parts. Works for both old and new results. */
-function parseEmailResult(raw: string): { subject: string; body: string } {
-  const firstNewline = raw.indexOf("\n");
-  if (firstNewline === -1) return { subject: "", body: raw };
-  const firstLine = raw.slice(0, firstNewline).trim();
-  const rest = raw.slice(firstNewline).replace(/^\n+/, "");
-  if (firstLine.toLowerCase().startsWith("subject:")) {
-    return { subject: firstLine.slice("subject:".length).trim(), body: rest };
+function MessageStructureTab({ result }: { result: string }) {
+  const structure = parseStructure(result);
+
+  if (!structure) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+        <Layers className="h-8 w-8 text-muted-foreground/30" />
+        <p className="text-sm font-medium text-muted-foreground">No structure data available</p>
+        <p className="text-xs text-muted-foreground/70 max-w-xs">
+          Message Structure is available for emails generated with the current framework.
+          Re-generate this email to see its anatomy.
+        </p>
+      </div>
+    );
   }
-  return { subject: "", body: raw };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[11px] text-muted-foreground leading-relaxed">
+        The anatomy of this email mapped to each layer of the Whyhello Cold Outreach Framework.
+        Each section is a verbatim extract from the generated message.
+      </p>
+      {STRUCTURE_LAYERS.map((layer, idx) => {
+        const Icon = layer.icon;
+        const text = structure[layer.key];
+        return (
+          <div key={layer.key} className={cn("rounded-xl border p-4 space-y-2", layer.bg, layer.border)}>
+            {/* Header */}
+            <div className="flex items-center gap-2">
+              <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", layer.bg, layer.border, "border")}>
+                <Icon className={cn("h-3 w-3", layer.color)} />
+              </div>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={cn("text-[11px] font-black uppercase tracking-widest", layer.color)}>
+                  {layer.label}
+                </span>
+                <span className="text-[10px] text-muted-foreground/70 truncate">— {layer.sublabel}</span>
+              </div>
+              <span className={cn(
+                "ml-auto text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0 text-white",
+                layer.dot
+              )}>
+                {idx + 1}
+              </span>
+            </div>
+            {/* Content */}
+            <p className="text-[12px] text-foreground leading-relaxed pl-7">
+              {text || <span className="text-muted-foreground/50 italic">—</span>}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onClose: () => void; initialTab?: ViewTab }) {
   const [tab, setTab] = useState<ViewTab>(initialTab);
   const [copied, setCopied] = useState(false);
 
-  const { subject, body } = parseEmailResult(job.result ?? "");
-  const fullText = job.result ?? "";
+  const raw = job.result ?? "";
+  const { subject, body } = parseEmailResult(raw);
+  const cleanEmail = subject ? `Subject: ${subject}\n\n${body}` : body;
 
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text).then(() => {
@@ -133,17 +286,20 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
     URL.revokeObjectURL(url);
   }
 
-  const tabs: { id: ViewTab; label: string }[] = [
-    { id: "result", label: "Email" },
-    { id: "prompt", label: "Prompt" },
-    { id: "sources", label: "Sources" },
+  const hasStructure = !!parseStructure(raw);
+
+  const tabs: { id: ViewTab; label: string; show: boolean }[] = [
+    { id: "result",    label: "Email",             show: true },
+    { id: "structure", label: "Message Structure", show: true },
+    { id: "prompt",    label: "Prompt",            show: true },
+    { id: "sources",   label: "Sources",           show: true },
   ];
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         className="p-0 gap-0 overflow-hidden"
-        style={{ width: "52vw", maxWidth: "52vw", maxHeight: "82vh", display: "flex", flexDirection: "column" }}
+        style={{ width: "58vw", maxWidth: "58vw", maxHeight: "84vh", display: "flex", flexDirection: "column" }}
       >
         <DialogHeader className="px-7 py-5 border-b border-border/60 flex-shrink-0">
           <div className="flex items-start justify-between gap-4">
@@ -157,7 +313,7 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
               <Button
                 variant="outline" size="sm"
                 className="h-7 gap-1.5 text-xs"
-                onClick={() => copyToClipboard(fullText)}
+                onClick={() => copyToClipboard(cleanEmail)}
               >
                 {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                 {copied ? "Copied" : "Copy"}
@@ -165,7 +321,7 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
               <Button
                 variant="outline" size="sm"
                 className="h-7 gap-1.5 text-xs"
-                onClick={() => downloadText(fullText, `${job.title.replace(/\s+/g, "-").toLowerCase()}.txt`)}
+                onClick={() => downloadText(cleanEmail, `${job.title.replace(/\s+/g, "-").toLowerCase()}.txt`)}
               >
                 <Download className="h-3 w-3" />
                 Download
@@ -174,19 +330,24 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
           </div>
         </DialogHeader>
 
+        {/* Tabs */}
         <div className="flex border-b border-border/60 flex-shrink-0">
-          {tabs.map(t => (
+          {tabs.filter(t => t.show).map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={cn(
-                "px-5 py-2.5 text-xs font-semibold border-b-2 transition-colors",
+                "px-5 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap",
                 tab === t.id
                   ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+                t.id === "structure" && !hasStructure && "opacity-50"
               )}
             >
               {t.label}
+              {t.id === "structure" && hasStructure && (
+                <span className="ml-1.5 inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold">5</span>
+              )}
             </button>
           ))}
         </div>
@@ -205,11 +366,17 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
               </div>
             </div>
           )}
+
+          {tab === "structure" && (
+            <MessageStructureTab result={raw} />
+          )}
+
           {tab === "prompt" && (
             <pre className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono bg-secondary/40 rounded-xl p-4">
               {job.prompt ?? "Prompt not stored."}
             </pre>
           )}
+
           {tab === "sources" && (
             <div className="space-y-1.5">
               {(job.sources ?? []).length === 0 ? (
@@ -259,7 +426,8 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
   }
 
   function downloadFile() {
-    const blob = new Blob([job.result ?? ""], { type: "text/plain" });
+    const clean = stripStructureBlock(job.result ?? "");
+    const blob = new Blob([clean], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -269,18 +437,19 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
   }
 
   function shareJob() {
-    navigator.clipboard.writeText(job.result ?? "").catch(console.error);
+    const clean = stripStructureBlock(job.result ?? "");
+    navigator.clipboard.writeText(clean).catch(console.error);
   }
 
   const isGenerating = job.status === "generating";
   const isFailed = job.status === "failed";
   const isCompleted = job.status === "completed";
+  const hasStructure = isCompleted && !!parseStructure(job.result ?? "");
 
   const primaryLabel = job.type === "intro_email" ? "View Email" : "View";
 
   return (
     <>
-      {/* Card — clicking the body opens the viewer for completed jobs */}
       <div
         onClick={() => isCompleted && openViewer("result")}
         className={cn(
@@ -291,14 +460,12 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
         )}
       >
         <div className="flex items-center gap-2.5">
-          {/* Status icon */}
           <div className="flex-shrink-0">
             {isGenerating && <GeneratingBars />}
             {isCompleted && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
             {isFailed && <XCircle className="h-3.5 w-3.5 text-red-400" />}
           </div>
 
-          {/* Title + meta */}
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground leading-snug truncate">{job.title}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">
@@ -311,13 +478,11 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
             </p>
           </div>
 
-          {/* Actions — only shown when completed */}
           {isCompleted && (
             <div
               className="flex items-center gap-1 flex-shrink-0"
               onClick={e => e.stopPropagation()}
             >
-              {/* Primary action */}
               <Button
                 size="sm"
                 variant="outline"
@@ -328,7 +493,18 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
                 {primaryLabel}
               </Button>
 
-              {/* More menu */}
+              {hasStructure && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1.5 text-xs font-semibold px-2.5 text-violet-600 border-violet-200 hover:bg-violet-50"
+                  onClick={() => openViewer("structure")}
+                  title="View message anatomy"
+                >
+                  <Layers className="h-3 w-3" />
+                </Button>
+              )}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -351,6 +527,10 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
                     <Download className="h-3.5 w-3.5" />
                     Download
                   </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("structure")}>
+                    <Layers className="h-3.5 w-3.5" />
+                    Message Structure
+                  </DropdownMenuItem>
                   <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("prompt")}>
                     <BookOpen className="h-3.5 w-3.5" />
                     View prompt &amp; sources
@@ -368,7 +548,6 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
             </div>
           )}
 
-          {/* Failed — only show delete */}
           {isFailed && (
             <button
               onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
