@@ -6,7 +6,6 @@ import {
   companyInsightsTable,
   industryInsightsTable,
   roleInsightsTable,
-  colleagueInsightsTable,
   counterpartInsightsTable,
   dnaProfilesTable,
   insightRelevanceScoresTable,
@@ -71,7 +70,22 @@ router.post("/relevance/score", async (req, res) => {
     if (!contact) { res.status(404).json({ error: "Contact not found" }); return; }
 
     // 2. Fetch all outside-in signals in parallel
-    const [personal, company, industry, role, colleague, counterpart] = await Promise.all([
+    // Colleague insights: dynamic — personal insights from contacts at the same company.
+    // Counterpart insights: dynamic — personal insights from contacts in the same industry at other companies.
+    const colleagueContactsPromise = contact.companyId
+      ? db.select({ id: contactsTable.id })
+          .from(contactsTable)
+          .where(and(eq(contactsTable.companyId, contact.companyId), ne(contactsTable.id, contactId)))
+      : Promise.resolve([]);
+
+    const counterpartContactsPromise = contact.industryId
+      ? db.select({ id: contactsTable.id })
+          .from(contactsTable)
+          .where(and(eq(contactsTable.industryId, contact.industryId), ne(contactsTable.id, contactId),
+            ...(contact.companyId ? [ne(contactsTable.companyId, contact.companyId)] : [])))
+      : Promise.resolve([]);
+
+    const [personal, company, industry, role, colleagueContacts, counterpartContacts] = await Promise.all([
       db.select().from(contactInsightsTable)
         .where(and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.category, "personal"))),
       contact.companyId
@@ -83,8 +97,22 @@ router.post("/relevance/score", async (req, res) => {
       contact.roleId
         ? db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId))
         : Promise.resolve([]),
-      db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, contactId)),
-      db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, contactId)),
+      colleagueContactsPromise,
+      counterpartContactsPromise,
+    ]);
+
+    const colleagueIds = colleagueContacts.map((c) => c.id);
+    const counterpartIds = counterpartContacts.map((c) => c.id);
+
+    const [colleague, counterpart] = await Promise.all([
+      colleagueIds.length > 0
+        ? db.select().from(contactInsightsTable)
+            .where(and(inArray(contactInsightsTable.contactId, colleagueIds), eq(contactInsightsTable.category, "personal")))
+        : Promise.resolve([]),
+      counterpartIds.length > 0
+        ? db.select().from(contactInsightsTable)
+            .where(and(inArray(contactInsightsTable.contactId, counterpartIds), eq(contactInsightsTable.category, "personal")))
+        : Promise.resolve([]),
     ]);
 
     // 3. Build flat signal list for the prompt

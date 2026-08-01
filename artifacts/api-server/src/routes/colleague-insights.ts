@@ -80,11 +80,11 @@ router.get("/", async (req, res) => {
       return;
     }
 
-    // ── 4. Load relevance scores ───────────────────────────────────────────
-    // Colleague insights are personal insights from other contacts. Their
-    // scores are stored under each colleague's own contactId with
-    // signalType='personal' — NOT under the target contact with
-    // signalType='colleague'. Query by colleague contactIds instead.
+    // ── 4. Load relevance scores (signalType='colleague') ─────────────────
+    // Scores are computed by the relevance/score route, which fetches dynamic
+    // colleague insights and stores them under the target contactId with
+    // signalType='colleague'. The UI looks up `colleague-${id}` from the map,
+    // so we must query by the target contactId + signalType='colleague'.
     const insightIds = insights.map((i) => i.id);
     const scores = await db
       .select({
@@ -94,8 +94,8 @@ router.get("/", async (req, res) => {
       .from(insightRelevanceScoresTable)
       .where(
         and(
-          inArray(insightRelevanceScoresTable.contactId, colleagueIds),
-          eq(insightRelevanceScoresTable.signalType, "personal"),
+          eq(insightRelevanceScoresTable.contactId, contactId),
+          eq(insightRelevanceScoresTable.signalType, "colleague"),
           inArray(insightRelevanceScoresTable.signalId, insightIds)
         )
       );
