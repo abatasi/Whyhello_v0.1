@@ -104,15 +104,40 @@ router.post("/relevance/score", async (req, res) => {
     const colleagueIds = colleagueContacts.map((c) => c.id);
     const counterpartIds = counterpartContacts.map((c) => c.id);
 
+    // Cap colleague/counterpart signals so the AI prompt stays manageable.
+    // Round-robin across contacts so no single contact dominates the sample.
+    const MAX_COLLEAGUE_SIGNALS = 25;
+    const MAX_COUNTERPART_SIGNALS = 25;
+
+    async function fetchCappedInsights(contactIds: number[], max: number) {
+      if (contactIds.length === 0) return [];
+      const all = await db.select().from(contactInsightsTable)
+        .where(and(inArray(contactInsightsTable.contactId, contactIds), eq(contactInsightsTable.category, "personal")));
+      if (all.length <= max) return all;
+      // Round-robin: group by contactId, pick one from each in turn
+      const buckets = new Map<number, typeof all>();
+      for (const row of all) {
+        if (!buckets.has(row.contactId)) buckets.set(row.contactId, []);
+        buckets.get(row.contactId)!.push(row);
+      }
+      const result: typeof all = [];
+      let round = 0;
+      const bucketList = Array.from(buckets.values());
+      while (result.length < max) {
+        let added = false;
+        for (const bucket of bucketList) {
+          if (result.length >= max) break;
+          if (round < bucket.length) { result.push(bucket[round]); added = true; }
+        }
+        if (!added) break;
+        round++;
+      }
+      return result;
+    }
+
     const [colleague, counterpart] = await Promise.all([
-      colleagueIds.length > 0
-        ? db.select().from(contactInsightsTable)
-            .where(and(inArray(contactInsightsTable.contactId, colleagueIds), eq(contactInsightsTable.category, "personal")))
-        : Promise.resolve([]),
-      counterpartIds.length > 0
-        ? db.select().from(contactInsightsTable)
-            .where(and(inArray(contactInsightsTable.contactId, counterpartIds), eq(contactInsightsTable.category, "personal")))
-        : Promise.resolve([]),
+      fetchCappedInsights(colleagueIds, MAX_COLLEAGUE_SIGNALS),
+      fetchCappedInsights(counterpartIds, MAX_COUNTERPART_SIGNALS),
     ]);
 
     // 3. Build flat signal list for the prompt

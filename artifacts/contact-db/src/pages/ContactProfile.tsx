@@ -594,12 +594,12 @@ export default function ContactProfile() {
   const [jobRefetchTrigger, setJobRefetchTrigger] = useState(0);
   const { data: relevanceData = [], refetch: refetchRelevance } = useGetInsightRelevance(id, { query: { enabled: !!id } });
   const relevanceMutation = useTriggerInsightRelevance();
-  const hasAutoScoredRef = useRef(false);
+  const hasAutoScoredRef = useRef<number | null>(null); // stores the contactId that was last scored
   const [showLostFriendo, setShowLostFriendo] = useState(false);
   const { data: topContact } = useGetTopRelevantContact(id, showLostFriendo);
   const { data: quotesData = [], refetch: refetchQuotes } = useGetInsightQuotes(id, { query: { enabled: !!id } });
   const quotesMutation = useExtractInsightQuotes();
-  const hasAutoExtractedQuotesRef = useRef(false);
+  const hasAutoExtractedQuotesRef = useRef<number | null>(null);
 
   // Effect 1: show toast whenever scores are settled and max ≤ 50
   useEffect(() => {
@@ -608,9 +608,11 @@ export default function ContactProfile() {
     if (maxScore <= 50) setShowLostFriendo(true);
   }, [relevanceData, relevanceMutation.isPending]);
 
-  // Effect 2: auto-trigger scoring once only for insights that don't yet have a score
+  // Effect 2: auto-trigger scoring when any insight doesn't yet have a score.
+  // Tracks the last contactId scored (not a boolean) so it resets automatically
+  // when navigating to a different contact within the same component instance.
   useEffect(() => {
-    if (!id || hasAutoScoredRef.current || relevanceMutation.isPending) return;
+    if (!id || hasAutoScoredRef.current === id || relevanceMutation.isPending) return;
 
     const allInsightKeys = [
       ...personalInsights.map(i => `personal-${i.id}`),
@@ -626,14 +628,14 @@ export default function ContactProfile() {
     const allScored = allInsightKeys.every(k => scoredKeys.has(k));
     if (allScored) return; // every insight already has a score — Effect 1 handles the toast
 
-    hasAutoScoredRef.current = true;
+    hasAutoScoredRef.current = id;
     relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() });
   }, [id, relevanceData, personalInsights, companyInsights, industryInsights, roleInsights,
     colleagueInsights, counterpartInsights, relevanceMutation.isPending]);
 
   // Effect 3: auto-extract quotes once when insights load and no quotes exist yet
   useEffect(() => {
-    if (!id || hasAutoExtractedQuotesRef.current || quotesMutation.isPending) return;
+    if (!id || hasAutoExtractedQuotesRef.current === id || quotesMutation.isPending) return;
     if (quotesData.length > 0) return; // already have quotes
 
     const totalInsights = personalInsights.length + companyInsights.length +
@@ -641,7 +643,7 @@ export default function ContactProfile() {
       colleagueInsights.length + counterpartInsights.length;
     if (totalInsights === 0) return;
 
-    hasAutoExtractedQuotesRef.current = true;
+    hasAutoExtractedQuotesRef.current = id;
     quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
   }, [id, quotesData.length, personalInsights.length, companyInsights.length,
     industryInsights.length, roleInsights.length, colleagueInsights.length,
@@ -859,7 +861,7 @@ export default function ContactProfile() {
                     quotes={quotesData}
                     isPending={quotesMutation.isPending}
                     onReExtract={() => {
-                      hasAutoExtractedQuotesRef.current = true;
+                      hasAutoExtractedQuotesRef.current = id;
                       quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
                     }}
                   />
@@ -962,7 +964,7 @@ export default function ContactProfile() {
                           quotes={quotesData}
                           isPending={quotesMutation.isPending}
                           onReExtract={() => {
-                            hasAutoExtractedQuotesRef.current = true;
+                            hasAutoExtractedQuotesRef.current = id;
                             quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
                           }}
                         />
