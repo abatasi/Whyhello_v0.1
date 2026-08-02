@@ -670,7 +670,10 @@ contactJobsRouter.post("/", async (req, res) => {
     const { type, title, params } = req.body ?? {};
     if (!type || !title || !params) { res.status(400).json({ error: "type, title, and params are required" }); return; }
 
-    const userId = (req as typeof req & { user?: { id: string } }).user?.id ?? null;
+    const userId =
+      (req as typeof req & { user?: { id: string } }).user?.id ??
+      // Dev-only: allow passing userId via header when not in production
+      (process.env.NODE_ENV !== "production" ? (req.headers["x-dev-user-id"] as string | undefined) ?? null : null);
 
     const [job] = await db.insert(outreachJobsTable)
       .values({ contactId, userId, type, title, params, status: "generating" })
