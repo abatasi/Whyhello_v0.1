@@ -24,8 +24,10 @@ function getUserId(req: Parameters<Parameters<typeof quotesRouter.get>[1]>[0]): 
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-// Media types where the contact themselves is the author
-const AUTHORED_MEDIA_TYPES = new Set(["linkedin", "linkedin_post", "blog_post", "blog", "newsletter", "podcast"]);
+// Currently quotables are drawn exclusively from LinkedIn posts authored by the contact.
+// When description (post body) is populated and substantial, extract quotes from the body text.
+// Expand to other authored media types once LinkedIn extraction is validated.
+const LINKEDIN_TYPES = new Set(["linkedin", "linkedin_post"]);
 
 interface SignalRow {
   signalType: string;
@@ -35,8 +37,8 @@ interface SignalRow {
   description: string | null;
   publishedDate: string | null;
   mediaType: string | null;
-  /** True when the contact is the author of this content (linkedin posts, blog posts, etc.) */
-  isAuthored: boolean;
+  /** True when this signal is a LinkedIn post authored by the contact */
+  isLinkedIn: boolean;
 }
 
 function toStringArray(v: unknown): string[] {
@@ -134,27 +136,21 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
       companyIns = await db.select().from(companyInsightsTable).where(eq(companyInsightsTable.companyId, contact.companyId));
     }
 
-    const toRow = (signalType: string, i: { id: number; title: string; source: string; description?: string | null; publishedDate?: string | null; mediaType?: string | null }, authoredWhenPersonal = false): SignalRow => {
+    const toRow = (signalType: string, i: { id: number; title: string; source: string; description?: string | null; publishedDate?: string | null; mediaType?: string | null }): SignalRow => {
       const mt = i.mediaType ?? null;
-      const isAuthored = authoredWhenPersonal && !!mt && AUTHORED_MEDIA_TYPES.has(mt);
-      return { signalType, signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null, mediaType: mt, isAuthored };
+      const isLinkedIn = !!mt && LINKEDIN_TYPES.has(mt);
+      return { signalType, signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null, mediaType: mt, isLinkedIn };
     };
 
-    const signals: SignalRow[] = [
-      ...personal.map(i => toRow("personal", i, /* authoredWhenPersonal= */ true)),
-      ...colleague.map(i => toRow("colleague", i)),
-      ...counterpart.map(i => toRow("counterpart", i)),
-      ...companyIns.map(i => toRow("company", i)),
-      ...industry.map(i => toRow("industry", i)),
-      ...role.map(i => toRow("role", i)),
-    ];
+    // Quotables are sourced exclusively from the contact's LinkedIn posts.
+    // The description field holds the post body text. Skip posts where it is absent or 'N/A'.
+    const allSignals: SignalRow[] = personal.map(i => toRow("personal", i));
 
-    // Authored content (linkedin posts, blog posts, etc.) is scannable via title alone.
-    // Third-party coverage requires a description of at least 40 chars.
-    const scannable = signals.filter(s => {
-      if (s.isAuthored) return s.title.trim().length > 15;
-      return !!(s.description && s.description.trim().length > 40 && s.description.trim() !== "N/A");
-    });
+    const scannable = allSignals.filter(s =>
+      s.isLinkedIn &&
+      !!(s.description && s.description.trim().length > 40 && s.description.trim() !== "N/A")
+    );
+
     if (scannable.length === 0) {
       return res.json([]);
     }
@@ -162,46 +158,38 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
     const contactName = `${contact.firstName} ${contact.lastName}`.trim();
     const hqSummary = await buildHqSummary(userId);
 
-    const signalBlocks = scannable.map((s, i) => {
-      const header = s.isAuthored
-        ? `[${i + 1}] signalType="${s.signalType}" signalId=${s.signalId} mediaType="${s.mediaType}" — AUTHORED BY CONTACT`
-        : `[${i + 1}] signalType="${s.signalType}" signalId=${s.signalId} source="${s.source}"`;
-      const body = s.isAuthored
-        ? `  Authored statement (contact's own published words): ${s.title}${s.publishedDate && s.publishedDate !== "N/A" ? `\n  Published: ${s.publishedDate}` : ""}`
-        : `  Title: ${s.title}\n  Content: ${s.description}`;
-      return `${header}\n${body}`;
-    }).join("\n\n");
+    const signalBlocks = scannable.map((s, i) =>
+      `[${i + 1}] signalId=${s.signalId}${s.publishedDate && s.publishedDate !== "N/A" ? ` published="${s.publishedDate}"` : ""}
+  LinkedIn post body: ${s.description}`
+    ).join("\n\n");
 
-    const systemPrompt = `You are a B2B sales intelligence analyst. Your job is to extract attributable quotes from signal content and craft a one-sentence bridge connecting each to the seller's HQ messaging.
+    const systemPrompt = `You are a B2B sales intelligence analyst. Your job is to extract attributable quotes from a contact's own LinkedIn posts and craft a one-sentence bridge connecting each to the seller's HQ messaging.
 
-There are two kinds of signals you will see:
+All signals below are LinkedIn posts written and published by ${contactName}. The post body is the source of quotes — do not use the post title. Extract statements from the body text that are genuine, quotable expressions of perspective, opinion, or insight. Short transitional sentences ("Here's the link", "I agree") do not qualify.
 
-A) AUTHORED BY CONTACT — marked "AUTHORED BY CONTACT" in the header. The contact themselves wrote or published this content. The "Authored statement" line IS what they said. Quote it verbatim. Attribution is always ${contactName}.
+CONTACT: ${contactName}${contact.jobTitle ? `, ${contact.jobTitle}` : ""}
 
-B) THIRD-PARTY COVERAGE — articles, posts, or analysis written by someone else. Extract only directly attributed speech (someone explicitly quoted by name). Do not paraphrase or invent quotes.
-
-CONTACT BEING RESEARCHED: ${contactName}${contact.jobTitle ? `, ${contact.jobTitle}` : ""}
-
-SELLER HQ PROFILE (inside-out context — use this to craft the HQ bridge):
+SELLER HQ PROFILE (use this to craft the HQ bridge):
 ${hqSummary}
 
 EXTRACTION RULES:
-1. For AUTHORED BY CONTACT signals: use the authored statement as the quote. Attribution = ${contactName}. These are highest priority.
-2. For THIRD-PARTY COVERAGE: only extract if someone is explicitly quoted by name. Reject paraphrases, summaries, and generic headlines.
-3. For each quote, write a short "hqBridge" sentence (max 25 words) connecting what they said to one concrete aspect of the seller's HQ profile. Name specific products, pillars, or differentiators — not generic categories.
-4. In "matchedHqSignals" list the specific HQ items referenced.
-5. If a signal yields no valid quote, omit it — do not fabricate.
-6. Maximum 8 quotes. Quality over quantity.
+1. The contact is the sole author of every post — attribution is always "${contactName}".
+2. Extract 1–2 of the strongest quotable sentences per post. Prefer direct, opinionated statements over generic summaries.
+3. Quote the contact's own words verbatim or near-verbatim. Do not paraphrase.
+4. For each quote, write a "hqBridge" sentence (max 25 words) connecting what they said to one concrete aspect of the seller's HQ profile. Name specific products, pillars, or differentiators.
+5. In "matchedHqSignals" list the specific HQ items referenced.
+6. If a post yields no quotable statement, omit it — do not fabricate.
+7. Maximum 8 quotes total. Quality over quantity.
 
 OUTPUT: A JSON array — no markdown fences, no extra text. Empty array [] if nothing qualifies.
 
 [
   {
-    "signalType": "personal" | "colleague" | "counterpart" | "company" | "industry" | "role",
+    "signalType": "personal",
     "signalId": <integer from the block header>,
-    "quote": "<the verbatim or near-verbatim quote>",
-    "attribution": "<full name of the person quoted>",
-    "attributionRole": "<their job title or role, if known — else null>",
+    "quote": "<verbatim or near-verbatim sentence from the post body>",
+    "attribution": "${contactName}",
+    "attributionRole": ${contact.jobTitle ? `"${contact.jobTitle}"` : "null"},
     "hqBridge": "<one sentence connecting this quote to the seller's HQ messaging>",
     "matchedHqSignals": ["<specific HQ item>", ...]
   }

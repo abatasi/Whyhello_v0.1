@@ -867,18 +867,6 @@ export default function ContactProfile() {
                   )}
                 </div>
 
-                {/* Quotes panel — normal sidebar */}
-                {(quotesData.length > 0 || quotesMutation.isPending) && (
-                  <QuotesPanel
-                    quotes={quotesData}
-                    isPending={quotesMutation.isPending}
-                    onReExtract={() => {
-                      hasAutoExtractedQuotesRef.current = id;
-                      quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
-                    }}
-                  />
-                )}
-
                 {INSIGHT_CATEGORIES.map((cat) => {
                   const items = sortedCategoryData[cat.id] ?? [];
                   const isLocked = cat.id === "personal" && !isRevealed;
@@ -970,17 +958,6 @@ export default function ContactProfile() {
                       )}
                     </div>
                     <div className="flex-1 overflow-y-scroll scroll-thin pr-1 pt-1 flex flex-col gap-4">
-                      {/* Quotes panel — expanded sidebar */}
-                      {(quotesData.length > 0 || quotesMutation.isPending) && (
-                        <QuotesPanel
-                          quotes={quotesData}
-                          isPending={quotesMutation.isPending}
-                          onReExtract={() => {
-                            hasAutoExtractedQuotesRef.current = id;
-                            quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
-                          }}
-                        />
-                      )}
                       {INSIGHT_CATEGORIES.map((cat) => {
                         const items = sortedCategoryData[cat.id] ?? [];
                         const isLocked = cat.id === "personal" && !isRevealed;
@@ -1283,6 +1260,16 @@ export default function ContactProfile() {
                 {/* Jobs list */}
                 <OutreachJobsList contactId={id} refetchTrigger={jobRefetchTrigger} />
 
+                {/* Quotables carousel — sits at the bottom of the outreach panel */}
+                <QuotablesCarousel
+                  quotes={quotesData}
+                  isPending={quotesMutation.isPending}
+                  onReExtract={() => {
+                    hasAutoExtractedQuotesRef.current = id;
+                    quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
+                  }}
+                />
+
               </aside>
             )}
 
@@ -1431,14 +1418,11 @@ export default function ContactProfile() {
   );
 }
 
-// ── QuotesPanel ────────────────────────────────────────────────────────────
+// ── QuotablesCarousel ──────────────────────────────────────────────────────
+// Compact carousel placed at the bottom of the Outreach panel.
+// Shows one quote at a time; user navigates with ← / → arrows.
 
-const SIGNAL_TYPE_LABEL: Record<string, string> = {
-  personal: "Personal", company: "Company", industry: "Industry",
-  role: "Role", colleague: "Colleague", counterpart: "Counterpart",
-};
-
-function QuotesPanel({
+function QuotablesCarousel({
   quotes,
   isPending,
   onReExtract,
@@ -1447,34 +1431,46 @@ function QuotesPanel({
   isPending: boolean;
   onReExtract: () => void;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
+  const [idx, setIdx] = useState(0);
+
+  // Keep idx in bounds when quotes array changes
+  const safeIdx = quotes.length > 0 ? Math.min(idx, quotes.length - 1) : 0;
+  const current = quotes[safeIdx] ?? null;
+
+  const prev = () => setIdx(i => (i - 1 + quotes.length) % quotes.length);
+  const next = () => setIdx(i => (i + 1) % quotes.length);
+
+  // Only mount when there is something to show
+  if (!isPending && quotes.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-violet-200 bg-violet-50/60 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2">
+    <div className="flex-shrink-0 border-t border-border/30 pt-2.5 mt-auto">
+      {/* ── Header row ── */}
+      <div className="flex items-center justify-between mb-1.5">
         <button
-          onClick={() => setExpanded(v => !v)}
-          className="flex items-center gap-1.5 text-left min-w-0"
+          onClick={() => setCollapsed(v => !v)}
+          className="flex items-center gap-1 text-left min-w-0 group"
         >
-          <Quote className="h-3 w-3 text-violet-500 flex-shrink-0" />
-          <span className="text-[11px] font-bold text-violet-700 uppercase tracking-wider">Quotables</span>
+          <Quote className="h-2.5 w-2.5 text-violet-500 flex-shrink-0" />
+          <span className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">Quotables</span>
           {quotes.length > 0 && (
-            <span className="text-[9px] font-bold bg-violet-200 text-violet-700 rounded-full px-1.5 py-px ml-0.5">
+            <span className="text-[9px] font-semibold bg-violet-100 text-violet-600 rounded-full px-1.5 py-px">
               {quotes.length}
             </span>
           )}
-          {isPending && <Loader2 className="h-2.5 w-2.5 animate-spin text-violet-400 flex-shrink-0" />}
+          {isPending && <Loader2 className="h-2 w-2 animate-spin text-violet-400 flex-shrink-0" />}
         </button>
-        <div className="flex items-center gap-1">
+
+        <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 onClick={onReExtract}
                 disabled={isPending}
-                className="h-5 w-5 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors disabled:opacity-40"
+                className="h-4 w-4 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors disabled:opacity-40"
               >
-                <RefreshCw className="h-2.5 w-2.5" />
+                <RefreshCw className="h-2 w-2" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={4}>
@@ -1482,62 +1478,70 @@ function QuotesPanel({
             </TooltipContent>
           </Tooltip>
           <button
-            onClick={() => setExpanded(v => !v)}
-            className="h-5 w-5 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 transition-colors"
+            onClick={() => setCollapsed(v => !v)}
+            className="h-4 w-4 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 transition-colors"
           >
-            {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {collapsed ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />}
           </button>
         </div>
       </div>
 
-      {/* Quote list */}
-      {expanded && (
-        <div className="px-3 pb-3 space-y-2.5">
-          {isPending && quotes.length === 0 && (
-            <p className="text-[11px] text-violet-400 italic">Scanning signals for attributable quotes…</p>
+      {/* ── Carousel body ── */}
+      {!collapsed && (
+        <div className="space-y-1.5">
+          {isPending && !current && (
+            <p className="text-[10px] text-violet-400 italic px-0.5">Scanning LinkedIn posts for quotes…</p>
           )}
-          {!isPending && quotes.length === 0 && (
-            <p className="text-[11px] text-violet-400/70 italic">No attributable quotes found in current signals.</p>
-          )}
-          {quotes.map((q) => (
-            <div key={q.id} className="rounded-lg border border-violet-200/70 bg-white/70 p-2.5 space-y-1.5">
+
+          {current && (
+            <div className="rounded-lg border border-violet-200/60 bg-violet-50/50 p-2 space-y-1.5">
               {/* Quote text */}
-              <p className="text-[11px] text-foreground leading-relaxed">
-                <Quote className="h-2.5 w-2.5 text-violet-400 inline mr-0.5 -mt-0.5" />
-                {q.quote}
+              <p className="text-[10px] text-foreground leading-relaxed">
+                <Quote className="h-2 w-2 text-violet-400 inline mr-0.5 -mt-px" />
+                {current.quote}
               </p>
-              {/* Attribution row */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-semibold text-foreground">{q.attribution}</span>
-                {q.attributionRole && (
-                  <span className="text-[10px] text-muted-foreground">· {q.attributionRole}</span>
-                )}
-                <span className={cn(
-                  "text-[9px] font-semibold uppercase tracking-wide px-1.5 py-px rounded-full border ml-auto",
-                  "bg-violet-50 text-violet-600 border-violet-200"
-                )}>
-                  {SIGNAL_TYPE_LABEL[q.signalType] ?? q.signalType}
-                </span>
-              </div>
+
               {/* HQ bridge */}
-              {q.hqBridge && (
-                <p className="text-[10px] text-violet-700 bg-violet-50 border border-violet-100 rounded px-2 py-1 leading-snug">
-                  <Sparkles className="h-2 w-2 inline mr-1 text-violet-400" />
-                  {q.hqBridge}
+              {current.hqBridge && (
+                <p className="text-[9px] text-violet-700 bg-violet-100/70 border border-violet-200/50 rounded px-1.5 py-1 leading-snug">
+                  <Sparkles className="h-1.5 w-1.5 inline mr-0.5 text-violet-400" />
+                  {current.hqBridge}
                 </p>
               )}
-              {/* Matched HQ signals */}
-              {q.matchedHqSignals.length > 0 && (
+
+              {/* HQ signal tags */}
+              {current.matchedHqSignals.length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  {q.matchedHqSignals.map((tag, i) => (
-                    <span key={i} className="text-[9px] bg-violet-100/80 text-violet-700 border border-violet-200/60 rounded-full px-1.5 py-px font-medium">
+                  {current.matchedHqSignals.map((tag, i) => (
+                    <span key={i} className="text-[8px] bg-violet-100 text-violet-600 border border-violet-200/50 rounded-full px-1.5 py-px font-medium">
                       {tag}
                     </span>
                   ))}
                 </div>
               )}
             </div>
-          ))}
+          )}
+
+          {/* ── Nav row ── */}
+          {quotes.length > 1 && (
+            <div className="flex items-center justify-between px-0.5">
+              <button
+                onClick={prev}
+                className="h-5 w-5 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+              >
+                <ChevronLeft className="h-3 w-3" />
+              </button>
+              <span className="text-[9px] text-muted-foreground tabular-nums">
+                {safeIdx + 1} / {quotes.length}
+              </span>
+              <button
+                onClick={next}
+                className="h-5 w-5 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+              >
+                <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
