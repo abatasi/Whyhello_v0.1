@@ -29,7 +29,13 @@ type Job = {
   type: string;
   status: string;
   title: string;
-  params: { length: string; tone: string; selectedInsightKeys: string[] };
+  params: {
+    length: string;
+    tone: string;
+    selectedInsightKeys: string[];
+    parentJobId?: number;
+    variantCategory?: string;
+  };
   result?: string | null;
   prompt?: string | null;
   sources?: string[] | null;
@@ -108,6 +114,17 @@ const STRUCTURE_LAYERS: {
     dot: "bg-rose-400",
   },
 ];
+
+// ── Category colours for variant badges ───────────────────────────────────
+
+const CATEGORY_META: Record<string, { label: string; badge: string; bar: string }> = {
+  personal:    { label: "Personal",    badge: "bg-sky-100 text-sky-700 border-sky-200",        bar: "bg-sky-400" },
+  company:     { label: "Company",     badge: "bg-amber-100 text-amber-700 border-amber-200",  bar: "bg-amber-400" },
+  industry:    { label: "Industry",    badge: "bg-emerald-100 text-emerald-700 border-emerald-200", bar: "bg-emerald-400" },
+  role:        { label: "Role",        badge: "bg-violet-100 text-violet-700 border-violet-200", bar: "bg-violet-400" },
+  colleague:   { label: "Colleague",   badge: "bg-orange-100 text-orange-700 border-orange-200", bar: "bg-orange-400" },
+  counterpart: { label: "Counterpart", badge: "bg-rose-100 text-rose-700 border-rose-200",     bar: "bg-rose-400" },
+};
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -200,6 +217,143 @@ function RenameDialog({ job, onClose, onSave }: { job: Job; onClose: () => void;
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Variant card ───────────────────────────────────────────────────────────
+
+function VariantCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
+  const [viewing, setViewing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteMutation = useDeleteOutreachJob();
+
+  const category = job.params?.variantCategory ?? "personal";
+  const meta = CATEGORY_META[category] ?? CATEGORY_META.personal;
+
+  const isGenerating = job.status === "generating";
+  const isFailed    = job.status === "failed";
+  const isCompleted = job.status === "completed";
+
+  const { subject } = isCompleted ? parseEmailResult(job.result ?? "") : { subject: "" };
+
+  return (
+    <>
+      <div
+        onClick={() => isCompleted && setViewing(true)}
+        className={cn(
+          "flex items-center gap-2 rounded-lg border px-3 py-2 transition-all",
+          isCompleted && "bg-card border-border/60 cursor-pointer hover:border-primary/40 hover:shadow-sm",
+          isGenerating && "border-blue-200/50 bg-blue-50/20",
+          isFailed    && "border-red-200/50 bg-red-50/20",
+        )}
+      >
+        {/* Category badge */}
+        <span className={cn(
+          "flex-shrink-0 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border whitespace-nowrap",
+          meta.badge,
+        )}>
+          {meta.label}
+        </span>
+
+        {/* Status icon */}
+        <div className="flex-shrink-0">
+          {isGenerating && <GeneratingBars />}
+          {isCompleted  && <CheckCircle2 className="h-3 w-3 text-emerald-500" />}
+          {isFailed     && <XCircle className="h-3 w-3 text-red-400" />}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] text-foreground truncate leading-snug">
+            {isGenerating && <span className="text-blue-500/80 font-medium">Generating…</span>}
+            {isFailed     && <span className="text-red-400 font-medium">Generation failed</span>}
+            {isCompleted  && (subject || <span className="italic text-muted-foreground">No subject</span>)}
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+          {isCompleted && (
+            <Button
+              size="sm" variant="outline"
+              className="h-6 px-2 gap-1 text-[11px]"
+              onClick={() => setViewing(true)}
+            >
+              <Eye className="h-2.5 w-2.5" />
+              View
+            </Button>
+          )}
+          <button
+            className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+            title="Delete variant"
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+
+      {viewing && <JobViewerModal job={job} onClose={() => setViewing(false)} />}
+
+      {confirmDelete && (
+        <Dialog open onOpenChange={(o) => !o && setConfirmDelete(false)}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle className="text-sm">Delete variant?</DialogTitle>
+              <DialogDescription className="text-xs">
+                This will permanently delete the {meta.label} entry point variant.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-2 justify-end mt-1">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+              <Button
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={() => deleteMutation.mutate({ jobId: job.id }, { onSuccess: onDeleted })}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? "Deleting…" : "Delete"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+}
+
+// ── Variant shelf ──────────────────────────────────────────────────────────
+
+function VariantShelf({ variants, onDeleted }: { variants: Job[]; onDeleted: () => void }) {
+  const readyCount = variants.filter(v => v.status === "completed").length;
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="mt-1 pl-3 border-l-2 border-border/30">
+      {/* Header toggle */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 w-full text-left py-1"
+      >
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Entry point variants
+        </span>
+        <span className="text-[9px] font-semibold bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-full">
+          {readyCount}/{variants.length} ready
+        </span>
+        {open
+          ? <ChevronUp className="h-3 w-3 text-muted-foreground ml-auto" />
+          : <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />}
+      </button>
+
+      {open && (
+        <div className="flex flex-col gap-1 pb-1">
+          {variants.map(v => (
+            <VariantCard key={v.id} job={v} onDeleted={onDeleted} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -403,7 +557,7 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
   );
 }
 
-function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
+function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () => void; variants?: Job[] }) {
   const [viewing, setViewing] = useState(false);
   const [viewTab, setViewTab] = useState<ViewTab>("result");
   const [renaming, setRenaming] = useState(false);
@@ -560,6 +714,11 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
         </div>
       </div>
 
+      {/* Entry-point variants — shown when main email is done and variants exist */}
+      {isCompleted && variants.length > 0 && (
+        <VariantShelf variants={variants} onDeleted={onDeleted} />
+      )}
+
       {viewing && <JobViewerModal job={job} initialTab={viewTab} onClose={() => setViewing(false)} />}
       {renaming && <RenameDialog job={job} onClose={() => setRenaming(false)} onSave={handleRename} />}
 
@@ -569,7 +728,7 @@ function JobCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
             <DialogHeader>
               <DialogTitle className="text-sm">Delete job?</DialogTitle>
               <DialogDescription className="text-xs">
-                This will permanently delete "{job.title}". This cannot be undone.
+                This will permanently delete "{job.title}" and all its entry point variants. This cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <div className="flex gap-2 justify-end mt-1">
@@ -611,6 +770,18 @@ export function OutreachJobsList({ contactId, refetchTrigger }: { contactId: num
 
   if (jobs.length === 0) return null;
 
+  // Separate top-level emails from variant children
+  const allJobs = jobs as Job[];
+  const mainJobs = allJobs.filter(j => j.type !== "intro_email_variant");
+  const variantsByParent = new Map<number, Job[]>();
+  for (const job of allJobs) {
+    if (job.type === "intro_email_variant" && job.params?.parentJobId != null) {
+      const arr = variantsByParent.get(job.params.parentJobId) ?? [];
+      arr.push(job);
+      variantsByParent.set(job.params.parentJobId, arr);
+    }
+  }
+
   return (
     <div className="mt-1">
       <button
@@ -619,16 +790,21 @@ export function OutreachJobsList({ contactId, refetchTrigger }: { contactId: num
       >
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Generated</span>
         <span className="text-[10px] font-semibold bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-full">
-          {jobs.length}
+          {mainJobs.length}
         </span>
         {expanded
           ? <ChevronUp className="h-3 w-3 text-muted-foreground ml-auto" />
           : <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />}
       </button>
       {expanded && (
-        <div className="flex flex-col gap-1.5">
-          {(jobs as Job[]).map(job => (
-            <JobCard key={job.id} job={job} onDeleted={() => refetch()} />
+        <div className="flex flex-col gap-2">
+          {mainJobs.map(job => (
+            <JobCard
+              key={job.id}
+              job={job}
+              onDeleted={() => refetch()}
+              variants={variantsByParent.get(job.id) ?? []}
+            />
           ))}
         </div>
       )}

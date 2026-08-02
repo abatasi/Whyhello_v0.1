@@ -13,8 +13,9 @@ import {
   messagesTable,
   dnaProfilesTable,
   insightQuotesTable,
+  insightRelevanceScoresTable,
 } from "@workspace/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 
 export const contactJobsRouter: IRouter = Router({ mergeParams: true });
@@ -491,8 +492,8 @@ ABSOLUTE PROHIBITIONS
     .set({ status: "completed", result, prompt: systemPrompt, sources: usedKeys, updatedAt: new Date() })
     .where(eq(outreachJobsTable.id, jobId));
 
-  // Save a draft to the Message Center automatically
-  if (job.userId && contact.email) {
+  // Save a draft to the Message Center automatically (main emails only, not variants)
+  if (job.userId && contact.email && job.type !== "intro_email_variant") {
     const { subject: parsedSubject, body: parsedBody } = parseEmailResult(result);
     await db.insert(messagesTable).values({
       userId: job.userId,
@@ -502,6 +503,131 @@ ABSOLUTE PROHIBITIONS
       subject: parsedSubject || job.title,
       body: parsedBody,
       status: "draft",
+    });
+  }
+}
+
+// ── Variant generation ─────────────────────────────────────────────────────
+// After a main intro_email job completes, automatically generate one email per
+// unused insight category (up to 5), each using the highest-scoring insight
+// from that category. Variant jobs are created immediately so the frontend
+// shows them as "generating" without waiting.
+
+const VARIANT_CATEGORIES = ["personal", "company", "industry", "role", "colleague", "counterpart"] as const;
+type VariantCategory = (typeof VARIANT_CATEGORIES)[number];
+
+async function generateVariants(parentJobId: number) {
+  const [parentJob] = await db.select().from(outreachJobsTable)
+    .where(eq(outreachJobsTable.id, parentJobId)).limit(1);
+  if (!parentJob) return;
+
+  type ParentParams = {
+    length: string;
+    tone: string;
+    selectedInsightKeys: string[];
+    voiceProfile?: Record<string, unknown>;
+  };
+  const parentParams = parentJob.params as ParentParams;
+
+  // Determine which categories were already covered in the main email
+  const usedSources: string[] = Array.isArray(parentJob.sources) ? (parentJob.sources as string[]) : [];
+  const usedCategories = new Set(usedSources.map(s => s.split("-")[0]));
+
+  // Load all available insights for this contact (same logic as runGeneration)
+  const contactId = parentJob.contactId;
+  const [[contact], personal, colleague, counterpart] = await Promise.all([
+    db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1),
+    db.select().from(contactInsightsTable).where(
+      and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.category, "personal"))
+    ),
+    db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, contactId)),
+    db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, contactId)),
+  ]);
+  if (!contact) return;
+
+  const [industry, role] = await Promise.all([
+    contact.industryId
+      ? db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, contact.industryId))
+      : Promise.resolve([]),
+    contact.roleId
+      ? db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId))
+      : Promise.resolve([]),
+  ]);
+
+  let companyIns: typeof companyInsightsTable.$inferSelect[] = [];
+  if (contact.companyId) {
+    companyIns = await db.select().from(companyInsightsTable)
+      .where(eq(companyInsightsTable.companyId, contact.companyId));
+  }
+
+  const allByCategory: Record<VariantCategory, { id: number }[]> = {
+    personal,
+    company: companyIns,
+    industry,
+    role,
+    colleague,
+    counterpart,
+  };
+
+  // Load relevance scores so we can pick the highest-scoring insight per category
+  const scores = await db.select().from(insightRelevanceScoresTable)
+    .where(eq(insightRelevanceScoresTable.contactId, contactId));
+  const scoreMap = new Map<string, number>();
+  for (const s of scores) {
+    scoreMap.set(`${s.signalType}-${s.signalId}`, s.score);
+  }
+
+  // For each unused category (in priority order), pick the top-scoring insight
+  const variantSpecs: { category: VariantCategory; insightKey: string }[] = [];
+  for (const cat of VARIANT_CATEGORIES) {
+    if (usedCategories.has(cat)) continue;
+    const insights = allByCategory[cat];
+    if (!insights || insights.length === 0) continue;
+
+    const sorted = [...insights].sort((a, b) => {
+      const sa = scoreMap.get(`${cat}-${a.id}`) ?? 0;
+      const sb = scoreMap.get(`${cat}-${b.id}`) ?? 0;
+      return sb - sa;
+    });
+
+    variantSpecs.push({ category: cat, insightKey: `${cat}-${sorted[0].id}` });
+    if (variantSpecs.length === 5) break;
+  }
+
+  if (variantSpecs.length === 0) return;
+
+  // Create all variant job rows immediately — frontend sees them as "generating" right away
+  const variantJobs = await Promise.all(
+    variantSpecs.map(({ category, insightKey }) => {
+      const label = category.charAt(0).toUpperCase() + category.slice(1);
+      return db.insert(outreachJobsTable)
+        .values({
+          contactId,
+          userId: parentJob.userId,
+          type: "intro_email_variant",
+          title: `${label} Variant`,
+          params: {
+            ...parentParams,
+            selectedInsightKeys: [insightKey],
+            parentJobId,
+            variantCategory: category,
+          },
+          status: "generating",
+        })
+        .returning()
+        .then(rows => rows[0]);
+    })
+  );
+
+  // Fire all variant generations concurrently (non-blocking)
+  for (const variantJob of variantJobs) {
+    if (!variantJob) continue;
+    runGeneration(variantJob.id).catch(async (err) => {
+      console.error(`Variant generation failed for job ${variantJob.id}:`, err);
+      await db.update(outreachJobsTable)
+        .set({ status: "failed", updatedAt: new Date() })
+        .where(eq(outreachJobsTable.id, variantJob.id))
+        .catch(console.error);
     });
   }
 }
@@ -552,13 +678,22 @@ contactJobsRouter.post("/", async (req, res) => {
 
     res.status(201).json(job);
 
-    runGeneration(job.id).catch(async (err) => {
-      console.error(`Generation failed for job ${job.id}:`, err);
-      await db.update(outreachJobsTable)
-        .set({ status: "failed", updatedAt: new Date() })
-        .where(eq(outreachJobsTable.id, job.id))
-        .catch(console.error);
-    });
+    runGeneration(job.id)
+      .then(async () => {
+        // After the main email completes, automatically generate entry-point variants
+        if (type === "intro_email") {
+          await generateVariants(job.id).catch(err => {
+            console.error(`Variant setup failed for parent job ${job.id}:`, err);
+          });
+        }
+      })
+      .catch(async (err) => {
+        console.error(`Generation failed for job ${job.id}:`, err);
+        await db.update(outreachJobsTable)
+          .set({ status: "failed", updatedAt: new Date() })
+          .where(eq(outreachJobsTable.id, job.id))
+          .catch(console.error);
+      });
   } catch (err) {
     console.error("Create outreach job error:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -600,6 +735,10 @@ jobsRouter.delete("/:jobId", async (req, res) => {
   try {
     const jobId = parseInt(req.params.jobId);
     if (isNaN(jobId)) { res.status(400).json({ error: "Invalid job ID" }); return; }
+    // Cascade-delete any variant children whose parentJobId matches this job
+    await db.delete(outreachJobsTable).where(
+      sql`(${outreachJobsTable.params}->>'parentJobId')::integer = ${jobId}`
+    );
     await db.delete(outreachJobsTable).where(eq(outreachJobsTable.id, jobId));
     res.status(204).end();
   } catch (err) {
