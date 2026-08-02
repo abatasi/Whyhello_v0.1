@@ -1419,8 +1419,10 @@ export default function ContactProfile() {
 }
 
 // ── QuotablesCarousel ──────────────────────────────────────────────────────
-// Compact carousel placed at the bottom of the Outreach panel.
-// Shows one quote at a time; user navigates with ← / → arrows.
+// Sits at the bottom of the Outreach panel.
+// Base state: pull-quote style, quote text only.
+// Expanded state: 2× height — quote + HQ bridge hook description.
+// Minimized state: header only.
 
 function QuotablesCarousel({
   quotes,
@@ -1431,36 +1433,31 @@ function QuotablesCarousel({
   isPending: boolean;
   onReExtract: () => void;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [minimized, setMinimized] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [idx, setIdx] = useState(0);
 
-  // Keep idx in bounds when quotes array changes
   const safeIdx = quotes.length > 0 ? Math.min(idx, quotes.length - 1) : 0;
   const current = quotes[safeIdx] ?? null;
-
   const prev = () => setIdx(i => (i - 1 + quotes.length) % quotes.length);
   const next = () => setIdx(i => (i + 1) % quotes.length);
 
-  // Only mount when there is something to show
   if (!isPending && quotes.length === 0) return null;
 
   return (
-    <div className="flex-shrink-0 border-t border-border/30 pt-2.5 mt-auto">
-      {/* ── Header row ── */}
-      <div className="flex items-center justify-between mb-1.5">
-        <button
-          onClick={() => setCollapsed(v => !v)}
-          className="flex items-center gap-1 text-left min-w-0 group"
-        >
-          <Quote className="h-2.5 w-2.5 text-violet-500 flex-shrink-0" />
-          <span className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">Quotables</span>
+    <div className="flex-shrink-0 border-t border-violet-100 pt-3 mt-auto">
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Quotables</span>
           {quotes.length > 0 && (
-            <span className="text-[9px] font-semibold bg-violet-100 text-violet-600 rounded-full px-1.5 py-px">
+            <span className="text-[9px] font-semibold bg-violet-100 text-violet-500 rounded-full px-1.5 py-px tabular-nums">
               {quotes.length}
             </span>
           )}
-          {isPending && <Loader2 className="h-2 w-2 animate-spin text-violet-400 flex-shrink-0" />}
-        </button>
+          {isPending && <Loader2 className="h-2.5 w-2.5 animate-spin text-violet-400 flex-shrink-0" />}
+        </div>
 
         <div className="flex items-center gap-0.5">
           <Tooltip>
@@ -1468,80 +1465,122 @@ function QuotablesCarousel({
               <button
                 onClick={onReExtract}
                 disabled={isPending}
-                className="h-4 w-4 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors disabled:opacity-40"
+                className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors disabled:opacity-30"
               >
-                <RefreshCw className="h-2 w-2" />
+                <RefreshCw className="h-2.5 w-2.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={4}>
               <p className="text-[11px]">Re-extract quotes</p>
             </TooltipContent>
           </Tooltip>
+
+          {/* Expand / compress toggle — only relevant when not minimized */}
+          {!minimized && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setExpanded(v => !v)}
+                  className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
+                >
+                  {expanded
+                    ? <Minimize2 className="h-2.5 w-2.5" />
+                    : <Maximize2 className="h-2.5 w-2.5" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={4}>
+                <p className="text-[11px]">{expanded ? "Compact view" : "Expand view"}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Minimize / restore toggle */}
           <button
-            onClick={() => setCollapsed(v => !v)}
-            className="h-4 w-4 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 transition-colors"
+            onClick={() => setMinimized(v => !v)}
+            className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
           >
-            {collapsed ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />}
+            {minimized
+              ? <ChevronUp className="h-2.5 w-2.5" />
+              : <ChevronDown className="h-2.5 w-2.5" />}
           </button>
         </div>
       </div>
 
-      {/* ── Carousel body ── */}
-      {!collapsed && (
-        <div className="space-y-1.5">
+      {/* ── Body ── */}
+      {!minimized && (
+        <div className="space-y-2">
+
           {isPending && !current && (
-            <p className="text-[10px] text-violet-400 italic px-0.5">Scanning LinkedIn posts for quotes…</p>
+            <p className="text-[11px] text-violet-400 italic">Scanning LinkedIn posts for quotes…</p>
           )}
 
           {current && (
-            <div className="rounded-lg border border-violet-200/60 bg-violet-50/50 p-2 space-y-1.5">
-              {/* Quote text */}
-              <p className="text-[10px] text-foreground leading-relaxed">
-                <Quote className="h-2 w-2 text-violet-400 inline mr-0.5 -mt-px" />
-                {current.quote}
-              </p>
+            <div className={cn(
+              "rounded-xl bg-gradient-to-br from-violet-50 to-white border border-violet-100 overflow-hidden transition-all duration-200",
+              expanded ? "px-4 pt-4 pb-4" : "px-4 pt-3 pb-3"
+            )}>
+              {/* Pull-quote */}
+              <div className="relative">
+                {/* Decorative opening mark */}
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "absolute -top-1 -left-1.5 font-serif text-violet-200 leading-none select-none pointer-events-none",
+                    expanded ? "text-[52px]" : "text-[40px]"
+                  )}
+                >"</span>
 
-              {/* HQ bridge */}
-              {current.hqBridge && (
-                <p className="text-[9px] text-violet-700 bg-violet-100/70 border border-violet-200/50 rounded px-1.5 py-1 leading-snug">
-                  <Sparkles className="h-1.5 w-1.5 inline mr-0.5 text-violet-400" />
-                  {current.hqBridge}
+                <p className={cn(
+                  "pl-5 italic text-foreground/85 leading-relaxed font-medium",
+                  expanded ? "text-[13px]" : "text-xs"
+                )}>
+                  {current.quote}
                 </p>
-              )}
 
-              {/* HQ signal tags */}
-              {current.matchedHqSignals.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {current.matchedHqSignals.map((tag, i) => (
-                    <span key={i} className="text-[8px] bg-violet-100 text-violet-600 border border-violet-200/50 rounded-full px-1.5 py-px font-medium">
-                      {tag}
-                    </span>
-                  ))}
+                <p className={cn(
+                  "pl-5 mt-1.5 text-violet-400 font-medium not-italic",
+                  expanded ? "text-[11px]" : "text-[10px]"
+                )}>
+                  — {current.attribution}
+                  {current.attributionRole && (
+                    <span className="font-normal">, {current.attributionRole}</span>
+                  )}
+                </p>
+              </div>
+
+              {/* HQ bridge — expanded only */}
+              {expanded && current.hqBridge && (
+                <div className="mt-3.5 pt-3 border-t border-violet-100">
+                  <div className="flex gap-2">
+                    <Sparkles className="h-3 w-3 text-violet-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-[12px] text-violet-700 leading-snug">{current.hqBridge}</p>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* ── Nav row ── */}
+          {/* Nav */}
           {quotes.length > 1 && (
-            <div className="flex items-center justify-between px-0.5">
+            <div className="flex items-center justify-between px-1">
               <button
                 onClick={prev}
-                className="h-5 w-5 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+                className="h-6 w-6 rounded-full flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
               >
-                <ChevronLeft className="h-3 w-3" />
+                <ChevronLeft className="h-3.5 w-3.5" />
               </button>
-              <span className="text-[9px] text-muted-foreground tabular-nums">
+              <span className="text-[10px] text-muted-foreground/60 tabular-nums">
                 {safeIdx + 1} / {quotes.length}
               </span>
               <button
                 onClick={next}
-                className="h-5 w-5 rounded flex items-center justify-center text-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+                className="h-6 w-6 rounded-full flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
               >
-                <ChevronRight className="h-3 w-3" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
           )}
+
         </div>
       )}
     </div>
