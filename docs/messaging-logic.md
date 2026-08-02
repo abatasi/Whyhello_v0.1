@@ -523,7 +523,134 @@ A published insight is the highest-value outside-in trigger because it provides 
 
 ---
 
-## 4. The Blend: Signal Resolution Rules
+## 4. Attributable Quotes
+
+Attributable quotes are a distinct enrichment layer extracted from insight content. They are not signals in themselves — they are **the most usable surface of a signal**: a verbatim or near-verbatim statement that a named person actually said, wrote, or was quoted saying, ready to open a message without further interpretation.
+
+### 4.1 What Qualifies as an Attributable Quote
+
+A quote is valid if it meets all three criteria:
+
+1. **Directly attributed** — a named person (the contact, a colleague, a counterpart, a company spokesperson, or an industry voice) is the speaker or source
+2. **Specific enough to open a message** — it must be usable as a conversation opener in a B2B outreach email without feeling generic
+3. **Verbatim or near-verbatim** — not a paraphrase or headline summary; it must feel like something a real person actually said
+
+Quotes that fail these criteria are discarded. Generic headlines, summary sentences, and paraphrased conclusions do not qualify.
+
+### 4.2 Extraction Process
+
+Quote extraction is triggered automatically once per contact when insights finish loading and no quotes have been stored yet. It can be manually re-triggered at any time via the Quotables panel in the contact sidebar.
+
+**Signal scope:** All six insight types are scanned — personal, company, industry, role, colleague, and counterpart. Only signals with a description longer than 40 characters are included, since shorter entries rarely contain attributable statements.
+
+**Priority within extraction:** Quotes from or about the contact are surfaced first. Colleague and counterpart quotes follow. Company, industry, and role sources are included but ranked lower.
+
+**Maximum output:** 8 quotes per extraction run. Quality over quantity — the extraction rejects anything that does not meet the validity criteria above.
+
+**Upsert behaviour:** Each extraction run deletes the existing stored quotes for that contact and inserts a fresh set. Quotes do not accumulate across runs.
+
+### 4.3 AI Extraction Prompt
+
+The extraction uses a single AI call with the following instructions:
+
+- Scan the numbered signal blocks (title + description per signal) for directly attributable statements
+- For each valid quote: record the verbatim text, the full name of the speaker, their role if known, the signal type, and the signal ID
+- Write an `hqBridge` sentence (max 25 words) connecting what the speaker said to one concrete aspect of the seller's HQ profile — naming actual products, pillars, or differentiator phrases, not generic categories
+- List `matchedHqSignals`: the specific HQ items referenced (product names, pillar names, differentiator phrases)
+- If a signal contains no clearly attributable statement, omit it entirely — fabrication is prohibited
+- Return a JSON array; empty array if nothing qualifies
+
+The HQ context passed to the extraction prompt includes: company name, value wedge, positioning, differentiators, pillars, and the first two products with their outcomes.
+
+### 4.4 Data Model
+
+Stored in the `insight_quotes` table, scoped to `contactId`.
+
+```typescript
+interface InsightQuote {
+  id: number;
+  contactId: number;         // FK → contacts.id
+  signalType: string;        // "personal" | "company" | "industry" | "role" | "colleague" | "counterpart"
+  signalId: number;          // ID of the source insight row
+  quote: string;             // verbatim or near-verbatim text
+  attribution: string;       // full name of the person quoted
+  attributionRole: string | null;    // their title or role at time of quote
+  hqBridge: string | null;           // one sentence connecting quote to seller HQ messaging
+  matchedHqSignals: string[];        // specific HQ items referenced (JSON-serialised in DB)
+  computedAt: Date;
+}
+```
+
+**`hqBridge` examples:**
+- *"Your point about advisory independence maps directly to how Richardson Wealth positions its practice-ownership model."*
+- *"This tension — autonomy vs. infrastructure — is exactly what Whyhello's relationship intelligence layer is built to resolve."*
+
+The `hqBridge` is the bridge that converts a cold quote into a warm opener: the AI reads it to know how to transition from the HOOK into VALUE without an abrupt pivot.
+
+### 4.5 Use in Message Generation
+
+When `runGeneration` executes an outreach job, it loads the stored quotes for that contact alongside the insights. Quotes are injected into the system prompt as a dedicated **ATTRIBUTABLE QUOTES** section — positioned before the SELECTED SIGNALS section and labelled as the highest-priority HOOK material.
+
+**Prompt placement:** Above all other outside-in content, clearly separated.
+
+**Formatting in prompt:**
+```
+[1] "The real risk isn't the move — it's the 90 days after."
+    — Sarah Chen, Head of Advisor Recruiting
+    HQ Bridge: This directly maps to the transition continuity gap Richardson Wealth's onboarding model addresses.
+
+[2] "Advisors don't leave firms, they leave constraints."
+    — James Park, Director of Practice Development
+    HQ Bridge: Aligns with the autonomy pillar and the platform's advisor-ownership positioning.
+```
+
+**Instructions given to the AI:**
+- When a quote fits, open the HOOK with it — do not use it mid-email
+- Recommended starters:
+  - *"Came across your line on [topic]: '[quote]' — that's a real tension."*
+  - *"Noticed you said '[quote]' — that's the crux of it."*
+- Read the HQ Bridge note to know how to transition into VALUE
+- Only use a quote when it genuinely elevates the message; never force one
+
+**Priority in hook selection:** A direct quote attributed to the contact outranks every other outside-in signal type (personal insight, company insight, industry insight, etc.).
+
+### 4.6 UI: Quotables Panel
+
+The Quotables panel appears in the contact profile sidebar when at least one quote has been extracted or extraction is in progress.
+
+Each quote card displays:
+- Quote text (verbatim, with a quotation mark icon)
+- Attribution line: speaker name · role
+- Signal type badge (Personal / Company / Industry / Role / Colleague / Counterpart)
+- HQ Bridge sentence (violet callout)
+- Matched HQ signal tags (product names, pillar names, differentiators)
+
+A **Re-extract** button re-runs the extraction against the current signal set. This is useful after new insights are added or after the HQ profile is updated (which would change the HQ bridges).
+
+### 4.7 Quote Quality Rules
+
+**What makes a quote worth using:**
+- It expresses a tension, a belief, a frustration, or a priority — not a fact
+- It could plausibly start a meaningful conversation with this person
+- It contains enough specificity to signal genuine research
+- The speaker's identity is relevant to the contact (they said it, or someone in their orbit said it)
+
+**What disqualifies a quote:**
+- Generic statements the contact would not recognise as distinctively theirs (*"Digital transformation is a priority"*)
+- Statements pulled from headline summaries rather than direct speech
+- Quotes where the speaker cannot be identified
+- Quotes that require private or confidential context to interpret
+- Statements that would embarrass, expose, or pressure the contact
+
+### 4.8 Relationship to Outside-In Framing Rules
+
+Quotes are subject to the same per-type framing rules as other signals (Section 3.2–3.7) but with one additional constraint: because the quote is the most personal signal type, the **Personal framing rules apply by default** regardless of which signal type the quote was extracted from.
+
+The only exception: if a quote is attributed to a colleague or counterpart (not the contact), apply the **Colleague** or **Counterpart** framing rules respectively when opening with it.
+
+---
+
+## 5. The Blend: Signal Resolution Rules
 
 When generating a message, the engine resolves outside-in signals into inside-out selections using the following priority order.
 
@@ -581,7 +708,7 @@ Each signal type requires a different opening posture. Applying a personal-insig
 
 ---
 
-## 5. Economic Benefit Sentence Construction
+## 6. Economic Benefit Sentence Construction
 
 This is the core quantified-value rendering logic, implemented as a verb-extraction pipeline.
 
@@ -658,7 +785,7 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 
 ---
 
-## 6. Message Structure Templates
+## 7. Message Structure Templates
 
 ### 6.1 Cold Outreach (Email / LinkedIn)
 
@@ -715,7 +842,7 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 
 ---
 
-## 7. Voice & Tone Application Rules
+## 8. Voice & Tone Application Rules
 
 1. `toneTags` constrain word choice and sentence rhythm — applied globally to every output.
 2. `communicationStyle` is passed as a system instruction to the generation layer.
@@ -725,7 +852,7 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 
 ---
 
-## 8. Constraint Hierarchy
+## 9. Constraint Hierarchy
 
 When signals conflict, apply this precedence:
 
@@ -741,7 +868,7 @@ When signals conflict, apply this precedence:
 
 ---
 
-## 9. Open Questions & Future Decisions
+## 10. Open Questions & Future Decisions
 
 | # | Question | Impact |
 |---|---|---|
@@ -754,7 +881,7 @@ When signals conflict, apply this precedence:
 
 ---
 
-## 10. Implementation Notes
+## 11. Implementation Notes
 
 - **EB logic lives in:** `artifacts/contact-db/src/pages/HQ.tsx` — `VERB_FORMS`, `descriptionToVerbPhrase()`, `frequencyPhrase()`, `buildProductEBParts()`, `buildCustomerEBParts()`, `EBSummary`
 - **Voice data lives in:** `DNAData.voice` — stored in `dna_profiles` table, retrieved via API
