@@ -464,12 +464,17 @@ function JobViewerModal({
                     <p className="text-xs text-muted-foreground">No sources recorded.</p>
                   ) : (
                     (activeJob.sources ?? []).map((raw, i) => {
-                      // Format: "category-id|Title|mediaType" (older jobs: just "category-id")
-                      const [idPart = raw, title = "", mediaType = ""] = raw.split("|");
+                      // Format: "category-id|Title|mediaType|score" (older jobs: just "category-id")
+                      const [idPart = raw, title = "", mediaType = "", scoreStr = ""] = raw.split("|");
                       const lastDash = idPart.lastIndexOf("-");
                       const catKey = lastDash !== -1 ? idPart.slice(0, lastDash) : idPart;
                       const meta = CATEGORY_META[catKey];
                       const mediaLabel = mediaType.replace(/_/g, " ");
+                      const score = scoreStr !== "" ? parseInt(scoreStr, 10) : null;
+                      const scoreColor = score === null ? ""
+                        : score >= 80 ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                        : score >= 50 ? "text-amber-700 bg-amber-50 border-amber-200"
+                        : "text-muted-foreground bg-secondary border-border/60";
                       return (
                         <div key={i} className="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-secondary/30 border border-border/40">
                           <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
@@ -485,6 +490,14 @@ function JobViewerModal({
                               )}
                               {mediaLabel && (
                                 <span className="text-[10px] text-muted-foreground capitalize">{mediaLabel}</span>
+                              )}
+                              {score !== null && (
+                                <span className={cn(
+                                  "ml-auto flex-shrink-0 text-[10px] font-bold px-1.5 py-px rounded border tabular-nums",
+                                  scoreColor
+                                )}>
+                                  {score}
+                                </span>
                               )}
                             </div>
                             <p className="text-[12px] text-foreground leading-snug">

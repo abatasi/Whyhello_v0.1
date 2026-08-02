@@ -517,16 +517,21 @@ ABSOLUTE PROHIBITIONS
   });
 
   const result = completion.choices[0]?.message?.content ?? "";
-  // Store enriched source keys: "category-id|Title|mediaType"
+  // Store enriched source keys: "category-id|Title|mediaType|score"
   // The frontend parses the pipe-separated format for the Sources tab display.
   // Old jobs without pipes fall back to showing the raw key.
+  const relevanceRows = await db.select().from(insightRelevanceScoresTable)
+    .where(eq(insightRelevanceScoresTable.contactId, job.contactId));
+  const relevanceMap = new Map<string, number>();
+  for (const r of relevanceRows) relevanceMap.set(`${r.signalType}-${r.signalId}`, r.score);
+
   const usedKeys = [
-    ...fp.map(i  => `personal-${i.id}|${i.title}|${i.mediaType ?? ""}`),
-    ...fci.map(i => `company-${i.id}|${i.title}|${i.mediaType ?? ""}`),
-    ...fi.map(i  => `industry-${i.id}|${i.title}|${i.mediaType ?? ""}`),
-    ...fr.map(i  => `role-${i.id}|${i.title}|${i.mediaType ?? ""}`),
-    ...fc.map(i  => `colleague-${i.id}|${i.title}|${i.mediaType ?? ""}`),
-    ...fct.map(i => `counterpart-${i.id}|${i.title}|${i.mediaType ?? ""}`),
+    ...fp.map(i  => `personal-${i.id}|${i.title}|${i.mediaType ?? ""}|${relevanceMap.get(`personal-${i.id}`) ?? ""}`),
+    ...fci.map(i => `company-${i.id}|${i.title}|${i.mediaType ?? ""}|${relevanceMap.get(`company-${i.id}`) ?? ""}`),
+    ...fi.map(i  => `industry-${i.id}|${i.title}|${i.mediaType ?? ""}|${relevanceMap.get(`industry-${i.id}`) ?? ""}`),
+    ...fr.map(i  => `role-${i.id}|${i.title}|${i.mediaType ?? ""}|${relevanceMap.get(`role-${i.id}`) ?? ""}`),
+    ...fc.map(i  => `colleague-${i.id}|${i.title}|${i.mediaType ?? ""}|${relevanceMap.get(`colleague-${i.id}`) ?? ""}`),
+    ...fct.map(i => `counterpart-${i.id}|${i.title}|${i.mediaType ?? ""}|${relevanceMap.get(`counterpart-${i.id}`) ?? ""}`),
   ];
 
   await db.update(outreachJobsTable)
