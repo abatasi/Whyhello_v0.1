@@ -1,10 +1,17 @@
-# Whyhello Messaging Logic — Master Reference
+# ☪ The Messaging Quran
+## Whyhello Messaging Logic — Master Reference
 
-> **Status:** Living document. Reflects logic implemented in `artifacts/contact-db/src/pages/HQ.tsx` and `ContactProfile.tsx` as of July 2026. All future messaging changes should be spec'd here first.
+> بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+> *In the name of relevance, the compassionate, the specific.*
+
+> **Status:** Living scripture. Reflects logic implemented in `artifacts/contact-db/src/pages/HQ.tsx` and `ContactProfile.tsx` as of July 2026. All future messaging changes must be revealed here first, before they descend into code.
 
 ---
 
-## 1. Philosophy: The Inside-Out / Outside-In Blend
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 1 · Al-Falsafa — The Philosophy
+### *The Inside-Out / Outside-In Blend*
 
 Whyhello generates outbound messages by combining two independent signal streams and resolving them into a single, contextually relevant output.
 
@@ -26,14 +33,17 @@ Role-level signals           ╯
   · InsightItems type: "role"
 ```
 
-**Inside-out** answers: *Who are we, what do we do, and why does it matter?*  
+**Inside-out** answers: *Who are we, what do we do, and why does it matter?*
 **Outside-in** answers: *Who is this specific person, and what is true of their world right now?*
 
 A message scores well when it uses outside-in signals to **select** which inside-out content to surface — not to change what is true about the company, but to choose the angle, proof point, pillar, or economic benefit that will resonate most with this contact in this moment.
 
 ---
 
-## 2. Inside-Out Inputs: The HQ Data Model
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 2 · Al-Dakhili — The Internal
+### *Inside-Out Inputs: The HQ Data Model*
 
 All inside-out data is defined and maintained in the HQ module (`DNAData`). The fields below are the authoritative messaging inputs.
 
@@ -91,7 +101,7 @@ interface EconomicBenefit {
 }
 ```
 
-**Gain** = positive economic outcome the buyer realizes.  
+**Gain** = positive economic outcome the buyer realizes.
 **Pain** = cost, loss, or inefficiency the buyer avoids or eliminates.
 
 ### 2.5 Customers (Proof Points)
@@ -111,7 +121,7 @@ interface Customer {
 }
 ```
 
-Customer EBs use **simple past tense** (proof: this already happened).  
+Customer EBs use **simple past tense** (proof: this already happened).
 Product EBs use **present tense** (promise: this is what the product does).
 
 ### 2.6 Competitors
@@ -173,7 +183,10 @@ These are used to **match** a contact to the correct buying center seat and targ
 
 ---
 
-## 3. Outside-In Inputs: Platform Signal Types
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 3 · Al-Khariji — The External
+### *Outside-In Inputs: Platform Signal Types*
 
 Outside-in data is sourced entirely from within the Whyhello platform — from the Personal Insights attached to each contact and the Company Insights attached to each company. No external enrichment or third-party data feeds are used at this stage. All signals are read-only from a messaging perspective — they inform selection, not content.
 
@@ -194,24 +207,24 @@ This creates a natural progression across insight types:
 
 ### 3.1 Universal Outside-In Messaging Principles
 
-These six rules apply to every outside-in signal, regardless of type.
+These six principles apply to every outside-in signal, regardless of type.
 
-#### 1. Respect the buyer's proximity to the signal
+**Ayah 1. Respect the buyer's proximity to the signal.**
 Never explain the buyer's own work back to them. Avoid treating company news as a revelation to an insider. Provide more context only as the signal moves farther from their immediate orbit.
 
-#### 2. Prove relevance through specificity
+**Ayah 2. Prove relevance through specificity.**
 Reference the particular quote, idea, event, finding, or decision that matters. `"I enjoyed your podcast"` is weak. `"Your point about advisors losing ownership of the client experience stayed with me"` proves attention.
 
-#### 3. Interpret rather than merely summarize
+**Ayah 3. Interpret rather than merely summarize.**
 Whyhello should explain what stood out or why the signal matters. The message should add a useful observation rather than repeat the source.
 
-#### 4. Use the signal as a premise, not decoration
+**Ayah 4. Use the signal as a premise, not decoration.**
 The insight should create a logical reason to introduce the seller's internal signal. It should not feel like personalization pasted onto an unrelated pitch.
 
-#### 5. Avoid false familiarity
+**Ayah 5. Avoid false familiarity.**
 Do not imply that the seller knows what the buyer thinks, knows, or is currently prioritizing. Use language such as *"It made me wonder,"* *"This may be relevant,"* and *"I could see this affecting…"*
 
-#### 6. Preserve conversational momentum
+**Ayah 6. Preserve conversational momentum.**
 The outside-in section should usually occupy one or two sentences. Include only enough context to establish relevance and create the bridge to the seller's perspective.
 
 ---
@@ -523,7 +536,10 @@ A published insight is the highest-value outside-in trigger because it provides 
 
 ---
 
-## 4. Attributable Quotes
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 4 · Al-Iqtibas — The Quotation
+### *Attributable Quotes*
 
 Attributable quotes are a distinct enrichment layer extracted from insight content. They are not signals in themselves — they are **the most usable surface of a signal**: a verbatim or near-verbatim statement that a named person actually said, wrote, or was quoted saying, ready to open a message without further interpretation.
 
@@ -597,10 +613,12 @@ When `runGeneration` executes an outreach job, it loads the stored quotes for th
 ```
 [1] "The real risk isn't the move — it's the 90 days after."
     — Sarah Chen, Head of Advisor Recruiting
+    Source: LinkedIn
     HQ Bridge: This directly maps to the transition continuity gap Richardson Wealth's onboarding model addresses.
 
 [2] "Advisors don't leave firms, they leave constraints."
     — James Park, Director of Practice Development
+    Source: LinkedIn
     HQ Bridge: Aligns with the autonomy pillar and the platform's advisor-ownership positioning.
 ```
 
@@ -646,23 +664,26 @@ A **Re-extract** button re-runs the extraction against the current signal set. T
 
 ### 4.8 Relationship to Outside-In Framing Rules
 
-Quotes are subject to the same per-type framing rules as other signals (Section 3.2–3.7) but with one additional constraint: because the quote is the most personal signal type, the **Personal framing rules apply by default** regardless of which signal type the quote was extracted from.
+Quotes are subject to the same per-type framing rules as other signals (Surah 3.2–3.7) but with one additional constraint: because the quote is the most personal signal type, the **Personal framing rules apply by default** regardless of which signal type the quote was extracted from.
 
 The only exception: if a quote is attributed to a colleague or counterpart (not the contact), apply the **Colleague** or **Counterpart** framing rules respectively when opening with it.
 
 ---
 
-## 5. The Blend: Signal Resolution Rules
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 5 · Al-Mazj — The Blend
+### *Signal Resolution Rules*
 
 When generating a message, the engine resolves outside-in signals into inside-out selections using the following priority order.
 
-### 4.1 Product Selection
+### 5.1 Product Selection
 
 1. Match contact's buying center seat (from HQ `BuyingCenterConfig`) to the product whose `persona` field best aligns.
 2. If no direct seat match, fall back to `TargetMarketConfig` — choose the product associated with the matched target market.
 3. If still ambiguous, default to the first product.
 
-### 4.2 Economic Benefit Selection
+### 5.2 Economic Benefit Selection
 
 Once a product is selected, choose an EB using:
 
@@ -677,7 +698,7 @@ Once a product is selected, choose an EB using:
 
 If no signal match, default to the first gain EB, then the first pain EB.
 
-### 4.3 Messaging Pillar Selection
+### 5.3 Messaging Pillar Selection
 
 Map the contact's role archetype to the most relevant messaging pillar:
 
@@ -685,7 +706,7 @@ Map the contact's role archetype to the most relevant messaging pillar:
 2. Select the pillar whose language most closely reflects what the outside-in signals indicate this person cares about.
 3. Use the selected pillar as the **thematic anchor** of the message body — it should be present, not necessarily quoted verbatim.
 
-### 4.4 Social Proof Selection
+### 5.4 Social Proof Selection
 
 From the `customers` array, select the proof point where `customerProfile` most closely matches the contact's company profile (industry + size + role type). Use that customer's:
 - `customerTransformation` as the "before/after" narrative
@@ -693,9 +714,9 @@ From the `customers` array, select the proof point where `customerProfile` most 
 - `customerQuote` as optional close
 - Customer EBs as past-tense quantified validation of the product EB claim
 
-### 4.5 Hook Selection (Outside-In Lead)
+### 5.5 Hook Selection (Outside-In Lead)
 
-A message should open with the most specific outside-in signal available. Signal type determines both priority and the correct awareness posture (see Section 3.0):
+A message should open with the most specific outside-in signal available. Signal type determines both priority and the correct awareness posture (see Surah 3.0):
 
 1. **Personal quote** — a verbatim line attributed directly to the contact (highest trust; certain awareness)
 2. **Personal insight** — something they published, said on stage, or was featured on (certain awareness)
@@ -710,11 +731,14 @@ Each signal type requires a different opening posture. Applying a personal-insig
 
 ---
 
-## 6. Economic Benefit Sentence Construction
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 6 · Al-Qima — The Value
+### *Economic Benefit Sentence Construction*
 
 This is the core quantified-value rendering logic, implemented as a verb-extraction pipeline.
 
-### 5.1 Verb Normalisation (`VERB_FORMS`)
+### 6.1 Verb Normalisation (`VERB_FORMS`)
 
 All recognised verbs are registered in `VERB_FORMS` as a dictionary mapping **any surface form** (base, 3sg present, past, participle, gerund) to a `[present-3sg, simple-past]` tuple.
 
@@ -728,7 +752,7 @@ Coverage includes ~40 gain verbs and ~20 pain verbs. Any verb not in the diction
 - **Gain fallback:** `realizes` / `realized`
 - **Pain fallback:** `eliminates` / `eliminated`
 
-### 5.2 Verb Extraction (`descriptionToVerbPhrase`)
+### 6.2 Verb Extraction (`descriptionToVerbPhrase`)
 
 The description field is a free-text verb phrase written by the user (e.g. *"generates revenue from assets under management"*).
 
@@ -739,7 +763,7 @@ The algorithm:
 4. If the verb is mid-phrase (e.g. *"revenue generated from assets"*): restructure as `conjugated_verb + pre-verb_words + post-verb_words` → *"generates revenue from assets"*
 5. Apply tense: **present** for Products, **simple past** for Customers
 
-### 5.3 Frequency Rendering (`frequencyPhrase`)
+### 6.3 Frequency Rendering (`frequencyPhrase`)
 
 | Key | Product (present) | Customer (past) |
 |---|---|---|
@@ -750,7 +774,7 @@ The algorithm:
 | `per-event` | `per occurrence` | `per occurrence` |
 | `ongoing` | `on an ongoing basis` | `on an ongoing basis` |
 
-### 5.4 Sentence Assembly
+### 6.4 Sentence Assembly
 
 **Gain (Product — present tense):**
 ```
@@ -780,19 +804,22 @@ Example: *Revenue from new AUM generated revenue from assets under management �
 ```
 Example: *Compliance overhead eliminated manual compliance reporting, saving **$80K per advisor** each year.*
 
-### 5.5 Unit Normalisation
+### 6.5 Unit Normalisation
 
 - Leading `"Per"` → lowercased to `"per"` in sentence context
 - All other unit casing preserved as entered
 
 ---
 
-## 7. Message Structure Templates
+<div align="center">❊ ❊ ❊</div>
 
-### 6.1 Cold Outreach (Email / LinkedIn)
+## Surah 7 · Al-Haykal — The Structure
+### *Message Structure Templates*
+
+### 7.1 Cold Outreach (Email / LinkedIn)
 
 ```
-[HOOK — outside-in signal, 1 sentence, framed per signal type (see §3.2–3.7)]
+[HOOK — outside-in signal, 1 sentence, framed per signal type (see Surah 3.2–3.7)]
 [BRIDGE — two stages:
     Stage A · Interpretation: what is specifically interesting or consequential about the signal
     Stage B · Relevance bridge: the buyer implication — what problem, priority, or opportunity this creates]
@@ -813,7 +840,7 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 - Industry / Role → informative, distilled, invitation to compare
 - Colleague / Counterpart → connective, one-example framing, no peer pressure
 
-### 6.2 Follow-Up / Nurture
+### 7.2 Follow-Up / Nurture
 
 ```
 [CALLBACK — reference prior interaction or shared context]
@@ -823,7 +850,7 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 [CTA]
 ```
 
-### 6.3 Meeting Prep Briefing
+### 7.3 Meeting Prep Briefing
 
 ```
 [CONTACT SNAPSHOT — role, seniority, recent signals]
@@ -833,7 +860,7 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 [SUGGESTED QUESTIONS — derived from customerPriorities field]
 ```
 
-### 6.4 Competitive Response
+### 7.4 Competitive Response
 
 ```
 [ACKNOWLEDGE — what the competitor is genuinely good at (theirStrengths)]
@@ -844,7 +871,10 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 
 ---
 
-## 8. Voice & Tone Application Rules
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 8 · Al-Sawt — The Voice
+### *Voice & Tone Application Rules*
 
 1. `toneTags` constrain word choice and sentence rhythm — applied globally to every output.
 2. `communicationStyle` is passed as a system instruction to the generation layer.
@@ -854,7 +884,10 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 
 ---
 
-## 9. Constraint Hierarchy
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 9 · Al-Hukm — The Judgment
+### *Constraint Hierarchy*
 
 When signals conflict, apply this precedence:
 
@@ -870,7 +903,10 @@ When signals conflict, apply this precedence:
 
 ---
 
-## 10. Open Questions & Future Decisions
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 10 · Al-Masa'il — The Questions
+### *Open Questions & Future Decisions*
 
 | # | Question | Impact |
 |---|---|---|
@@ -883,9 +919,18 @@ When signals conflict, apply this precedence:
 
 ---
 
-## 11. Implementation Notes
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 11 · Al-Tatbiq — The Implementation
+### *Implementation Notes*
 
 - **EB logic lives in:** `artifacts/contact-db/src/pages/HQ.tsx` — `VERB_FORMS`, `descriptionToVerbPhrase()`, `frequencyPhrase()`, `buildProductEBParts()`, `buildCustomerEBParts()`, `EBSummary`
 - **Voice data lives in:** `DNAData.voice` — stored in `dna_profiles` table, retrieved via API
 - **Contact/insight data lives in:** `ContactProfile.tsx` — `InsightItem`, `InsightCategory`
 - **Blending logic (not yet implemented):** Will require a resolver function that accepts `{ contact, company, dna }` and returns a `MessageContext` object — the selected product, EB, pillar, proof point, and hook — before passing to a generation call.
+
+---
+
+<div align="center">❊ ❊ ❊</div>
+
+*The Messaging Quran is a living scripture. It does not describe what Whyhello once did — it prescribes what Whyhello must do. Revise it before revising the code.*
