@@ -24,6 +24,9 @@ function getUserId(req: Parameters<Parameters<typeof quotesRouter.get>[1]>[0]): 
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+// Media types where the contact themselves is the author
+const AUTHORED_MEDIA_TYPES = new Set(["linkedin", "linkedin_post", "blog_post", "blog", "newsletter", "podcast"]);
+
 interface SignalRow {
   signalType: string;
   signalId: number;
@@ -31,6 +34,9 @@ interface SignalRow {
   source: string;
   description: string | null;
   publishedDate: string | null;
+  mediaType: string | null;
+  /** True when the contact is the author of this content (linkedin posts, blog posts, etc.) */
+  isAuthored: boolean;
 }
 
 function toStringArray(v: unknown): string[] {
@@ -128,17 +134,27 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
       companyIns = await db.select().from(companyInsightsTable).where(eq(companyInsightsTable.companyId, contact.companyId));
     }
 
+    const toRow = (signalType: string, i: { id: number; title: string; source: string; description?: string | null; publishedDate?: string | null; mediaType?: string | null }, authoredWhenPersonal = false): SignalRow => {
+      const mt = i.mediaType ?? null;
+      const isAuthored = authoredWhenPersonal && !!mt && AUTHORED_MEDIA_TYPES.has(mt);
+      return { signalType, signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null, mediaType: mt, isAuthored };
+    };
+
     const signals: SignalRow[] = [
-      ...personal.map(i => ({ signalType: "personal", signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null })),
-      ...colleague.map(i => ({ signalType: "colleague", signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null })),
-      ...counterpart.map(i => ({ signalType: "counterpart", signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null })),
-      ...companyIns.map(i => ({ signalType: "company", signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null })),
-      ...industry.map(i => ({ signalType: "industry", signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null })),
-      ...role.map(i => ({ signalType: "role", signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null })),
+      ...personal.map(i => toRow("personal", i, /* authoredWhenPersonal= */ true)),
+      ...colleague.map(i => toRow("colleague", i)),
+      ...counterpart.map(i => toRow("counterpart", i)),
+      ...companyIns.map(i => toRow("company", i)),
+      ...industry.map(i => toRow("industry", i)),
+      ...role.map(i => toRow("role", i)),
     ];
 
-    // Only scan signals that have a description worth parsing
-    const scannable = signals.filter(s => s.description && s.description.trim().length > 40);
+    // Authored content (linkedin posts, blog posts, etc.) is scannable via title alone.
+    // Third-party coverage requires a description of at least 40 chars.
+    const scannable = signals.filter(s => {
+      if (s.isAuthored) return s.title.trim().length > 15;
+      return !!(s.description && s.description.trim().length > 40 && s.description.trim() !== "N/A");
+    });
     if (scannable.length === 0) {
       return res.json([]);
     }
@@ -146,13 +162,23 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
     const contactName = `${contact.firstName} ${contact.lastName}`.trim();
     const hqSummary = await buildHqSummary(userId);
 
-    const signalBlocks = scannable.map((s, i) =>
-      `[${i + 1}] signalType="${s.signalType}" signalId=${s.signalId} source="${s.source}"\n` +
-      `  Title: ${s.title}\n` +
-      `  Content: ${s.description}`
-    ).join("\n\n");
+    const signalBlocks = scannable.map((s, i) => {
+      const header = s.isAuthored
+        ? `[${i + 1}] signalType="${s.signalType}" signalId=${s.signalId} mediaType="${s.mediaType}" — AUTHORED BY CONTACT`
+        : `[${i + 1}] signalType="${s.signalType}" signalId=${s.signalId} source="${s.source}"`;
+      const body = s.isAuthored
+        ? `  Authored statement (contact's own published words): ${s.title}${s.publishedDate && s.publishedDate !== "N/A" ? `\n  Published: ${s.publishedDate}` : ""}`
+        : `  Title: ${s.title}\n  Content: ${s.description}`;
+      return `${header}\n${body}`;
+    }).join("\n\n");
 
-    const systemPrompt = `You are a B2B sales intelligence analyst. Your job is to extract verbatim or near-verbatim attributable quotes from signal content — statements that a named person said, wrote, or was quoted saying — and then craft a one-sentence bridge connecting each quote to the seller's HQ messaging.
+    const systemPrompt = `You are a B2B sales intelligence analyst. Your job is to extract attributable quotes from signal content and craft a one-sentence bridge connecting each to the seller's HQ messaging.
+
+There are two kinds of signals you will see:
+
+A) AUTHORED BY CONTACT — marked "AUTHORED BY CONTACT" in the header. The contact themselves wrote or published this content. The "Authored statement" line IS what they said. Quote it verbatim. Attribution is always ${contactName}.
+
+B) THIRD-PARTY COVERAGE — articles, posts, or analysis written by someone else. Extract only directly attributed speech (someone explicitly quoted by name). Do not paraphrase or invent quotes.
 
 CONTACT BEING RESEARCHED: ${contactName}${contact.jobTitle ? `, ${contact.jobTitle}` : ""}
 
@@ -160,15 +186,12 @@ SELLER HQ PROFILE (inside-out context — use this to craft the HQ bridge):
 ${hqSummary}
 
 EXTRACTION RULES:
-1. A valid quote is one that is:
-   - Directly attributed to a named person (the contact, a colleague, a counterpart, a company spokesperson, or an industry voice)
-   - Specific enough to be used as a conversation opener in a sales email
-   - Not a generic headline or paraphrase — it must feel like something a real person actually said
-2. Prioritise quotes FROM or ABOUT the contact (${contactName}) first, then colleagues and counterparts.
-3. For each quote, write a short "hqBridge" sentence (max 25 words) that connects what they said to one concrete aspect of the seller's HQ profile. Be specific — name actual products, pillars, or differentiators from the HQ profile.
-4. In "matchedHqSignals" list the specific HQ items you referenced (product names, pillar names, differentiator phrases — not generic categories).
-5. If a signal contains no clearly attributable quote, omit it entirely — do not fabricate.
-6. Maximum 8 quotes total. Quality over quantity.
+1. For AUTHORED BY CONTACT signals: use the authored statement as the quote. Attribution = ${contactName}. These are highest priority.
+2. For THIRD-PARTY COVERAGE: only extract if someone is explicitly quoted by name. Reject paraphrases, summaries, and generic headlines.
+3. For each quote, write a short "hqBridge" sentence (max 25 words) connecting what they said to one concrete aspect of the seller's HQ profile. Name specific products, pillars, or differentiators — not generic categories.
+4. In "matchedHqSignals" list the specific HQ items referenced.
+5. If a signal yields no valid quote, omit it — do not fabricate.
+6. Maximum 8 quotes. Quality over quantity.
 
 OUTPUT: A JSON array — no markdown fences, no extra text. Empty array [] if nothing qualifies.
 
