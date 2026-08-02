@@ -1,5 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { recordContactVisit } from "@/lib/recentVisits";
 import {
   useGetContact,
   useGetContactInsights,
@@ -725,7 +726,15 @@ export default function ContactProfile() {
   };
 
   useEffect(() => {
-    if (contact) document.title = `${contact.firstName} ${contact.lastName} on Whyhello`;
+    if (contact) {
+      document.title = `${contact.firstName} ${contact.lastName} on Whyhello`;
+      recordContactVisit(
+        contact.id,
+        `${contact.firstName} ${contact.lastName}`,
+        (contact as any).title ?? null,
+        contact.company?.name ?? null,
+      );
+    }
     return () => { document.title = "Whyhello"; };
   }, [contact]);
 

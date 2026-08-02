@@ -6,8 +6,14 @@ import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown,
   ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList, X,
-  Mail, Phone,
+  Mail, Phone, Clock,
 } from "lucide-react";
+import {
+  getRecentContactVisits,
+  getRecentCompanyVisits,
+  type RecentContactVisit,
+  type RecentCompanyVisit,
+} from "@/lib/recentVisits";
 import {
   useListContacts,
   useListCompanies,
@@ -148,6 +154,15 @@ export default function Search() {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [saveError, setSaveError] = useState("");
+
+  const [recentContacts, setRecentContacts] = useState<RecentContactVisit[]>([]);
+  const [recentCompanies, setRecentCompanies] = useState<RecentCompanyVisit[]>([]);
+
+  // Refresh recent visits whenever the tab switches or the pane opens
+  useEffect(() => {
+    setRecentContacts(getRecentContactVisits());
+    setRecentCompanies(getRecentCompanyVisits());
+  }, [activeTab, sidebarOpen]);
 
   const { data: savedSearches = [] } = useListSavedSearches();
   const createSearch = useCreateSavedSearch();
@@ -554,6 +569,67 @@ export default function Search() {
               selected={filters.location}
               onChange={(v) => handleFilterChange("location", v)}
             />
+
+            {/* Recent Visits */}
+            {activeTab === "contacts" && recentContacts.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-sm font-semibold text-foreground">Recent Visits</span>
+                </div>
+                <ul className="space-y-0.5">
+                  {recentContacts.map((c) => (
+                    <li key={c.id}>
+                      <Link
+                        href={`/contacts/${c.id}`}
+                        className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-muted transition-colors group"
+                      >
+                        <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0 group-hover:bg-primary/15 transition-colors">
+                          {getInitials(c.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate leading-tight">{c.name}</p>
+                          {(c.title || c.companyName) && (
+                            <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                              {[c.title, c.companyName].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {activeTab === "companies" && recentCompanies.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-sm font-semibold text-foreground">Recent Visits</span>
+                </div>
+                <ul className="space-y-0.5">
+                  {recentCompanies.map((co) => (
+                    <li key={co.id}>
+                      <Link
+                        href={`/companies/${co.id}`}
+                        className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-muted transition-colors group"
+                      >
+                        <div className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0 group-hover:bg-primary/15 transition-colors">
+                          {getInitials(co.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate leading-tight">{co.name}</p>
+                          {co.industry && (
+                            <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">{co.industry}</p>
+                          )}
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
             </motion.div>

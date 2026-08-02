@@ -1,5 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useEffect } from "react";
+import { recordCompanyVisit } from "@/lib/recentVisits";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
 import {
   useGetCompany,
@@ -133,6 +134,11 @@ export default function CompanyProfile() {
   useEffect(() => {
     if (company) {
       document.title = `${company.name} on Whyhello`;
+      recordCompanyVisit(
+        company.id,
+        company.name,
+        (company as any).industry ?? null,
+      );
     }
     return () => { document.title = "Whyhello"; };
   }, [company]);
