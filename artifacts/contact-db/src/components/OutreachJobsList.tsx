@@ -21,6 +21,7 @@ import {
   Trash2, PenLine, FileText, ChevronDown, ChevronUp,
   Copy, Check, MoreVertical, BookOpen, Layers,
   Anchor, ArrowRight, Sparkles, ShieldCheck, MousePointerClick,
+  Loader2,
 } from "lucide-react";
 
 type Job = {
@@ -220,142 +221,8 @@ function RenameDialog({ job, onClose, onSave }: { job: Job; onClose: () => void;
   );
 }
 
-// ── Variant card ───────────────────────────────────────────────────────────
-
-function VariantCard({ job, onDeleted }: { job: Job; onDeleted: () => void }) {
-  const [viewing, setViewing] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const deleteMutation = useDeleteOutreachJob();
-
-  const category = job.params?.variantCategory ?? "personal";
-  const meta = CATEGORY_META[category] ?? CATEGORY_META.personal;
-
-  const isGenerating = job.status === "generating";
-  const isFailed    = job.status === "failed";
-  const isCompleted = job.status === "completed";
-
-  const { subject } = isCompleted ? parseEmailResult(job.result ?? "") : { subject: "" };
-
-  return (
-    <>
-      <div
-        onClick={() => isCompleted && setViewing(true)}
-        className={cn(
-          "flex items-center gap-2 rounded-lg border px-3 py-2 transition-all",
-          isCompleted && "bg-card border-border/60 cursor-pointer hover:border-primary/40 hover:shadow-sm",
-          isGenerating && "border-blue-200/50 bg-blue-50/20",
-          isFailed    && "border-red-200/50 bg-red-50/20",
-        )}
-      >
-        {/* Category badge */}
-        <span className={cn(
-          "flex-shrink-0 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border whitespace-nowrap",
-          meta.badge,
-        )}>
-          {meta.label}
-        </span>
-
-        {/* Status icon */}
-        <div className="flex-shrink-0">
-          {isGenerating && <GeneratingBars />}
-          {isCompleted  && <CheckCircle2 className="h-3 w-3 text-emerald-500" />}
-          {isFailed     && <XCircle className="h-3 w-3 text-red-400" />}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] text-foreground truncate leading-snug">
-            {isGenerating && <span className="text-blue-500/80 font-medium">Generating…</span>}
-            {isFailed     && <span className="text-red-400 font-medium">Generation failed</span>}
-            {isCompleted  && (subject || <span className="italic text-muted-foreground">No subject</span>)}
-          </p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
-          {isCompleted && (
-            <Button
-              size="sm" variant="outline"
-              className="h-6 px-2 gap-1 text-[11px]"
-              onClick={() => setViewing(true)}
-            >
-              <Eye className="h-2.5 w-2.5" />
-              View
-            </Button>
-          )}
-          <button
-            className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
-            title="Delete variant"
-            onClick={() => setConfirmDelete(true)}
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
-        </div>
-      </div>
-
-      {viewing && <JobViewerModal job={job} onClose={() => setViewing(false)} />}
-
-      {confirmDelete && (
-        <Dialog open onOpenChange={(o) => !o && setConfirmDelete(false)}>
-          <DialogContent className="max-w-xs">
-            <DialogHeader>
-              <DialogTitle className="text-sm">Delete variant?</DialogTitle>
-              <DialogDescription className="text-xs">
-                This will permanently delete the {meta.label} entry point variant.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex gap-2 justify-end mt-1">
-              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-              <Button
-                size="sm"
-                className="bg-red-600 hover:bg-red-700 text-white"
-                onClick={() => deleteMutation.mutate({ jobId: job.id }, { onSuccess: onDeleted })}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? "Deleting…" : "Delete"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
-  );
-}
-
-// ── Variant shelf ──────────────────────────────────────────────────────────
-
-function VariantShelf({ variants, onDeleted }: { variants: Job[]; onDeleted: () => void }) {
-  const readyCount = variants.filter(v => v.status === "completed").length;
-  const [open, setOpen] = useState(true);
-
-  return (
-    <div className="mt-1 pl-3 border-l-2 border-border/30">
-      {/* Header toggle */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 w-full text-left py-1"
-      >
-        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Entry point variants
-        </span>
-        <span className="text-[9px] font-semibold bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-full">
-          {readyCount}/{variants.length} ready
-        </span>
-        {open
-          ? <ChevronUp className="h-3 w-3 text-muted-foreground ml-auto" />
-          : <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />}
-      </button>
-
-      {open && (
-        <div className="flex flex-col gap-1 pb-1">
-          {variants.map(v => (
-            <VariantCard key={v.id} job={v} onDeleted={onDeleted} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// VariantCard and VariantShelf removed — variants are now navigated from
+// within the primary job's JobViewerModal via the variant pill selector.
 
 type ViewTab = "result" | "structure" | "prompt" | "sources";
 
@@ -415,11 +282,27 @@ function MessageStructureTab({ result }: { result: string }) {
   );
 }
 
-function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onClose: () => void; initialTab?: ViewTab }) {
+function JobViewerModal({
+  job,
+  variants = [],
+  onClose,
+  initialTab = "result",
+}: {
+  job: Job;
+  variants?: Job[];
+  onClose: () => void;
+  initialTab?: ViewTab;
+}) {
   const [tab, setTab] = useState<ViewTab>(initialTab);
+  const [activeIdx, setActiveIdx] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  const raw = job.result ?? "";
+  // Primary job is index 0; completed variants follow
+  const allJobs = [job, ...variants];
+  const activeJob = allJobs[activeIdx] ?? job;
+  const isActiveGenerating = activeJob.status === "generating";
+
+  const raw = activeJob.result ?? "";
   const { subject, body } = parseEmailResult(raw);
   const cleanEmail = subject ? `Subject: ${subject}\n\n${body}` : body;
 
@@ -455,36 +338,77 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
         className="p-0 gap-0 overflow-hidden"
         style={{ width: "58vw", maxWidth: "58vw", maxHeight: "84vh", display: "flex", flexDirection: "column" }}
       >
+        {/* ── Header ── */}
         <DialogHeader className="px-7 py-5 border-b border-border/60 flex-shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div>
               <DialogTitle className="text-base font-semibold">{job.title}</DialogTitle>
               <DialogDescription className="text-xs mt-0.5 capitalize">
-                {job.type.replace("_", " ")} · {job.params?.length} · {job.params?.tone} · {timeAgo(job.createdAt)}
+                {job.type.replace(/_/g, " ")} · {job.params?.length} · {job.params?.tone} · {timeAgo(job.createdAt)}
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
-              <Button
-                variant="outline" size="sm"
-                className="h-7 gap-1.5 text-xs"
-                onClick={() => copyToClipboard(cleanEmail)}
-              >
-                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
-              <Button
-                variant="outline" size="sm"
-                className="h-7 gap-1.5 text-xs"
-                onClick={() => downloadText(cleanEmail, `${job.title.replace(/\s+/g, "-").toLowerCase()}.txt`)}
-              >
-                <Download className="h-3 w-3" />
-                Download
-              </Button>
-            </div>
+            {!isActiveGenerating && (
+              <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+                <Button
+                  variant="outline" size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={() => copyToClipboard(cleanEmail)}
+                >
+                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+                <Button
+                  variant="outline" size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={() => downloadText(cleanEmail, `${activeJob.title.replace(/\s+/g, "-").toLowerCase()}.txt`)}
+                >
+                  <Download className="h-3 w-3" />
+                  Download
+                </Button>
+              </div>
+            )}
           </div>
         </DialogHeader>
 
-        {/* Tabs */}
+        {/* ── Variant selector pill strip ── */}
+        {variants.length > 0 && (
+          <div className="flex items-center gap-1.5 px-7 py-2.5 border-b border-border/60 flex-shrink-0 bg-secondary/20 overflow-x-auto">
+            {allJobs.map((j, i) => {
+              const isActive = activeIdx === i;
+              const isGen = j.status === "generating";
+              const cat = j.params?.variantCategory;
+              const label = i === 0
+                ? "Primary"
+                : (cat ? (CATEGORY_META[cat]?.label ?? cat) : `Variant ${i}`);
+              return (
+                <button
+                  key={j.id}
+                  disabled={isGen}
+                  onClick={() => {
+                    if (!isGen) {
+                      setActiveIdx(i);
+                      setTab("result");
+                      setCopied(false);
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : isGen
+                        ? "bg-secondary/60 text-muted-foreground/40 cursor-not-allowed"
+                        : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  {isGen && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Tabs ── */}
         <div className="flex border-b border-border/60 flex-shrink-0">
           {tabs.filter(t => t.show).map(t => (
             <button
@@ -506,44 +430,49 @@ function JobViewerModal({ job, onClose, initialTab = "result" }: { job: Job; onC
           ))}
         </div>
 
+        {/* ── Content ── */}
         <div className="flex-1 overflow-y-auto px-7 py-5">
-          {tab === "result" && (
-            <div className="space-y-4">
-              {subject ? (
-                <div className="flex items-baseline gap-2 pb-4 border-b border-border/50">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex-shrink-0">Subject</span>
-                  <span className="text-sm font-semibold text-foreground">{subject}</span>
-                </div>
-              ) : null}
-              <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-                {body || "No content generated."}
-              </div>
+          {isActiveGenerating ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+              <Loader2 className="h-6 w-6 animate-spin text-primary/40" />
+              <p className="text-sm text-muted-foreground">Generating this variant…</p>
             </div>
-          )}
-
-          {tab === "structure" && (
-            <MessageStructureTab result={raw} />
-          )}
-
-          {tab === "prompt" && (
-            <pre className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono bg-secondary/40 rounded-xl p-4">
-              {job.prompt ?? "Prompt not stored."}
-            </pre>
-          )}
-
-          {tab === "sources" && (
-            <div className="space-y-1.5">
-              {(job.sources ?? []).length === 0 ? (
-                <p className="text-xs text-muted-foreground">No sources recorded.</p>
-              ) : (
-                (job.sources ?? []).map((key, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/40 text-xs text-foreground">
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                    <span className="font-mono">{key}</span>
+          ) : (
+            <>
+              {tab === "result" && (
+                <div className="space-y-4">
+                  {subject ? (
+                    <div className="flex items-baseline gap-2 pb-4 border-b border-border/50">
+                      <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex-shrink-0">Subject</span>
+                      <span className="text-sm font-semibold text-foreground">{subject}</span>
+                    </div>
+                  ) : null}
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                    {body || "No content generated."}
                   </div>
-                ))
+                </div>
               )}
-            </div>
+              {tab === "structure" && <MessageStructureTab result={raw} />}
+              {tab === "prompt" && (
+                <pre className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono bg-secondary/40 rounded-xl p-4">
+                  {activeJob.prompt ?? "Prompt not stored."}
+                </pre>
+              )}
+              {tab === "sources" && (
+                <div className="space-y-1.5">
+                  {(activeJob.sources ?? []).length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No sources recorded.</p>
+                  ) : (
+                    (activeJob.sources ?? []).map((key, i) => (
+                      <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/40 text-xs text-foreground">
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="font-mono">{key}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -621,13 +550,21 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-foreground leading-snug truncate">{job.title}</p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p className="text-xs font-semibold text-foreground leading-snug truncate">{job.title}</p>
+              {isCompleted && variants.length > 0 && (
+                <span className="flex-shrink-0 flex items-center gap-1 text-[9px] font-bold bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-full">
+                  <Layers className="h-2 w-2" />
+                  {variants.filter(v => v.status === "completed").length + 1} emails
+                </span>
+              )}
+            </div>
             <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">
               {isGenerating
                 ? <span className="text-blue-500/80 font-medium tracking-wide">Writing your email…</span>
                 : isFailed
                   ? <span className="text-red-400 font-medium">Generation failed</span>
-                  : <>{job.type.replace("_", " ")} · {job.params?.length} · {job.params?.tone} · {timeAgo(job.createdAt)}</>
+                  : <>{job.type.replace(/_/g, " ")} · {job.params?.length} · {job.params?.tone} · {timeAgo(job.createdAt)}</>
               }
             </p>
           </div>
@@ -714,12 +651,7 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
         </div>
       </div>
 
-      {/* Entry-point variants — shown when main email is done and variants exist */}
-      {isCompleted && variants.length > 0 && (
-        <VariantShelf variants={variants} onDeleted={onDeleted} />
-      )}
-
-      {viewing && <JobViewerModal job={job} initialTab={viewTab} onClose={() => setViewing(false)} />}
+      {viewing && <JobViewerModal job={job} variants={variants} initialTab={viewTab} onClose={() => setViewing(false)} />}
       {renaming && <RenameDialog job={job} onClose={() => setRenaming(false)} onSave={handleRename} />}
 
       {confirmDelete && (

@@ -240,8 +240,19 @@ async function runGeneration(jobId: number) {
     ...role.map(i => [i.id, signalSourceLabel(i.mediaType)] as [number, string]),
   ]);
 
-  const quotesSection = quotes.length > 0
-    ? quotes.map((q, i) => {
+  // Only surface quotes whose signal is actually selected for this job.
+  // Prevents a Company-variant from showing Personal quotes as HOOK options, etc.
+  const selectedSignalIds = new Set(
+    (params.selectedInsightKeys ?? [])
+      .map(k => parseInt(k.split("-")[1], 10))
+      .filter(n => !isNaN(n))
+  );
+  const jobQuotes = selectedSignalIds.size > 0
+    ? quotes.filter(q => selectedSignalIds.has(q.signalId))
+    : quotes;
+
+  const quotesSection = jobQuotes.length > 0
+    ? jobQuotes.map((q, i) => {
         const source = signalSourceMap.get(q.signalId) ?? "";
         const sourceLine = source ? `\n    Source: ${source}` : "";
         const bridgeLine = q.hqBridge ? `\n    HQ Bridge: ${q.hqBridge}` : "";
