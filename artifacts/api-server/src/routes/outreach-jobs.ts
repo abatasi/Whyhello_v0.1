@@ -517,13 +517,16 @@ ABSOLUTE PROHIBITIONS
   });
 
   const result = completion.choices[0]?.message?.content ?? "";
+  // Store enriched source keys: "category-id|Title|mediaType"
+  // The frontend parses the pipe-separated format for the Sources tab display.
+  // Old jobs without pipes fall back to showing the raw key.
   const usedKeys = [
-    ...fp.map(i => `personal-${i.id}`),
-    ...fci.map(i => `company-${i.id}`),
-    ...fi.map(i => `industry-${i.id}`),
-    ...fr.map(i => `role-${i.id}`),
-    ...fc.map(i => `colleague-${i.id}`),
-    ...fct.map(i => `counterpart-${i.id}`),
+    ...fp.map(i  => `personal-${i.id}|${i.title}|${i.mediaType ?? ""}`),
+    ...fci.map(i => `company-${i.id}|${i.title}|${i.mediaType ?? ""}`),
+    ...fi.map(i  => `industry-${i.id}|${i.title}|${i.mediaType ?? ""}`),
+    ...fr.map(i  => `role-${i.id}|${i.title}|${i.mediaType ?? ""}`),
+    ...fc.map(i  => `colleague-${i.id}|${i.title}|${i.mediaType ?? ""}`),
+    ...fct.map(i => `counterpart-${i.id}|${i.title}|${i.mediaType ?? ""}`),
   ];
 
   await db.update(outreachJobsTable)
