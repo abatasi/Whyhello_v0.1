@@ -163,14 +163,52 @@ async function runGeneration(jobId: number) {
   const fct = filterSelected(counterpart, "counterpart");
   const fci = filterSelected(companyIns, "company");
 
-  const allSelected = [
-    ...fp.map(i => ({ ...i, prefix: "personal" })),
-    ...fi.map(i => ({ ...i, prefix: "industry" })),
-    ...fr.map(i => ({ ...i, prefix: "role" })),
-    ...fc.map(i => ({ ...i, prefix: "colleague" })),
-    ...fct.map(i => ({ ...i, prefix: "counterpart" })),
-    ...fci.map(i => ({ ...i, prefix: "company" })),
-  ];
+  // Group insights by type, each annotated with awareness posture + seller posture
+  // so the AI knows its relationship to the buyer before framing each signal.
+  function buildTypedInsightsSection(): string {
+    const groups: string[] = [];
+
+    if (fp.length > 0) {
+      groups.push(
+        `PERSONAL INSIGHTS  [Awareness: Certain — contact created/said/published the source | Posture: Attentive audience member]\n` +
+        fp.map(i => fmtInsight(i)).join("\n")
+      );
+    }
+    if (fci.length > 0) {
+      groups.push(
+        `COMPANY INSIGHTS  [Awareness: Probable — contact knows the event, may not have seen this angle | Posture: Informed external observer]\n` +
+        fci.map(i => fmtInsight(i)).join("\n")
+      );
+    }
+    if (fi.length > 0) {
+      groups.push(
+        `INDUSTRY INSIGHTS  [Awareness: Possible general awareness, low assumed awareness of specific source | Posture: Resourceful industry observer]\n` +
+        fi.map(i => fmtInsight(i)).join("\n")
+      );
+    }
+    if (fr.length > 0) {
+      groups.push(
+        `ROLE INSIGHTS  [Awareness: Likely familiar with the challenge, uncertain of specific evidence | Posture: Role-informed specialist]\n` +
+        fr.map(i => fmtInsight(i)).join("\n")
+      );
+    }
+    if (fc.length > 0) {
+      groups.push(
+        `COLLEAGUE INSIGHTS  [Awareness: Low for specific content, high recognition of the person/function | Posture: Connected organizational observer]\n` +
+        fc.map(i => fmtInsight(i)).join("\n")
+      );
+    }
+    if (fct.length > 0) {
+      groups.push(
+        `COUNTERPART INSIGHTS  [Awareness: Low for specific activity, high relevance of the peer's position | Posture: Cross-market pattern spotter]\n` +
+        fct.map(i => fmtInsight(i)).join("\n")
+      );
+    }
+
+    return groups.length > 0
+      ? groups.join("\n\n")
+      : "  No specific insights selected — use general professional context about their role and company.";
+  }
 
   const lengthMap: Record<string, string> = {
     short:  "~100 words body — HOOK + BRIDGE + VALUE + CTA; omit PROOF or compress to one EB clause",
@@ -181,9 +219,7 @@ async function runGeneration(jobId: number) {
   const tone = params.tone ?? "professional";
   const vp = params.voiceProfile;
 
-  const insightsSection = allSelected.length > 0
-    ? allSelected.map(i => fmtInsight(i)).join("\n")
-    : "  No specific insights selected — use general professional context about their role and company.";
+  const insightsSection = buildTypedInsightsSection();
 
   const quotesSection = quotes.length > 0
     ? quotes.map((q, i) => {
@@ -250,7 +286,7 @@ Company:  ${company?.name ?? "Unknown"}${company?.industry ? " (" + company.indu
 Location: ${[contact.location, contact.country].filter(Boolean).join(", ") || "Not specified"}
 Bio:      ${contact.bio ?? "Not available"}
 
-SELECTED SIGNALS — choose your HOOK from here (personal quote > personal insight > company insight > industry > role):
+SELECTED SIGNALS — each group is labelled with the buyer's assumed awareness and your correct seller posture. Choose your HOOK from here. Priority: personal quote > personal insight > company insight > industry insight > role insight > colleague insight > counterpart insight.
 ${insightsSection}
 
 ═══════════════════════════════════════════
@@ -259,28 +295,121 @@ SELLER CONTEXT  (inside-out)
 ${sellerContext}
 
 ═══════════════════════════════════════════
+OUTSIDE-IN MESSAGING PRINCIPLES
+═══════════════════════════════════════════
+These six rules govern every outside-in signal, regardless of type. Internalize them before writing.
+
+1. RESPECT PROXIMITY TO THE SIGNAL
+   The closer an insight sits to the buyer, the more familiarity you assume and the less context you provide.
+   Personal → recognize. Company → acknowledge. Industry/Role → surface. Colleague/Counterpart → introduce.
+   Never explain the buyer's own work back to them. Never treat company news as a revelation to an insider.
+
+2. PROVE RELEVANCE THROUGH SPECIFICITY
+   Reference the particular quote, idea, event, finding, or decision that matters.
+   "I enjoyed your podcast" is weak. "Your point about advisors losing ownership of the client experience stayed with me" proves attention.
+
+3. INTERPRET, DO NOT MERELY SUMMARIZE
+   Add a useful observation. Explain what stood out or why the signal matters. Do not repeat the source back.
+
+4. USE THE SIGNAL AS A PREMISE, NOT DECORATION
+   The outside-in insight must create a logical reason to introduce the seller's internal signal.
+   It should not feel like personalization pasted onto an unrelated pitch.
+
+5. AVOID FALSE FAMILIARITY
+   Do not imply you know what the buyer thinks, knows, or is currently prioritizing.
+   Use: "It made me wonder…", "This may be relevant…", "I could see this affecting…"
+   Avoid: "You must be focused on…", "You're probably dealing with…", "As you know…" (unless genuinely foundational).
+
+6. PRESERVE CONVERSATIONAL MOMENTUM
+   The outside-in section occupies one or two sentences — enough to establish relevance and create the bridge.
+   Do not let the hook become a summary. Get to the bridge.
+
+PER-TYPE FRAMING RULES  (apply the rule set that matches your chosen signal)
+
+  PERSONAL  — They created it. You are the attentive audience member.
+    Lead with recognition or thoughtful appreciation. Isolate a specific quote, argument, or detail.
+    Explain briefly why it stood out. Connect it to the seller's internal signal.
+    Frame: "Your point about…" / "The part that stayed with me was…" / "Your distinction between X and Y…"
+    Avoid: generic praise, long summaries of what they said, claiming agreement without demonstrating understanding.
+    Bridge logic: You expressed X → X has an implication for Y → we help address Y.
+
+  COMPANY  — They know the event. You are the informed external observer contributing an outside angle.
+    Assume familiarity with the underlying development; do not assume they have seen this specific article or interpretation.
+    Focus on what the development could mean for their function. Use tentative language for operational implications.
+    Treat sensitive developments (layoffs, missed targets, departures) with restraint.
+    Frame: "You're likely already close to this, but I noticed…" / "I saw the announcement about X and was interested in the emphasis on Y." / "From the outside, it looks as though…"
+    Avoid: "Did you know your company…?", "In case you weren't aware…", treating speculation as confirmed fact.
+    Bridge logic: Your company is doing X → this may create pressure or opportunity around Y → our work is relevant to Y.
+
+  INDUSTRY  — They may know the trend. You are the resourceful observer who found, filtered, and interpreted it.
+    Introduce the source naturally. Distill rather than summarize. Explain why the finding may matter to their business.
+    Separate evidence from interpretation. Prefer recent, credible, decision-relevant sources.
+    Frame: "I came across an interesting report on…" / "One finding caught my attention…" / "The headline is X, but the more interesting detail may be Y."
+    Avoid: dropping a link without explaining relevance, presenting forecasts as established fact, using a loosely related article merely to create an opening.
+    Bridge logic: The market is shifting toward X → companies may need to respond through Y → we enable or support Y.
+
+  ROLE  — They live this challenge. You are the role-informed specialist who can quantify or reframe it.
+    Validate lived experience; do not lecture them about their role. Use the source to quantify, contextualize, or reframe a familiar challenge.
+    Invite comparison with their own experience. Connect to the seller only when relevance is credible.
+    Frame: "I found a benchmark on how [role] leaders are approaching…" / "You'll know this far better than I do, but this finding was interesting…" / "One tension the report highlights is…"
+    Avoid: telling them what their role cares about, overconfident phrases like "Your biggest challenge must be…", using role stereotypes as personalization.
+    Bridge logic: People in your role are confronting X → the difficult trade-off is Y → we help improve or resolve Y.
+
+  COLLEAGUE  — They recognize the person. You are the connected observer bringing an idea from inside their organization.
+    Name the colleague and explain their connection to the insight. Do not imply the contact and colleague know each other personally.
+    Do not use one colleague's statement as proof of company-wide consensus.
+    Never imply the colleague privately referred the seller unless that happened.
+    Frame: "I came across a conversation with your colleague [Name] about…" / "Not sure if you caught [Name]'s discussion of…" / "[Name] made an interesting point recently about…"
+    Avoid: "Your company believes…" based on one person's statement, name-dropping without substance, triangulating internal politics.
+    Bridge logic: Your colleague raised X → X may also touch your area through Y → we have a relevant perspective on Y.
+
+  COUNTERPART  — They recognize the role context. You are the cross-market pattern spotter surfacing what peers are doing.
+    Establish why this person is a meaningful peer. Focus on comparable decisions, experiments, or challenges.
+    Frame as "what one peer is doing," not "what everyone else knows." Be cautious with direct competitors.
+    Frame: "I came across an interesting perspective from another [role] in your space…" / "[Name] at [Company] recently described…" / "It is only one example, but their approach to X was interesting…"
+    Avoid: "Your competitors are all doing this", "You're falling behind", invented peer pressure, treating a stated initiative as a proven success.
+    Bridge logic: A comparable leader is approaching X through Y → this suggests an emerging option or question → we can help the buyer evaluate or pursue it.
+
+═══════════════════════════════════════════
 THE WHYHELLO COLD OUTREACH FRAMEWORK
 ═══════════════════════════════════════════
 Write the email in exactly these five layers in order. Do not label them in the output.
 
-LAYER 1 — HOOK  (outside-in lead — 1 sentence)
-  Purpose : Open with the single most specific signal you have. Something ${contact.firstName}
-            would immediately recognise as true of their world right now.
-  Priority: 1. A direct quote attributed to ${contact.firstName} (from Attributable Quotes above)
-            2. A personal insight — something they published, said on stage, or was featured on
-            3. A company insight — a recent event (funding, launch, M&A, earnings beat/miss)
-            4. An industry signal — a sector shift or regulatory move they are living inside
-            5. A role-level truth — a structural pressure facing this function right now
-  Rules   : Exactly one sentence. No "I". No opinion. Purely observational.
-            Quote starters: "Came across your line on [topic]: '[quote]'..."
-            Signal starters: "Noticed...", "Saw that...", "Interesting timing on...", "One thing that stood out..."
+The underlying architecture of Layers 1–3 follows four stages:
+  Signal (HOOK) → Interpretation (HOOK tail or BRIDGE opening) → Relevance bridge (BRIDGE) → Internal signal (VALUE)
+The bridge is the most important piece. Without it, the message becomes two disconnected statements:
+"I saw something about you" followed by "Here is what we sell." The bridge supplies the buyer implication.
 
-LAYER 2 — BRIDGE  (connect hook to the contact's implied priority)
-  Purpose : Show that you understand the business consequence of the HOOK — the pressure it
-            represents, the decision it forces, or the tension it creates for ${contact.firstName}.
-  Rules   : Zero self-reference. Still entirely about them.
-            Starters: "That usually means...", "For most ${contact.jobTitle ?? "leaders"} at this stage...",
-            "That pace typically surfaces...", "The challenge that tends to follow..."
+LAYER 1 — HOOK  (outside-in signal — 1 sentence)
+  Purpose : Open with the single most specific signal, framed according to the per-type rules above.
+            Something ${contact.firstName} would immediately recognise as true of their world right now.
+  Priority: 1. A direct quote attributed to ${contact.firstName} (from Attributable Quotes above)
+            2. Personal insight — recognize something they created, said, or published
+            3. Company insight — acknowledge something happening around them
+            4. Industry insight — surface something they may not have seen
+            5. Role insight — surface a challenge or tension in their operating environment
+            6. Colleague insight — introduce relevant activity through a recognizable peer
+            7. Counterpart insight — surface what a comparable peer is doing or questioning
+  Rules   : Exactly one sentence. No "I". No opinion. Purely observational.
+            Apply the recommended framing patterns and avoid patterns from the per-type rules above.
+            Quote starters: "Came across your line on [topic]: '[quote]'…"
+            Personal starters: "Your point about…", "The part that stayed with me was…"
+            Company starters: "You're likely already close to this, but…", "I noticed the emphasis on…"
+            Industry/Role starters: "I came across a report on…", "One finding caught my attention…"
+            Colleague starters: "I came across a conversation with your colleague [Name]…"
+            Counterpart starters: "I came across an interesting perspective from another [role]…"
+
+LAYER 2 — BRIDGE  (interpretation + relevance bridge — still entirely about them)
+  Purpose : Complete the four-stage arc: interpret the signal, then connect it to a buyer implication.
+            Stage A — Interpretation: explain what is specifically interesting or consequential about the signal.
+              What stood out? What tension, decision, or pressure does it reveal?
+            Stage B — Relevance bridge: translate the interpretation into a specific implication for ${contact.firstName}.
+              What problem, opportunity, or priority might this create in their world?
+            The bridge logic follows: outside-in signal → buyer implication → (sets up VALUE).
+  Rules   : Zero self-reference. Still entirely about them. Use tentative language — you are inferring, not asserting.
+            Starters: "That usually means…", "For most ${contact.jobTitle ?? "leaders"} at this stage…",
+            "That pace typically surfaces…", "The challenge that tends to follow…",
+            "That tension seems especially important when…", "The implication for [function] is often…"
 
 LAYER 3 — VALUE  (inside-out: value wedge or activated pillar)
   Purpose : Introduce the seller as the natural resolution to what BRIDGE surfaced.
@@ -349,7 +478,14 @@ ABSOLUTE PROHIBITIONS
   });
 
   const result = completion.choices[0]?.message?.content ?? "";
-  const usedKeys = allSelected.map(i => `${i.prefix}-${i.id}`);
+  const usedKeys = [
+    ...fp.map(i => `personal-${i.id}`),
+    ...fci.map(i => `company-${i.id}`),
+    ...fi.map(i => `industry-${i.id}`),
+    ...fr.map(i => `role-${i.id}`),
+    ...fc.map(i => `colleague-${i.id}`),
+    ...fct.map(i => `counterpart-${i.id}`),
+  ];
 
   await db.update(outreachJobsTable)
     .set({ status: "completed", result, prompt: systemPrompt, sources: usedKeys, updatedAt: new Date() })
