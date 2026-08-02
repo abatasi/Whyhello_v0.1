@@ -541,7 +541,7 @@ Quotes that fail these criteria are discarded. Generic headlines, summary senten
 
 Quote extraction is triggered automatically once per contact when insights finish loading and no quotes have been stored yet. It can be manually re-triggered at any time via the Quotables panel in the contact sidebar.
 
-**Signal scope:** All six insight types are scanned — personal, company, industry, role, colleague, and counterpart. Only signals with a description longer than 40 characters are included, since shorter entries rarely contain attributable statements.
+**Signal scope (current):** Only the contact's personal LinkedIn posts (`media_type = linkedin` or `linkedin_post`) are scanned. The post body text is fetched live at extraction time directly from the LinkedIn URL — the stored `description` field is not used, as it is often unpopulated. This scope is intentionally narrow while the extraction quality is being validated; additional signal types (blog posts, newsletters, podcasts, third-party coverage) will be added once LinkedIn extraction is confirmed reliable.
 
 **Priority within extraction:** Quotes from or about the contact are surfaced first. Colleague and counterpart quotes follow. Company, industry, and role sources are included but ranked lower.
 
@@ -606,9 +606,11 @@ When `runGeneration` executes an outreach job, it loads the stored quotes for th
 
 **Instructions given to the AI:**
 - When a quote fits, open the HOOK with it — do not use it mid-email
+- Always cite the source platform explicitly in the opener — the contact should immediately know where the quote came from. Each stored quote carries a `Source` label (e.g. "LinkedIn") that the AI uses to name the platform.
 - Recommended starters:
-  - *"Came across your line on [topic]: '[quote]' — that's a real tension."*
-  - *"Noticed you said '[quote]' — that's the crux of it."*
+  - *"Came across your post on LinkedIn re: [topic]: '[quote]' — that stood out."*
+  - *"Saw your [source] post on [topic]: '[quote]' — that's a real tension."*
+  - *"Your [source] note on [topic]: '[quote]' — that's a sharp framing."*
 - Read the HQ Bridge note to know how to transition into VALUE
 - Only use a quote when it genuinely elevates the message; never force one
 

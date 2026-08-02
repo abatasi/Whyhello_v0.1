@@ -1,2 +1,3 @@
 - [gpt-5-mini API parameters](gpt-5-mini-params.md) — never set max_tokens or max_completion_tokens; both silently produce empty output
 - [Relevance Scoring System](relevance-scoring.md) — outside-in signal scoring against HQ profile; DB table, API routes, hooks, and UI components
+- [Quotables extraction pipeline](quotables-extraction.md) — LinkedIn post body fetched live from URL; source label injected into quotes prompt block; carousel in Outreach panel; dev userId bypass header

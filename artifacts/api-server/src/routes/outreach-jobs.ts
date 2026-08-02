@@ -222,11 +222,31 @@ async function runGeneration(jobId: number) {
 
   const insightsSection = buildTypedInsightsSection();
 
+  // Map signalId → human-readable source platform for use in the quotes block
+  function signalSourceLabel(mediaType: string | null | undefined): string {
+    if (!mediaType) return "";
+    if (mediaType === "linkedin" || mediaType === "linkedin_post") return "LinkedIn";
+    if (mediaType === "blog_post" || mediaType === "blog") return "blog post";
+    if (mediaType === "newsletter") return "newsletter";
+    if (mediaType === "podcast") return "podcast";
+    return mediaType;
+  }
+  const signalSourceMap = new Map<number, string>([
+    ...personal.map(i => [i.id, signalSourceLabel(i.mediaType)] as [number, string]),
+    ...colleague.map(i => [i.id, signalSourceLabel(i.mediaType)] as [number, string]),
+    ...counterpart.map(i => [i.id, signalSourceLabel(i.mediaType)] as [number, string]),
+    ...companyIns.map(i => [i.id, signalSourceLabel(i.mediaType)] as [number, string]),
+    ...industry.map(i => [i.id, signalSourceLabel(i.mediaType)] as [number, string]),
+    ...role.map(i => [i.id, signalSourceLabel(i.mediaType)] as [number, string]),
+  ]);
+
   const quotesSection = quotes.length > 0
     ? quotes.map((q, i) => {
+        const source = signalSourceMap.get(q.signalId) ?? "";
+        const sourceLine = source ? `\n    Source: ${source}` : "";
         const bridgeLine = q.hqBridge ? `\n    HQ Bridge: ${q.hqBridge}` : "";
         const roleLine = q.attributionRole ? `, ${q.attributionRole}` : "";
-        return `[${i + 1}] "${q.quote}"\n    — ${q.attribution}${roleLine}${bridgeLine}`;
+        return `[${i + 1}] "${q.quote}"\n    — ${q.attribution}${roleLine}${sourceLine}${bridgeLine}`;
       }).join("\n\n")
     : null;
 
@@ -252,9 +272,13 @@ async function runGeneration(jobId: number) {
 ═══════════════════════════════════════════
 ATTRIBUTABLE QUOTES  (highest-priority HOOK material)
 ═══════════════════════════════════════════
-These are verbatim quotes from the buyer or people in their orbit. When one fits, open the HOOK with it:
-  "Came across your line on [topic]: '[quote]' — that's a real tension."
-  "Noticed you said '[quote]' — that's the crux of it."
+These are verbatim quotes from the buyer or people in their orbit. Each quote includes a "Source" label — always cite the source platform explicitly in the HOOK opener. Do not open with a quote and leave the reader guessing where it came from.
+
+Recommended starters (use the Source label to name the platform):
+  "Came across your post on [Source] re: [topic]: '[quote]' — that stood out."
+  "Saw your [Source] post on [topic]: '[quote]' — that's a real tension."
+  "Your [Source] note on [topic]: '[quote]' — that's a sharp framing."
+
 The HQ Bridge note below each quote shows how to transition into VALUE.
 Only use a quote when it genuinely elevates the message; never force one.
 
@@ -393,7 +417,10 @@ LAYER 1 — HOOK  (outside-in signal — 1 sentence)
             7. Counterpart insight — surface what a comparable peer is doing or questioning
   Rules   : Exactly one sentence. No "I". No opinion. Purely observational.
             Apply the recommended framing patterns and avoid patterns from the per-type rules above.
-            Quote starters: "Came across your line on [topic]: '[quote]'…"
+            Quote starters (always cite the source platform — see "Source:" label in each quote above):
+                          "Came across your post on [Source] re: [topic]: '[quote]'…"
+                          "Saw your [Source] note on [topic]: '[quote]'…"
+                          "Your [Source] post on [topic]: '[quote]' — that stood out."
             Personal starters: "Your point about…", "The part that stayed with me was…"
             Company starters: "You're likely already close to this, but…", "I noticed the emphasis on…"
             Industry/Role starters: "I came across a report on…", "One finding caught my attention…"

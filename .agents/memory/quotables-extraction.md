@@ -1,0 +1,29 @@
+---
+name: Quotables extraction pipeline
+description: How LinkedIn Quotables are extracted, stored, and injected into message generation
+---
+
+## Rule
+Quotables are sourced by fetching LinkedIn post bodies live from the public URL at extraction time. Never use the stored `description` field — it is consistently `"N/A"` for LinkedIn signals.
+
+**Why:** The `description` column in `contact_insights` is not populated for LinkedIn signals during ingestion. The actual post body is available on LinkedIn's public page via `og:description` meta tag and JSON-LD `articleBody` field — no auth required.
+
+**How to apply:** `fetchLinkedInPostBody(url)` in `artifacts/api-server/src/routes/quotes.ts` fetches the URL and extracts the body. Prefer `articleBody` (untruncated) over `og:description` (sometimes cut off).
+
+## Current scope
+Only `linkedin` / `linkedin_post` media types are scanned. Other authored types (blog_post, newsletter, podcast) are intentionally excluded until LinkedIn quality is validated (Task #5 covers expansion).
+
+## Source citation in generation
+Each quote in the `quotesSection` prompt block includes a `Source: LinkedIn` label. The HOOK starters in `outreach-jobs.ts` instruct the AI to always name the platform explicitly:
+- "Came across your post on LinkedIn re: [topic]: '[quote]'…"
+
+Both the `quotesBlock` instructions and the LAYER 1 HOOK quote starters in the system prompt enforce this.
+
+## Signal source map
+`signalSourceMap` in `runGeneration` maps signalId → platform label by joining the loaded signal arrays against `signalSourceLabel()`. Covers personal, colleague, counterpart, company, industry, role arrays.
+
+## Dev userId bypass
+`X-Dev-User-Id` header on POST `/contacts/:id/outreach-jobs` injects a userId for unauthenticated dev/test calls. Gated on `NODE_ENV !== "production"`. Known userId for Richardson Wealth profile: `56015584`.
+
+## Panel location
+`QuotablesCarousel` lives at the bottom of the **Outreach panel** (right sidebar), not the Insights sidebar. It is minimizable and shows one quote at a time with ← / → navigation. Only mounts when quotes exist or extraction is pending.
