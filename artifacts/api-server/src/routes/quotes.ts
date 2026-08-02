@@ -2,13 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import {
   contactsTable,
-  companiesTable,
   contactInsightsTable,
-  colleagueInsightsTable,
-  counterpartInsightsTable,
-  companyInsightsTable,
-  industryInsightsTable,
-  roleInsightsTable,
   insightQuotesTable,
   dnaProfilesTable,
 } from "@workspace/db/schema";
@@ -24,21 +18,17 @@ function getUserId(req: Parameters<Parameters<typeof quotesRouter.get>[1]>[0]): 
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-// Currently quotables are drawn exclusively from LinkedIn posts authored by the contact.
-// When description (post body) is populated and substantial, extract quotes from the body text.
-// Expand to other authored media types once LinkedIn extraction is validated.
 const LINKEDIN_TYPES = new Set(["linkedin", "linkedin_post"]);
 
 interface SignalRow {
   signalType: string;
   signalId: number;
   title: string;
-  source: string;
-  description: string | null;
-  publishedDate: string | null;
+  url: string | null;
   mediaType: string | null;
-  /** True when this signal is a LinkedIn post authored by the contact */
-  isLinkedIn: boolean;
+  publishedDate: string | null;
+  /** Post body text fetched live from the LinkedIn URL */
+  postBody: string | null;
 }
 
 function toStringArray(v: unknown): string[] {
@@ -47,6 +37,46 @@ function toStringArray(v: unknown): string[] {
     try { return JSON.parse(v); } catch { /* fall through */ }
   }
   return [];
+}
+
+/**
+ * Fetch a LinkedIn post's body text from its public page.
+ * LinkedIn exposes the full post text in the og:description meta tag and in
+ * the JSON-LD articleBody field — both accessible without authentication.
+ * Returns null if the fetch fails or no content is found.
+ */
+async function fetchLinkedInPostBody(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    // 1. Try JSON-LD articleBody (most complete — not truncated)
+    const ldMatch = html.match(/"articleBody"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (ldMatch?.[1]) {
+      return ldMatch[1].replace(/\\"/g, '"').replace(/\\n/g, " ").trim();
+    }
+
+    // 2. Fallback: og:description meta tag
+    const ogMatch =
+      html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i) ??
+      html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:description"/i);
+    if (ogMatch?.[1]) {
+      return ogMatch[1].replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/&quot;/g, '"').trim();
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 async function buildHqSummary(userId: string | null): Promise<string> {
@@ -73,7 +103,7 @@ async function buildHqSummary(userId: string | null): Promise<string> {
   }
 }
 
-// ── GET /relevance (existing scores) ──────────────────────────────────────
+// ── GET /quotes ─────────────────────────────────────────────────────────────
 
 quotesRouter.get("/quotes", async (req, res) => {
   try {
@@ -108,47 +138,45 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
 
     const userId = getUserId(req);
 
-    // Load contact + signals
-    const [[contact], personal, colleague, counterpart] = await Promise.all([
+    const [[contact], personalSignals] = await Promise.all([
       db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1),
       db.select().from(contactInsightsTable).where(and(
         eq(contactInsightsTable.contactId, contactId),
         eq(contactInsightsTable.category, "personal"),
       )),
-      db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, contactId)),
-      db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, contactId)),
     ]);
 
     if (!contact) return res.status(404).json({ error: "Contact not found" });
 
-    // Also load company, industry, role signals
-    const [industry, role] = await Promise.all([
-      contact.industryId
-        ? db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, contact.industryId))
-        : Promise.resolve([]),
-      contact.roleId
-        ? db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId))
-        : Promise.resolve([]),
-    ]);
+    // Filter to LinkedIn posts that have a URL to fetch from
+    const linkedInSignals = personalSignals.filter(s => {
+      const mt = s.mediaType ?? "";
+      return LINKEDIN_TYPES.has(mt) && s.url && s.url.trim().length > 0 && s.url.trim() !== "N/A";
+    });
 
-    let companyIns: typeof companyInsightsTable.$inferSelect[] = [];
-    if (contact.companyId) {
-      companyIns = await db.select().from(companyInsightsTable).where(eq(companyInsightsTable.companyId, contact.companyId));
+    if (linkedInSignals.length === 0) {
+      return res.json([]);
     }
 
-    const toRow = (signalType: string, i: { id: number; title: string; source: string; description?: string | null; publishedDate?: string | null; mediaType?: string | null }): SignalRow => {
-      const mt = i.mediaType ?? null;
-      const isLinkedIn = !!mt && LINKEDIN_TYPES.has(mt);
-      return { signalType, signalId: i.id, title: i.title, source: i.source, description: i.description ?? null, publishedDate: i.publishedDate ?? null, mediaType: mt, isLinkedIn };
-    };
+    // Fetch post bodies from LinkedIn public pages in parallel
+    const withBodies: SignalRow[] = await Promise.all(
+      linkedInSignals.map(async s => {
+        const postBody = await fetchLinkedInPostBody(s.url!);
+        return {
+          signalType: "personal",
+          signalId: s.id,
+          title: s.title,
+          url: s.url ?? null,
+          mediaType: s.mediaType ?? null,
+          publishedDate: s.publishedDate ?? null,
+          postBody,
+        };
+      })
+    );
 
-    // Quotables are sourced exclusively from the contact's LinkedIn posts.
-    // The description field holds the post body text. Skip posts where it is absent or 'N/A'.
-    const allSignals: SignalRow[] = personal.map(i => toRow("personal", i));
-
-    const scannable = allSignals.filter(s =>
-      s.isLinkedIn &&
-      !!(s.description && s.description.trim().length > 40 && s.description.trim() !== "N/A")
+    // Only keep signals where we successfully retrieved the post body
+    const scannable = withBodies.filter(
+      s => s.postBody !== null && s.postBody.trim().length > 40
     );
 
     if (scannable.length === 0) {
@@ -160,37 +188,40 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
 
     const signalBlocks = scannable.map((s, i) =>
       `[${i + 1}] signalId=${s.signalId}${s.publishedDate && s.publishedDate !== "N/A" ? ` published="${s.publishedDate}"` : ""}
-  LinkedIn post body: ${s.description}`
+  Post body: ${s.postBody}`
     ).join("\n\n");
 
-    const systemPrompt = `You are a B2B sales intelligence analyst. Your job is to extract attributable quotes from a contact's own LinkedIn posts and craft a one-sentence bridge connecting each to the seller's HQ messaging.
-
-All signals below are LinkedIn posts written and published by ${contactName}. The post body is the source of quotes — do not use the post title. Extract statements from the body text that are genuine, quotable expressions of perspective, opinion, or insight. Short transitional sentences ("Here's the link", "I agree") do not qualify.
+    const systemPrompt = `You are a B2B sales intelligence analyst extracting verbatim quotes from a contact's LinkedIn posts.
 
 CONTACT: ${contactName}${contact.jobTitle ? `, ${contact.jobTitle}` : ""}
 
-SELLER HQ PROFILE (use this to craft the HQ bridge):
+Each signal below contains a "Post body" — the exact text ${contactName} published on LinkedIn. Your task is to find sentences in that body that are quotable: substantive statements of perspective, market observation, or insight that could be used in a sales conversation.
+
+SELLER HQ PROFILE (for crafting HQ bridges):
 ${hqSummary}
 
-EXTRACTION RULES:
-1. The contact is the sole author of every post — attribution is always "${contactName}".
-2. Extract 1–2 of the strongest quotable sentences per post. Prefer direct, opinionated statements over generic summaries.
-3. Quote the contact's own words verbatim or near-verbatim. Do not paraphrase.
-4. For each quote, write a "hqBridge" sentence (max 25 words) connecting what they said to one concrete aspect of the seller's HQ profile. Name specific products, pillars, or differentiators.
-5. In "matchedHqSignals" list the specific HQ items referenced.
-6. If a post yields no quotable statement, omit it — do not fabricate.
-7. Maximum 8 quotes total. Quality over quantity.
+STRICT EXTRACTION RULES:
+1. The "quote" field MUST be copied character-for-character from the "Post body" text. Do not rephrase, summarize, condense, or alter a single word. If you cannot find a complete verbatim sentence worth quoting, omit that post entirely.
+2. Extract at most 1 quote per post — the single strongest, most specific sentence.
+3. Short filler phrases ("Here's the link", "Full video:", "Check this out") are not quotes — skip them.
+4. If the post body is entirely a description of someone else speaking (e.g. "John Smith joins MoneyTalk to discuss X"), the framing sentence written by ${contactName} — even if it describes the topic — is still a valid quote from ${contactName} as long as it expresses a market view or insight.
+5. Attribution is always "${contactName}" — they authored every post.
+6. For each quote, write a "hqBridge" sentence (max 25 words) connecting what they said to one specific aspect of the seller's HQ profile. Name specific products, pillars, or differentiators.
+7. List referenced HQ items in "matchedHqSignals".
+8. Maximum 8 quotes total. Omit rather than fabricate.
 
-OUTPUT: A JSON array — no markdown fences, no extra text. Empty array [] if nothing qualifies.
+⚠️ VERBATIM CHECK: Before including a quote, confirm every word appears in that exact sequence in the Post body. If it does not, do not include it.
+
+OUTPUT: A JSON array only — no markdown fences, no preamble. Empty array [] if nothing qualifies.
 
 [
   {
     "signalType": "personal",
     "signalId": <integer from the block header>,
-    "quote": "<verbatim or near-verbatim sentence from the post body>",
+    "quote": "<exact verbatim sentence copied from Post body>",
     "attribution": "${contactName}",
     "attributionRole": ${contact.jobTitle ? `"${contact.jobTitle}"` : "null"},
-    "hqBridge": "<one sentence connecting this quote to the seller's HQ messaging>",
+    "hqBridge": "<one sentence connecting this to the seller's HQ messaging>",
     "matchedHqSignals": ["<specific HQ item>", ...]
   }
 ]`;
@@ -199,7 +230,7 @@ OUTPUT: A JSON array — no markdown fences, no extra text. Empty array [] if no
       model: "gpt-5-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Extract attributable quotes from these signals:\n\n${signalBlocks}` },
+        { role: "user", content: `Extract attributable quotes from these LinkedIn posts:\n\n${signalBlocks}` },
       ],
       stream: false,
     });
