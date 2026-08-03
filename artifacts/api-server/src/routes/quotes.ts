@@ -202,7 +202,11 @@ ${hqSummary}
 
 STRICT EXTRACTION RULES:
 1. The "quote" field MUST be copied character-for-character from the "Post body" text. Do not rephrase, summarize, condense, or alter a single word. If you cannot find a complete verbatim sentence worth quoting, omit that post entirely.
-2. Extract at most 1 quote per post — the single strongest, most specific sentence.
+2. Extract at most 1 quote per post. That quote may be one sentence or two consecutive sentences, following this decision rule:
+   a. Identify the single most substantive sentence — the one with the most specific insight, observation, or named detail.
+   b. Look at the sentence immediately before it. If that preceding sentence is a strong thematic lead-in that frames or contextualises the substantive sentence (e.g. a broad claim that the next sentence then unpacks with specifics), include both consecutive sentences as the quote, joined exactly as they appear in the post body.
+   c. If the preceding sentence is a filler, a call-to-action, a generic opener with no thematic content ("Here's my latest post", "Excited to share"), or unrelated to the substantive sentence, include the substantive sentence only.
+   d. Never include more than two sentences. Never skip sentences to join non-adjacent ones.
 3. Short filler phrases ("Here's the link", "Full video:", "Check this out") are not quotes — skip them.
 4. If the post body is entirely a description of someone else speaking (e.g. "John Smith joins MoneyTalk to discuss X"), the framing sentence written by ${contactName} — even if it describes the topic — is still a valid quote from ${contactName} as long as it expresses a market view or insight.
 5. Attribution is always "${contactName}" — they authored every post.
