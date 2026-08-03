@@ -883,33 +883,36 @@ The algorithm:
 
 ### 6.4 Sentence Assembly
 
+EB sentences must be **full declarative sentences**, not bare label fragments. Prefix with "Our [product name]" so the sentence reads naturally in an email.
+
 **Gain (Product — present tense):**
 ```
-{label} {predicate} — {amount} {unit}, {freq}.
-                     ^^^^^^^^^^^^^^^^^^^
-                     bolded in rendered output
+Our [product name] {predicate} — **{amount} {unit}**, {freq}.
 ```
-Example: *Revenue from new AUM generates revenue from assets under management — **1.2% per $1M of net-new AUM**, each year.*
+Example: *Our Advisor Partnership Platform protects recurring revenue by successfully transferring client assets — **$9,000 per $1M of AUM retained**, each year.*
 
 **Pain (Product — present tense):**
 ```
-{label} {predicate}, saving {amount} {unit} {freq}.
-                            ^^^^^^^^^^^^^^^^^^^
-                            bolded in rendered output
+Our [product name] {predicate}, saving **{amount} {unit}** {freq}.
 ```
-Example: *Compliance overhead eliminates manual compliance reporting, saving **$80K per advisor** each year.*
+Example: *Our Advisor Partnership Platform eliminates manual compliance reporting, saving **$80K per advisor** each year.*
 
 **Gain (Customer — simple past):**
 ```
-{label} {predicate} — {amount} {unit}, {freq}.
+Our [product name] {predicate} — **{amount} {unit}**, {freq}.
 ```
-Example: *Revenue from new AUM generated revenue from assets under management — **1.2% per $1M of net-new AUM**, each year.*
+Example: *Our Advisor Partnership Platform generated revenue from assets under management — **1.2% per $1M of net-new AUM**, each year.*
 
 **Pain (Customer — simple past):**
 ```
-{label} {predicate}, saving {amount} {unit} {freq}.
+Our [product name] {predicate}, saving **{amount} {unit}** {freq}.
 ```
-Example: *Compliance overhead eliminated manual compliance reporting, saving **$80K per advisor** each year.*
+Example: *Our Advisor Partnership Platform eliminated manual compliance reporting, saving **$80K per advisor** each year.*
+
+**Company-level proof (credentials, scale, differentiators):**
+Use first-person "We" — never repeat the company name once the email is underway.
+- Correct: *"We are Canada's largest independent wealth manager…"*
+- Wrong: *"Richardson Wealth is Canada's largest independent wealth manager…"*
 
 ### 6.5 Unit Normalisation
 
