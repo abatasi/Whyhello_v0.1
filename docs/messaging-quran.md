@@ -914,6 +914,26 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 [PROOF — customer EB that directly addresses the competitor's claimed strength]
 ```
 
+### 7.5 Email Styling Rules
+
+Whyhello emails use selective markdown formatting to guide the reader's eye toward the most signal-dense moments. Styling is intentional, not decorative — every bolded element must earn its weight.
+
+**Current rules:**
+
+**Rule S-1 — Bold all verbatim quoted text**
+Any time a message includes a direct quote from the buyer or a named source, the quoted passage — including its surrounding quotation marks — is wrapped in `**double asterisks**` so it renders as bold.
+
+*Applies to:* direct quotes drawn from the contact's own words (LinkedIn posts, interviews, articles, podcasts) or from a named colleague, counterpart, or industry source, set off in quotation marks inside the email body.
+
+*Does not apply to:* paraphrases, summaries, the sender's own phrasing, or CTA option text.
+
+Example:
+> Came across your post on LinkedIn: **"Advisor independence means little without the infrastructure to act on it."** — that stayed with me.
+
+*Rationale:* The quoted snippet is the single most credible element in the HOOK — it is the buyer's own words. Bolding it separates evidence from commentary, gives the eye a landing point, and signals that the sender actually read the source rather than skimming a headline.
+
+**Future rules will be added to this section as the styling strategy develops.**
+
 ---
 
 <div align="center">❊ ❊ ❊</div>

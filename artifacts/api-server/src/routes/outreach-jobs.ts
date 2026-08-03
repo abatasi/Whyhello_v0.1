@@ -539,6 +539,12 @@ SIGN-OFF: ${tone === "my_voice_profile" ? "Use the sender's preferred closing ph
 ${voiceSection}
 ${linkPlacementBlock}
 
+STYLING RULES
+  • Bold all verbatim quoted text — any time you include a direct quote from the buyer or a named source inside quotation marks, wrap the entire quoted passage (including the quotation marks) in **double asterisks** so it renders as bold.
+    Example: Your post on LinkedIn: **"Advisor independence means little without the infrastructure to act on it."** — that stayed with me.
+  • Apply this only to genuine verbatim quotes set off in quotation marks. Do not bold paraphrases, summaries, or your own phrasing.
+  • More styling rules will be added here over time.
+
 ABSOLUTE PROHIBITIONS
   • Never open with "I hope this email finds you well" or any variant
   • Never open the body with "I" as the first word
