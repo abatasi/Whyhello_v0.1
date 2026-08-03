@@ -121,6 +121,10 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 pnpm --filter @workspace/db run push
 ```
 
+## User Preferences
+
+- **Doctrine-first development:** Any code change that touches Messaging logic or Scoring logic must be accompanied by an update to the corresponding foundational doc in the same turn — `docs/messaging-quran.md` for Messaging, `docs/scoring-bible.md` for Scoring. The doc update is part of the definition of done, not a follow-up. The Scraping Torah (`docs/scraping-torah.md`) is not actively maintained at this stage and does not need to be updated unless explicitly requested.
+
 ## Key Design Notes
 
 - Lists filter in Search sidebar filters the directory to members of a specific list (SQL subquery via `listId` param).
