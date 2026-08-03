@@ -165,6 +165,9 @@ async function runGeneration(jobId: number) {
   const fct = filterSelected(counterpart, "counterpart");
   const fci = filterSelected(companyIns, "company");
 
+  // Signal IDs that have verbatim quotes extracted — used to tag personal insights below
+  const quoteSignalIdSet = new Set(quotes.map(q => q.signalId));
+
   // Group insights by type, each annotated with awareness posture + seller posture
   // so the AI knows its relationship to the buyer before framing each signal.
   function buildTypedInsightsSection(): string {
@@ -173,7 +176,13 @@ async function runGeneration(jobId: number) {
     if (fp.length > 0) {
       groups.push(
         `PERSONAL INSIGHTS  [Awareness: Certain — contact created/said/published the source | Posture: Attentive audience member]\n` +
-        fp.map(i => fmtInsight(i)).join("\n")
+        fp.map(i => {
+          const base = fmtInsight(i);
+          const quoteTag = quoteSignalIdSet.has(i.id)
+            ? `\n    ⚠ VERBATIM QUOTE AVAILABLE — the exact text to use is in the ATTRIBUTABLE QUOTES block below. The title on the line above is a filing label; it is NOT the quote and must never be used as one.`
+            : "";
+          return base + quoteTag;
+        }).join("\n")
       );
     }
     if (fci.length > 0) {
@@ -353,7 +362,7 @@ ${quotesSection}
   const systemPrompt = `You are the AI message engine inside Whyhello, a B2B relationship intelligence platform.
 
 Your job is to write a first-touch outreach email following the Whyhello Cold Outreach Framework — five ordered layers that move from a specific outside-in observation to a concrete inside-out value claim, backed by proof and closed with a precise ask.
-${quotesBlock}
+
 ═══════════════════════════════════════════
 BUYER CONTEXT  (outside-in)
 ═══════════════════════════════════════════
@@ -457,7 +466,7 @@ The underlying architecture of Layers 1–3 follows four stages:
   Signal (HOOK) → Interpretation (HOOK tail or BRIDGE opening) → Relevance bridge (BRIDGE) → Internal signal (VALUE)
 The bridge is the most important piece. Without it, the message becomes two disconnected statements:
 "I saw something about you" followed by "Here is what we sell." The bridge supplies the buyer implication.
-
+${quotesBlock}
 LAYER 1 — HOOK  (1–2 sentences)
   Purpose : Open with the single most specific signal. The hook must sound like something the sender
             would still send even if no pitch followed — genuine, human, low-ceremony.
@@ -475,6 +484,15 @@ LAYER 1 — HOOK  (1–2 sentences)
   PERSONAL SIGNALS (including attributable quotes) — Formula: Recognition + specific evidence + genuine reaction
     The sender is the attentive audience member. Isolate a specific argument, detail, or quote.
     Say what stood out and why — briefly. "I" is allowed. 1–2 sentences.
+
+    ⛔ HARD STOP — QUOTE SOURCE RULE:
+    If a personal insight is tagged ⚠ VERBATIM QUOTE AVAILABLE in SELECTED SIGNALS, a quote from that
+    signal's post body is listed in the ATTRIBUTABLE QUOTES block immediately above. You MUST use that
+    exact text as the quoted passage — copied character-for-character, no rewording, no summarising.
+    The insight title (the short label line in SELECTED SIGNALS) is a filing label. It is NOT a quote
+    and must NEVER appear inside quotation marks in the email. Using the title as a quote is a
+    critical error that breaks the message.
+
     Starters (vary — do not repeat verbatim):
       "Came across your [post/interview/podcast] on [topic]. Your point about [specific idea] really stood out."
       "Really enjoyed your perspective on [topic], particularly your observation that [specific point]."
