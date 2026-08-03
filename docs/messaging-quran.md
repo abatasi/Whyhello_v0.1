@@ -564,12 +564,12 @@ Rendered as markdown: `[anchor text](URL)`. Placed at the natural sentence break
 
 **Style B — Postscript (after the sign-off)**
 
-The link appears as a P.S. on a new line after `[Your Name]`, preceded by a blank line. The P.S. must name the specific source referenced in the HOOK. Examples:
+The link appears as a P.S. on a new line after `[Your Name]`, preceded by a blank line. The P.S. must connect back to the specific source referenced in the HOOK — phrasing should make it clear the link belongs to the piece already mentioned in the email, not a new reference introduced at the end. Examples:
 
-- *"P.S. Here's the link to the article above if you'd like to read more: \<URL\>"*
-- *"P.S. Full piece here in case it's useful: \<URL\>"*
-- *"P.S. Link to the report I mentioned: \<URL\>"*
-- *"P.S. The article referenced above, if you'd like to dig in: \<URL\>"*
+- *"P.S. Full piece on the article I mentioned above, in case it's useful: \<URL\>"*
+- *"P.S. Here's the full piece on what I referenced above if you'd like to read more: \<URL\>"*
+- *"P.S. Link to the report I mentioned above, if you'd like to dig in: \<URL\>"*
+- *"P.S. The piece I referenced above — full version here if it's of interest: \<URL\>"*
 
 **Constraints:**
 

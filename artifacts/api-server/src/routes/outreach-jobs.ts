@@ -307,12 +307,12 @@ PLACEMENT STYLE FOR THIS EMAIL: ${linkStyle === "inline"
   Render it as markdown: [anchor text](URL)
   Place it at the natural sentence break after you reference the signal — not mid-sentence.`
     : `PS — add a postscript after "[Your Name]" at the very end of the email.
-  The PS must reference the specific signal you used as your HOOK.
+  The PS must connect back to the specific signal you used as your HOOK — make it clear the link is for the piece already mentioned above, not a new reference.
   Examples of PS patterns (vary the phrasing — do not copy verbatim):
-    "P.S. Here's the link to the article above if you'd like to read more: <URL>"
-    "P.S. Full piece here in case it's useful: <URL>"
-    "P.S. Link to the report I mentioned: <URL>"
-    "P.S. The article referenced above, if you'd like to dig in: <URL>"
+    "P.S. Full piece on the article I mentioned above, in case it's useful: <URL>"
+    "P.S. Here's the full piece on what I referenced above if you'd like to read more: <URL>"
+    "P.S. Link to the report I mentioned above, if you'd like to dig in: <URL>"
+    "P.S. The piece I referenced above — full version here if it's of interest: <URL>"
   Place it on a new line after the sign-off, preceded by a blank line.`
   }`;
 
