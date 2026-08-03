@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { generateBattlecardBuffer } from "../lib/battlecard-generator.js";
 import { db } from "@workspace/db";
 import {
   contactsTable,
@@ -109,6 +110,15 @@ function buildSellerContext(dna: SellerDNA | null): string {
 async function runGeneration(jobId: number) {
   const [job] = await db.select().from(outreachJobsTable).where(eq(outreachJobsTable.id, jobId)).limit(1);
   if (!job) return;
+
+  // ── Battlecard: generate PPTX, store as base64, done ──────────────────
+  if (job.type === "battlecard") {
+    const buffer = await generateBattlecardBuffer(job.contactId);
+    await db.update(outreachJobsTable)
+      .set({ status: "completed", result: buffer.toString("base64"), updatedAt: new Date() })
+      .where(eq(outreachJobsTable.id, jobId));
+    return;
+  }
 
   type VoiceProfileData = {
     toneTags: string[];

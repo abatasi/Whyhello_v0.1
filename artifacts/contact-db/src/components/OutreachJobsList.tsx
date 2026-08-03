@@ -595,6 +595,20 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
     URL.revokeObjectURL(url);
   }
 
+  function downloadBattlecard() {
+    const b64 = job.result ?? "";
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `battlecard_${job.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.pptx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function shareJob() {
     const clean = stripStructureBlock(job.result ?? "");
     navigator.clipboard.writeText(clean).catch(console.error);
@@ -603,14 +617,15 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
   const isGenerating = job.status === "generating";
   const isFailed = job.status === "failed";
   const isCompleted = job.status === "completed";
-  const hasStructure = isCompleted && !!parseStructure(job.result ?? "");
+  const isBattlecard = job.type === "battlecard";
+  const hasStructure = isCompleted && !isBattlecard && !!parseStructure(job.result ?? "");
 
-  const primaryLabel = job.type === "intro_email" ? "View Email" : "View";
+  const primaryLabel = isBattlecard ? "Download PPTX" : job.type === "intro_email" ? "View Email" : "View";
 
   return (
     <>
       <div
-        onClick={() => isCompleted && openViewer("result")}
+        onClick={() => isCompleted && !isBattlecard && openViewer("result")}
         className={cn(
           "rounded-xl border px-3.5 py-3 transition-all",
           isGenerating && "border-blue-200/70 bg-gradient-to-r from-blue-50/40 to-indigo-50/20",
@@ -637,10 +652,14 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
             </div>
             <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">
               {isGenerating
-                ? <span className="text-blue-500/80 font-medium tracking-wide">Writing your email…</span>
+                ? isBattlecard
+                  ? <span className="text-blue-500/80 font-medium tracking-wide">Building your battlecard…</span>
+                  : <span className="text-blue-500/80 font-medium tracking-wide">Writing your email…</span>
                 : isFailed
                   ? <span className="text-red-400 font-medium">Generation failed</span>
-                  : <>{job.type.replace(/_/g, " ")} · {job.params?.length} · {job.params?.tone} · {timeAgo(job.createdAt)}</>
+                  : isBattlecard
+                    ? <>{job.type.replace(/_/g, " ")} · {timeAgo(job.createdAt)}</>
+                    : <>{job.type.replace(/_/g, " ")} · {job.params?.length} · {job.params?.tone} · {timeAgo(job.createdAt)}</>
               }
             </p>
           </div>
@@ -654,9 +673,9 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
                 size="sm"
                 variant="outline"
                 className="h-7 gap-1.5 text-xs font-semibold px-2.5"
-                onClick={() => openViewer("result")}
+                onClick={() => isBattlecard ? downloadBattlecard() : openViewer("result")}
               >
-                <Eye className="h-3 w-3" />
+                {isBattlecard ? <Download className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                 {primaryLabel}
               </Button>
 

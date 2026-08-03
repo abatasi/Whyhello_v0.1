@@ -464,35 +464,19 @@ function IntroEmailModal({
 
 // ── BattlecardModal ──────────────────────────────────────────────────────────
 
-function BattlecardModal({ open, onClose, contactId, contactName }: {
+function BattlecardModal({ open, onClose, contactId, contactName, onGenerate }: {
   open: boolean;
   onClose: () => void;
   contactId: number;
   contactName: string;
+  onGenerate: () => void;
 }) {
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  // Reset when modal closes
+  useEffect(() => { if (!open) return; }, [open]);
 
-  // Reset when modal opens
-  useEffect(() => { if (open) setStatus("idle"); }, [open]);
-
-  async function handleGenerate() {
-    setStatus("loading");
-    try {
-      const res = await fetch(`/api/contacts/${contactId}/battlecard`);
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `battlecard_${contactName.replace(/\s+/g, "_").toLowerCase()}.pptx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setStatus("done");
-    } catch {
-      setStatus("error");
-    }
+  function handleGenerate() {
+    onGenerate();
+    onClose();
   }
 
   return (
@@ -531,41 +515,16 @@ function BattlecardModal({ open, onClose, contactId, contactName }: {
           </div>
         </div>
 
-        {/* Status feedback */}
-        {status === "done" && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
-            <div className="h-6 w-6 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
-              <svg className="h-3.5 w-3.5 text-emerald-600" viewBox="0 0 12 9" fill="none">
-                <path d="M1 4.5l3 3 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <p className="text-xs font-medium text-emerald-700">Battlecard downloaded — check your downloads folder.</p>
-          </div>
-        )}
-        {status === "error" && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5">
-            <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
-            <p className="text-xs font-medium text-rose-700">Something went wrong. Please try again.</p>
-          </div>
-        )}
-
         <DialogFooter className="gap-2 sm:gap-2">
           <DialogClose asChild>
             <Button variant="outline" size="sm">Cancel</Button>
           </DialogClose>
           <Button
             size="sm"
-            disabled={status === "loading"}
-            onClick={status === "done" ? handleGenerate : handleGenerate}
+            onClick={handleGenerate}
             className="gap-1.5 bg-rose-600 hover:bg-rose-700 text-white border-0"
           >
-            {status === "loading" ? (
-              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Building battlecard…</>
-            ) : status === "done" ? (
-              <><Shield className="h-3.5 w-3.5" /> Download again</>
-            ) : (
-              <><Shield className="h-3.5 w-3.5" /> Generate Battlecard</>
-            )}
+            <Shield className="h-3.5 w-3.5" /> Generate Battlecard
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -664,6 +623,20 @@ export default function ContactProfile() {
       onSuccess: () => setJobRefetchTrigger(t => t + 1),
     });
   }, [createJobMutation, id]);
+
+  const handleGenerateBattlecard = useCallback(() => {
+    const contactName = [contact?.firstName, contact?.lastName].filter(Boolean).join(" ") || "Contact";
+    createJobMutation.mutate({
+      id,
+      data: {
+        type: "battlecard",
+        title: `Battlecard — ${contactName}`,
+        params: {},
+      },
+    }, {
+      onSuccess: () => setJobRefetchTrigger(t => t + 1),
+    });
+  }, [createJobMutation, id, contact?.firstName, contact?.lastName]);
 
   const isRevealed = revealStatus?.isRevealed ?? false;
   const outOfCredits =
@@ -1360,6 +1333,7 @@ export default function ContactProfile() {
         onClose={() => setActiveOutput(null)}
         contactId={id}
         contactName={[contact.firstName, contact.lastName].filter(Boolean).join(" ")}
+        onGenerate={handleGenerateBattlecard}
       />
 
       {/* ── Generic outreach modal (coming soon) ── */}
