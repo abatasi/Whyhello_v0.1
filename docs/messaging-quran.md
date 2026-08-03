@@ -536,6 +536,51 @@ A published insight is the highest-value outside-in trigger because it provides 
 
 ---
 
+### 3.11 Source Link Inclusion — Company, Industry, and Role Signals
+
+When a message opens with a Company, Industry, or Role insight as the HOOK, Whyhello includes the source URL in the buyer-facing email body. This is an expression of the awareness posture these signal types carry: the seller is surfacing something the buyer may not have seen, and offering them the chance to go deeper is consistent with that posture. It adds generosity without adding friction.
+
+**Why these three types — and not Personal, Colleague, or Counterpart:**
+
+- **Personal** — the buyer created or said it. Linking back to their own content would be unnecessary at best and condescending at worst.
+- **Colleague / Counterpart** — the content belongs to someone else in their orbit. Passing along a colleague's LinkedIn post or a peer's interview introduces a third party in a way that can feel awkward. The link is omitted.
+- **Company / Industry / Role** — the buyer may not have encountered this specific article, report, or data source. Offering the link is genuinely useful and positions the seller as a resourceful observer rather than someone who merely name-drops a source.
+
+**Placement — two styles, distributed evenly across generated emails:**
+
+The placement style is selected randomly at generation time, with equal probability between the two options. This prevents the link from feeling like a templated feature.
+
+**Style A — Inline (within the HOOK paragraph)**
+
+The link is woven into the same sentence or the sentence immediately following the HOOK, using natural anchor text. The link must feel like a generous offer of context, not a sales asset. The anchor text should vary; examples include:
+
+- *"More here."*
+- *"You can read more about it here."*
+- *"Worth a look here if you want the full picture."*
+- *"Full piece here if it's useful."*
+- *"Here's the piece if you'd like more context."*
+
+Rendered as markdown: `[anchor text](URL)`. Placed at the natural sentence break after the signal is referenced — not mid-sentence, and not in BRIDGE or VALUE.
+
+**Style B — Postscript (after the sign-off)**
+
+The link appears as a P.S. on a new line after `[Your Name]`, preceded by a blank line. The P.S. must name the specific source referenced in the HOOK. Examples:
+
+- *"P.S. Here's the link to the article above if you'd like to read more: \<URL\>"*
+- *"P.S. Full piece here in case it's useful: \<URL\>"*
+- *"P.S. Link to the report I mentioned: \<URL\>"*
+- *"P.S. The article referenced above, if you'd like to dig in: \<URL\>"*
+
+**Constraints:**
+
+- The URL is used exactly once. It does not appear in both the body and the P.S.
+- The URL is used verbatim — it must not be modified, shortened, or substituted.
+- The link must be absent if the HOOK signal is Personal, Colleague, or Counterpart.
+- The link must be absent if no URL is available for the chosen signal.
+- The phrasing around the link must vary between messages; the same anchor text or P.S. opener should not appear in consecutive emails from the same sender.
+
+---
+
 <div align="center">❊ ❊ ❊</div>
 
 ## Surah 4 · Al-Iqtibas — The Quotation
