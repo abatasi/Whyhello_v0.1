@@ -1277,6 +1277,14 @@ export default function ContactProfile() {
                     hasAutoExtractedQuotesRef.current = id;
                     quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
                   }}
+                  onInsightClick={(signalId, signalType) => {
+                    const item = categoryData[signalType]?.find(i => i.id === signalId);
+                    const category = INSIGHT_CATEGORIES.find(c => c.id === signalType);
+                    if (item && category) {
+                      setSelectedInsight({ item, category });
+                      setInsightsMode("expanded");
+                    }
+                  }}
                 />
 
               </aside>
@@ -1437,10 +1445,12 @@ function QuotablesCarousel({
   quotes,
   isPending,
   onReExtract,
+  onInsightClick,
 }: {
   quotes: InsightQuote[];
   isPending: boolean;
   onReExtract: () => void;
+  onInsightClick?: (signalId: number, signalType: string) => void;
 }) {
   const [minimized, setMinimized] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -1524,10 +1534,19 @@ function QuotablesCarousel({
           )}
 
           {current && (
-            <div className={cn(
-              "rounded-xl bg-gradient-to-br from-violet-50 to-white border border-violet-100 overflow-hidden transition-all duration-200",
-              expanded ? "px-4 pt-4 pb-4" : "px-4 pt-3 pb-3"
-            )}>
+            <div
+              className={cn(
+                "rounded-xl bg-gradient-to-br from-violet-50 to-white border border-violet-100 overflow-hidden transition-all duration-200",
+                expanded ? "px-4 pt-4 pb-4" : "px-4 pt-3 pb-3",
+                onInsightClick && current.signalId != null && "cursor-pointer hover:border-violet-300 hover:shadow-sm hover:from-violet-100 active:scale-[0.99]"
+              )}
+              onClick={() => {
+                if (onInsightClick && current.signalId != null) {
+                  onInsightClick(current.signalId, current.signalType);
+                }
+              }}
+              title={onInsightClick && current.signalId != null ? "Open source insight" : undefined}
+            >
               {/* Pull-quote */}
               <div className="relative">
                 {/* Decorative opening mark */}
