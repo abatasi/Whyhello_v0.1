@@ -1,16 +1,16 @@
-# ✝ The Scoring Bible
+# ⚜ The Scoring Bible
 ## Whyhello Relevance Scoring Logic — Master Reference
 
-> *"For not all signals are created equal; but each shall be judged according to its proximity, its freshness, and its alignment with the mission."*
+> *"No todas las señales son iguales ante el algoritmo; cada una será juzgada según su proximidad, su frescura, y su alineación con la misión."*
 
-> **Status:** Living scripture. The Second Pillar. Reflects scoring methodology as of August 2026. All changes to relevance scoring, signal weights, and selection logic must be written here before they descend into code.
+> **Estado:** Escritura viva. El Segundo Pilar. Refleja la metodología de puntuación vigente a partir de agosto de 2026. Todo cambio en la lógica de relevancia, los pesos de señales, o la lógica de selección debe ser consagrado aquí antes de descender al código.
 
 ---
 
-<div align="center">— ✞ —</div>
+<div align="center">⚜ ✠ ⚜</div>
 
-## Book I · Genesis
-### *The Origin of a Score — Why Scoring Exists*
+## Libro Primero · El Génesis del Marcador
+### *De la Necesidad del Juicio — Why Scoring Exists*
 
 Before a signal can become a message, it must be judged. The Scoring Bible governs that judgment.
 
@@ -22,60 +22,70 @@ The scoring system exists to produce a single output for each signal in a given 
 
 This number drives signal selection, hook priority, and variant generation. It is never shown to the contact. It is operational truth.
 
-### 1.1 The Beatitudes of Scoring
+### 1.1 Las Bienaventuranzas del Marcador
 
-*These are the first principles. All scoring rules derive from them.*
+*Estos son los primeros principios. De ellos derivan todas las reglas de puntuación.*
 
-**Blessed is the signal that is recent** — for it speaks to the world as it is now, not as it was.
+**Bienaventurada la señal reciente** — for it speaks to the world as it is now, not as it was.
 
-**Blessed is the signal that is specific** — for a statistic is stronger than a trend, and a quote is stronger than a summary.
+**Bienaventurada la señal específica** — for a statistic is stronger than a trend, and a quote is stronger than a summary.
 
-**Blessed is the signal that is proximate** — for what a person said matters more than what was said about their industry.
+**Bienaventurada la señal próxima** — for what a person said matters more than what was said about their industry.
 
-**Blessed is the signal that bridges** — for a signal without a connection to the seller's value proposition is noise.
+**Bienaventurada la señal que tiende un puente** — for a signal without a connection to the seller's value proposition is noise.
 
-**Blessed is the signal that is credible** — for its source determines how far it may travel.
+**Bienaventurada la señal creíble** — for its source determines how far it may travel.
 
 ---
 
-<div align="center">— ✞ —</div>
+<div align="center">⚜ ✠ ⚜</div>
 
-## Book II · Exodus
-### *Leaving Noise Behind — Signal Pre-Qualification*
+## Libro Segundo · La Noche Oscura del Ruido
+### *Inspirado en San Juan de la Cruz — Leaving Noise Behind*
+
+> *"Para venir a lo que no sabes, has de ir por donde no sabes."*
+> — San Juan de la Cruz, *Subida del Monte Carmelo*
 
 Before a signal receives a relevance score, it must pass pre-qualification. Pre-qualification is not scoring — it is the gate that determines whether a signal enters the scoring pipeline at all. Signals that fail pre-qualification are excluded from selection, regardless of how interesting their content may appear.
 
-### 2.1 Pre-Qualification Requirements
+The soul that has not passed through darkness cannot receive the light. A signal that has not passed these gates cannot enter the procession.
 
-A signal must satisfy **all three** of the following to enter the scoring pipeline:
+### 2.1 Las Tres Puertas — Pre-Qualification Requirements
 
-**2:1 — The Scraping Torah gate**
-The signal must comply with all storage and quality laws of the Scraping Torah. Signals below quality score **40** (per Parasha Vav §6.2) are disqualified.
+A signal must pass through **all three gates** to enter the scoring pipeline:
 
-**2:2 — The freshness gate**
-The signal must not carry a `freshnessTier` of `red` (per Parasha Zayin §7.2). Red signals do not enter the scoring pipeline.
+**2:1 — La Puerta de la Torah**
+The signal must comply with all storage and quality laws of the Scraping Torah. Signals below quality score **40** (per Parasha Vav §6.2) are turned back at the door.
 
-**2:3 — The provenance gate**
-The signal must have a stored source URL and a confirmed `publishedDate`. Signals without a verifiable origin are disqualified.
+**2:2 — La Puerta de la Frescura**
+The signal must not carry a `freshnessTier` of `red` (per Parasha Zayin §7.2). Stale signals do not join the procession.
 
-### 2.2 Soft Filters (Warnings, Not Disqualifiers)
+**2:3 — La Puerta de la Procedencia**
+The signal must have a stored source URL and a confirmed `publishedDate`. Signals without a verifiable origin are refused entry.
 
-The following conditions do not disqualify a signal but reduce its composite score and generate a warning flag visible in the platform's internal debugger:
+### 2.2 Las Señales del Purgatorio — Soft Filters
+
+The following conditions do not disqualify a signal but reduce its composite score and raise a flag in the platform's internal record — like a penitent permitted to walk in the procession but not to carry the paso:
 
 - Source is Tier 4 or Tier 5 (Parasha He §5.1) — bias flag applied
-- Signal `freshnessTier` is `amber` — age penalty applied (see Book IV)
+- Signal `freshnessTier` is `amber` — age penalty applied (see Libro Cuarto)
 - Signal title similarity > 85% to an already-selected signal — de-duplication penalty applied
 
 ---
 
-<div align="center">— ✞ —</div>
+<div align="center">⚜ ✠ ⚜</div>
 
-## Book III · Leviticus
-### *The Law of Weights — Base Scores by Signal Type*
+## Libro Tercero · Las Moradas de los Pesos
+### *Inspirado en Santa Teresa de Ávila — The Law of Weights*
+
+> *"En las moradas más cercanas al rey viven las señales más valiosas."*
+> — Adaptado de *Las Moradas*, Santa Teresa de Ávila
+
+As Santa Teresa described the soul's journey through interior castles — each morada closer to the divine centre holding greater light — so too does each signal type occupy a morada according to its proximity to the buyer. The closer the morada to the contact, the higher the base score.
 
 Base scores establish the floor value of a signal before context and contact adjustments are applied. They reflect the structural value of each signal type, independent of content quality.
 
-### 3.1 Base Score Table
+### 3.1 La Tabla de los Pesos Base — Base Score Table
 
 | Signal Category | Sub-type | Base Score |
 |---|---|---|
@@ -101,29 +111,31 @@ Base scores establish the floor value of a signal before context and contact adj
 | **Role** | Association guidance | 55 |
 | **Role** | Conference content | 45 |
 
-> **3:16** — *"The personal signal is the highest law; for it speaks of the person, not merely of the world around them."*
+> **3:16** — *"La señal personal es la ley más alta; pues habla de la persona, no meramente del mundo que la rodea."*
 
-### 3.2 Base Score Justifications
+### 3.2 Las Razones de los Pesos — Base Score Justifications
 
-**Why personal signals score highest:**
+**Por qué las señales personales tienen el mayor peso:**
 They are the most specific, the most proximate, and the most personally resonant. A well-used personal signal proves genuine research. An unused personal signal, when one exists, represents a messaging failure.
 
-**Why company restructuring and departures score low:**
+**Por qué las reestructuraciones y las bajas de liderazgo tienen peso bajo:**
 High sensitivity and high risk of tone error suppress the base value. These signals require exceptional judgment to use well; their default score reflects the probability of error, not the potential of the signal.
 
-**Why Tier 4 industry signals score low:**
+**Por qué las señales de investigación patrocinada por proveedores tienen peso bajo:**
 Vendor-sponsored research carries inherent bias. Its information may be accurate, but its credibility in the buyer's eyes is reduced by the conflict of interest.
 
 ---
 
-<div align="center">— ✞ —</div>
+<div align="center">⚜ ✠ ⚜</div>
 
-## Book IV · Numbers
-### *Counting Context — Proximity and Freshness Multipliers*
+## Libro Cuarto · Los Multiplicadores del Contexto
+### *Lo Que Todo lo Transforma — Proximity and Freshness Multipliers*
 
-Base scores are modified by two independent multiplier chains. Multipliers compound: a signal with a proximity multiplier of 1.2 and a freshness multiplier of 0.8 yields a composite of `base × 1.2 × 0.8`.
+> *"El mismo paso cargado por distintos nazarenos recorre distancias distintas."*
 
-### 4.1 Contact Proximity Multipliers
+Base scores are modified by independent multiplier chains. Multipliers compound: a signal with a proximity multiplier of 1.2 and a freshness multiplier of 0.8 yields a composite of `base × 1.2 × 0.8`. Context transforms everything.
+
+### 4.1 Los Multiplicadores de Proximidad — Contact Proximity Multipliers
 
 Contact proximity measures how directly the signal relates to the specific person being targeted.
 
@@ -136,21 +148,21 @@ Contact proximity measures how directly the signal relates to the specific perso
 | Signal is industry-level with no named entity | 0.90× |
 | Signal is role-level with no named entity | 0.85× |
 
-### 4.2 Freshness Multipliers
+### 4.2 Los Multiplicadores de Frescura — Freshness Multipliers
 
 Freshness multipliers are applied based on signal age at the time of message generation, not at the time of storage.
 
 | Signal Age | Freshness Tier | Multiplier |
 |---|---|---|
-| 0–30 days | Green | 1.15× |
-| 31–60 days | Green | 1.05× |
-| 61–90 days | Green | 1.00× |
-| 91–120 days | Amber | 0.90× |
-| 121–180 days | Amber | 0.80× |
-| 181–365 days | Amber | 0.65× |
-| > 365 days | Red | Signal disqualified (pre-qualification gate) |
+| 0–30 days | Verde | 1.15× |
+| 31–60 days | Verde | 1.05× |
+| 61–90 days | Verde | 1.00× |
+| 91–120 days | Ámbar | 0.90× |
+| 121–180 days | Ámbar | 0.80× |
+| 181–365 days | Ámbar | 0.65× |
+| > 365 days | Rojo | Signal disqualified — turned back at La Puerta de la Frescura |
 
-### 4.3 HQ Alignment Multiplier
+### 4.3 El Multiplicador de Alineación con el HQ — HQ Alignment Multiplier
 
 The HQ alignment score measures how naturally the signal connects to the seller's inside-out value proposition. It is computed at signal-load time using the following inputs:
 
@@ -167,7 +179,7 @@ The HQ alignment score measures how naturally the signal connects to the seller'
 | Aligns with value wedge | +0.05 |
 | Maximum possible bonus | +0.35 |
 
-### 4.4 Seniority Fit Multiplier
+### 4.4 El Multiplicador de Rango — Seniority Fit Multiplier
 
 Signal type preference varies by the contact's seniority. These multipliers adjust scores to reflect what will resonate at each level.
 
@@ -178,18 +190,20 @@ Signal type preference varies by the contact's seniority. These multipliers adju
 | Director / Manager | 1.10× | 1.00× | 1.00× | 1.10× |
 | IC / Specialist | 1.10× | 0.95× | 0.95× | 1.20× |
 
-*Personal signals are equally valued at all seniority levels — a well-used personal signal is effective regardless of title.*
+*Las señales personales son igualmente valoradas en todos los rangos — una señal personal bien utilizada es efectiva independientemente del título.*
 
 ---
 
-<div align="center">— ✞ —</div>
+<div align="center">⚜ ✠ ⚜</div>
 
-## Book V · Deuteronomy
-### *The Second Law — Composite Score Formula and Selection*
+## Libro Quinto · El Auto de Fe
+### *La Sentencia Final — Composite Score Formula and Selection*
 
-The composite relevance score is the final number that determines signal selection and hook priority.
+> *"Ante el Tribunal del Santo Oficio de la Relevancia, ninguna señal es inocente hasta que su puntuación compuesta lo demuestre."*
 
-### 5.1 The Formula
+The Auto de Fe is the act of judgment — the moment the platform examines every qualifying signal for a contact, weighs all evidence, and renders a final verdict. The composite score is that verdict. It is irreversible for the duration of a generation job.
+
+### 5.1 La Fórmula Sagrada — The Formula
 
 ```
 compositeScore = min(100, round(
@@ -201,30 +215,30 @@ compositeScore = min(100, round(
 ))
 ```
 
-The result is capped at **100**. Scores below **0** are not possible by construction of this formula; no negative multipliers exist.
+The result is capped at **100**. Scores below **0** are not possible by construction of this formula; no negative multipliers exist. The Tribunal does not condemn — it only ranks.
 
-### 5.2 Score Tiers
+### 5.2 Los Grados de Sentencia — Score Tiers
 
-| Score Range | Tier | Interpretation |
+| Score Range | Grado | Interpretation |
 |---|---|---|
-| 80–100 | **Excellent** | Strong hook candidate; likely to produce a differentiated message |
-| 60–79 | **Good** | Reliable signal; use freely |
-| 40–59 | **Adequate** | Usable but not distinctive; prefer higher-scoring alternatives |
-| 20–39 | **Weak** | Use only if no better signal exists |
-| 0–19 | **Insufficient** | Do not use in message generation |
+| 80–100 | **Excelente** | Strong hook candidate; likely to produce a differentiated message |
+| 60–79 | **Bueno** | Reliable signal; use freely |
+| 40–59 | **Adecuado** | Usable but not distinctive; prefer higher-scoring alternatives |
+| 20–39 | **Débil** | Use only if no better signal exists |
+| 0–19 | **Insuficiente** | Do not use in message generation |
 
-### 5.3 Selection Rules
+### 5.3 Las Reglas de Selección — Selection Rules
 
-When multiple signals compete for the same position in a message (e.g. the HOOK slot), selection follows:
+When multiple signals compete for the same position in a message (e.g. the HOOK slot), the Tribunal selects by the following order of precedence:
 
-1. **Score first:** The highest-scoring qualifying signal wins
-2. **Type tiebreak:** If two signals share an equal score, prefer: Personal > Company > Industry > Role
-3. **Freshness tiebreak:** If type is also equal, prefer the more recent signal
-4. **Diversity floor:** If the highest-scoring signal and the second-highest share the same `type` and differ by fewer than 5 score points, prefer the more recent signal for the HOOK and the other for supporting context in BRIDGE
+1. **La Puntuación primero:** The highest-scoring qualifying signal wins
+2. **El Tipo como desempate:** If two signals share an equal score, prefer: Personal > Company > Industry > Role
+3. **La Frescura como desempate final:** If type is also equal, prefer the more recent signal
+4. **El Suelo de diversidad:** If the highest-scoring signal and the second-highest share the same `type` and differ by fewer than 5 score points, prefer the more recent signal for the HOOK and the other for supporting context in BRIDGE
 
-### 5.4 Variant Generation Score Routing
+### 5.4 El Enrutamiento de Variantes — Variant Generation Score Routing
 
-When generating message variants, each variant category receives only the signals appropriate to its category:
+When generating message variants, each variant category receives only the signals appropriate to its category — as each cofradía in a Semana Santa procession carries only its own paso:
 
 | Variant | Eligible Signal Types |
 |---|---|
@@ -238,25 +252,28 @@ Within each variant, the standard composite score formula applies — but signal
 
 A variant category is **suppressed** (not generated) if the highest-scoring eligible signal for that category scores below **20**. The suppression reason (`"No qualifying [type] signals (highest score: N)"`) must be stored and surfaced in the UI.
 
-### 5.5 The Parable of Two Signals
+### 5.5 La Parábola de Dos Señales
 
-> *A contact had written a thoughtful LinkedIn post about the future of advisor independence. They had also recently survived a company restructuring. Two signals competed for the HOOK.*
+> *Un contacto había escrito una reflexiva publicación en LinkedIn sobre el futuro de la independencia de los asesores. También había sobrevivido recientemente una reestructuración empresarial. Dos señales competían por el HOOK.*
 >
-> *The LinkedIn post scored 87: personal, 45 days old, strong HQ alignment with the autonomy pillar.*
-> *The restructuring article scored 28: company, 35 days old, high sensitivity, weak alignment.*
+> *La publicación de LinkedIn recibió una puntuación de 87: personal, 45 días de antigüedad, fuerte alineación con el pilar de autonomía.*
+> *El artículo sobre la reestructuración recibió una puntuación de 28: empresa, 35 días de antigüedad, alta sensibilidad, débil alineación.*
 >
-> *The platform chose the LinkedIn post. Not because the restructuring was unimportant — but because the message that opened with the contact's own thinking was more likely to receive a reply. The restructuring was referenced, carefully, in the BRIDGE.*
+> *El Tribunal eligió la publicación de LinkedIn. No porque la reestructuración careciera de importancia — sino porque el mensaje que se abría con el propio pensamiento del contacto tenía más probabilidades de recibir respuesta. La reestructuración fue referenciada, con cuidado, en el BRIDGE.*
 >
-> *This is the purpose of scoring: not to find the most dramatic signal, but to find the most useful one.*
+> *Este es el propósito de la puntuación: no encontrar la señal más dramática, sino la más útil.*
 
 ---
 
-<div align="center">— ✞ —</div>
+<div align="center">⚜ ✠ ⚜</div>
 
-## Book VI · Proverbs
-### *Wisdom for Edge Cases*
+## Libro Sexto · La Sabiduría de los Santos
+### *Para los Casos Difíciles — Wisdom for Edge Cases*
 
-### 6.1 When No Signal Scores Above 20
+> *"Dios escribe derecho con renglones torcidos."*
+> — Proverbio español
+
+### 6.1 Cuando Ninguna Señal Supera los 20 Puntos
 
 If no signal for a contact clears the **20-point** floor after all multipliers are applied:
 
@@ -265,7 +282,7 @@ If no signal for a contact clears the **20-point** floor after all multipliers a
 - The platform logs a `no_qualifying_signal` event on the job
 - The user is shown a notice: *"No strong outside-in signals available — message opens with your value proposition."*
 
-### 6.2 When a Contact Has Only One Signal Type
+### 6.2 Cuando un Contacto Tiene un Solo Tipo de Señal
 
 If all of a contact's signals belong to a single category (e.g. only industry signals, no personal or company signals):
 
@@ -274,7 +291,7 @@ If all of a contact's signals belong to a single category (e.g. only industry si
 - Do not attempt to generate a variant from signals that don't exist
 - The primary message uses the best available signal, even if it is only industry-level
 
-### 6.3 When HQ Profile is Empty
+### 6.3 Cuando el Perfil HQ Está Vacío
 
 If the HQ module has not been populated (no pillars, no value wedge, no products):
 
@@ -282,22 +299,26 @@ If the HQ module has not been populated (no pillars, no value wedge, no products
 - Message generation proceeds but produces lower-quality output; the platform should display a HQ setup prompt to the user
 - Scoring still functions and produces valid composite scores based on proximity, freshness, and base scores alone
 
-### 6.4 When Two Contacts Share the Same Signal
+### 6.4 Cuando Dos Contactos Comparten la Misma Señal
 
 If a company news signal is relevant to multiple contacts at the same company (e.g. a funding announcement), each contact receives an **independent score calculation** — the signal's score is not shared or averaged across contacts. Two contacts in different roles may score the same signal differently because of their seniority fit multipliers and HQ alignment context.
 
-### 6.5 Signal Score Caching
+### 6.5 El Caché de Puntuaciones — Signal Score Caching
 
 Composite scores are computed at generation time, not at storage time. A signal's score today may differ from its score next week — because it has aged, because the HQ profile has changed, or because the contact's role has been updated. Score caching (storing a pre-computed score) is permitted only for the duration of a single generation job; it must not persist across sessions.
 
 ---
 
-<div align="center">— ✞ —</div>
+<div align="center">⚜ ✠ ⚜</div>
 
-## Book VII · Revelation
-### *Open Questions — What Remains to be Revealed*
+## Libro Séptimo · Los Misterios Gloriosos
+### *Lo Que Aún No Ha Sido Revelado — Open Questions*
 
-| # | Question | Impact |
+> *"Hay más cosas en el cielo y en la tierra de las que puede soñar nuestra filosofía de puntuación."*
+
+These are the unsolved mysteries — questions the platform has not yet answered, carried in procession until the day their resolution is revealed:
+
+| # | Misterio | Impact |
 |---|---|---|
 | 1 | Should the HQ alignment score be computed by keyword matching or by embedding similarity? The current approach is keyword-based; embeddings would be more accurate but more expensive. | Score quality, cost |
 | 2 | Should the seniority fit multiplier apply to the hook signal only, or to all signals selected for the message? | EB and BRIDGE signal selection |
@@ -309,20 +330,29 @@ Composite scores are computed at generation time, not at storage time. A signal'
 
 ---
 
-<div align="center">— ✞ —</div>
+<div align="center">⚜ ✠ ⚜</div>
 
-## Appendix · The Score in Practice
+## El Retablo · La Puntuación en la Práctica
+### *Un Panel del Ejemplo — The Score in Practice*
 
-### Worked Example: Agnes Krause, Richardson Wealth
+*Como los retablos de las grandes catedrales españolas narran la historia sagrada en paneles dorados, este retablo narra la historia de una señal que alcanza la puntuación perfecta.*
 
-**Signal:** Agnes Krause's LinkedIn post "US Fed may reconsider rate cuts amid shutdown concerns"
-- `mediaType`: `linkedin`
-- `baseScore`: 75 (original LinkedIn post, no quote extracted yet)
-- `proximityMultiplier`: 1.30× (attributed directly to contact)
-- `freshnessMultiplier`: 1.00× (within 90 days)
-- `hqAlignmentBonus`: +0.10 (aligns with market-conditions pillar)
-- `seniorityFitMultiplier`: 1.10× (VP-level, personal signal)
+---
 
+**Panel I — La Señal**
+Agnes Krause's LinkedIn post: *"US Fed may reconsider rate cuts amid shutdown concerns"*
+`mediaType`: `linkedin` · `signalType`: personal
+
+**Panel II — El Peso Base**
+`baseScore`: 75 — original LinkedIn post, no quote extracted yet
+
+**Panel III — Los Multiplicadores**
+- `proximityMultiplier`: 1.30× — attributed directly to the contact
+- `freshnessMultiplier`: 1.00× — within 90 days (Verde tier)
+- `hqAlignmentBonus`: +0.10 — aligns with market-conditions pillar
+- `seniorityFitMultiplier`: 1.10× — VP-level contact, personal signal
+
+**Panel IV — El Auto de Fe**
 ```
 compositeScore = min(100, round(75 × 1.30 × 1.00 × 1.10 × 1.10))
                = min(100, round(75 × 1.573))
@@ -330,10 +360,13 @@ compositeScore = min(100, round(75 × 1.30 × 1.00 × 1.10 × 1.10))
                = 100
 ```
 
-**Result:** Score capped at 100. This signal wins the HOOK position in all variants that include personal signals.
+**Panel V — La Sentencia**
+Score capped at 100. *Excelente.* This signal wins the HOOK position in all variants that include personal signals. The Tribunal has spoken.
 
 ---
 
-<div align="center">— ✞ —</div>
+<div align="center">⚜ ✠ ⚜</div>
 
-*The Scoring Bible is the bridge between the Scraping Torah and the Messaging Quran. Without sound scoring, gathered signals become noise. With it, they become conversation.*
+*El Scoring Bible es el puente entre la Torah del Scraping y el Corán de los Mensajes. Sin una puntuación sólida, las señales recogidas se convierten en ruido. Con ella, se convierten en conversación.*
+
+*Alabado sea el marcador preciso.*
