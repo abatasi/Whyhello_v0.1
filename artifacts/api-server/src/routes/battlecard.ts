@@ -1,9 +1,18 @@
 import { Router, type IRouter } from "express";
 import { createRequire } from "node:module";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 const _require = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PptxGenJS = _require("pptxgenjs") as any;
 import { db } from "@workspace/db";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Resolve from api-server package root up to contact-db's public folder
+const LOGO_PATH = path.resolve(
+  __dirname,
+  "../../../../contact-db/public/images/whyhello-logo.png"
+);
 import {
   contactsTable,
   companiesTable,
@@ -114,6 +123,15 @@ router.get("/", async (req, res) => {
     slide.addText("BATTLECARD", {
       x: W - 1.48, y: 0.16, w: 1.14, h: 0.24,
       fontSize: 6.5, bold: true, color: "FFFFFF", align: "center", valign: "middle", charSpacing: 1,
+    });
+
+    // Whyhello logo — below the pill (508×92 px → ~5.52:1 ratio; rendered at 1.14" wide)
+    slide.addImage({
+      path: LOGO_PATH,
+      x: W - 1.48,
+      y: 0.46,
+      w: 1.14,
+      h: 1.14 * (92 / 508), // ≈ 0.207"
     });
 
     slide.addText(fullName, {
