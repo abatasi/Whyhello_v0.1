@@ -296,16 +296,17 @@ in the message body, using the placement style below. Do not alter the URL.
 Do NOT include a link if your HOOK is a Personal, Colleague, or Counterpart insight.
 
 PLACEMENT STYLE FOR THIS EMAIL: ${linkStyle === "inline"
-    ? `INLINE — weave the URL naturally into the same paragraph as your HOOK.
-  The link must feel like a generous offer of context, not a sales attachment.
-  Examples of natural anchor patterns (vary the phrasing — do not copy verbatim):
-    "More here."
-    "You can read more about it here."
-    "Worth a look here if you want the full picture."
-    "Full piece here if it's useful."
-    "Here's the piece if you'd like more context."
-  Render it as markdown: [anchor text](URL)
-  Place it at the natural sentence break after you reference the signal — not mid-sentence.`
+    ? `INLINE — embed the URL inside the HOOK sentence itself using active verb anchor text. The link should feel like a natural part of the sentence, not a call-to-action appended at the end.
+  Anchor text must be an active verb phrase that describes what the piece does — not a generic prompt like "More here" or "Full piece here".
+  The URL must be hidden behind the anchor text. The raw URL must never appear in the email body.
+  Examples of well-embedded inline links (vary the phrasing — do not copy verbatim):
+    "...a shift that [this Oliver Wyman report tracks closely](URL)."
+    "...as [this Deloitte analysis explores](URL)."
+    "...a tension [this piece digs into](URL) across a range of firms."
+    "...a finding [this Fidelity research unpacks in detail](URL)."
+    "...one [this study examines](URL) in the context of independent advisory growth."
+    "...[worth reading in full](URL) if this is on your radar."
+  Render as markdown: [anchor text](URL). Weave directly into the sentence — not added after a full stop as a standalone fragment.`
     : `PS — add a postscript after "[Your Name]" at the very end of the email.
   The PS must connect back to the specific signal you used as your HOOK — make it clear the link is for the piece already mentioned above, not a new reference.
   Examples of PS patterns (vary the phrasing — do not copy verbatim):

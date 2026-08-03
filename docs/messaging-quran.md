@@ -571,17 +571,26 @@ When a message opens with a Company, Industry, or Role insight as the HOOK, Whyh
 
 The placement style is selected randomly at generation time, with equal probability between the two options. This prevents the link from feeling like a templated feature.
 
-**Style A — Inline (within the HOOK paragraph)**
+**Style A — Inline (within the HOOK sentence)**
 
-The link is woven into the same sentence or the sentence immediately following the HOOK, using natural anchor text. The link must feel like a generous offer of context, not a sales asset. The anchor text should vary; examples include:
+The link is embedded directly inside the HOOK sentence using **active verb anchor text** — a short phrase that describes what the source does, woven naturally into the grammar of the sentence. The raw URL must never appear in the email body; it must always be hidden behind the anchor text.
 
-- *"More here."*
-- *"You can read more about it here."*
-- *"Worth a look here if you want the full picture."*
-- *"Full piece here if it's useful."*
-- *"Here's the piece if you'd like more context."*
+The anchor text must be an active verb phrase, not a generic call-to-action. Standalone fragments like *"More here."*, *"Full piece here."*, or *"Read more."* are not permitted — they feel tacked on, make the URL visible or ominous in plain-text clients, and interrupt the sentence's rhythm.
 
-Rendered as markdown: `[anchor text](URL)`. Placed at the natural sentence break after the signal is referenced — not mid-sentence, and not in BRIDGE or VALUE.
+**Correct — active verb, embedded in the sentence:**
+- *"...a shift that [this Oliver Wyman report tracks closely](URL)."*
+- *"...as [this Deloitte analysis explores](URL)."*
+- *"...a tension [this piece digs into](URL) across a range of firms."*
+- *"...a finding [this Fidelity research unpacks in detail](URL)."*
+- *"...one [this study examines](URL) in the context of independent advisory growth."*
+- *"...[worth reading in full](URL) if this is on your radar."*
+
+**Incorrect — standalone fragments or passive anchors:**
+- ~~*"More here."*~~
+- ~~*"You can read more about it here."*~~
+- ~~*"Full piece here if it's useful."*~~
+
+Rendered as markdown: `[anchor text](URL)`. Placed mid-sentence or at the clause boundary — not after a full stop as a standalone fragment. Only appears in HOOK, not in BRIDGE or VALUE.
 
 **Style B — Postscript (after the sign-off)**
 
