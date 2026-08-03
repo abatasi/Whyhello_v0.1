@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   useListOutreachJobs,
   useDeleteOutreachJob,
@@ -170,40 +171,24 @@ function parseEmailResult(raw: string): { subject: string; body: string } {
   return { subject: "", body: clean };
 }
 
-/** Render a string that may contain **bold** and [text](url) markdown as React nodes. */
-function renderInlineMarkdown(text: string): React.ReactNode[] {
-  // Split on **bold** and [text](url) tokens
-  const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>;
-    }
-    const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (linkMatch) {
-      return (
-        <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer"
-          className="underline text-primary hover:opacity-80 transition-opacity">
-          {linkMatch[1]}
-        </a>
-      );
-    }
-    return part;
-  });
-}
-
-/** Render an email body string, preserving whitespace/newlines and applying inline markdown. */
+/** Render email body markdown — bold, links, and future styling rules all handled by react-markdown. */
 function EmailBody({ text }: { text: string }) {
   if (!text) return <span>No content generated.</span>;
-  const lines = text.split("\n");
   return (
-    <>
-      {lines.map((line, i) => (
-        <span key={i}>
-          {renderInlineMarkdown(line)}
-          {i < lines.length - 1 && "\n"}
-        </span>
-      ))}
-    </>
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+        a: ({ href, children }) => (
+          <a href={href} target="_blank" rel="noopener noreferrer"
+            className="underline text-primary hover:opacity-80 transition-opacity">
+            {children}
+          </a>
+        ),
+      }}
+    >
+      {text}
+    </ReactMarkdown>
   );
 }
 
