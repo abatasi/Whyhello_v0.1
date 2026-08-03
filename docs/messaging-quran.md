@@ -477,6 +477,27 @@ Every outside-in lead follows a four-stage arc before connecting to inside-out c
 
 **Quality-control test:** *Because [outside-in signal] suggests [buyer implication], it may be productive for the buyer and seller to discuss [inside-out relevance].* If Whyhello cannot complete that sentence convincingly, the insight and internal signal probably should not be combined.
 
+**The authority posture of the bridge**
+
+The bridge is a hypothesis, not a confirmed fact — but it is an *informed* hypothesis, grounded in pattern recognition and domain expertise. It should not read like guesswork or hedging, nor should it read like certainty the sender cannot justify. The right register is calibrated authority: the voice of someone who has seen this pattern before and is offering a considered observation, not claiming to know the buyer's situation better than they do.
+
+**Bridge Starter Library**
+
+Use one of the following frames to open the bridge. Vary the opener across emails — the same frame should not appear in consecutive messages from the same sender.
+
+| Starter | When to use |
+|---|---|
+| *"What we tend to see in situations like this is…"* | Pattern-based inference from a recurring dynamic |
+| *"A common pattern here is…"* | Similar to above; slightly more direct |
+| *"When this comes up, the next challenge is often…"* | Sequential pressure — one event typically triggers another |
+| *"This is often where [X] begins to affect [Y]."* | Two functions or forces whose interaction is predictable |
+| *"The practical implication is often…"* | Grounding an abstract signal in an operational consequence |
+| *"That can create added pressure around…"* | A development that compounds an existing tension |
+| *"One likely consequence is…"* | A single downstream effect stated with measured confidence |
+| *"Depending on [relevant condition], that could mean…"* | Conditional framing — acknowledges context without abandoning the hypothesis |
+| *"While every situation is different, we often see…"* | Explicitly signals expertise while respecting the buyer's uniqueness |
+| *"It made me wonder whether this is also creating…"* | Softest frame — invites rather than asserts; use when the inference is more speculative |
+
 **Full example:**
 
 | Stage | Example text |

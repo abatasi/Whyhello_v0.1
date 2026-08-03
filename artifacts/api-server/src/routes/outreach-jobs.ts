@@ -482,10 +482,19 @@ LAYER 2 — BRIDGE  (interpretation + relevance bridge — still entirely about 
             Stage B — Relevance bridge: translate the interpretation into a specific implication for ${contact.firstName}.
               What problem, opportunity, or priority might this create in their world?
             The bridge logic follows: outside-in signal → buyer implication → (sets up VALUE).
-  Rules   : Zero self-reference. Still entirely about them. Use tentative language — you are inferring, not asserting.
-            Starters: "That usually means…", "For most ${contact.jobTitle ?? "leaders"} at this stage…",
-            "That pace typically surfaces…", "The challenge that tends to follow…",
-            "That tension seems especially important when…", "The implication for [function] is often…"
+  Rules   : Zero self-reference. Still entirely about them.
+            The bridge is a hypothesis, but it is an informed hypothesis — it draws on pattern recognition and domain expertise, not guesswork. Frame it with calibrated authority: confident enough to be useful, tentative enough to stay honest.
+            Use starters from this library (vary across emails — do not repeat the same opener):
+              "What we tend to see in situations like this is…"
+              "A common pattern here is…"
+              "When this comes up, the next challenge is often…"
+              "This is often where [X] begins to affect [Y]."
+              "The practical implication is often…"
+              "That can create added pressure around…"
+              "One likely consequence is…"
+              "Depending on [relevant condition], that could mean…"
+              "While every situation is different, we often see…"
+              "It made me wonder whether this is also creating…"
 
 LAYER 3 — VALUE  (inside-out: value wedge or activated pillar)
   Purpose : Introduce the seller as the natural resolution to what BRIDGE surfaced.
