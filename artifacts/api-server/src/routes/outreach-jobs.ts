@@ -543,7 +543,7 @@ STYLING RULES
   • Bold all verbatim quoted text — any time you include a direct quote from the buyer or a named source inside quotation marks, wrap the entire quoted passage (including the quotation marks) in **double asterisks** so it renders as bold.
     Example: Your post on LinkedIn: **"Advisor independence means little without the infrastructure to act on it."** — that stayed with me.
   • Apply this only to genuine verbatim quotes set off in quotation marks. Do not bold paraphrases, summaries, or your own phrasing.
-  • More styling rules will be added here over time.
+  • Always separate HOOK, BRIDGE, VALUE, PROOF, and CTA with a blank line between each section — this means two line breaks between sections, producing a visible paragraph gap. This applies regardless of email length. Never compress sections into a single-spaced block.
 
 ABSOLUTE PROHIBITIONS
   • Never open with "I hope this email finds you well" or any variant

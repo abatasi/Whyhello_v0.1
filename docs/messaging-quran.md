@@ -932,6 +932,11 @@ Example:
 
 *Rationale:* The quoted snippet is the single most credible element in the HOOK — it is the buyer's own words. Bolding it separates evidence from commentary, gives the eye a landing point, and signals that the sender actually read the source rather than skimming a headline.
 
+**Rule S-2 — Double-space between all sections**
+Every layer boundary — between HOOK and BRIDGE, BRIDGE and VALUE, VALUE and PROOF, PROOF and CTA — is separated by a blank line, producing a visible paragraph gap in the rendered email. This applies unconditionally: short emails, medium emails, and long emails all use the same spacing. Length setting controls word count within each layer, not the spacing between them.
+
+*Rationale:* Single-spaced sections create visual crowding and blur the four-stage arc. The blank line between sections gives each layer room to land before the next one begins. This is especially important on medium-length emails, where the reduced word count per layer makes tight spacing feel compressed.
+
 **Future rules will be added to this section as the styling strategy develops.**
 
 ---
