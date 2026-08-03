@@ -308,12 +308,14 @@ PLACEMENT STYLE FOR THIS EMAIL: ${linkStyle === "inline"
     "...[worth reading in full](URL) if this is on your radar."
   Render as markdown: [anchor text](URL). Weave directly into the sentence — not added after a full stop as a standalone fragment.`
     : `PS — add a postscript after "[Your Name]" at the very end of the email.
-  The PS must connect back to the specific signal you used as your HOOK — make it clear the link is for the piece already mentioned above, not a new reference.
+  The PS must connect back to the specific signal you used as your HOOK — make it clear the link belongs to the piece already mentioned above, not a new reference.
+  The raw URL must never appear in the PS. Hide it behind active verb anchor text using markdown: [anchor text](URL).
+  Anchor text must describe what the piece does — not a generic "click here" or "read more".
   Examples of PS patterns (vary the phrasing — do not copy verbatim):
-    "P.S. Full piece on the article I mentioned above, in case it's useful: <URL>"
-    "P.S. Here's the full piece on what I referenced above if you'd like to read more: <URL>"
-    "P.S. Link to the report I mentioned above, if you'd like to dig in: <URL>"
-    "P.S. The piece I referenced above — full version here if it's of interest: <URL>"
+    "P.S. The piece I mentioned above is [worth reading in full](URL) if this is on your radar."
+    "P.S. Full report — [digs into this in more detail](URL) if useful."
+    "P.S. The article above [covers this in depth](URL) if you'd like more context."
+    "P.S. [The full piece is here](URL) — goes deeper on the numbers if it's of interest."
   Place it on a new line after the sign-off, preceded by a blank line.`
   }`;
 

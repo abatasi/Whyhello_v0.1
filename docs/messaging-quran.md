@@ -594,12 +594,19 @@ Rendered as markdown: `[anchor text](URL)`. Placed mid-sentence or at the clause
 
 **Style B — Postscript (after the sign-off)**
 
-The link appears as a P.S. on a new line after `[Your Name]`, preceded by a blank line. The P.S. must connect back to the specific source referenced in the HOOK — phrasing should make it clear the link belongs to the piece already mentioned in the email, not a new reference introduced at the end. Examples:
+The link appears as a P.S. on a new line after `[Your Name]`, preceded by a blank line. The P.S. must connect back to the specific source referenced in the HOOK, and the raw URL must never appear — it must always be hidden behind active verb anchor text using markdown: `[anchor text](URL)`.
 
-- *"P.S. Full piece on the article I mentioned above, in case it's useful: \<URL\>"*
-- *"P.S. Here's the full piece on what I referenced above if you'd like to read more: \<URL\>"*
-- *"P.S. Link to the report I mentioned above, if you'd like to dig in: \<URL\>"*
-- *"P.S. The piece I referenced above — full version here if it's of interest: \<URL\>"*
+Anchor text must describe what the piece does. Generic prompts like *"click here"*, *"read more"*, or bare URLs are not permitted.
+
+**Correct — active verb anchor, URL hidden:**
+- *"P.S. The piece I mentioned above is [worth reading in full](URL) if this is on your radar."*
+- *"P.S. Full report — [digs into this in more detail](URL) if useful."*
+- *"P.S. The article above [covers this in depth](URL) if you'd like more context."*
+- *"P.S. [The full piece is here](URL) — goes deeper on the numbers if it's of interest."*
+
+**Incorrect — raw URL exposed:**
+- ~~*"P.S. Full piece on the article I mentioned above, in case it's useful: https://..."*~~
+- ~~*"P.S. Link to the report I mentioned above: https://..."*~~
 
 **Constraints:**
 

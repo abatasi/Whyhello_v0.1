@@ -170,12 +170,22 @@ function parseEmailResult(raw: string): { subject: string; body: string } {
   return { subject: "", body: clean };
 }
 
-/** Render a string that may contain **bold** markdown as React nodes. */
+/** Render a string that may contain **bold** and [text](url) markdown as React nodes. */
 function renderInlineMarkdown(text: string): React.ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  // Split on **bold** and [text](url) tokens
+  const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (linkMatch) {
+      return (
+        <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer"
+          className="underline text-primary hover:opacity-80 transition-opacity">
+          {linkMatch[1]}
+        </a>
+      );
     }
     return part;
   });
