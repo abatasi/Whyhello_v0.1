@@ -1,0 +1,43 @@
+Personal Insight hooks
+
+Use when the Contact authored the post, appeared in the interview, delivered the keynote, received the recognition, or otherwise generated the signal.
+
+“Came across your [post/interview/podcast] on [topic]. Your point about [specific idea] really stood out.”
+“Really enjoyed your perspective on [topic], particularly your observation that [specific point].”
+“I was glad to see you drawing attention to [issue]. Your point about [specific idea] was especially well made.”
+“Your recent [post/interview] on [topic] caught my attention. I particularly liked how you framed [specific idea].”
+“I appreciated your comments on [topic], especially the distinction you made between [X] and [Y].”
+“You made an interesting point recently about [specific idea]. It stayed with me because [brief interpretation].”
+“Congratulations on [achievement or milestone]. It was particularly impressive to see [specific detail].”
+“Nice to see your work on [initiative] getting recognized. [Specific element] seems especially noteworthy.”
+“I came across your conversation with [interviewer/publication]. Your comment that ‘[short quotation]’ was a sharp way of capturing [issue].”
+“Your post about [topic] stood out, especially the way you connected [X] with [Y]. That’s a connection people often miss.”
+
+The governing formula is:
+
+Recognition + specific evidence + genuine reaction
+
+For example:
+
+Came across your post on the tax implications of major life changes. Your breakdown of how foreign investments, medical expenses, and common-law status can affect filing obligations was particularly useful. That stood out.
+
+This is stronger than quoting the post’s introductory description wholesale because it sounds like a human reaction rather than scraped source material.
+
+Company, Colleague, Counterpart, Role and Industry hooks
+
+These should sound like a thoughtful colleague dropping something useful into Slack: low ceremony, immediately relevant, and free of a premature sales tone.
+
+“Came across this piece on [topic] and thought it might be useful given your work around [relevant responsibility].”
+“Thought I’d pass this along. It has an interesting take on [specific issue] that seems relevant to [their world].”
+“Not sure if this has crossed your desk yet, but there’s an interesting finding here around [specific finding].”
+“I found this analysis of [topic] particularly useful. The part about [specific detail] seemed especially relevant.”
+“This may already be on your radar, but I thought the section on [specific issue] was worth sharing.”
+“Passing this along because it puts some useful numbers behind [challenge or trend].”
+“Came across an interesting example of how [company/person/peer group] is approaching [problem]. Thought it might be relevant to you.”
+“This caught my attention because it connects [development] with [buyer responsibility or market implication].”
+“One finding in this [report/article] stood out: [concise finding]. I thought you might find it useful given [relevance].”
+“You may have already seen the broader news, but this particular perspective on [topic] seemed worth sharing.”
+
+The governing formula is:
+
+Discovery + useful substance + reason for sharing

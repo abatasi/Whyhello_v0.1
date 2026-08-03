@@ -246,14 +246,23 @@ The outside-in section should usually occupy one or two sentences. Include only 
 - Connect the idea expressed by the contact to the seller's internal signal
 - Treat disagreements carefully: show curiosity before challenging the contact's view
 
+**Governing formula:** Recognition + specific evidence + genuine reaction. 1–2 sentences. "I" is permitted. The hook must sound like something the sender would still send even if no pitch followed.
+
 **Recommended framing:**
-- *"I enjoyed your point about…"*
-- *"Your comment that '[short quote]' stood out to me."*
-- *"I was glad to see you raise…"*
-- *"Your distinction between X and Y was especially interesting."*
-- *"The part that stayed with me was…"*
+- *"Came across your [post/interview/podcast] on [topic]. Your point about [specific idea] really stood out."*
+- *"Really enjoyed your perspective on [topic], particularly your observation that [specific point]."*
+- *"Your recent [post/interview] on [topic] caught my attention — particularly the way you framed [specific idea]."*
+- *"I appreciated your comments on [topic], especially the distinction you made between [X] and [Y]."*
+- *"You made an interesting point recently about [specific idea]. It stayed with me because [brief interpretation]."*
+- *"I came across your conversation with [interviewer/publication]. Your comment that '[short quotation]' was a sharp way of capturing [issue]."*
+- *"Your post about [topic] stood out, especially the way you connected [X] with [Y] — that's a connection people often miss."*
+
+For attributable quotes — always cite the source platform:
+- *"Came across your post on [Source]: '[quote]' — that stayed with me."*
+- *"Saw your [Source] note on [topic]: '[quote]' — that's a sharp framing."*
 
 **Avoid:**
+- Fragment sentences or bare observations with no human voice ("A post that discusses X.")
 - Generic praise such as "Great post!"
 - Long summaries of what the contact already said
 - Claiming agreement without demonstrating understanding
@@ -284,15 +293,18 @@ The outside-in section should usually occupy one or two sentences. Include only 
 - Treat sensitive developments — layoffs, missed targets, litigation, leadership departures — with restraint
 - Avoid asking the contact to confirm confidential or non-public information
 
+**Governing formula:** Discovery + useful substance + reason for sharing. Should sound like a thoughtful colleague dropping something relevant into Slack — low ceremony, immediately relevant, no premature sales tone.
+
 **Recommended framing:**
-- *"You're likely already close to this, but I noticed…"*
-- *"I imagine this is already well known internally, though this outside take caught my attention…"*
-- *"Not sure whether this particular analysis crossed your desk…"*
-- *"I saw the announcement about X and was interested in the emphasis on Y."*
-- *"From the outside, it looks as though…"*
+- *"Thought I'd pass this along — there's an interesting take on [specific issue] that seems relevant to [their world]."*
+- *"Not sure if this has crossed your desk yet, but there's an interesting finding here around [specific development]."*
+- *"You're likely already close to this, but I thought this outside perspective was worth sharing."*
+- *"This caught my attention because it connects [development] with [buyer responsibility or implication]."*
+- *"You may have already seen the broader news, but this particular take on [topic] seemed worth passing along."*
 
 **Avoid:**
 - *"Did you know your company…?"* / *"In case you weren't aware…"*
+- Fragment sentences or bare observations with no human voice
 - Treating public speculation as confirmed fact
 - Asking the buyer to disclose inside information
 - Overstating what a single signal proves
@@ -323,14 +335,18 @@ The outside-in section should usually occupy one or two sentences. Include only 
 - Avoid manufacturing urgency from weak trend data
 - When referencing competitors, focus on market implications rather than gossip
 
+**Governing formula:** Discovery + useful substance + reason for sharing. The sender earns attention by finding, filtering, and interpreting. Should feel like a useful drop into someone's inbox, not a manufactured entry point.
+
 **Recommended framing:**
-- *"I came across an interesting report on…"*
-- *"This analysis of X may be worth a look…"*
-- *"One finding in this industry report caught my attention…"*
-- *"I thought you might find this useful given the shift toward…"*
-- *"The headline is X, but the more interesting detail may be Y."*
+- *"Came across this piece on [topic] and thought it might be useful given your work around [relevant responsibility]."*
+- *"Not sure if this has crossed your desk yet, but there's an interesting finding here around [specific finding]."*
+- *"I found this analysis of [topic] particularly useful. The part about [specific detail] seemed especially relevant."*
+- *"Passing this along because it puts some useful numbers behind [challenge or trend]."*
+- *"One finding in this [report/article] stood out: [concise finding]. I thought you might find it useful given [relevance]."*
+- *"This may already be on your radar, but I thought the section on [specific issue] was worth sharing."*
 
 **Avoid:**
+- Fragment sentences that function as link labels, not hooks ("A report that [explores X].")
 - *"As you already know…"* unless the statement is genuinely foundational
 - Dropping a link without explaining its relevance
 - Summarizing an entire report
@@ -362,14 +378,17 @@ The outside-in section should usually occupy one or two sentences. Include only 
 - Invite the buyer to compare the research with their own experience
 - Connect to an internal signal only when the seller has credible relevance
 
+**Governing formula:** Discovery + useful substance + reason for sharing. Validate lived experience; quantify or reframe a familiar tension. Invite comparison with the buyer's own reality.
+
 **Recommended framing:**
-- *"I found this benchmark on how [role] leaders are approaching…"*
-- *"This report puts some useful numbers behind…"*
-- *"You'll know the challenge far better than I do, but this finding was interesting…"*
-- *"One tension the report highlights is…"*
-- *"I was curious whether this reflects what you're seeing…"*
+- *"Came across this benchmark on how [role] leaders are approaching [challenge] — thought it might be useful."*
+- *"Passing this along because it puts some useful numbers behind [challenge or trade-off]."*
+- *"You'll know this far better than I do, but this finding was interesting given [context]."*
+- *"Not sure if this has crossed your desk, but there's an interesting tension flagged here around [specific issue]."*
+- *"I found this [report/study] worth sharing — particularly the section on [specific finding]."*
 
 **Avoid:**
+- Fragment sentences or bare link labels with no human voice
 - Telling the contact what people in their role care about
 - Basic descriptions of their responsibilities
 - Overconfident phrases such as *"Your biggest challenge must be…"*
@@ -400,12 +419,13 @@ The outside-in section should usually occupy one or two sentences. Include only 
 - Never imply that the colleague privately referred the seller unless that happened
 - Treat the colleague's idea as a useful internal signal, not leverage against the contact
 
+**Governing formula:** Discovery + useful substance + reason for sharing. Bring forward an idea already present inside the buyer's organization — low ceremony, no manufactured significance.
+
 **Recommended framing:**
-- *"I came across a conversation with your colleague [Name] about…"*
-- *"[Name] made an interesting point recently about…"*
-- *"Not sure if you caught [Name]'s discussion of…"*
-- *"A theme raised by someone elsewhere in your organization caught my attention…"*
-- *"Your colleague's distinction between X and Y seemed especially relevant to…"*
+- *"Came across [Name]'s [interview/post] on [topic] and thought it might be worth passing along given your work on [relevant area]."*
+- *"[Name] made an interesting point recently about [topic] — thought it might be relevant to you."*
+- *"Not sure if you caught [Name]'s discussion of [topic], but there's a useful angle here on [specific issue]."*
+- *"A theme raised by someone elsewhere in your organization caught my attention — particularly the point about [specific idea]."*
 
 **Avoid:**
 - *"Your company believes…"* based on one person's statement
@@ -440,12 +460,14 @@ The outside-in section should usually occupy one or two sentences. Include only 
 - Never reveal confidential information from another company
 - Frame the insight as "what one peer is doing," not "what everyone else knows"
 
+**Governing formula:** Discovery + useful substance + reason for sharing. Surface what peers are trying or questioning — frame as one example, not market consensus.
+
 **Recommended framing:**
-- *"I came across an interesting perspective from another [role] in your space…"*
-- *"[Name], who leads X at Y, recently described…"*
-- *"One of your counterparts is taking an interesting approach to…"*
-- *"This caught my attention because it came from someone dealing with a very similar mandate."*
-- *"It is only one example, but their approach to X was interesting…"*
+- *"Came across an interesting perspective from another [role] in your space — thought it might be worth sharing."*
+- *"Passing this along because it came from someone dealing with a very similar mandate to yours."*
+- *"[Name], who leads X at Y, recently described an approach to [challenge] that caught my attention."*
+- *"It is only one example, but their take on [topic] raised an interesting question I thought might be relevant to you."*
+- *"Not sure if this has crossed your desk, but one of your counterparts is taking an interesting approach to [problem]."*
 
 **Avoid:**
 - *"Your competitors are all doing this."*
@@ -901,7 +923,7 @@ Example: *Compliance overhead eliminated manual compliance reporting, saving **$
 ### 7.1 Cold Outreach (Email / LinkedIn)
 
 ```
-[HOOK — outside-in signal, 1 sentence, framed per signal type (see Surah 3.2–3.7)]
+[HOOK — 1–2 sentences, framed per signal type (see Surah 3.2–3.7 and the two governing formulas below)]
 [BRIDGE — two stages:
     Stage A · Interpretation: what is specifically interesting or consequential about the signal
     Stage B · Relevance bridge: the buyer implication — what problem, priority, or opportunity this creates]

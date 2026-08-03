@@ -456,9 +456,10 @@ The underlying architecture of Layers 1–3 follows four stages:
 The bridge is the most important piece. Without it, the message becomes two disconnected statements:
 "I saw something about you" followed by "Here is what we sell." The bridge supplies the buyer implication.
 
-LAYER 1 — HOOK  (outside-in signal — 1 sentence)
-  Purpose : Open with the single most specific signal, framed according to the per-type rules above.
-            Something ${contact.firstName} would immediately recognise as true of their world right now.
+LAYER 1 — HOOK  (1–2 sentences)
+  Purpose : Open with the single most specific signal. The hook must sound like something the sender
+            would still send even if no pitch followed — genuine, human, low-ceremony.
+            Most buyers won't know the sender. Establish brief context through tone and framing, not a bio.
   Priority: 1. A direct quote attributed to ${contact.firstName} (from Attributable Quotes above)
             2. Personal insight — recognize something they created, said, or published
             3. Company insight — acknowledge something happening around them
@@ -466,17 +467,38 @@ LAYER 1 — HOOK  (outside-in signal — 1 sentence)
             5. Role insight — surface a challenge or tension in their operating environment
             6. Colleague insight — introduce relevant activity through a recognizable peer
             7. Counterpart insight — surface what a comparable peer is doing or questioning
-  Rules   : Exactly one sentence. No "I". No opinion. Purely observational.
-            Apply the recommended framing patterns and avoid patterns from the per-type rules above.
-            Quote starters (always cite the source platform — see "Source:" label in each quote above):
-                          "Came across your post on [Source] re: [topic]: '[quote]'…"
-                          "Saw your [Source] note on [topic]: '[quote]'…"
-                          "Your [Source] post on [topic]: '[quote]' — that stood out."
-            Personal starters: "Your point about…", "The part that stayed with me was…"
-            Company starters: "You're likely already close to this, but…", "I noticed the emphasis on…"
-            Industry/Role starters: "I came across a report on…", "One finding caught my attention…"
-            Colleague starters: "I came across a conversation with your colleague [Name]…"
-            Counterpart starters: "I came across an interesting perspective from another [role]…"
+
+  TWO GOVERNING FORMULAS — use the one that matches the signal type:
+
+  PERSONAL SIGNALS (including attributable quotes) — Formula: Recognition + specific evidence + genuine reaction
+    The sender is the attentive audience member. Isolate a specific argument, detail, or quote.
+    Say what stood out and why — briefly. "I" is allowed. 1–2 sentences.
+    Starters (vary — do not repeat verbatim):
+      "Came across your [post/interview/podcast] on [topic]. Your point about [specific idea] really stood out."
+      "Really enjoyed your perspective on [topic], particularly your observation that [specific point]."
+      "Your recent [post/interview] on [topic] caught my attention — particularly the way you framed [specific idea]."
+      "I appreciated your comments on [topic], especially the distinction you made between [X] and [Y]."
+      "You made an interesting point recently about [specific idea]. It stayed with me because [brief interpretation]."
+      "I came across your conversation with [interviewer/publication]. Your comment that '[short quotation]' was a sharp way of capturing [issue]."
+      "Your post about [topic] stood out, especially the way you connected [X] with [Y] — that's a connection people often miss."
+    For attributable quotes — always cite the source platform explicitly:
+      "Came across your post on [Source]: '[quote]' — that stayed with me."
+      "Saw your [Source] note on [topic]: '[quote]' — that's a sharp framing."
+    Avoid: generic praise ("great post"), wholesale summary of the source, fragment sentences with no human voice.
+
+  COMPANY / INDUSTRY / ROLE / COLLEAGUE / COUNTERPART — Formula: Discovery + useful substance + reason for sharing
+    Should sound like a thoughtful colleague dropping something relevant into Slack: low ceremony,
+    immediately relevant, no premature sales tone. "I" is allowed. 1–2 sentences.
+    Starters (vary — do not repeat verbatim):
+      "Came across this piece on [topic] and thought it might be useful given your work around [relevant responsibility]."
+      "Thought I'd pass this along — there's an interesting take on [specific issue] that seems relevant to [their world]."
+      "Not sure if this has crossed your desk yet, but there's an interesting finding here around [specific finding]."
+      "I found this analysis of [topic] particularly useful. The part about [specific detail] seemed especially relevant."
+      "This may already be on your radar, but I thought the section on [specific issue] was worth sharing."
+      "Passing this along because it puts some useful numbers behind [challenge or trend]."
+      "This caught my attention because it connects [development] with [buyer responsibility or market implication]."
+      "One finding in this [report/article] stood out: [concise finding]. I thought you might find it useful given [relevance]."
+    Avoid: fragment sentences, bare link drops with no human voice, "I came across X" with nothing that follows.
 
 LAYER 2 — BRIDGE  (interpretation + relevance bridge — still entirely about them)
   Purpose : Complete the four-stage arc: interpret the signal, then connect it to a buyer implication.
