@@ -21,10 +21,11 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 export const contactJobsRouter: IRouter = Router({ mergeParams: true });
 export const jobsRouter: IRouter = Router({ mergeParams: true });
 
-type InsightRow = { id: number; title: string; source: string; description?: string | null; publishedDate?: string | null };
+type InsightRow = { id: number; title: string; source: string; url?: string | null; description?: string | null; publishedDate?: string | null; mediaType?: string | null };
 
-function fmtInsight(i: InsightRow) {
-  return `  • "${i.title}" (${i.source}${i.publishedDate ? ", " + i.publishedDate : ""})${i.description ? "\n    " + i.description : ""}`;
+function fmtInsight(i: InsightRow, showUrl = false) {
+  const base = `  • "${i.title}" (${i.source}${i.publishedDate ? ", " + i.publishedDate : ""})${i.description ? "\n    " + i.description : ""}`;
+  return showUrl && i.url ? `${base}\n    URL: ${i.url}` : base;
 }
 
 // ── DNA / seller-context types (mirrors HQ.tsx) ───────────────────────────
@@ -178,19 +179,19 @@ async function runGeneration(jobId: number) {
     if (fci.length > 0) {
       groups.push(
         `COMPANY INSIGHTS  [Awareness: Probable — contact knows the event, may not have seen this angle | Posture: Informed external observer]\n` +
-        fci.map(i => fmtInsight(i)).join("\n")
+        fci.map(i => fmtInsight(i, true)).join("\n")
       );
     }
     if (fi.length > 0) {
       groups.push(
         `INDUSTRY INSIGHTS  [Awareness: Possible general awareness, low assumed awareness of specific source | Posture: Resourceful industry observer]\n` +
-        fi.map(i => fmtInsight(i)).join("\n")
+        fi.map(i => fmtInsight(i, true)).join("\n")
       );
     }
     if (fr.length > 0) {
       groups.push(
         `ROLE INSIGHTS  [Awareness: Likely familiar with the challenge, uncertain of specific evidence | Posture: Role-informed specialist]\n` +
-        fr.map(i => fmtInsight(i)).join("\n")
+        fr.map(i => fmtInsight(i, true)).join("\n")
       );
     }
     if (fc.length > 0) {
@@ -278,6 +279,42 @@ async function runGeneration(jobId: number) {
   const voiceSection = tone === "my_voice_profile" && vp
     ? buildVoiceGuide(vp)
     : `Tone: ${tone} — let this govern word choice, sentence rhythm, and sign-off style.`;
+
+  // 50/50 coin-flip for link placement style, decided once per generation run
+  const linkStyle: "inline" | "ps" = Math.random() < 0.5 ? "inline" : "ps";
+
+  // Only relevant when the HOOK draws from a Company, Industry, or Role signal
+  // (those are the signal types whose URL appears in the insights section above).
+  const linkPlacementBlock = `
+═══════════════════════════════════════════
+LINK PLACEMENT RULE  (Company / Industry / Role signals only)
+═══════════════════════════════════════════
+If your chosen HOOK signal is a Company, Industry, or Role insight, that signal's URL is listed
+in the SELECTED SIGNALS section above as "URL: <url>". You MUST include that URL exactly once
+in the message body, using the placement style below. Do not alter the URL.
+
+Do NOT include a link if your HOOK is a Personal, Colleague, or Counterpart insight.
+
+PLACEMENT STYLE FOR THIS EMAIL: ${linkStyle === "inline"
+    ? `INLINE — weave the URL naturally into the same paragraph as your HOOK.
+  The link must feel like a generous offer of context, not a sales attachment.
+  Examples of natural anchor patterns (vary the phrasing — do not copy verbatim):
+    "More here."
+    "You can read more about it here."
+    "Worth a look here if you want the full picture."
+    "Full piece here if it's useful."
+    "Here's the piece if you'd like more context."
+  Render it as markdown: [anchor text](URL)
+  Place it at the natural sentence break after you reference the signal — not mid-sentence.`
+    : `PS — add a postscript after "[Your Name]" at the very end of the email.
+  The PS must reference the specific signal you used as your HOOK.
+  Examples of PS patterns (vary the phrasing — do not copy verbatim):
+    "P.S. Here's the link to the article above if you'd like to read more: <URL>"
+    "P.S. Full piece here in case it's useful: <URL>"
+    "P.S. Link to the report I mentioned: <URL>"
+    "P.S. The article referenced above, if you'd like to dig in: <URL>"
+  Place it on a new line after the sign-off, preceded by a blank line.`
+  }`;
 
   const quotesBlock = quotesSection ? `
 ═══════════════════════════════════════════
@@ -500,6 +537,7 @@ LENGTH: ${lengthDesc}
 SIGN-OFF: ${tone === "my_voice_profile" ? "Use the sender's preferred closing phrase from the voice profile below, followed by \"[Your Name]\" on the next line" : "Sign off with \"[Your Name]\" as a placeholder — no invented name"}
 
 ${voiceSection}
+${linkPlacementBlock}
 
 ABSOLUTE PROHIBITIONS
   • Never open with "I hope this email finds you well" or any variant
