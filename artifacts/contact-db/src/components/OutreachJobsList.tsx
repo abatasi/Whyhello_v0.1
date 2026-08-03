@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
 import {
   useListOutreachJobs,
   useDeleteOutreachJob,
@@ -171,24 +170,41 @@ function parseEmailResult(raw: string): { subject: string; body: string } {
   return { subject: "", body: clean };
 }
 
-/** Render email body markdown — bold, links, and future styling rules all handled by react-markdown. */
+/**
+ * Convert email body markdown to safe HTML for rendering.
+ * Handles: **bold**, [text](url) links, paragraph breaks, line breaks.
+ * HTML entities are escaped first so AI-generated text can't inject markup.
+ */
+function emailMarkdownToHtml(text: string): string {
+  // 1. Escape HTML entities to prevent injection
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // 2. Markdown links [text](url) — only allow http/https URLs
+  html = html.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer" style="text-decoration:underline;color:inherit;opacity:0.85;">$1</a>'
+  );
+
+  // 3. Bold **text**
+  html = html.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+
+  // 4. Split on double newlines → paragraphs; single newlines → <br>
+  return html
+    .split(/\n{2,}/)
+    .map(para => `<p style="margin:0 0 1em 0;">${para.replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+/** Render an email body with full markdown styling, matching how it would look in Gmail or Outlook. */
 function EmailBody({ text }: { text: string }) {
   if (!text) return <span>No content generated.</span>;
   return (
-    <ReactMarkdown
-      components={{
-        p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
-        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-        a: ({ href, children }) => (
-          <a href={href} target="_blank" rel="noopener noreferrer"
-            className="underline text-primary hover:opacity-80 transition-opacity">
-            {children}
-          </a>
-        ),
-      }}
-    >
-      {text}
-    </ReactMarkdown>
+    <div
+      dangerouslySetInnerHTML={{ __html: emailMarkdownToHtml(text) }}
+    />
   );
 }
 
@@ -469,7 +485,7 @@ function JobViewerModal({
                       <span className="text-sm font-semibold text-foreground">{subject}</span>
                     </div>
                   ) : null}
-                  <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                  <div className="text-sm leading-relaxed text-foreground">
                     <EmailBody text={body} />
                   </div>
                 </div>
