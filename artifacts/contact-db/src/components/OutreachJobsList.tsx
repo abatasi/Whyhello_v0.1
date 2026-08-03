@@ -170,6 +170,33 @@ function parseEmailResult(raw: string): { subject: string; body: string } {
   return { subject: "", body: clean };
 }
 
+/** Render a string that may contain **bold** markdown as React nodes. */
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
+/** Render an email body string, preserving whitespace/newlines and applying inline markdown. */
+function EmailBody({ text }: { text: string }) {
+  if (!text) return <span>No content generated.</span>;
+  const lines = text.split("\n");
+  return (
+    <>
+      {lines.map((line, i) => (
+        <span key={i}>
+          {renderInlineMarkdown(line)}
+          {i < lines.length - 1 && "\n"}
+        </span>
+      ))}
+    </>
+  );
+}
+
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function GeneratingBars() {
@@ -448,7 +475,7 @@ function JobViewerModal({
                     </div>
                   ) : null}
                   <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-                    {body || "No content generated."}
+                    <EmailBody text={body} />
                   </div>
                 </div>
               )}
