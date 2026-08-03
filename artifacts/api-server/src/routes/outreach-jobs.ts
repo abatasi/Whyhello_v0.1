@@ -481,9 +481,16 @@ LAYER 1 — HOOK  (1–2 sentences)
       "You made an interesting point recently about [specific idea]. It stayed with me because [brief interpretation]."
       "I came across your conversation with [interviewer/publication]. Your comment that '[short quotation]' was a sharp way of capturing [issue]."
       "Your post about [topic] stood out, especially the way you connected [X] with [Y] — that's a connection people often miss."
-    For attributable quotes — always cite the source platform explicitly:
-      "Came across your post on [Source]: '[quote]' — that stayed with me."
-      "Saw your [Source] note on [topic]: '[quote]' — that's a sharp framing."
+    For attributable quotes — always cite the source platform explicitly.
+      After invoking the quote, the reaction must be ONE short sentence naming the specific takeaway.
+      No "— that stayed with me" preamble. No restatement of what the quote said.
+      Correct patterns:
+        "Came across your post on [Source]: '[quote]' I really appreciated the highlight on [key takeaway]."
+        "Saw your [Source] note on [topic]: '[quote]' That framing of [specific idea] stood out to me."
+        "Came across your [Source] piece: '[quote]' Really appreciated the way you put [specific tension] into words."
+        "Your [Source] post caught my eye: '[quote]' I thought the emphasis on [specific point] was sharp."
+      Wrong:
+        "[quote] — that stayed with me. The way you highlighted X makes clear that Y." (too long, restates the quote)
     Avoid: generic praise ("great post"), wholesale summary of the source, fragment sentences with no human voice.
 
   COMPANY / INDUSTRY / ROLE / COLLEAGUE / COUNTERPART — Formula: Discovery + useful substance + reason for sharing
