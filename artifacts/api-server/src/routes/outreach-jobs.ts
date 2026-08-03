@@ -24,7 +24,7 @@ export const jobsRouter: IRouter = Router({ mergeParams: true });
 type InsightRow = { id: number; title: string; source: string; url?: string | null; description?: string | null; publishedDate?: string | null; mediaType?: string | null };
 
 function fmtInsight(i: InsightRow, showUrl = false) {
-  const base = `  • "${i.title}" (${i.source}${i.publishedDate ? ", " + i.publishedDate : ""})${i.description ? "\n    " + i.description : ""}`;
+  const base = `  • ${i.title} (${i.source}${i.publishedDate ? ", " + i.publishedDate : ""})${i.description ? "\n    " + i.description : ""}`;
   return showUrl && i.url ? `${base}\n    URL: ${i.url}` : base;
 }
 
@@ -323,12 +323,14 @@ PLACEMENT STYLE FOR THIS EMAIL: ${linkStyle === "inline"
 ═══════════════════════════════════════════
 ATTRIBUTABLE QUOTES  (highest-priority HOOK material)
 ═══════════════════════════════════════════
-These are verbatim quotes from the buyer or people in their orbit. Each quote includes a "Source" label — always cite the source platform explicitly in the HOOK opener. Do not open with a quote and leave the reader guessing where it came from.
+These are verbatim quotes extracted from post bodies. Each entry includes the exact text to quote, its attribution, and the source platform.
 
-Recommended starters (use the Source label to name the platform):
-  "Came across your post on [Source] re: [topic]: '[quote]' — that stood out."
-  "Saw your [Source] post on [topic]: '[quote]' — that's a real tension."
-  "Your [Source] note on [topic]: '[quote]' — that's a sharp framing."
+CRITICAL: The "[quote]" in your HOOK must be copied character-for-character from the "quote" field in one of the entries below. Never use the insight title from SELECTED SIGNALS as the quote — the title is a label, not quotable text.
+
+Recommended starters (use the Source label to name the platform, and the insight topic as a brief re: label):
+  "Came across your post on [Source] re: [topic]: '[verbatim quote from entry below]' I appreciated [one-sentence specific reaction]."
+  "Saw your [Source] post on [topic]: '[verbatim quote from entry below]' That framing of [specific idea] stood out to me."
+  "Your [Source] piece on [topic]: '[verbatim quote from entry below]' Really appreciated the way you put [specific tension] into words."
 
 The HQ Bridge note below each quote shows how to transition into VALUE.
 Only use a quote when it genuinely elevates the message; never force one.
