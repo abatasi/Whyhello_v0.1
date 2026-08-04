@@ -4,7 +4,9 @@
 > بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
 > *In the name of relevance, the compassionate, the specific.*
 
-> **Status:** Living scripture. Reflects logic implemented in `artifacts/contact-db/src/pages/HQ.tsx` and `ContactProfile.tsx` as of July 2026. All future messaging changes must be revealed here first, before they descend into code.
+> **Status:** Living scripture. Reflects logic implemented in `artifacts/contact-db/src/pages/HQ.tsx`, `ContactProfile.tsx`, and `artifacts/api-server/src/routes/` as of August 2026. All future messaging changes must be revealed here first, before they descend into code.
+
+> **Scope:** "Messaging" in Whyhello is an umbrella for every customer-facing or seller-enablement output the platform generates — not just emails. Current output types: Cold Outreach Email, Battlecard (PPTX). Forthcoming: One-page PDF, Talk Track, LinkedIn Message, Meeting Prep Brief. Each output type shares the same signal selection philosophy and inside-out/outside-in blend engine, but renders it through a format-appropriate structure and register.
 
 ---
 
@@ -12,6 +14,8 @@
 
 ## Surah 1 · Al-Falsafa — The Philosophy
 ### *The Inside-Out / Outside-In Blend*
+
+### 1.1 The Blend
 
 Whyhello generates outbound messages by combining two independent signal streams and resolving them into a single, contextually relevant output.
 
@@ -37,6 +41,27 @@ Role-level signals           ╯
 **Outside-in** answers: *Who is this specific person, and what is true of their world right now?*
 
 A message scores well when it uses outside-in signals to **select** which inside-out content to surface — not to change what is true about the company, but to choose the angle, proof point, pillar, or economic benefit that will resonate most with this contact in this moment.
+
+---
+
+### 1.2 Output Type Taxonomy
+
+Every output Whyhello generates is an expression of the same underlying blend — outside-in signal selection applied against inside-out positioning — rendered through a format appropriate to its audience and use case.
+
+| Output Type | Format | Primary Audience | Register | Purpose |
+|---|---|---|---|---|
+| **Cold Outreach Email** | Text / Markdown | Buyer | Conversational, direct | Open a new relationship or reactivate a dormant one |
+| **Battlecard** | PPTX (one slide) | Seller | Informational, structured | Pre-meeting intelligence brief — what to lead with and why |
+| **LinkedIn Message** | Plain text | Buyer | Informal, brief | Create an initial connection or bridge from email |
+| **Talk Track** | Structured prose | Seller | Spoken-word, natural cadence | Prepare the seller for a live conversation or discovery call |
+| **One-Page PDF** | PDF | Buyer / Seller | Clean, visual | Leave-behind or send-ahead summary of the value proposition |
+| **Meeting Prep Brief** | Text / Markdown | Seller | Analytical | Contextualise the meeting: who is in the room, what signals are live, what to say |
+
+> **Governing rule:** Every output type shares the same signal selection engine (Surah 3–5) and the same inside-out content model (Surah 2, 6). What differs across types is the **rendering layer** — how the blend is expressed in structure, length, register, and format. Format does not change what is true; it changes how that truth is presented.
+
+**Buyer-facing outputs** (Email, LinkedIn, One-Page PDF) must comply with all hook framing rules in Surah 3 — they are messages the contact will read, so posture, tone, and awareness accuracy are non-negotiable.
+
+**Seller-facing outputs** (Battlecard, Talk Track, Meeting Prep Brief) surface the same underlying intelligence but in a reference format — dense, scannable, labelled. They are not bound by email hook conventions, but the signal selection and relevance logic that governs what to surface is identical.
 
 ---
 
@@ -1067,5 +1092,210 @@ When signals conflict, apply this precedence:
 ---
 
 <div align="center">❊ ❊ ❊</div>
+
+---
+
+<div align="center">❊ ❊ ❊</div>
+
+## Surah 12 · Al-Haykal Al-Maktub — The Written Brief
+### *Battlecard: Seller-Facing Intelligence Output*
+
+The Battlecard is Whyhello's first non-email output type. It is a one-slide PowerPoint (PPTX) that surfaces the highest-relevance insight per signal category alongside the contact's details and relevance scores — formatted for a seller to scan before a call, share with a team, or print for a meeting.
+
+> **Primary distinction from email:** The Battlecard is not a message the buyer reads. It is a reference tool the seller uses. The register shifts from conversational to informational. Hook framing rules (Surah 3) do not apply to the content rendered on the card. Signal selection rules (Surah 5) do apply — the same relevance logic that would select a hook for an email selects the lead insight for each card.
+
+---
+
+### 12.1 Purpose and Use Cases
+
+| Use case | What the Battlecard provides |
+|---|---|
+| Pre-call prep | The single best insight per category and its relevance score — tells the seller which angle to lead with |
+| Team briefing | A single file to share with a manager, solution engineer, or co-seller before a meeting |
+| Account handover | A snapshot of what is known about the contact at the time of transfer |
+| Pipeline review | A visual summary of signal depth — how many categories have live intelligence |
+
+The Battlecard answers two questions for the seller:
+1. **What do I know about this person?** — Contact details, signal categories, source titles.
+2. **What should I lead with?** — The relevance score and matched HQ signals tell the seller which category is the strongest angle for this specific contact against this specific HQ profile.
+
+---
+
+### 12.2 Signal Selection Logic
+
+Each of the four insight cards (Personal, Company, Industry, Role) shows the **single highest-relevance insight** for that category. Selection follows this logic:
+
+1. Fetch all insights for the category.
+2. Join against `insight_relevance_scores` for this contact.
+3. Select the row with the highest `score`.
+4. **Fallback:** If no relevance scores have been computed yet for this contact, select the first row in the category.
+
+This is the same relevance signal that drives hook selection in email generation (Surah 5.5). The seller sees the same answer to "which insight should I lead with?" — whether they are composing an email or opening a PPTX.
+
+---
+
+### 12.3 Slide Structure
+
+The single slide is divided into four zones:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  HEADER BAND (dark navy)                              [BATTLECARD pill]  │
+│  Contact full name (large)                           [Whyhello logo]     │
+│  Job title · Company                                                     │
+│  Seniority | Department | Industry                                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│  DETAILS BAR (light grey)                                                │
+│  ✉ email   ✆ phone   ⌖ location   in linkedin   ⊕ website               │
+├─────────────────────────────────────────────────────────────────────────┤
+│  KEY INSIGHTS label                                                      │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐   │
+│  │  PERSONAL    │ │  COMPANY     │ │  INDUSTRY    │ │  ROLE        │   │
+│  │  [title]     │ │  [title]     │ │  [title]     │ │  [title]     │   │
+│  │  ──────────  │ │  ──────────  │ │  ──────────  │ │  ──────────  │   │
+│  │  SUMMARY     │ │  SUMMARY     │ │  SUMMARY     │ │  SUMMARY     │   │
+│  │  [desc]      │ │  [desc]      │ │  [desc]      │ │  [desc]      │   │
+│  │  ──────────  │ │  ──────────  │ │  ──────────  │ │  ──────────  │   │
+│  │  RELEVANCE   │ │  RELEVANCE   │ │  RELEVANCE   │ │  RELEVANCE   │   │
+│  │  [score]     │ │  [score]     │ │  [score]     │ │  [score]     │   │
+│  │  [signals]   │ │  [signals]   │ │  [signals]   │ │  [signals]   │   │
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘   │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                              Generated by Whyhello       │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 12.4 Zone Rules
+
+#### Header Band
+- Background: dark navy (`#0F172A`)
+- Contact name: large, white, bold
+- Title line: `jobTitle · companyName` — muted slate
+- Meta line: `seniority | department | industry` — darker slate, smaller
+- **BATTLECARD pill:** red (`#E11D48`), top-right, white caps text — identifies the document type at a glance
+- **Whyhello logo:** placed directly below the BATTLECARD pill, same width — co-brands the output without competing with the contact name
+
+#### Details Bar
+- Background: light grey (`#E2E8F0`)
+- Fields: email, phone, location, LinkedIn, website — distributed evenly across the bar width
+- **Clickable fields** (rendered as hyperlinks in the PPTX): email uses `mailto:`, LinkedIn uses the full URL from the database (not a stripped username), website uses the full URL
+- Non-clickable fields (phone, location): rendered in dark text without hyperlink styling
+- Clickable fields: rendered in blue (`#1E40AF`) to signal interactivity
+
+#### KEY INSIGHTS Label
+- Small, uppercase, tracked, muted — a visual section header only; no messaging content
+
+#### Insight Cards
+- Four cards, equal width, side by side
+- Each card: coloured background + accent border, both keyed to signal type (see §12.5)
+
+#### Footer
+- `Generated by Whyhello` — right-aligned, small, muted — attribution only
+
+---
+
+### 12.5 Insight Card Anatomy
+
+Each card has three content sections, separated by thin accent-coloured rules:
+
+**1. Category label**
+Uppercase, bold, in the category's accent colour. Values: `PERSONAL`, `COMPANY`, `INDUSTRY`, `ROLE`.
+
+**2. Title**
+The insight's title — rendered as a **blue hyperlink** to the source URL when available. Truncated to 120 characters. Bold, slightly larger than body text.
+
+> The title is a **filing label** for the insight, not a hook or a headline the seller reads aloud. Its job is to identify the source so the seller can click through and verify.
+
+**3. SUMMARY section**
+- Section label: `SUMMARY` — small, uppercase, tracked, grey
+- Thin accent rule beneath the label
+- Content: the insight's `description` field, truncated to ~340 characters
+- If no description is available: `"No summary available."` in muted italic
+- Register: informational — this is the seller reading a summary of what the source says, not a hook
+
+**4. RELEVANCE section**
+- Section label: `RELEVANCE` — small, uppercase, tracked, grey
+- Thin accent rule beneath the label
+- **Score** (large, bold, colour-coded — see §12.6) followed by `/100` in muted small text
+- **Relevance description** — why this insight scored highly against the HQ profile (generated by the relevance engine)
+- **Matched HQ signals** — a dot-prefixed list of the specific HQ items that drove the score (product names, pillar names, differentiator phrases)
+- If no relevance score has been computed: `"No relevance score computed yet."` in muted italic
+
+**5. Source + date footer**
+- Small, italic, muted — `source · publishedDate`
+- At the bottom of the card; present only when the data is available
+
+---
+
+### 12.6 Relevance Score Colour Coding
+
+The score number on each card is colour-coded to give the seller an immediate read on signal strength:
+
+| Score range | Colour | Meaning |
+|---|---|---|
+| 75–100 | Green (`#16A34A`) | Strong signal — lead with this category |
+| 50–74 | Amber (`#D97706`) | Relevant — worth mentioning |
+| 25–49 | Orange (`#EA580C`) | Weak relevance — use with caution |
+| 0–24 | Slate grey (`#94A3B8`) | Low relevance — not recommended as lead angle |
+
+> **Seller instruction (implied by colour):** Lead with the green cards. Amber cards are supporting material. Orange and grey cards are available but should not anchor the opening.
+
+---
+
+### 12.7 Signal Type Colour System
+
+Each insight category has a consistent colour identity used for the card background, border, category label, and matched HQ signal tags:
+
+| Category | Background | Border | Label / Tag colour |
+|---|---|---|---|
+| PERSONAL | Indigo 50 (`#EEF2FF`) | Indigo 400 (`#818CF8`) | Indigo 700 (`#4338CA`) |
+| COMPANY | Amber 50 (`#FFFBEB`) | Amber 400 (`#F59E0B`) | Amber 800 (`#92400E`) |
+| INDUSTRY | Green 50 (`#F0FDF4`) | Emerald 400 (`#34D399`) | Emerald 800 (`#065F46`) |
+| ROLE | Violet 50 (`#F5F3FF`) | Violet 400 (`#A78BFA`) | Violet 900 (`#4C1D95`) |
+
+These colours mirror the signal-type colour system used in the contact profile UI — a seller who uses both surfaces will develop the same colour-to-category associations across the platform.
+
+---
+
+### 12.8 Generation Flow
+
+The Battlecard is generated as an outreach job — it enters the same `outreach_jobs` queue as email generation and appears in the Generated list with the same status lifecycle (`generating` → `completed` | `failed`).
+
+**Generation steps:**
+1. Seller clicks "Generate Battlecard" in the Battlecard modal on a contact profile
+2. A job is created immediately with `type: "battlecard"`, `status: "generating"`, `title: "Battlecard — [Contact Name]"`
+3. The modal closes; the Generated list shows an animated "Building your battlecard…" card
+4. The server's `runGeneration()` detects `type === "battlecard"` and calls `generateBattlecardBuffer(contactId)`
+5. The PPTX buffer is base64-encoded and stored in the job's `result` field; status is set to `"completed"`
+6. The Generated list card transitions to a "Download PPTX" button
+7. Clicking "Download PPTX" decodes the base64 result in the browser and saves a `.pptx` file
+
+**Key constraint:** The PPTX is generated server-side and stored as base64 in the DB. No temporary file path is used. The Whyhello logo is loaded from disk once at module initialisation as a base64 data URI and embedded into the PPTX at generation time — it is never resolved at request time.
+
+---
+
+### 12.9 What the Battlecard Is Not
+
+| It is not… | Because… |
+|---|---|
+| A buyer-facing message | The hook framing rules (Surah 3) do not apply — the insight titles and summaries are displayed as raw intelligence, not as crafted openers |
+| A competitive battlecard | Despite the name, it does not currently contain competitor objection handling or displacement plays — it is a signal intelligence summary. Competitive content (Surah 2.6) is a planned addition. |
+| A replacement for the email | The Battlecard and the email serve different moments — the card preps the seller before a call; the email opens the relationship with the buyer |
+| A permanent record | The Battlecard reflects the best available signals at generation time. Relevance scores may change as the HQ profile evolves. Re-generate before any significant meeting. |
+
+---
+
+### 12.10 Future Additions to the Battlecard
+
+| Addition | What it adds |
+|---|---|
+| Competitive section | A card per relevant competitor: their strengths, when they win, what to avoid claiming, and the HQ counter-position |
+| Talk track | A prose block suggesting how to open the conversation based on the top-scoring insight |
+| Buyer sentiment summary | A short AI-generated paragraph synthesising all four signal categories into a single "what we know about this contact" statement |
+| Multi-contact version | A briefing slide per contact in a buying committee — for complex deals with multiple stakeholders |
+
+---
 
 *The Messaging Quran is a living scripture. It does not describe what Whyhello once did — it prescribes what Whyhello must do. Revise it before revising the code.*
