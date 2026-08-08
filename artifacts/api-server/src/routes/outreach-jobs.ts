@@ -576,6 +576,10 @@ LAYER 3 — VALUE  (inside-out: value wedge or activated pillar)
   Rules   : Name the company. Speak in outcomes, not features. One or two sentences.
             Starters: "That's exactly what [Company] was built for...",
             "We help [persona] [achieve outcome]...", "The reason [type of firm] comes to us is..."
+  Styling : Bold the crux outcome phrase — the specific capability or result that delivers the value.
+            Wrap the key predicate clause in **double asterisks**.
+            Example: "That's exactly what [Company] was built for — **giving senior advisors the planning resources and open investment access needed to address complex life-change scenarios while preserving a differentiated, advisor-owned practice.**"
+            Do not bold the entire sentence; bold only the outcome phrase that carries the weight of the value claim.
 
 LAYER 4 — PROOF  (EB sentence + optional customer reference)
   Purpose : Back the value claim with one quantified economic benefit sentence.
@@ -585,12 +589,13 @@ LAYER 4 — PROOF  (EB sentence + optional customer reference)
   EB sentences must be full declarative sentences — never bare label fragments.
   Prefix with "Our [product name]" and write the verb phrase as a natural predicate.
 
-  Gain EB format : "Our [product name] [verb phrase], valued on average at **[amount] [unit]** [frequency]."
-    Example: "Our Advisor Partnership Platform protects recurring revenue by successfully transferring client assets, valued on average at **$9,000 per $1M of AUM retained** each year."
-  Pain EB format : "Our [product name] [verb phrase], saving on average **[amount] [unit]** [frequency]."
-    Example: "Our Advisor Partnership Platform eliminates manual compliance reporting, saving on average **$80K per advisor** each year."
+  Gain EB format : "Our [product name] **[verb phrase], valued on average at [amount] [unit] [frequency].**"
+    Example: "Our Advisor Partnership Platform **protects recurring revenue by successfully transferring client assets, valued on average at $9,000 per $1M of AUM retained each year.**"
+  Pain EB format : "Our [product name] **[verb phrase], saving on average [amount] [unit] [frequency].**"
+    Example: "Our Advisor Partnership Platform **eliminates manual compliance reporting, saving on average $80K per advisor each year.**"
 
   The "on average" qualifier is mandatory — it signals a typical or representative figure rather than a guarantee, which is both more honest and more credible to a sophisticated buyer.
+  Bold covers the entire predicate — verb phrase through the final unit/frequency — so the full economic claim reads as a single emphatic unit.
 
   Company-level proof (credentials, scale, differentiators):
     Use first-person "We" — never repeat the company name.
@@ -639,7 +644,11 @@ ${linkPlacementBlock}
 STYLING RULES
   • Bold all verbatim quoted text — any time you include a direct quote from the buyer or a named source inside quotation marks, wrap the entire quoted passage (including the quotation marks) in **double asterisks** so it renders as bold.
     Example: Your post on LinkedIn re: advisor independence: **"Advisor independence means little without the infrastructure to act on it."** — that stood out.
-  • Apply this only to genuine verbatim quotes set off in quotation marks. Do not bold paraphrases, summaries, or your own phrasing.
+    Apply this only to genuine verbatim quotes set off in quotation marks. Do not bold paraphrases, summaries, or your own phrasing.
+  • Bold the crux of the VALUE layer — wrap the key outcome phrase (the specific capability or result) in **double asterisks**.
+    Example: "That's exactly what [Company] was built for — **giving senior advisors the planning resources and open investment access needed to address complex life-change scenarios while preserving a differentiated, advisor-owned practice.**"
+  • Bold the entire EB sentence predicate in the PROOF layer — from the verb phrase through the final unit/frequency, so the full economic claim reads as one emphatic unit.
+    Example: "Our Advisor Partnership Platform **protects recurring revenue by successfully transferring client assets, valued on average at $9,000 per $1M of AUM retained each year.**"
   • Always separate HOOK, BRIDGE, VALUE, PROOF, and CTA with a blank line between each section — this means two line breaks between sections, producing a visible paragraph gap. This applies regardless of email length. Never compress sections into a single-spaced block.
 
 ABSOLUTE PROHIBITIONS
