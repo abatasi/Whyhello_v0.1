@@ -7,6 +7,8 @@ import {
   companyInsightsTable,
   industryInsightsTable,
   roleInsightsTable,
+  insightRelevanceScoresTable,
+  insightQuotesTable,
 } from "@workspace/db/schema";
 import { and, eq, inArray, ne } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
@@ -15,6 +17,9 @@ const router: IRouter = Router({ mergeParams: true });
 
 type RawMessage = { role: string; content: string };
 type SourceRef = { signalType: string; id: number; title: string; source: string; publishedDate?: string | null };
+
+type RelevanceInfo = { score: number; description: string };
+type QuoteInfo     = { quote: string; hqBridge: string | null };
 
 function parseMessages(body: unknown): { role: "user" | "assistant"; content: string }[] | null {
   if (!body || typeof body !== "object") return null;
@@ -43,19 +48,54 @@ function filterBySelected<T extends { id: number }>(items: T[], prefix: string, 
   return items.filter(i => selected.has(`${prefix}-${i.id}`));
 }
 
-// Build a numbered reference list for the system prompt.
-// Returns the formatted text block and populates the shared index array (1-based).
+function relevanceLabel(score: number): string {
+  if (score >= 70) return "HIGH";
+  if (score >= 40) return "MEDIUM";
+  return "LOW";
+}
+
+/**
+ * Build a numbered reference block for the system prompt.
+ * Items are sorted by relevance score descending (unscored last).
+ * Each entry is annotated with its relevance label + score, relevance note, and any quotable.
+ */
 function buildRefSection(
-  items: Array<{ id: number; title: string; source: string; publishedDate?: string | null; description?: string | null }>,
+  items: Array<{ id: number; title: string; source: string | null; publishedDate?: string | null; description?: string | null }>,
   signalType: string,
   index: SourceRef[],
+  scoreMap: Map<string, RelevanceInfo>,
+  quoteMap: Map<string, QuoteInfo>,
 ): string {
   if (!items.length) return "  None available.";
-  return items.map((i) => {
+
+  // Sort HIGH → MEDIUM → LOW → unscored
+  const sorted = [...items].sort((a, b) => {
+    const sa = scoreMap.get(`${signalType}-${a.id}`)?.score ?? -1;
+    const sb = scoreMap.get(`${signalType}-${b.id}`)?.score ?? -1;
+    return sb - sa;
+  });
+
+  return sorted.map((i) => {
+    const key = `${signalType}-${i.id}`;
     index.push({ signalType, id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate ?? null });
     const n = index.length; // 1-based ref number
-    return `  [${n}] "${i.title}" (${i.source}${i.publishedDate ? ", " + i.publishedDate : ""})\n    ${i.description ?? ""}`;
-  }).join("\n");
+
+    const rel = scoreMap.get(key);
+    const qt  = quoteMap.get(key);
+
+    const relTag    = rel ? `[${relevanceLabel(rel.score)}] ` : "";
+    const sourceStr = `${i.source ?? "Unknown"}${i.publishedDate ? ", " + i.publishedDate : ""}`;
+
+    let entry = `  [${n}] ${relTag}"${i.title}" (${sourceStr})`;
+    if (i.description) entry += `\n      ${i.description}`;
+    if (rel)           entry += `\n      ↳ Relevance ${rel.score}/100: ${rel.description}`;
+    if (qt) {
+      entry += `\n      ★ QUOTABLE (verbatim — use exact wording): "${qt.quote}"`;
+      if (qt.hqBridge) entry += `\n      ↳ Bridge to your pitch: ${qt.hqBridge}`;
+    }
+
+    return entry;
+  }).join("\n\n");
 }
 
 // Parse [CITED: 1, 3, 5] from the tail of the accumulated response.
@@ -66,11 +106,6 @@ function parseCitations(content: string): number[] {
     .split(",")
     .map(s => parseInt(s.trim(), 10))
     .filter(n => !isNaN(n) && n > 0);
-}
-
-// Strip the [CITED: …] line from the end of content.
-function stripCitation(content: string): string {
-  return content.replace(/\n*\[CITED:[^\]]*\]\s*$/, "").trimEnd();
 }
 
 router.post("/", async (req, res) => {
@@ -111,7 +146,7 @@ router.post("/", async (req, res) => {
           ))
       : Promise.resolve([]);
 
-    const [personal, industry, role, colleagueContacts, counterpartContacts] = await Promise.all([
+    const [personal, industry, role, colleagueContacts, counterpartContacts, relevanceRows, quoteRows] = await Promise.all([
       db.select().from(contactInsightsTable).where(and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.category, "personal"))),
       contact.industryId
         ? db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, contact.industryId))
@@ -121,10 +156,14 @@ router.post("/", async (req, res) => {
         : Promise.resolve([]),
       colleagueContactsPromise,
       counterpartContactsPromise,
+      // Relevance scores for this contact (all signal types)
+      db.select().from(insightRelevanceScoresTable).where(eq(insightRelevanceScoresTable.contactId, contactId)),
+      // Quotables for this contact
+      db.select().from(insightQuotesTable).where(eq(insightQuotesTable.contactId, contactId)),
     ]);
 
-    const colleagueIds = colleagueContacts.map(c => c.id);
-    const counterpartIds = counterpartContacts.map(c => c.id);
+    const colleagueIds    = colleagueContacts.map(c => c.id);
+    const counterpartIds  = counterpartContacts.map(c => c.id);
 
     const [colleague, counterpart] = await Promise.all([
       colleagueIds.length > 0
@@ -144,7 +183,7 @@ router.post("/", async (req, res) => {
         db.select().from(companiesTable).where(eq(companiesTable.id, contact.companyId)).limit(1),
         db.select().from(companyInsightsTable).where(eq(companyInsightsTable.companyId, contact.companyId)),
       ]);
-      company = co ?? null;
+      company   = co ?? null;
       companyIns = ci;
     }
 
@@ -155,14 +194,45 @@ router.post("/", async (req, res) => {
     const fct = filterBySelected(counterpart, "counterpart", selectedIds);
     const fci = filterBySelected(companyIns,  "company",     selectedIds);
 
+    // ── Build lookup maps: "signalType-signalId" → info ──────────────────
+    const scoreMap = new Map<string, RelevanceInfo>();
+    for (const r of relevanceRows) {
+      scoreMap.set(`${r.signalType}-${r.signalId}`, { score: r.score, description: r.description });
+    }
+
+    const quoteMap = new Map<string, QuoteInfo>();
+    for (const q of quoteRows) {
+      quoteMap.set(`${q.signalType}-${q.signalId}`, { quote: q.quote, hqBridge: q.hqBridge ?? null });
+    }
+
+    const hasRelevanceScores = scoreMap.size > 0;
+    const hasQuotables       = quoteMap.size > 0;
+
     // ── Build numbered source index (1-based) for citation tracking ───────
     const sourceIndex: SourceRef[] = [];
-    const personalSection    = buildRefSection(fp,  "personal",    sourceIndex);
-    const industrySection    = buildRefSection(fi,  "industry",    sourceIndex);
-    const roleSection        = buildRefSection(fr,  "role",        sourceIndex);
-    const colleagueSection   = buildRefSection(fc,  "colleague",   sourceIndex);
-    const counterpartSection = buildRefSection(fct, "counterpart", sourceIndex);
-    const companySection     = buildRefSection(fci, "company",     sourceIndex);
+    const personalSection    = buildRefSection(fp,  "personal",    sourceIndex, scoreMap, quoteMap);
+    const industrySection    = buildRefSection(fi,  "industry",    sourceIndex, scoreMap, quoteMap);
+    const roleSection        = buildRefSection(fr,  "role",        sourceIndex, scoreMap, quoteMap);
+    const colleagueSection   = buildRefSection(fc,  "colleague",   sourceIndex, scoreMap, quoteMap);
+    const counterpartSection = buildRefSection(fct, "counterpart", sourceIndex, scoreMap, quoteMap);
+    const companySection     = buildRefSection(fci, "company",     sourceIndex, scoreMap, quoteMap);
+
+    const relevanceInstructions = hasRelevanceScores ? `
+RELEVANCE SCORING
+Each source above may carry a relevance tag set by an AI scoring engine comparing the signal against the seller's value proposition:
+  • [HIGH]   score ≥ 70 — directly connects to your ICP and offering. These sources should anchor your answers; lead with them.
+  • [MEDIUM] score 40–69 — adds useful context. Use to round out a response.
+  • [LOW]    score < 40 — general background. Draw on only when nothing better applies.
+  • (untagged) — not yet scored. Treat as neutral context.
+
+When composing outreach, talking points, or conversation openers, prioritise [HIGH] sources first. Always explain *why* a source is relevant using the ↳ Relevance note beneath it.` : "";
+
+    const quotableInstructions = hasQuotables ? `
+QUOTABLES
+Sources marked ★ QUOTABLE contain a verbatim sentence the contact actually published. These are gold:
+  • When drafting a cold email, LinkedIn note, or conversation opener, weave in the exact quoted wording — do not paraphrase.
+  • The ↳ Bridge line tells you how that quote connects to the seller's pitch; use it to frame your angle.
+  • A well-placed quotable shows the contact you have genuinely read their work — it is the single strongest personalisation signal available.` : "";
 
     const systemPrompt = `You are an AI contact intelligence assistant embedded in Whyhello, a B2B relationship intelligence platform. Help the user deeply understand and engage with their contact.
 
@@ -191,6 +261,7 @@ ${counterpartSection}
 
 COMPANY INSIGHTS (${company?.name ?? "their company"} news and press):
 ${companySection}
+${relevanceInstructions}${quotableInstructions}
 
 Your role:
 - Answer any question about this contact's priorities, background, and professional context
@@ -199,7 +270,7 @@ Your role:
 - Summarise their recent activity and what it signals about their agenda
 - Identify common ground and angles for building rapport
 
-Be concise, specific, and actionable. Tie every response to the actual data above. Do not invent information not present in the profile.
+Be concise, specific, and actionable. Tie every response to the actual data above. Do not invent information not present in the profile.${hasRelevanceScores ? " Anchor responses in [HIGH] relevance sources." : ""}${hasQuotables ? " Deploy ★ QUOTABLE verbatim wording in any outreach drafts." : ""}
 
 CITATION REQUIREMENT:
 After your response, on a new line by itself, write exactly this — and nothing else on that line:
