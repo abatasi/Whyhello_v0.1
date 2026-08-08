@@ -1,5 +1,6 @@
 import { integer, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { contactsTable } from "./contacts";
+import { sequencesTable, sequenceStepsTable } from "./sequences";
 
 export const messagesTable = pgTable("messages", {
   id: serial("id").primaryKey(),
@@ -17,6 +18,9 @@ export const messagesTable = pgTable("messages", {
   trackingToken: varchar("tracking_token", { length: 64 }).unique(),
   openedAt: timestamp("opened_at", { withTimezone: true }),
   clickCount: integer("click_count").default(0).notNull(),
+  // Sequence attribution
+  sequenceId: integer("sequence_id").references(() => sequencesTable.id, { onDelete: "set null" }),
+  sequenceStepId: integer("sequence_step_id").references(() => sequenceStepsTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

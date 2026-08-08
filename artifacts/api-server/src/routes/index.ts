@@ -32,6 +32,7 @@ import proxyRouter from "./proxy";
 import metaRouter from "./meta";
 import trackRouter from "./track";
 import { contactMessagesRouter } from "./messages";
+import { sequencesRouter } from "./sequences";
 
 const router: IRouter = Router();
 
@@ -77,5 +78,6 @@ router.use("/meta", requireAuth, metaRouter);
 router.use("/industries", requireAuth, industriesRouter);
 router.use("/roles", requireAuth, rolesRouter);
 router.use("/contacts/:contactId/sent-messages", requireAuth, contactMessagesRouter);
+router.use("/sequences", requireAuth, sequencesRouter);
 
 export default router;

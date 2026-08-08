@@ -373,6 +373,7 @@ export function Navbar() {
     { label: "Roles", href: "/roles" },
     { label: "Lists", href: "/lists" },
     { label: "Message Center", href: "/messages" },
+    { label: "Sequences", href: "/sequences" },
     { label: "HQ", href: "/hq" },
     { label: "Import", href: "/import" },
   ];

@@ -41,7 +41,7 @@ import {
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
   Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp, ArrowUpDown, Quote,
-  Activity, Clock, Eye, MousePointerClick, CheckCheck,
+  Activity, Clock, Eye, MousePointerClick, CheckCheck, ListChecks,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -50,6 +50,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getInitials, cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 // ── Media type config ──────────────────────────────────────────────────────
 
@@ -544,6 +545,108 @@ function BattlecardModal({ open, onClose, contactId, contactName, onGenerate }: 
   );
 }
 
+// ── SequencePickerModal ────────────────────────────────────────────────────
+
+function SequencePickerModal({
+  open,
+  onClose,
+  contactId,
+  contactName,
+}: {
+  open: boolean;
+  onClose: () => void;
+  contactId: number;
+  contactName: string;
+}) {
+  const { toast } = useToast();
+  const [enrolling, setEnrolling] = useState<number | null>(null);
+
+  const { data: sequences = [], isLoading } = useQuery<{ id: number; name: string; stepCount: number; enrollmentCount: number }[]>({
+    queryKey: ["sequences"],
+    queryFn: () => apiFetch("/api/sequences").then(r => r.json()),
+    enabled: open,
+  });
+
+  async function handleEnroll(seqId: number) {
+    setEnrolling(seqId);
+    try {
+      const res = await apiFetch(`/api/sequences/${seqId}/enrollments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactIds: [contactId] }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to enroll");
+      }
+      toast({ title: "Enrolled", description: `${contactName} added to sequence` });
+      onClose();
+    } catch (err) {
+      toast({
+        title: "Enrollment failed",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setEnrolling(null);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b border-border/60">
+          <DialogTitle className="text-base">Add to Sequence</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+            Choose a sequence to enroll {contactName} into.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="overflow-y-auto" style={{ maxHeight: 400 }}>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading sequences…
+            </div>
+          ) : sequences.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3 text-center text-muted-foreground">
+              <ListChecks className="h-8 w-8 opacity-30" />
+              <div>
+                <p className="text-sm font-medium">No sequences yet</p>
+                <p className="text-xs mt-0.5">Create a sequence first from the Sequences page.</p>
+              </div>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border/40">
+              {sequences.map(seq => (
+                <li key={seq.id} className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/20 transition-colors">
+                  <div className="h-8 w-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{seq.name}</p>
+                    <p className="text-xs text-muted-foreground">{seq.stepCount} step{seq.stepCount !== 1 ? "s" : ""} · {seq.enrollmentCount} enrolled</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs flex-shrink-0"
+                    disabled={enrolling === seq.id}
+                    onClick={() => handleEnroll(seq.id)}
+                  >
+                    {enrolling === seq.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Enroll"}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="px-6 py-3 border-t border-border/60 flex justify-end">
+          <Button variant="outline" size="sm" onClick={onClose}>Close</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function ContactProfile() {
@@ -657,6 +760,7 @@ export default function ContactProfile() {
 
   type InsightsMode = "normal" | "collapsed" | "expanded";
   const [composeOpen, setComposeOpen] = useState(false);
+  const [seqPickerOpen, setSeqPickerOpen] = useState(false);
   const [insightsMode, setInsightsMode] = useState<InsightsMode>("normal");
   const [sortByRelevance, setSortByRelevance] = useState(false);
   const [outreachCollapsed, setOutreachCollapsed] = useState(false);
@@ -1105,6 +1209,9 @@ export default function ContactProfile() {
                             <Send className="h-3.5 w-3.5" /> Email
                           </Button>
                         )}
+                        <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setSeqPickerOpen(true)}>
+                          <ListChecks className="h-3.5 w-3.5" /> Add to Sequence
+                        </Button>
                         {contact.linkedinUrl && (
                           <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer">
                             <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs text-[#0A66C2] border-[#0A66C2]/30 hover:bg-[#0A66C2]/10">
@@ -1405,6 +1512,14 @@ export default function ContactProfile() {
           </Dialog>
         );
       })()}
+
+      {/* ── Sequence picker modal ── */}
+      <SequencePickerModal
+        open={seqPickerOpen}
+        onClose={() => setSeqPickerOpen(false)}
+        contactId={id}
+        contactName={`${contact.firstName} ${contact.lastName}`}
+      />
 
       {contact.email && (
         <ComposeDrawer
