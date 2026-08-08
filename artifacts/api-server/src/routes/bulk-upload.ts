@@ -347,11 +347,11 @@ router.post("/:table", upload.single("file"), async (req, res) => {
           contactId,
           title,
           url: r.url?.trim() || "",
-          source: r.source?.trim() || null,
+          source: val(r.source),
           mediaType: r.mediaType?.trim() || null,
           category: r.category?.trim() || "personal",
           description: r.description || null,
-          publishedDate: r.publishedDate || null,
+          publishedDate: val(r.publishedDate),
         });
         results.inserted++;
       } catch (err) {
@@ -372,10 +372,10 @@ router.post("/:table", upload.single("file"), async (req, res) => {
           companyId,
           title,
           url: r.url?.trim() || "",
-          source: r.source?.trim() || null,
+          source: val(r.source),
           mediaType: r.mediaType?.trim() || null,
           description: r.description || null,
-          publishedDate: r.publishedDate || null,
+          publishedDate: val(r.publishedDate),
         });
         results.inserted++;
       } catch (err) {

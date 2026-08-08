@@ -92,6 +92,15 @@ function RelevanceBadge({ score, description, size = "sm" }: { score: number; de
   );
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+/** Returns null if the value is a meaningless sentinel ("N/A", "-", "none", etc.) */
+function meaningful(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const s = v.trim();
+  return /^(n\/a|-+|none|null|undefined)$/i.test(s) ? null : s || null;
+}
+
 // ── Insight category definitions ───────────────────────────────────────────
 
 type InsightSourceContact = { name: string; jobTitle?: string | null; companyName?: string | null };
@@ -1042,10 +1051,10 @@ export default function ContactProfile() {
                               </div>
                               <div className="px-3 py-2 flex flex-col gap-0.5">
                                 <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">{item.title}</p>
-                                <p className="text-[10px] text-muted-foreground">{cfg.label} · {item.source}</p>
-                                {item.publishedDate && (
+                                <p className="text-[10px] text-muted-foreground">{cfg.label}{meaningful(item.source) ? ` · ${meaningful(item.source)}` : ""}</p>
+                                {meaningful(item.publishedDate) && (
                                   <p className="text-[10px] text-muted-foreground/70">
-                                    {new Date(item.publishedDate).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                                    {new Date(meaningful(item.publishedDate)!).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
                                   </p>
                                 )}
                                 <p className="text-[9px] text-muted-foreground/50 mt-0.5">{checked ? "✓ In context" : "Click to add to context"}</p>
@@ -1868,11 +1877,11 @@ function InsightDetailView({
             </div>
             <h3 className="text-sm font-bold text-foreground leading-snug">{item.title}</h3>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
-              <span className="font-semibold">{item.source}</span>
-              {item.publishedDate && (
+              {meaningful(item.source) && <span className="font-semibold">{meaningful(item.source)}</span>}
+              {meaningful(item.publishedDate) && (
                 <>
-                  <span className="opacity-40">·</span>
-                  <span>{new Date(item.publishedDate).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>
+                  {meaningful(item.source) && <span className="opacity-40">·</span>}
+                  <span>{new Date(meaningful(item.publishedDate)!).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>
                 </>
               )}
             </div>
@@ -2129,9 +2138,9 @@ function InsightCardExpanded({
             <MIcon className={cn("h-2.5 w-2.5", cfg.color)} />
             <span className={cfg.color}>{cfg.label}</span>
           </div>
-          {item.publishedDate && (
+          {meaningful(item.publishedDate) && (
             <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[9px] text-white/90">
-              {new Date(item.publishedDate).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+              {new Date(meaningful(item.publishedDate)!).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
             </div>
           )}
         </div>
@@ -2142,9 +2151,9 @@ function InsightCardExpanded({
             <MIcon className={cn("h-3 w-3", cfg.color)} />
           </div>
           <span className="text-[10px] font-semibold text-muted-foreground flex-1 truncate">{cfg.label}</span>
-          {item.publishedDate && (
+          {meaningful(item.publishedDate) && (
             <span className="text-[9px] text-muted-foreground/60 flex-shrink-0">
-              {new Date(item.publishedDate).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+              {new Date(meaningful(item.publishedDate)!).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
             </span>
           )}
         </div>
@@ -2165,7 +2174,7 @@ function InsightCardExpanded({
               onError={() => setFaviconError(true)}
             />
           )}
-          <span className="text-xs text-muted-foreground truncate">{item.source}</span>
+          {meaningful(item.source) && <span className="text-xs text-muted-foreground truncate">{meaningful(item.source)}</span>}
         </div>
         {item.description && (
           <p className="text-[11px] text-muted-foreground/80 leading-snug line-clamp-2 mt-0.5">
