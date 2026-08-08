@@ -41,7 +41,7 @@ import {
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
   Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp, ArrowUpDown, Quote,
-  Activity, Clock, Eye, MousePointerClick, CheckCheck, ListChecks,
+  Activity, Clock, Eye, MousePointerClick, CheckCheck, ListChecks, Volume2,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -51,6 +51,13 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getInitials, cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import {
+  CallButton,
+  PreCallModal,
+  ActiveCallWidget,
+  PostCallPanel,
+  useVoiceCall,
+} from "@/components/VoiceCall";
 
 // ── Media type config ──────────────────────────────────────────────────────
 
@@ -765,6 +772,10 @@ export default function ContactProfile() {
   type InsightsMode = "normal" | "collapsed" | "expanded";
   const [composeOpen, setComposeOpen] = useState(false);
   const [seqPickerOpen, setSeqPickerOpen] = useState(false);
+  const voiceContactName = [contact?.firstName, contact?.lastName].filter(Boolean).join(" ");
+  const { phase: callPhase, openPreCall, closePreCall, startCall, mute: muteCall, hangUp, dismissPostCall } = useVoiceCall(
+    id, voiceContactName
+  );
   const [insightsMode, setInsightsMode] = useState<InsightsMode>("normal");
   const [sortByRelevance, setSortByRelevance] = useState(false);
   const [outreachCollapsed, setOutreachCollapsed] = useState(false);
@@ -1213,6 +1224,9 @@ export default function ContactProfile() {
                             <Send className="h-3.5 w-3.5" /> Email
                           </Button>
                         )}
+                        {contact.phone && (
+                          <CallButton contactPhone={contact.phone} onInitiate={openPreCall} />
+                        )}
                         <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setSeqPickerOpen(true)}>
                           <ListChecks className="h-3.5 w-3.5" /> Add to Sequence
                         </Button>
@@ -1524,6 +1538,28 @@ export default function ContactProfile() {
         contactId={id}
         contactName={`${contact.firstName} ${contact.lastName}`}
       />
+
+      {/* ── Voice call modals ── */}
+      <PreCallModal
+        open={callPhase.type === "pre-call"}
+        contactName={voiceContactName}
+        contactPhone={contact.phone ?? ""}
+        onClose={closePreCall}
+        onStart={startCall}
+      />
+      <ActiveCallWidget
+        phase={callPhase}
+        contactName={voiceContactName}
+        onMute={muteCall}
+        onHangUp={hangUp}
+      />
+      {callPhase.type === "ended" && (
+        <PostCallPanel
+          call={callPhase.call}
+          contactName={voiceContactName}
+          onClose={dismissPostCall}
+        />
+      )}
 
       {contact.email && (
         <ComposeDrawer
@@ -2882,11 +2918,33 @@ function timeAgo(dateStr: string | null): string {
 }
 
 function ActivityFeed({ contactId }: { contactId: number }) {
-  const { data: messages = [], isLoading, refetch } = useQuery<SentMessage[]>({
+  const { data: messages = [], isLoading: msgLoading } = useQuery<SentMessage[]>({
     queryKey: ["contact-sent-messages", contactId],
     queryFn: () => apiFetch(`/api/contacts/${contactId}/sent-messages`).then((r) => r.json()),
     refetchInterval: 30000,
   });
+
+  const { data: calls = [], isLoading: callsLoading } = useQuery<import("@/components/VoiceCall").CallRecord[]>({
+    queryKey: ["contact-calls", contactId],
+    queryFn: async () => {
+      const r = await apiFetch(`/api/contacts/${contactId}/calls`);
+      if (!r.ok) return [];
+      return r.json();
+    },
+    refetchInterval: 30000,
+  });
+
+  const isLoading = msgLoading || callsLoading;
+
+  // Merge and sort by date descending
+  type FeedItem =
+    | { kind: "email"; data: SentMessage; date: string }
+    | { kind: "call"; data: import("@/components/VoiceCall").CallRecord; date: string };
+
+  const feed: FeedItem[] = [
+    ...messages.map((m) => ({ kind: "email" as const, data: m, date: m.sentAt ?? m.createdAt })),
+    ...calls.map((c) => ({ kind: "call" as const, data: c, date: c.createdAt })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   if (isLoading) {
     return (
@@ -2896,75 +2954,139 @@ function ActivityFeed({ contactId }: { contactId: number }) {
     );
   }
 
-  if (messages.length === 0) {
+  if (feed.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12 text-center px-6">
         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-          <Mail className="h-5 w-5 text-muted-foreground" />
+          <Activity className="h-5 w-5 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground">No emails sent yet</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Emails you send to this contact will appear here.</p>
+          <p className="text-sm font-semibold text-foreground">No activity yet</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Emails and calls with this contact will appear here.</p>
         </div>
       </div>
     );
   }
 
+  function callStatusLabel(status: string): string {
+    switch (status) {
+      case "completed": return "Completed";
+      case "in-progress": case "in-progress-ringing": return "In progress";
+      case "failed": return "Failed";
+      case "busy": return "Busy";
+      case "no-answer": return "No answer";
+      case "canceled": return "Canceled";
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  }
+
+  function callStatusColor(status: string): string {
+    if (status === "completed") return "text-emerald-600";
+    if (["failed", "busy", "no-answer", "canceled"].includes(status)) return "text-red-500";
+    return "text-amber-500";
+  }
+
+  function formatDur(seconds: number | null): string | null {
+    if (!seconds) return null;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  }
+
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5">
-      {messages.map((msg) => {
-        const isOpened = !!msg.openedAt;
-        const hasClicks = msg.clickCount > 0;
+      {feed.map((item) => {
+        if (item.kind === "email") {
+          const msg = item.data;
+          const isOpened = !!msg.openedAt;
+          const hasClicks = msg.clickCount > 0;
+          return (
+            <div key={`email-${msg.id}`} className="rounded-xl border border-border/60 bg-background px-4 py-3 hover:border-border transition-colors">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <p className="text-[13px] font-semibold text-foreground leading-snug truncate">
+                    {msg.subject || "(no subject)"}
+                  </p>
+                </div>
+                <span className="text-[10px] text-muted-foreground flex-shrink-0 flex items-center gap-1 mt-0.5">
+                  <Clock className="h-3 w-3" />
+                  {timeAgo(msg.sentAt ?? msg.createdAt)}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                {msg.sentFrom && (
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Send className="h-2.5 w-2.5" />
+                    {msg.sentFrom}
+                  </span>
+                )}
+                {msg.sentFrom && <span className="text-border text-[10px]">·</span>}
+                <span className={cn("text-[10px] flex items-center gap-1 font-medium", isOpened ? "text-emerald-600" : "text-muted-foreground")}>
+                  <Eye className="h-3 w-3" />
+                  {isOpened ? <span title={new Date(msg.openedAt!).toLocaleString()}>Opened {timeAgo(msg.openedAt)}</span> : "Not opened"}
+                </span>
+                {hasClicks && (
+                  <>
+                    <span className="text-border text-[10px]">·</span>
+                    <span className="text-[10px] text-primary flex items-center gap-1 font-medium">
+                      <MousePointerClick className="h-3 w-3" />
+                      {msg.clickCount} click{msg.clickCount !== 1 ? "s" : ""}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        // Call card
+        const call = item.data;
+        const dur = formatDur(call.durationSeconds);
+        const snippet = call.aiSummary?.split("\n")[0]?.replace(/^Summary:\s*/i, "").trim();
         return (
-          <div key={msg.id} className="rounded-xl border border-border/60 bg-background px-4 py-3 hover:border-border transition-colors">
-            {/* Subject */}
+          <div key={`call-${call.id}`} className="rounded-xl border border-border/60 bg-background px-4 py-3 hover:border-border transition-colors">
             <div className="flex items-start justify-between gap-2 mb-2">
-              <p className="text-[13px] font-semibold text-foreground leading-snug flex-1 min-w-0 truncate">
-                {msg.subject || "(no subject)"}
-              </p>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Phone className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
+                <p className="text-[13px] font-semibold text-foreground leading-snug truncate">
+                  Call · {call.callMode === "phone" ? "Via phone" : "Via browser"}
+                </p>
+              </div>
               <span className="text-[10px] text-muted-foreground flex-shrink-0 flex items-center gap-1 mt-0.5">
                 <Clock className="h-3 w-3" />
-                {timeAgo(msg.sentAt ?? msg.createdAt)}
+                {timeAgo(call.createdAt)}
               </span>
             </div>
-
-            {/* Meta row */}
             <div className="flex items-center gap-3 flex-wrap">
-              {/* Sent from */}
-              {msg.sentFrom && (
-                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                  <Send className="h-2.5 w-2.5" />
-                  {msg.sentFrom}
-                </span>
-              )}
-
-              {/* Divider */}
-              {msg.sentFrom && <span className="text-border text-[10px]">·</span>}
-
-              {/* Open status */}
-              <span className={cn(
-                "text-[10px] flex items-center gap-1 font-medium",
-                isOpened ? "text-emerald-600" : "text-muted-foreground"
-              )}>
-                <Eye className="h-3 w-3" />
-                {isOpened ? (
-                  <span title={new Date(msg.openedAt!).toLocaleString()}>
-                    Opened {timeAgo(msg.openedAt)}
-                  </span>
-                ) : "Not opened"}
+              <span className={cn("text-[10px] font-medium", callStatusColor(call.status))}>
+                {callStatusLabel(call.status)}
               </span>
-
-              {/* Clicks */}
-              {hasClicks && (
+              {dur && (
                 <>
                   <span className="text-border text-[10px]">·</span>
-                  <span className="text-[10px] text-primary flex items-center gap-1 font-medium">
-                    <MousePointerClick className="h-3 w-3" />
-                    {msg.clickCount} click{msg.clickCount !== 1 ? "s" : ""}
-                  </span>
+                  <span className="text-[10px] text-muted-foreground">{dur}</span>
+                </>
+              )}
+              {call.recordingUrl && (
+                <>
+                  <span className="text-border text-[10px]">·</span>
+                  {/* Proxy URL supplies Twilio credentials server-side */}
+                  <a
+                    href={`/api/calls/${call.id}/recording`}
+                    className="text-[10px] text-primary hover:underline flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Volume2 className="h-3 w-3" /> Recording
+                  </a>
                 </>
               )}
             </div>
+            {snippet && (
+              <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
+                {snippet}
+              </p>
+            )}
           </div>
         );
       })}
@@ -3018,7 +3140,7 @@ function ContactCenterHub({
 
         {activeTab === "activity" && (
           <span className="ml-auto text-[10px] font-semibold text-muted-foreground bg-secondary border border-border/50 px-1.5 py-0.5 rounded-full">
-            Sent emails
+            Activity
           </span>
         )}
         {activeTab === "assistant" && (
