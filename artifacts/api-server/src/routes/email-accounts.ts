@@ -96,15 +96,22 @@ export async function getValidAccessToken(account: UserEmailAccountRow): Promise
   return null;
 }
 
-export async function sendViaGmail(accessToken: string, toEmail: string, toName: string | null, subject: string, body: string) {
+export async function sendViaGmail(
+  accessToken: string,
+  toEmail: string,
+  toName: string | null,
+  subject: string,
+  body: string,
+  htmlBody?: string,
+) {
   const toHeader = toName ? `"${toName}" <${toEmail}>` : toEmail;
   const raw = [
     `To: ${toHeader}`,
     `Subject: ${subject || "(no subject)"}`,
     `MIME-Version: 1.0`,
-    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Type: ${htmlBody ? "text/html" : "text/plain"}; charset=UTF-8`,
     ``,
-    body,
+    htmlBody ?? body,
   ].join("\r\n");
 
   const encoded = Buffer.from(raw).toString("base64url");
@@ -121,14 +128,21 @@ export async function sendViaGmail(accessToken: string, toEmail: string, toName:
   }
 }
 
-export async function sendViaOutlook(accessToken: string, toEmail: string, toName: string | null, subject: string, body: string) {
+export async function sendViaOutlook(
+  accessToken: string,
+  toEmail: string,
+  toName: string | null,
+  subject: string,
+  body: string,
+  htmlBody?: string,
+) {
   const r = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       message: {
         subject: subject || "(no subject)",
-        body: { contentType: "Text", content: body },
+        body: { contentType: htmlBody ? "HTML" : "Text", content: htmlBody ?? body },
         toRecipients: [{ emailAddress: { address: toEmail, ...(toName ? { name: toName } : {}) } }],
       },
       saveToSentItems: true,

@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/apiFetch";
 import { useRoute, Link } from "wouter";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { recordContactVisit } from "@/lib/recentVisits";
 import {
   useGetContact,
@@ -40,6 +41,7 @@ import {
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
   Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp, ArrowUpDown, Quote,
+  Activity, Clock, Eye, MousePointerClick, CheckCheck,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -1213,8 +1215,8 @@ export default function ContactProfile() {
                 </div>
               </div>
 
-              {/* ── Strategy Assistant (live chatbot) ── */}
-              <ContactChat id={id} contact={contact} checkedIds={checkedIds} currentIds={currentInsightIds} highlightedInsight={selectedInsight} />
+              {/* ── Strategy Assistant / Activity Hub ── */}
+              <ContactCenterHub id={id} contact={contact} checkedIds={checkedIds} currentIds={currentInsightIds} highlightedInsight={selectedInsight} />
             </main>
 
             {/* ══════════════════════════════════════════════════════════════
@@ -2732,6 +2734,191 @@ function ChatSourcesPanel({ sources }: { sources: ChatSourceRef[] }) {
   );
 }
 
+// ── ActivityFeed ───────────────────────────────────────────────────────────
+
+interface SentMessage {
+  id: number;
+  subject: string;
+  toEmail: string;
+  toName: string | null;
+  sentAt: string | null;
+  sentFrom: string | null;
+  openedAt: string | null;
+  clickCount: number;
+  status: string;
+  createdAt: string;
+}
+
+function timeAgo(dateStr: string | null): string {
+  if (!dateStr) return "";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function ActivityFeed({ contactId }: { contactId: number }) {
+  const { data: messages = [], isLoading, refetch } = useQuery<SentMessage[]>({
+    queryKey: ["contact-sent-messages", contactId],
+    queryFn: () => apiFetch(`/api/contacts/${contactId}/sent-messages`).then((r) => r.json()),
+    refetchInterval: 30000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-12">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (messages.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12 text-center px-6">
+        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+          <Mail className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">No emails sent yet</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Emails you send to this contact will appear here.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5">
+      {messages.map((msg) => {
+        const isOpened = !!msg.openedAt;
+        const hasClicks = msg.clickCount > 0;
+        return (
+          <div key={msg.id} className="rounded-xl border border-border/60 bg-background px-4 py-3 hover:border-border transition-colors">
+            {/* Subject */}
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <p className="text-[13px] font-semibold text-foreground leading-snug flex-1 min-w-0 truncate">
+                {msg.subject || "(no subject)"}
+              </p>
+              <span className="text-[10px] text-muted-foreground flex-shrink-0 flex items-center gap-1 mt-0.5">
+                <Clock className="h-3 w-3" />
+                {timeAgo(msg.sentAt ?? msg.createdAt)}
+              </span>
+            </div>
+
+            {/* Meta row */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Sent from */}
+              {msg.sentFrom && (
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Send className="h-2.5 w-2.5" />
+                  {msg.sentFrom}
+                </span>
+              )}
+
+              {/* Divider */}
+              {msg.sentFrom && <span className="text-border text-[10px]">·</span>}
+
+              {/* Open status */}
+              <span className={cn(
+                "text-[10px] flex items-center gap-1 font-medium",
+                isOpened ? "text-emerald-600" : "text-muted-foreground"
+              )}>
+                <Eye className="h-3 w-3" />
+                {isOpened ? (
+                  <span title={new Date(msg.openedAt!).toLocaleString()}>
+                    Opened {timeAgo(msg.openedAt)}
+                  </span>
+                ) : "Not opened"}
+              </span>
+
+              {/* Clicks */}
+              {hasClicks && (
+                <>
+                  <span className="text-border text-[10px]">·</span>
+                  <span className="text-[10px] text-primary flex items-center gap-1 font-medium">
+                    <MousePointerClick className="h-3 w-3" />
+                    {msg.clickCount} click{msg.clickCount !== 1 ? "s" : ""}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── ContactCenterHub (toggle: Strategy Assistant ↔ Activity) ───────────────
+
+function ContactCenterHub({
+  id, contact, checkedIds, currentIds, highlightedInsight,
+}: {
+  id: number;
+  contact: { firstName: string };
+  checkedIds: Set<string>;
+  currentIds: Set<string>;
+  highlightedInsight?: { item: InsightItem; category: InsightCategory } | null;
+}) {
+  const [activeTab, setActiveTab] = useState<"assistant" | "activity">("assistant");
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden">
+      {/* Tab toggle header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 flex-shrink-0">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary border border-border/50">
+          <button
+            onClick={() => setActiveTab("assistant")}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all",
+              activeTab === "assistant"
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Sparkles className="h-3 w-3" />
+            Strategy Assistant
+          </button>
+          <button
+            onClick={() => setActiveTab("activity")}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all",
+              activeTab === "activity"
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Activity className="h-3 w-3" />
+            Activity
+          </button>
+        </div>
+
+        {activeTab === "activity" && (
+          <span className="ml-auto text-[10px] font-semibold text-muted-foreground bg-secondary border border-border/50 px-1.5 py-0.5 rounded-full">
+            Sent emails
+          </span>
+        )}
+        {activeTab === "assistant" && (
+          <span className="ml-auto text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+            AI
+          </span>
+        )}
+      </div>
+
+      {/* Panel content */}
+      {activeTab === "assistant" ? (
+        <ContactChat id={id} contact={contact} checkedIds={checkedIds} currentIds={currentIds} highlightedInsight={highlightedInsight} embedded />
+      ) : (
+        <ActivityFeed contactId={id} />
+      )}
+    </div>
+  );
+}
+
 // ── ContactChat ────────────────────────────────────────────────────────────
 
 type ChatMessage = { role: "user" | "assistant"; content: string; sources?: ChatSourceRef[] };
@@ -2744,13 +2931,14 @@ const STARTERS = (firstName: string) => [
 ];
 
 function ContactChat({
-  id, contact, checkedIds, currentIds, highlightedInsight,
+  id, contact, checkedIds, currentIds, highlightedInsight, embedded = false,
 }: {
   id: number;
   contact: { firstName: string };
   checkedIds: Set<string>;
   currentIds: Set<string>;
   highlightedInsight?: { item: InsightItem; category: InsightCategory } | null;
+  embedded?: boolean;
 }) {
   const { data: savedMessages = [], isLoading: historyLoading } = useListChatMessages(id);
   const persistMessage = useCreateChatMessage();
@@ -2891,28 +3079,8 @@ function ContactChat({
   const messages = localMessages;
   const showEmpty = hydrated && messages.length === 0;
 
-  return (
-    <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 flex-shrink-0">
-        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-        </div>
-        <span className="text-xs font-bold uppercase tracking-widest text-foreground">Strategy Assistant</span>
-        <span className="ml-auto text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
-          AI
-        </span>
-        {messages.length > 0 && (
-          <button
-            onClick={handleClear}
-            disabled={clearMutation.isPending}
-            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors ml-1 disabled:opacity-40"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
+  const inner = (
+    <>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {showEmpty ? (
@@ -3055,6 +3223,35 @@ function ContactChat({
           <Send className="h-3.5 w-3.5" />
         </button>
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="flex flex-col flex-1 min-h-0 overflow-hidden">{inner}</div>;
+  }
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 flex-shrink-0">
+        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+        </div>
+        <span className="text-xs font-bold uppercase tracking-widest text-foreground">Strategy Assistant</span>
+        <span className="ml-auto text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+          AI
+        </span>
+        {messages.length > 0 && (
+          <button
+            onClick={handleClear}
+            disabled={clearMutation.isPending}
+            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors ml-1 disabled:opacity-40"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      {inner}
     </div>
   );
 }

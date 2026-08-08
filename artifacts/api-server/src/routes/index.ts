@@ -30,8 +30,13 @@ import industriesRouter from "./industries";
 import rolesRouter from "./roles";
 import proxyRouter from "./proxy";
 import metaRouter from "./meta";
+import trackRouter from "./track";
+import { contactMessagesRouter } from "./messages";
 
 const router: IRouter = Router();
+
+// ── Tracking (public — pixel/redirect loaded by email clients without cookies) ──
+router.use("/track", trackRouter);
 
 // ── Public routes (no auth required) ────────────────────────────────────────
 router.use(healthRouter);
@@ -71,5 +76,6 @@ router.use("/meta", requireAuth, metaRouter);
 // Reference data mutations require auth; reads are also behind auth (reference data for authenticated UI only)
 router.use("/industries", requireAuth, industriesRouter);
 router.use("/roles", requireAuth, rolesRouter);
+router.use("/contacts/:contactId/sent-messages", requireAuth, contactMessagesRouter);
 
 export default router;

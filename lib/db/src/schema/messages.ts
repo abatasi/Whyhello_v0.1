@@ -10,6 +10,13 @@ export const messagesTable = pgTable("messages", {
   subject: text("subject").notNull().default(""),
   body: text("body").notNull().default(""),
   status: varchar("status", { length: 20 }).notNull().default("draft"),
+  // Send metadata
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  sentFrom: varchar("sent_from", { length: 320 }),
+  // Tracking
+  trackingToken: varchar("tracking_token", { length: 64 }).unique(),
+  openedAt: timestamp("opened_at", { withTimezone: true }),
+  clickCount: integer("click_count").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
