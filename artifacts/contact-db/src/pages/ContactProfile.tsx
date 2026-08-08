@@ -909,6 +909,8 @@ export default function ContactProfile() {
                     onToggle={toggleInsight}
                     onMinimize={() => { setSelectedInsight(null); setInsightsMode("normal"); }}
                     onCollapse={() => { setSelectedInsight(null); setInsightsMode("collapsed"); }}
+                    contactId={id}
+                    companyId={companyIdForInsights}
                   />
                 ) : (
                   /* ── Card grid view ── */
@@ -978,6 +980,8 @@ export default function ContactProfile() {
                             relevanceMap={relevanceMap}
                             quoteMap={quoteMap}
                             onCardClick={(item) => setSelectedInsight({ item, category: cat })}
+                            contactId={id}
+                            companyId={companyIdForInsights}
                           />
                         );
                       })}
@@ -1731,6 +1735,8 @@ function InsightDetailView({
   onToggle: (key: string) => void;
   onMinimize: () => void;
   onCollapse: () => void;
+  contactId?: number;
+  companyId?: number;
 }) {
   const [aiData, setAiData] = useState<{ summary: string; keyInsights: string[] } | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
@@ -1738,6 +1744,35 @@ function InsightDetailView({
   const [iframeError, setIframeError] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const [browserExpanded, setBrowserExpanded] = useState(false);
+
+  // ── Metadata enrichment ──────────────────────────────────────────────────
+  const { data: meta } = useInsightMeta(item.url);
+  const displaySource = meaningful(item.source) ?? meaningful(meta?.source ?? null);
+  const displayDate   = meaningful(item.publishedDate) ?? meaningful(meta?.publishedDate ?? null);
+
+  const enrichedRef = useRef(false);
+  useEffect(() => {
+    if (enrichedRef.current || !meta) return;
+    const needsSource = !meaningful(item.source) && meaningful(meta.source);
+    const needsDate   = !meaningful(item.publishedDate) && meaningful(meta.publishedDate);
+    if (!needsSource && !needsDate) return;
+    enrichedRef.current = true;
+    const endpoint =
+      category.id === "company" && companyId
+        ? `/api/companies/${companyId}/insights/${item.id}`
+        : contactId
+          ? `/api/contacts/${contactId}/insights/${item.id}`
+          : null;
+    if (!endpoint) return;
+    const body: Record<string, string | null> = {};
+    if (needsSource) body.source = meta.source;
+    if (needsDate)   body.publishedDate = meta.publishedDate;
+    apiFetch(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(() => {});
+  }, [meta, item, category, contactId, companyId]);
 
   const cfg = getMediaConfig(item.mediaType);
   const MIcon = cfg.icon;
@@ -1877,11 +1912,11 @@ function InsightDetailView({
             </div>
             <h3 className="text-sm font-bold text-foreground leading-snug">{item.title}</h3>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
-              {meaningful(item.source) && <span className="font-semibold">{meaningful(item.source)}</span>}
-              {meaningful(item.publishedDate) && (
+              {displaySource && <span className="font-semibold">{displaySource}</span>}
+              {displayDate && (
                 <>
-                  {meaningful(item.source) && <span className="opacity-40">·</span>}
-                  <span>{new Date(meaningful(item.publishedDate)!).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>
+                  {displaySource && <span className="opacity-40">·</span>}
+                  <span>{new Date(displayDate).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>
                 </>
               )}
             </div>
@@ -2090,6 +2125,8 @@ function InsightCardExpanded({
   relevance,
   quote,
   onCardClick,
+  contactId,
+  companyId,
 }: {
   item: InsightItem;
   category: InsightCategory;
@@ -2098,6 +2135,8 @@ function InsightCardExpanded({
   relevance?: InsightRelevanceScore;
   quote?: InsightQuote;
   onCardClick?: () => void;
+  contactId?: number;
+  companyId?: number;
 }) {
   const key = `${category.id}-${item.id}`;
   const cfg = getMediaConfig(item.mediaType);
@@ -2109,6 +2148,34 @@ function InsightCardExpanded({
 
   const showImage = !!meta?.ogImage && !imgError;
   const showFavicon = !!meta?.favicon && !faviconError;
+
+  // ── Metadata enrichment: prefer DB values, fall back to live page meta ──
+  const displaySource = meaningful(item.source) ?? meaningful(meta?.source ?? null);
+  const displayDate   = meaningful(item.publishedDate) ?? meaningful(meta?.publishedDate ?? null);
+
+  const enrichedCardRef = useRef(false);
+  useEffect(() => {
+    if (enrichedCardRef.current || !meta) return;
+    const needsSource = !meaningful(item.source) && meaningful(meta.source);
+    const needsDate   = !meaningful(item.publishedDate) && meaningful(meta.publishedDate);
+    if (!needsSource && !needsDate) return;
+    enrichedCardRef.current = true;
+    const endpoint =
+      category.id === "company" && companyId
+        ? `/api/companies/${companyId}/insights/${item.id}`
+        : contactId
+          ? `/api/contacts/${contactId}/insights/${item.id}`
+          : null;
+    if (!endpoint) return;
+    const body: Record<string, string | null> = {};
+    if (needsSource) body.source = meta.source;
+    if (needsDate)   body.publishedDate = meta.publishedDate;
+    apiFetch(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(() => {});
+  }, [meta, item, category, contactId, companyId]);
 
   return (
     <div
@@ -2138,9 +2205,9 @@ function InsightCardExpanded({
             <MIcon className={cn("h-2.5 w-2.5", cfg.color)} />
             <span className={cfg.color}>{cfg.label}</span>
           </div>
-          {meaningful(item.publishedDate) && (
+          {displayDate && (
             <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[9px] text-white/90">
-              {new Date(meaningful(item.publishedDate)!).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+              {new Date(displayDate).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
             </div>
           )}
         </div>
@@ -2151,9 +2218,9 @@ function InsightCardExpanded({
             <MIcon className={cn("h-3 w-3", cfg.color)} />
           </div>
           <span className="text-[10px] font-semibold text-muted-foreground flex-1 truncate">{cfg.label}</span>
-          {meaningful(item.publishedDate) && (
+          {displayDate && (
             <span className="text-[9px] text-muted-foreground/60 flex-shrink-0">
-              {new Date(meaningful(item.publishedDate)!).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+              {new Date(displayDate).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
             </span>
           )}
         </div>
@@ -2174,7 +2241,7 @@ function InsightCardExpanded({
               onError={() => setFaviconError(true)}
             />
           )}
-          {meaningful(item.source) && <span className="text-xs text-muted-foreground truncate">{meaningful(item.source)}</span>}
+          {displaySource && <span className="text-xs text-muted-foreground truncate">{displaySource}</span>}
         </div>
         {item.description && (
           <p className="text-[11px] text-muted-foreground/80 leading-snug line-clamp-2 mt-0.5">
@@ -2296,6 +2363,8 @@ function InsightCategoryPanel({
   relevanceMap,
   quoteMap,
   onCardClick,
+  contactId,
+  companyId,
 }: {
   category: InsightCategory;
   items: InsightItem[];
@@ -2311,6 +2380,8 @@ function InsightCategoryPanel({
   relevanceMap?: Map<string, InsightRelevanceScore>;
   quoteMap?: Map<string, InsightQuote>;
   onCardClick?: (item: InsightItem) => void;
+  contactId?: number;
+  companyId?: number;
 }) {
   const [open, setOpen] = useState(true);
   const Icon = category.icon;
@@ -2412,6 +2483,8 @@ function InsightCategoryPanel({
                     relevance={relevanceMap?.get(`${category.id}-${item.id}`)}
                     quote={quoteMap?.get(`${category.id}-${item.id}`)}
                     onCardClick={onCardClick ? () => onCardClick(item) : undefined}
+                    contactId={contactId}
+                    companyId={companyId}
                   />
                 );
               })}

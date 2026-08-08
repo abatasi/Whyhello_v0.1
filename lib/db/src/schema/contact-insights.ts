@@ -7,7 +7,7 @@ export const contactInsightsTable = pgTable("contact_insights", {
   category: varchar("category", { length: 50 }).notNull().default("personal"),
   title: varchar("title", { length: 500 }).notNull(),
   url: varchar("url", { length: 1000 }).notNull(),
-  source: varchar("source", { length: 200 }).notNull(),
+  source: varchar("source", { length: 200 }),
   mediaType: varchar("media_type", { length: 50 }).notNull(),
   description: text("description"),
   publishedDate: varchar("published_date", { length: 50 }),

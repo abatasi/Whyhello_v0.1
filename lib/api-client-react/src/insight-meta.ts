@@ -4,6 +4,10 @@ import { customFetch } from "./custom-fetch";
 export interface InsightMeta {
   ogImage: string | null;
   favicon: string | null;
+  /** Publisher name extracted from og:site_name, meta[name=publisher], or hostname */
+  source: string | null;
+  /** Normalised date string (e.g. "Mar 2024") from article:published_time or similar */
+  publishedDate: string | null;
 }
 
 export function useInsightMeta(url: string) {
