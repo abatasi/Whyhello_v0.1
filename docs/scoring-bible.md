@@ -196,6 +196,67 @@ Signal type preference varies by the contact's seniority. These multipliers adju
 
 <div align="center">⚜ ✠ ⚜</div>
 
+## Libro Cuarto-Bis · El Don de la Cita
+### *El Multiplicador de los Quotables — The Quotable Signal Bonus*
+
+> *"Las palabras de la persona son más poderosas que cualquier descripción de ella. La cita abre la puerta; la relevancia la sostiene abierta."*
+
+A Quotable is a verbatim statement extracted from a signal — the contact's own words, or the words of a named person within their orbit — confirmed usable as a conversation opener. The mere existence of an extracted Quotable on a signal is a second-order proof of value: not only is the signal relevant, it is **immediately actionable**. The seller can open an email with it today.
+
+This bonus is therefore not a judgment — it is a decree. It is applied by the engine, not the AI, after the HQ alignment score has been rendered.
+
+### 4-Bis.1 La Condición del Bonus — Quotable Bonus Conditions
+
+The Quotable Bonus is applied **deterministically** after the AI has scored each signal's HQ alignment:
+
+| Condition | Quotable Bonus Applied? |
+|---|---|
+| Signal has an extracted Quotable **and** HQ alignment score ≥ 20 | **Yes — add +20 points, cap at 100** |
+| Signal has an extracted Quotable **and** HQ alignment score 0–19 | **No** — a quote that connects to nothing is still noise |
+| Signal has no extracted Quotable | No |
+
+> **El Principio de la Cita:** *A Quotable cannot rescue a signal from irrelevance — but it elevates every signal that has earned its entry. A signal that would score 60 without a quote scores 80 with one. A signal that would score 80 scores 100.*
+
+The HQ alignment score is the gate. The Quotable Bonus is the reward beyond the gate.
+
+### 4-Bis.2 La Razón del Decreto — Justification
+
+A signal with an extracted Quotable provides the seller with:
+1. **Verbatim material** — ready to embed in the HOOK without paraphrase
+2. **Proof of attention** — the seller demonstrably read the source
+3. **Controlled specificity** — the quote names the exact idea the contact holds, reducing the risk of misattribution
+
+These three properties compound the signal's message value independently of its HQ alignment. They do not change how relevant the topic is — they change how usable the signal is as an outreach instrument. Hence: deterministic boost after HQ alignment assessment, not a modification of the HQ alignment score itself.
+
+### 4-Bis.3 El Tratamiento del AI — How the AI Uses Quotable Context
+
+When building the scoring prompt, the engine surfaces the quote text in the signal block — not to instruct the AI to apply a score boost, but to give it richer content for the HQ alignment assessment. The verbatim text of the quote is often more precise than the insight's stored description, and a quote that name-checks the contact's specific belief or tension may align with a HQ pillar more clearly than the parent insight's title suggests.
+
+The AI's sole job on a ⭐ QUOTABLE signal is to assess HQ alignment using the verbatim quote text as its primary content. The +20 bonus is applied by the engine after the fact.
+
+### 4-Bis.4 Impacto en la Fórmula — Effect on the Composite Formula
+
+The Quotable Bonus is applied as a **flat additive post-step** after the full composite score is computed:
+
+```
+compositeScore (pre-quotable) = min(100, round(
+  baseScore × proximityMultiplier × freshnessMultiplier
+  × (1 + hqAlignmentBonus) × seniorityFitMultiplier
+))
+
+finalScore = min(100, compositeScore + quotableBonus)
+
+where:
+  quotableBonus = 20  if signal has extracted Quotable AND compositeScore ≥ 20
+                = 0   otherwise
+```
+
+The cap of 100 is re-applied after the bonus. A signal that reaches 90 before the bonus caps at 100, not 110.
+
+---
+
+<div align="center">⚜ ✠ ⚜</div>
+
 ## Libro Quinto · El Auto de Fe
 ### *La Sentencia Final — Composite Score Formula and Selection*
 

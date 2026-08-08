@@ -9,6 +9,7 @@ import {
   counterpartInsightsTable,
   dnaProfilesTable,
   insightRelevanceScoresTable,
+  insightQuotesTable,
 } from "@workspace/db/schema";
 import { eq, and, inArray, ne, gt, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
@@ -90,7 +91,7 @@ router.post("/relevance/score", async (req, res) => {
           ))
       : Promise.resolve([]);
 
-    const [personal, company, industry, role, colleagueContacts, counterpartContacts] = await Promise.all([
+    const [personal, company, industry, role, colleagueContacts, counterpartContacts, quotes] = await Promise.all([
       db.select().from(contactInsightsTable)
         .where(and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.category, "personal"))),
       contact.companyId
@@ -104,6 +105,8 @@ router.post("/relevance/score", async (req, res) => {
         : Promise.resolve([]),
       colleagueContactsPromise,
       counterpartContactsPromise,
+      // Fetch extracted quotables for this contact — used to enrich signal blocks and apply bonus
+      db.select().from(insightQuotesTable).where(eq(insightQuotesTable.contactId, contactId)),
     ]);
 
     const colleagueIds = colleagueContacts.map((c) => c.id);
@@ -145,23 +148,44 @@ router.post("/relevance/score", async (req, res) => {
       fetchCappedInsights(counterpartIds, MAX_COUNTERPART_SIGNALS),
     ]);
 
-    // 3. Build flat signal list for the prompt
-    type SignalRow = { signalType: string; signalId: number; title: string; description: string | null };
+    // 3. Build quotable lookup: "signalType-signalId" → quote row
+    type QuotableInfo = { quote: string; attribution: string; attributionRole: string | null; hqBridge: string | null };
+    const quoteMap = new Map<string, QuotableInfo>();
+    for (const q of quotes) {
+      quoteMap.set(`${q.signalType}-${q.signalId}`, {
+        quote: q.quote,
+        attribution: q.attribution,
+        attributionRole: q.attributionRole ?? null,
+        hqBridge: q.hqBridge ?? null,
+      });
+    }
+
+    // 4. Build flat signal list for the prompt
+    type SignalRow = {
+      signalType: string;
+      signalId: number;
+      title: string;
+      description: string | null;
+      quotable: QuotableInfo | undefined;
+    };
     const signals: SignalRow[] = [
-      ...personal.map((s) => ({ signalType: "personal", signalId: s.id, title: s.title, description: s.description })),
-      ...company.map((s) => ({ signalType: "company", signalId: s.id, title: s.title, description: s.description })),
-      ...industry.map((s) => ({ signalType: "industry", signalId: s.id, title: s.title, description: s.description })),
-      ...role.map((s) => ({ signalType: "role", signalId: s.id, title: s.title, description: s.description })),
-      ...colleague.map((s) => ({ signalType: "colleague", signalId: s.id, title: s.title, description: s.description })),
-      ...counterpart.map((s) => ({ signalType: "counterpart", signalId: s.id, title: s.title, description: s.description })),
+      ...personal.map((s) => ({ signalType: "personal", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`personal-${s.id}`) })),
+      ...company.map((s) => ({ signalType: "company", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`company-${s.id}`) })),
+      ...industry.map((s) => ({ signalType: "industry", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`industry-${s.id}`) })),
+      ...role.map((s) => ({ signalType: "role", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`role-${s.id}`) })),
+      ...colleague.map((s) => ({ signalType: "colleague", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`colleague-${s.id}`) })),
+      ...counterpart.map((s) => ({ signalType: "counterpart", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`counterpart-${s.id}`) })),
     ];
+
+    // Set of signal keys that have an extracted quotable — used for post-processing boost
+    const quotableKeys = new Set(signals.filter((s) => s.quotable).map((s) => `${s.signalType}-${s.signalId}`));
 
     if (signals.length === 0) {
       res.json([]);
       return;
     }
 
-    // 4. Load HQ profile
+    // 5. Load HQ profile
     const [dnaRow] = await db
       .select()
       .from(dnaProfilesTable)
@@ -170,11 +194,19 @@ router.post("/relevance/score", async (req, res) => {
     const hqProfile = dnaRow ? (JSON.parse(dnaRow.data) as Record<string, unknown>) : {};
     const hqSummary = buildHqSummary(hqProfile);
 
-    // 5. Build prompt and call AI
+    // 6. Build prompt and call AI
+    // Signals with an extracted Quotable include the verbatim quote text so the AI can
+    // assess HQ alignment using the actual spoken/written content, not just the title.
     const signalsList = signals
-      .map((s, i) =>
-        `[${i + 1}] type="${s.signalType}" id=${s.signalId}\n  Title: ${s.title}\n  Description: ${s.description ?? "(none)"}`
-      )
+      .map((s, i) => {
+        let block = `[${i + 1}] type="${s.signalType}" id=${s.signalId}\n  Title: ${s.title}\n  Description: ${s.description ?? "(none)"}`;
+        if (s.quotable) {
+          block += `\n  ⭐ QUOTABLE: "${s.quotable.quote}"`;
+          block += `\n     — ${s.quotable.attribution}${s.quotable.attributionRole ? `, ${s.quotable.attributionRole}` : ""}`;
+          if (s.quotable.hqBridge) block += `\n     HQ Bridge note: ${s.quotable.hqBridge}`;
+        }
+        return block;
+      })
       .join("\n\n");
 
     const prompt = `You are a B2B sales intelligence engine. Score each outside-in signal (news, posts, content) for how relevant it is to the seller's specific value proposition and capabilities as defined in their HQ profile.
@@ -192,8 +224,10 @@ SCORING RUBRIC (0–100):
 - 20-39: Weak connection — only tangential overlap
 - 0-19: No meaningful connection to the seller's offering
 
+IMPORTANT — FOR ⭐ QUOTABLE SIGNALS: The verbatim quote text is the primary signal content. Use it (not just the title) when assessing HQ alignment. The HQ Bridge note, if present, describes the connection between the quote and the seller profile — use it to validate or sharpen your assessment. Score based purely on HQ alignment; a separate bonus is applied by the system after your scores are returned.
+
 For each signal:
-- Write a 1–2 sentence description explaining WHAT in the HQ profile this signal connects to and WHY that linkage matters for outreach relevance.
+- Write a 1–2 sentence description explaining WHAT in the HQ profile this signal connects to and WHY that linkage matters for outreach relevance. For ⭐ QUOTABLE signals, reference what the quote itself says.
 - In "matchedHqSignals", list the SPECIFIC named items from the HQ profile that this signal touches — use the actual product names, exact differentiator phrases, pillar names, or customer profile types as they appear in the profile above. Do NOT return generic category labels like "value proposition" or "product". Return the real names and phrases (e.g. "Wealth Optimization Platform", "UHNW Family Office focus", "fee-only fiduciary model").
 
 Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
@@ -215,9 +249,22 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       description: string;
       matchedHqSignals: string[];
     };
-    const scored: ScoredSignal[] = JSON.parse(match[0]);
+    const rawScored: ScoredSignal[] = JSON.parse(match[0]);
 
-    // 6. Persist — delete old scores for this contact, insert new ones
+    // 7. Apply deterministic Quotable Bonus (+20) for signals with an extracted quote
+    //    that scored ≥ 20 on HQ alignment — a quote that connects to nothing gets no lift.
+    const QUOTABLE_BOOST = 20;
+    const QUOTABLE_HQ_FLOOR = 20;
+    const scored: ScoredSignal[] = rawScored.map((s) => {
+      const hqScore = Math.max(0, Math.min(100, s.score));
+      const hasQuotable = quotableKeys.has(`${s.signalType}-${s.signalId}`);
+      const finalScore = hasQuotable && hqScore >= QUOTABLE_HQ_FLOOR
+        ? Math.min(100, hqScore + QUOTABLE_BOOST)
+        : hqScore;
+      return { ...s, score: finalScore };
+    });
+
+    // 8. Persist — delete old scores for this contact, insert new ones
     await db
       .delete(insightRelevanceScoresTable)
       .where(eq(insightRelevanceScoresTable.contactId, contactId));
@@ -228,7 +275,7 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
           contactId,
           signalType: s.signalType,
           signalId: s.signalId,
-          score: Math.max(0, Math.min(100, s.score)),
+          score: s.score,
           description: s.description,
           matchedHqSignals: JSON.stringify(s.matchedHqSignals ?? []),
           computedAt: new Date(),
@@ -236,12 +283,12 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       );
     }
 
-    // 7. Return the scored list
+    // 9. Return the scored list
     res.json(
       scored.map((s) => ({
         signalType: s.signalType,
         signalId: s.signalId,
-        score: Math.max(0, Math.min(100, s.score)),
+        score: s.score,
         description: s.description,
         matchedHqSignals: s.matchedHqSignals ?? [],
         computedAt: new Date(),

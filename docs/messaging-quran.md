@@ -1132,6 +1132,8 @@ Each of the four insight cards (Personal, Company, Industry, Role) shows the **s
 
 This is the same relevance signal that drives hook selection in email generation (Surah 5.5). The seller sees the same answer to "which insight should I lead with?" — whether they are composing an email or opening a PPTX.
 
+> **Quotable boost effect on Battlecard selection:** When relevance scores are (re-)computed, insights with extracted Quotables receive a +20 deterministic bonus on top of their HQ alignment score (provided the base HQ score is ≥ 20). This means an insight with a verbatim quote from the contact is likely to win its card slot — the Battlecard will therefore tend to surface the most *actionable* signal per category, not merely the most topically adjacent one. See the Scoring Bible, Libro Cuarto-Bis for the full Quotable Bonus doctrine.
+
 ---
 
 ### 12.3 Slide Structure
