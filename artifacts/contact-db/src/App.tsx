@@ -3,6 +3,7 @@ import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wo
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppModeProvider } from "@/contexts/AppModeContext";
 import {
   ClerkProvider,
   SignIn,
@@ -265,7 +266,9 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      <AppModeProvider>
+        <ClerkProviderWithRoutes />
+      </AppModeProvider>
     </WouterRouter>
   );
 }

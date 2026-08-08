@@ -1,7 +1,11 @@
 import { apiFetch } from "@/lib/apiFetch";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2, Mail, Settings } from "lucide-react";
+import {
+  Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
+  Mail, Settings, ShieldCheck, Flame, ChevronDown, MoreHorizontal,
+  Factory, Briefcase, Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUser, useClerk } from "@clerk/react";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
@@ -9,6 +13,7 @@ import { cn, getInitials } from "@/lib/utils";
 import { useListExports, downloadExportFile, useCreditsStatus } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useAppMode } from "@/contexts/AppModeContext";
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -20,7 +25,7 @@ function formatRelative(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function CreditTracker() {
+function CreditTracker({ wartime }: { wartime: boolean }) {
   const { data: status } = useCreditsStatus();
   if (!status) return null;
 
@@ -31,14 +36,15 @@ function CreditTracker() {
   const tierLabel =
     tier === "enterprise" ? "Enterprise" : tier === "professional" ? "Pro" : "Free";
 
-  const colorClass =
-    isUnlimited
-      ? "text-primary bg-primary/10 border-primary/20"
-      : pct >= 0.9
-      ? "text-destructive bg-destructive/10 border-destructive/20"
-      : pct >= 0.7
-      ? "text-amber-600 bg-amber-50 border-amber-200"
-      : "text-emerald-700 bg-emerald-50 border-emerald-200";
+  const colorClass = wartime
+    ? "text-red-100 bg-red-800/60 border-red-700/60"
+    : isUnlimited
+    ? "text-primary bg-primary/10 border-primary/20"
+    : pct >= 0.9
+    ? "text-destructive bg-destructive/10 border-destructive/20"
+    : pct >= 0.7
+    ? "text-amber-600 bg-amber-50 border-amber-200"
+    : "text-emerald-700 bg-emerald-50 border-emerald-200";
 
   const usageText = isUnlimited
     ? "∞"
@@ -78,7 +84,7 @@ interface CompanyResult {
   location: string | null;
 }
 
-function GlobalSearch() {
+function GlobalSearch({ wartime }: { wartime: boolean }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -158,7 +164,10 @@ function GlobalSearch() {
       <Button
         variant="ghost"
         size="icon"
-        className="rounded-full"
+        className={cn(
+          "rounded-full",
+          wartime && "text-red-100 hover:bg-red-800/60 hover:text-white",
+        )}
         onClick={() => setOpen(true)}
         aria-label="Search"
       >
@@ -169,20 +178,31 @@ function GlobalSearch() {
 
   return (
     <div ref={containerRef} className="relative">
-      <div className="flex items-center gap-2 bg-secondary/50 border border-border rounded-full px-3 py-1.5 w-72 transition-all">
-        <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      <div className={cn(
+        "flex items-center gap-2 border rounded-full px-3 py-1.5 w-72 transition-all",
+        wartime
+          ? "bg-red-800/50 border-red-700/60 text-white"
+          : "bg-secondary/50 border-border",
+      )}>
+        <Search className={cn("h-4 w-4 flex-shrink-0", wartime ? "text-red-300" : "text-muted-foreground")} />
         <input
           ref={inputRef}
           type="text"
           placeholder="Search contacts & companies…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground min-w-0"
+          className={cn(
+            "flex-1 bg-transparent text-sm outline-none min-w-0",
+            wartime ? "placeholder:text-red-300/70 text-white" : "placeholder:text-muted-foreground",
+          )}
         />
         {query ? (
           <button
             onClick={() => setQuery("")}
-            className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            className={cn(
+              "transition-colors flex-shrink-0",
+              wartime ? "text-red-300 hover:text-white" : "text-muted-foreground hover:text-foreground",
+            )}
             aria-label="Clear"
           >
             <X className="h-3.5 w-3.5" />
@@ -190,7 +210,10 @@ function GlobalSearch() {
         ) : (
           <button
             onClick={closeSearch}
-            className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            className={cn(
+              "transition-colors flex-shrink-0",
+              wartime ? "text-red-300 hover:text-white" : "text-muted-foreground hover:text-foreground",
+            )}
             aria-label="Close search"
           >
             <X className="h-3.5 w-3.5" />
@@ -347,6 +370,116 @@ function NotificationsDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── More dropdown (Industries, Roles, Import) ────────────────────────────────
+
+const moreItems = [
+  { label: "Industries", href: "/industries", icon: Factory },
+  { label: "Roles", href: "/roles", icon: Briefcase },
+  { label: "Import", href: "/import", icon: Upload },
+];
+
+function MoreDropdown({ wartime }: { wartime: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const [location] = useLocation();
+
+  const isMoreActive = moreItems.some((item) => location.startsWith(item.href));
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+          wartime
+            ? isMoreActive
+              ? "bg-red-800 text-white"
+              : "text-red-100 hover:bg-red-800/60 hover:text-white"
+            : isMoreActive
+            ? "bg-secondary/50 text-foreground"
+            : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
+        )}
+        aria-expanded={open}
+      >
+        More
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1.5 w-44 rounded-xl border border-border bg-card shadow-lg z-50 overflow-hidden py-1">
+          {moreItems.map(({ label, href, icon: Icon }) => {
+            const isActive = location.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
+                  isActive
+                    ? "bg-secondary/60 text-foreground font-medium"
+                    : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Mode toggle ──────────────────────────────────────────────────────────────
+
+function ModeToggle({ wartime }: { wartime: boolean }) {
+  const { toggleMode } = useAppMode();
+
+  if (wartime) {
+    return (
+      <button
+        onClick={toggleMode}
+        title="Switch to Peacetime mode"
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all select-none",
+          "bg-red-700/80 text-red-100 border border-red-600/60",
+          "hover:bg-red-700 hover:text-white",
+        )}
+      >
+        <Flame className="h-3.5 w-3.5" />
+        Wartime
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={toggleMode}
+      title="Switch to Wartime mode"
+      className={cn(
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all select-none",
+        "bg-transparent text-muted-foreground border border-border/60",
+        "hover:border-border hover:text-foreground",
+      )}
+    >
+      <ShieldCheck className="h-3.5 w-3.5" />
+      Peacetime
+    </button>
+  );
+}
+
+// ── Main Navbar ──────────────────────────────────────────────────────────────
+
 export function Navbar() {
   const { user } = useUser();
   const { signOut } = useClerk();
@@ -356,6 +489,8 @@ export function Navbar() {
   const notifRef = useRef<HTMLDivElement>(null);
   const { data: exports } = useListExports();
   const hasExports = (exports?.length ?? 0) > 0;
+  const { mode } = useAppMode();
+  const wartime = mode === "wartime";
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -367,15 +502,14 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [notifOpen]);
 
+  // Industries, Roles, Import moved into the "More" dropdown
   const navItems = [
     { label: "Directory", href: "/" },
-    { label: "Industries", href: "/industries" },
-    { label: "Roles", href: "/roles" },
     { label: "Lists", href: "/lists" },
     { label: "Message Center", href: "/messages" },
     { label: "Sequences", href: "/sequences" },
     { label: "HQ", href: "/hq" },
-    { label: "Import", href: "/import" },
+    { label: "Multi-threading", href: "/multithreading" },
   ];
 
   const displayName = user?.firstName
@@ -383,14 +517,25 @@ export function Navbar() {
     : user?.primaryEmailAddress?.emailAddress ?? "Account";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className={cn(
+        "sticky top-0 z-50 w-full border-b transition-colors duration-300",
+        wartime
+          ? "border-red-800 bg-red-900"
+          : "border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      )}
+    >
       <div className="w-full px-6 xl:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center">
-            <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto" />
+            <img
+              src={whyhelloLogo}
+              alt="Whyhello"
+              className={cn("h-6 w-auto", wartime && "brightness-200 saturate-0")}
+            />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1 text-sm font-medium text-muted-foreground">
+          <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
             {navItems.map((item) => {
               const isActive = item.href === "/"
                 ? location === "/" || location === ""
@@ -401,51 +546,56 @@ export function Navbar() {
                   href={item.href}
                   className={cn(
                     "px-4 py-2 rounded-lg transition-colors",
-                    isActive
+                    wartime
+                      ? isActive
+                        ? "bg-red-800 text-white"
+                        : "text-red-100 hover:bg-red-800/60 hover:text-white"
+                      : isActive
                       ? "bg-secondary/50 text-foreground"
-                      : "hover:bg-secondary/30 hover:text-foreground",
+                      : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
                   )}
                 >
                   {item.label}
                 </Link>
               );
             })}
-            <Link
-              href="/multithreading"
-              className={cn(
-                "px-4 py-2 rounded-lg transition-colors",
-                location.startsWith("/multithreading")
-                  ? "bg-secondary/50 text-foreground"
-                  : "hover:bg-secondary/30 hover:text-foreground",
-              )}
-            >
-              Multi-threading
-            </Link>
+
+            <MoreDropdown wartime={wartime} />
           </nav>
         </div>
 
         <div className="flex items-center gap-2">
-          <CreditTracker />
+          <ModeToggle wartime={wartime} />
 
-          <GlobalSearch />
+          <div className={cn("h-4 w-px mx-1", wartime ? "bg-red-700/60" : "bg-border")} />
+
+          <CreditTracker wartime={wartime} />
+
+          <GlobalSearch wartime={wartime} />
 
           <div ref={notifRef} className="relative">
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full relative"
+              className={cn(
+                "rounded-full relative",
+                wartime && "text-red-100 hover:bg-red-800/60 hover:text-white",
+              )}
               onClick={() => setNotifOpen((o) => !o)}
               aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
               {hasExports && (
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
+                <span className={cn(
+                  "absolute top-1.5 right-1.5 h-2 w-2 rounded-full",
+                  wartime ? "bg-red-300" : "bg-primary",
+                )} />
               )}
             </Button>
             {notifOpen && <NotificationsDropdown onClose={() => setNotifOpen(false)} />}
           </div>
 
-          <div className="h-8 w-px bg-border mx-2" />
+          <div className={cn("h-8 w-px mx-2", wartime ? "bg-red-800" : "bg-border")} />
 
           <div className="flex items-center gap-2">
             <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -453,20 +603,38 @@ export function Navbar() {
                 <img
                   src={user.imageUrl}
                   alt="Profile"
-                  className="h-7 w-7 rounded-full object-cover border border-border"
+                  className={cn(
+                    "h-7 w-7 rounded-full object-cover border",
+                    wartime ? "border-red-700" : "border-border",
+                  )}
                 />
               ) : (
-                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs border border-primary/20">
+                <div className={cn(
+                  "h-7 w-7 rounded-full flex items-center justify-center font-semibold text-xs border",
+                  wartime
+                    ? "bg-red-800/60 text-red-100 border-red-700"
+                    : "bg-primary/10 text-primary border-primary/20",
+                )}>
                   {getInitials(displayName)}
                 </div>
               )}
-              <span className="text-sm font-medium hidden md:block">{displayName}</span>
+              <span className={cn(
+                "text-sm font-medium hidden md:block",
+                wartime ? "text-red-100" : "",
+              )}>
+                {displayName}
+              </span>
             </Link>
             <Link href="/settings">
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full text-muted-foreground hover:text-foreground"
+                className={cn(
+                  "rounded-full",
+                  wartime
+                    ? "text-red-300 hover:bg-red-800/60 hover:text-white"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
                 title="Settings"
               >
                 <Settings className="h-4 w-4" />
@@ -475,7 +643,12 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full text-muted-foreground hover:text-foreground ml-1"
+              className={cn(
+                "rounded-full ml-1",
+                wartime
+                  ? "text-red-300 hover:bg-red-800/60 hover:text-white"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
               onClick={() => signOut({ redirectUrl: basePath || "/" })}
               title="Sign out"
             >
