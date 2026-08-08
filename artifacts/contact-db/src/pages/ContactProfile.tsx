@@ -1941,7 +1941,7 @@ function InsightDetailView({
                   <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-300 flex-shrink-0" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Quotable</span>
                 </div>
-                <p className="text-sm text-amber-950 leading-relaxed italic">
+                <p className="text-xs text-amber-950 leading-relaxed font-bold">
                   "{quote.quote}"
                 </p>
                 <p className="text-[11px] text-amber-600 font-medium mt-2 not-italic">
