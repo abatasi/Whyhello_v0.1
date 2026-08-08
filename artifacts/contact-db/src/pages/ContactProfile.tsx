@@ -1671,29 +1671,6 @@ function LostFriendoCard({
   );
 }
 
-// ── Walled-garden detection ────────────────────────────────────────────────
-// Sites that actively block iframing. We skip the proxy iframe entirely for
-// these and go straight to the "open in new tab" fallback.
-
-const IFRAME_BLOCKED_HOSTS = new Set([
-  "linkedin.com",
-  "www.linkedin.com",
-  "twitter.com",
-  "www.twitter.com",
-  "x.com",
-  "www.x.com",
-  "facebook.com",
-  "www.facebook.com",
-  "instagram.com",
-  "www.instagram.com",
-]);
-
-function isIframeBlocked(url: string): boolean {
-  try {
-    return IFRAME_BLOCKED_HOSTS.has(new URL(url).hostname);
-  } catch { return false; }
-}
-
 // ── YouTube embed helper ───────────────────────────────────────────────────
 
 function getYouTubeEmbedUrl(url: string): string | null {
@@ -1766,10 +1743,7 @@ function InsightDetailView({
 
   const youtubeEmbedUrl = getYouTubeEmbedUrl(item.url);
   const applePodcastEmbedUrl = getApplePodcastEmbedUrl(item.url);
-  const iframeBlocked = isIframeBlocked(item.url);
-  const iframeSrc = iframeBlocked
-    ? null
-    : (youtubeEmbedUrl ?? applePodcastEmbedUrl ?? `/api/proxy?url=${encodeURIComponent(item.url)}`);
+  const iframeSrc = youtubeEmbedUrl ?? applePodcastEmbedUrl ?? `/api/proxy?url=${encodeURIComponent(item.url)}`;
 
   useEffect(() => {
     setAiLoading(true);
@@ -2050,66 +2024,46 @@ function InsightDetailView({
 
         {/* iframe — fills the remaining space of the browser card */}
         <div className="relative flex-1 min-h-0 bg-white">
-          {iframeBlocked ? (
-            /* Walled-garden sites (LinkedIn, X, etc.) — skip iframe entirely */
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-center px-6">
-              <p className="text-sm font-semibold text-foreground">Preview not available</p>
+          {!iframeLoaded && !iframeError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
+              <span className="text-[10px] text-muted-foreground/70">Loading preview…</span>
+            </div>
+          )}
+          {iframeError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-center px-6 z-10">
+              <p className="text-sm font-semibold text-foreground">Trouble connecting with this page 🫠</p>
               <p className="text-[11px] text-muted-foreground leading-snug">
-                This site doesn't allow embedded previews.{" "}
+                Try{" "}
+                <button
+                  onClick={() => { setIframeLoaded(false); setIframeError(false); setIframeKey(k => k + 1); }}
+                  className="underline underline-offset-2 hover:text-foreground transition-colors"
+                >
+                  refreshing
+                </button>
+                {" "}or{" "}
                 <a
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline underline-offset-2 hover:text-foreground transition-colors"
                 >
-                  Open in a new tab
+                  open in a new tab
                 </a>
               </p>
             </div>
-          ) : (
-            <>
-              {!iframeLoaded && !iframeError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
-                  <span className="text-[10px] text-muted-foreground/70">Loading preview…</span>
-                </div>
-              )}
-              {iframeError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-center px-6 z-10">
-                  <p className="text-sm font-semibold text-foreground">Trouble connecting with this page 🫠</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
-                    Try{" "}
-                    <button
-                      onClick={() => { setIframeLoaded(false); setIframeError(false); setIframeKey(k => k + 1); }}
-                      className="underline underline-offset-2 hover:text-foreground transition-colors"
-                    >
-                      refreshing
-                    </button>
-                    {" "}or{" "}
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2 hover:text-foreground transition-colors"
-                    >
-                      open in a new tab
-                    </a>
-                  </p>
-                </div>
-              )}
-              <iframe
-                key={iframeKey}
-                src={iframeSrc!}
-                title={item.title}
-                className={cn("absolute inset-0 w-full h-full border-0 transition-opacity duration-300", iframeLoaded && !iframeError ? "opacity-100" : "opacity-0")}
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                onLoad={() => setIframeLoaded(true)}
-                onError={() => setIframeError(true)}
-              />
-            </>
           )}
+          <iframe
+            key={iframeKey}
+            src={iframeSrc}
+            title={item.title}
+            className={cn("absolute inset-0 w-full h-full border-0 transition-opacity duration-300", iframeLoaded && !iframeError ? "opacity-100" : "opacity-0")}
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            onLoad={() => setIframeLoaded(true)}
+            onError={() => setIframeError(true)}
+          />
         </div>
       </div>
 

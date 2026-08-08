@@ -69,13 +69,25 @@ function rewriteUrls(html: string, origin: string, basePath: string): string {
 
 /**
  * Injected into every proxied page. Runs synchronously before paint:
- * 1. Applies CSS zoom so wide desktop layouts scale to fit the iframe width.
- * 2. Patches window.location so JS URL construction uses the real origin.
+ * 1. Hides the document until DOMContentLoaded so partially-parsed HTML
+ *    (e.g. long body-tag attribute strings) never flashes as visible text.
+ * 2. Applies CSS zoom so wide desktop layouts scale to fit the iframe width.
+ * 3. Patches window.location so JS URL construction uses the real origin.
  */
 function buildInjection(targetUrl: string, origin: string): string {
-  return `<script data-proxy-inject="1">
+  return `<style data-proxy-inject="1">html{opacity:0!important}</style><script data-proxy-inject="1">
 (function(){
-  /* ── 1. Zoom desktop layouts to fit the iframe width ── */
+  /* ── 1. Reveal page only after DOM is parsed and initial styles applied ── */
+  function reveal() { document.documentElement.style.opacity = ''; }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', reveal);
+  } else {
+    reveal();
+  }
+  /* Safety net: always reveal after 3 s even if DOMContentLoaded never fires */
+  setTimeout(reveal, 3000);
+
+  /* ── 2. Zoom desktop layouts to fit the iframe width ── */
   var TARGET_W = 1280;
   var zoomStyle = document.createElement('style');
   zoomStyle.id = '_proxy_zoom';
@@ -91,7 +103,7 @@ function buildInjection(targetUrl: string, origin: string): string {
   applyZoom();
   window.addEventListener('resize', applyZoom);
 
-  /* ── 2. Patch location so JS URL construction resolves against the real origin ── */
+  /* ── 3. Patch location so JS URL construction resolves against the real origin ── */
   try {
     var _realOrigin = ${JSON.stringify(origin)};
     var _realHref   = ${JSON.stringify(targetUrl)};
