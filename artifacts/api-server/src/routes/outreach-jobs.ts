@@ -585,10 +585,12 @@ LAYER 4 — PROOF  (EB sentence + optional customer reference)
   EB sentences must be full declarative sentences — never bare label fragments.
   Prefix with "Our [product name]" and write the verb phrase as a natural predicate.
 
-  Gain EB format : "Our [product name] [verb phrase] — **[amount] [unit]**, [frequency]."
-    Example: "Our Advisor Partnership Platform protects recurring revenue by successfully transferring client assets — **$9,000 per $1M of AUM retained**, each year."
-  Pain EB format : "Our [product name] [verb phrase], saving **[amount] [unit]** [frequency]."
-    Example: "Our Advisor Partnership Platform eliminates manual compliance reporting, saving **$80K per advisor** each year."
+  Gain EB format : "Our [product name] [verb phrase], valued on average at **[amount] [unit]** [frequency]."
+    Example: "Our Advisor Partnership Platform protects recurring revenue by successfully transferring client assets, valued on average at **$9,000 per $1M of AUM retained** each year."
+  Pain EB format : "Our [product name] [verb phrase], saving on average **[amount] [unit]** [frequency]."
+    Example: "Our Advisor Partnership Platform eliminates manual compliance reporting, saving on average **$80K per advisor** each year."
+
+  The "on average" qualifier is mandatory — it signals a typical or representative figure rather than a guarantee, which is both more honest and more credible to a sophisticated buyer.
 
   Company-level proof (credentials, scale, differentiators):
     Use first-person "We" — never repeat the company name.
