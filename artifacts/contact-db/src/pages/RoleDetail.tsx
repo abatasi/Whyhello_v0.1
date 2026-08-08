@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect } from "react";
 import { Link, useParams } from "wouter";
 import { Briefcase, ArrowLeft, ExternalLink, Loader2, FileText } from "lucide-react";
@@ -54,7 +55,7 @@ export default function RoleDetail() {
     if (!params.id) return;
     document.title = "Role · Whyhello";
     setLoading(true);
-    fetch(`/api/roles/${params.id}`)
+    apiFetch(`/api/roles/${params.id}`)
       .then(r => {
         if (r.status === 404) { setNotFound(true); setLoading(false); return null; }
         return r.json();

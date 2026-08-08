@@ -12,10 +12,11 @@ import {
 } from "@workspace/db/schema";
 import { eq, and, inArray, ne, gt, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { getAuth } from "@clerk/express";
 
-type AuthedReq = Request & { user: { id: string } };
 function getUserId(req: Request): string | null {
-  return (req as AuthedReq).user?.id ?? null;
+  const auth = getAuth(req);
+  return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
 const router: IRouter = Router({ mergeParams: true });

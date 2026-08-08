@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useRoute, Link } from "wouter";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { recordContactVisit } from "@/lib/recentVisits";
@@ -1738,7 +1739,7 @@ function InsightDetailView({
     setAiData(null);
     setIframeLoaded(false);
     setIframeError(false);
-    fetch("/api/insights/summarize", {
+    apiFetch("/api/insights/summarize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: item.url, title: item.title, source: item.source, description: item.description, mediaType: item.mediaType }),
@@ -2682,7 +2683,7 @@ function ContactChat({
     let citationTag = "";
 
     try {
-      const resp = await fetch(`/api/contacts/${id}/chat`, {
+      const resp = await apiFetch(`/api/contacts/${id}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: history, selectedIds: effectiveIds }),

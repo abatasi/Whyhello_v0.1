@@ -1,9 +1,8 @@
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import {
   useGetContact,
   useGetContactInsights,
 } from "@workspace/api-client-react";
-import { useAuth } from "@workspace/replit-auth-web";
 import {
   ArrowLeft, Mail, Phone, MapPin, Building, Briefcase,
   Linkedin, Twitter, ExternalLink, Newspaper, Tv2,
@@ -129,7 +128,8 @@ function ContactInfoRow({
 export default function PublicContactProfile() {
   const [, params] = useRoute("/contacts/:id");
   const id = parseInt(params?.id || "0");
-  const { login } = useAuth();
+  const [, navigate] = useLocation();
+  const login = () => navigate("/sign-in");
 
   const { data: contact, isLoading, isError } = useGetContact(id, {
     query: { enabled: !!id },

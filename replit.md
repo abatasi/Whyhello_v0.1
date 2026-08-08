@@ -15,7 +15,7 @@ Contact Database SaaS application built on a pnpm workspace monorepo using TypeS
 - **Database**: PostgreSQL + Drizzle ORM
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
-- **Auth**: Replit OIDC/PKCE (`@workspace/replit-auth-web`)
+- **Auth**: Clerk (`@clerk/react` frontend, `@clerk/express` server)
 
 ## Features
 
@@ -55,7 +55,7 @@ Contact Database SaaS application built on a pnpm workspace monorepo using TypeS
 | POST | /exports | Generate + store CSV export for a list |
 | GET | /exports | List current user's exports (no csvData) |
 | GET | /exports/:id/download | Download CSV file attachment |
-| GET/POST | /auth/* | Replit OIDC authentication |
+| /api/__clerk/* | Clerk proxy (production only) |
 
 ## Database Schema (`lib/db/src/schema/`)
 
@@ -106,14 +106,14 @@ lib/
 │       ├── api.ts           # All API functions + hooks incl. exports
 │       └── api.schemas.ts   # TypeScript interfaces incl. ExportRecord
 ├── db/src/schema/           # Drizzle ORM schema tables
-└── replit-auth-web/         # Replit OIDC client (React hook)
+└── (replit-auth-web removed — replaced by Clerk)
 ```
 
 ## TypeScript & Composite Projects
 
 Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references.
 
-**Known pre-existing TS issue**: `replit-auth-web` is missing `composite: true` in its tsconfig — this shows as a TS6306 warning in the contact-db tsc check but does not affect runtime.
+Authentication uses Clerk. Session cookies are managed by Clerk; the local `users` table is still active for app-specific data (tier, credits). JIT provisioning creates a local user row on first authenticated request using `sessionClaims.userId` as the bridge column.
 
 ## DB Push
 

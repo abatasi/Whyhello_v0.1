@@ -1,4 +1,5 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
+import { getAuth } from "@clerk/express";
 import { generateBattlecardBuffer } from "../lib/battlecard-generator.js";
 import { db } from "@workspace/db";
 import {
@@ -21,6 +22,11 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 
 export const contactJobsRouter: IRouter = Router({ mergeParams: true });
 export const jobsRouter: IRouter = Router({ mergeParams: true });
+
+function getUserId(req: Request): string | null {
+  const auth = getAuth(req);
+  return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
+}
 
 type InsightRow = { id: number; title: string; source: string; url?: string | null; description?: string | null; publishedDate?: string | null; mediaType?: string | null };
 
@@ -827,7 +833,10 @@ contactJobsRouter.get("/", async (req, res) => {
   try {
     const contactId = parseInt(req.params.contactId);
     if (isNaN(contactId)) { res.status(400).json({ error: "Invalid contact ID" }); return; }
-    const jobs = await db.select().from(outreachJobsTable).where(eq(outreachJobsTable.contactId, contactId)).orderBy(desc(outreachJobsTable.createdAt));
+    const uid = getUserId(req);
+    const jobs = await db.select().from(outreachJobsTable)
+      .where(and(eq(outreachJobsTable.contactId, contactId), eq(outreachJobsTable.userId, uid!)))
+      .orderBy(desc(outreachJobsTable.createdAt));
     res.json(jobs);
   } catch (err) {
     console.error("List outreach jobs error:", err);
@@ -843,10 +852,8 @@ contactJobsRouter.post("/", async (req, res) => {
     const { type, title, params } = req.body ?? {};
     if (!type || !title || !params) { res.status(400).json({ error: "type, title, and params are required" }); return; }
 
-    const userId =
-      (req as typeof req & { user?: { id: string } }).user?.id ??
-      // Dev-only: allow passing userId via header when not in production
-      (process.env.NODE_ENV !== "production" ? (req.headers["x-dev-user-id"] as string | undefined) ?? null : null);
+    const userId = getUserId(req);
+    if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
     const [job] = await db.insert(outreachJobsTable)
       .values({ contactId, userId, type, title, params, status: "generating" })
@@ -880,7 +887,10 @@ jobsRouter.get("/:jobId", async (req, res) => {
   try {
     const jobId = parseInt(req.params.jobId);
     if (isNaN(jobId)) { res.status(400).json({ error: "Invalid job ID" }); return; }
-    const [job] = await db.select().from(outreachJobsTable).where(eq(outreachJobsTable.id, jobId)).limit(1);
+    const uid = getUserId(req);
+    const [job] = await db.select().from(outreachJobsTable)
+      .where(and(eq(outreachJobsTable.id, jobId), eq(outreachJobsTable.userId, uid!)))
+      .limit(1);
     if (!job) { res.status(404).json({ error: "Job not found" }); return; }
     res.json(job);
   } catch (err) {
@@ -893,11 +903,12 @@ jobsRouter.patch("/:jobId", async (req, res) => {
   try {
     const jobId = parseInt(req.params.jobId);
     if (isNaN(jobId)) { res.status(400).json({ error: "Invalid job ID" }); return; }
+    const uid = getUserId(req);
     const { title } = req.body ?? {};
     if (!title) { res.status(400).json({ error: "title is required" }); return; }
     const [job] = await db.update(outreachJobsTable)
       .set({ title, updatedAt: new Date() })
-      .where(eq(outreachJobsTable.id, jobId))
+      .where(and(eq(outreachJobsTable.id, jobId), eq(outreachJobsTable.userId, uid!)))
       .returning();
     if (!job) { res.status(404).json({ error: "Job not found" }); return; }
     res.json(job);
@@ -911,11 +922,23 @@ jobsRouter.delete("/:jobId", async (req, res) => {
   try {
     const jobId = parseInt(req.params.jobId);
     if (isNaN(jobId)) { res.status(400).json({ error: "Invalid job ID" }); return; }
-    // Cascade-delete any variant children whose parentJobId matches this job
+    const uid = getUserId(req);
+    // First verify ownership
+    const [parent] = await db.select({ id: outreachJobsTable.id })
+      .from(outreachJobsTable)
+      .where(and(eq(outreachJobsTable.id, jobId), eq(outreachJobsTable.userId, uid!)))
+      .limit(1);
+    if (!parent) { res.status(404).json({ error: "Job not found" }); return; }
+    // Cascade-delete variant children (same user's variants)
     await db.delete(outreachJobsTable).where(
-      sql`(${outreachJobsTable.params}->>'parentJobId')::integer = ${jobId}`
+      and(
+        sql`(${outreachJobsTable.params}->>'parentJobId')::integer = ${jobId}`,
+        eq(outreachJobsTable.userId, uid!),
+      )
     );
-    await db.delete(outreachJobsTable).where(eq(outreachJobsTable.id, jobId));
+    await db.delete(outreachJobsTable).where(
+      and(eq(outreachJobsTable.id, jobId), eq(outreachJobsTable.userId, uid!))
+    );
     res.status(204).end();
   } catch (err) {
     console.error("Delete outreach job error:", err);

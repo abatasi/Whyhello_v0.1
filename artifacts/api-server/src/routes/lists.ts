@@ -1,16 +1,21 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { db } from "@workspace/db";
 import {
   listsTable, listContactsTable, listCompaniesTable,
   contactsTable, companiesTable,
 } from "@workspace/db/schema";
-import { eq, inArray, sql, and } from "drizzle-orm";
+import { eq, sql, and, or, isNull } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-// GET /lists — all lists with member counts
-router.get("/", async (_req, res) => {
+function userId(req: Request): string | null {
+  return req.dbUser?.id ?? null;
+}
+
+// GET /lists — lists owned by the current user (includes legacy NULL-owner lists)
+router.get("/", async (req, res) => {
   try {
+    const uid = userId(req);
     const rows = await db
       .select({
         id: listsTable.id,
@@ -25,6 +30,7 @@ router.get("/", async (_req, res) => {
         )`,
       })
       .from(listsTable)
+      .where(or(eq(listsTable.userId, uid!), isNull(listsTable.userId)))
       .orderBy(listsTable.createdAt);
     res.json(rows);
   } catch (err) {
@@ -33,13 +39,14 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// POST /lists — create a list
+// POST /lists — create a list for the current user
 router.post("/", async (req, res) => {
   try {
+    const uid = userId(req);
     const { name, type } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Name is required" });
     if (type !== "contacts" && type !== "companies") return res.status(400).json({ error: "Type must be contacts or companies" });
-    const [row] = await db.insert(listsTable).values({ name: name.trim(), type }).returning();
+    const [row] = await db.insert(listsTable).values({ userId: uid!, name: name.trim(), type }).returning();
     res.status(201).json({ ...row, memberCount: 0 });
   } catch (err) {
     console.error(err);
@@ -47,12 +54,15 @@ router.post("/", async (req, res) => {
   }
 });
 
-// DELETE /lists/:id — delete a list
+// DELETE /lists/:id — delete a list (ownership enforced)
 router.delete("/:id", async (req, res) => {
   try {
+    const uid = userId(req);
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
-    const [deleted] = await db.delete(listsTable).where(eq(listsTable.id, id)).returning();
+    const [deleted] = await db.delete(listsTable)
+      .where(and(eq(listsTable.id, id), eq(listsTable.userId, uid!)))
+      .returning();
     if (!deleted) return res.status(404).json({ error: "Not found" });
     res.json({ ok: true });
   } catch (err) {
@@ -61,9 +71,10 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// GET /lists/:id — list detail with member count
+// GET /lists/:id — list detail (ownership or legacy NULL)
 router.get("/:id", async (req, res) => {
   try {
+    const uid = userId(req);
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
     const [list] = await db
@@ -80,7 +91,10 @@ router.get("/:id", async (req, res) => {
         )`,
       })
       .from(listsTable)
-      .where(eq(listsTable.id, id));
+      .where(and(
+        eq(listsTable.id, id),
+        or(eq(listsTable.userId, uid!), isNull(listsTable.userId)),
+      ));
     if (!list) return res.status(404).json({ error: "Not found" });
     res.json(list);
   } catch (err) {
@@ -89,9 +103,10 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// GET /lists/:id/members — paginated members
+// GET /lists/:id/members — paginated members (ownership enforced via list lookup)
 router.get("/:id/members", async (req, res) => {
   try {
+    const uid = userId(req);
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
     const raw = req.query as Record<string, string>;
@@ -99,7 +114,11 @@ router.get("/:id/members", async (req, res) => {
     const limit = Math.min(100, Math.max(1, parseInt(raw.limit ?? "20") || 20));
     const offset = (page - 1) * limit;
 
-    const [list] = await db.select().from(listsTable).where(eq(listsTable.id, id));
+    const [list] = await db.select().from(listsTable)
+      .where(and(
+        eq(listsTable.id, id),
+        or(eq(listsTable.userId, uid!), isNull(listsTable.userId)),
+      ));
     if (!list) return res.status(404).json({ error: "Not found" });
 
     if (list.type === "contacts") {
@@ -163,15 +182,20 @@ router.get("/:id/members", async (req, res) => {
   }
 });
 
-// POST /lists/:id/members — add members
+// POST /lists/:id/members — add members (ownership enforced)
 router.post("/:id/members", async (req, res) => {
   try {
+    const uid = userId(req);
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids must be a non-empty array" });
 
-    const [list] = await db.select().from(listsTable).where(eq(listsTable.id, id));
+    const [list] = await db.select().from(listsTable)
+      .where(and(
+        eq(listsTable.id, id),
+        or(eq(listsTable.userId, uid!), isNull(listsTable.userId)),
+      ));
     if (!list) return res.status(404).json({ error: "Not found" });
 
     if (list.type === "contacts") {
@@ -192,14 +216,19 @@ router.post("/:id/members", async (req, res) => {
   }
 });
 
-// DELETE /lists/:id/members/:memberId — remove a member
+// DELETE /lists/:id/members/:memberId — remove a member (ownership enforced)
 router.delete("/:id/members/:memberId", async (req, res) => {
   try {
+    const uid = userId(req);
     const id = parseInt(req.params.id);
     const memberId = parseInt(req.params.memberId);
     if (isNaN(id) || isNaN(memberId)) return res.status(400).json({ error: "Invalid id" });
 
-    const [list] = await db.select().from(listsTable).where(eq(listsTable.id, id));
+    const [list] = await db.select().from(listsTable)
+      .where(and(
+        eq(listsTable.id, id),
+        or(eq(listsTable.userId, uid!), isNull(listsTable.userId)),
+      ));
     if (!list) return res.status(404).json({ error: "Not found" });
 
     if (list.type === "contacts") {

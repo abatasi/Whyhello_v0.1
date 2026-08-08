@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -401,7 +402,7 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
 
   const { data: emailAccounts = [] } = useQuery<{ id: number; provider: string; email: string }[]>({
     queryKey: ["email-accounts"],
-    queryFn: () => fetch("/api/email-accounts").then((r) => r.json()),
+    queryFn: () => apiFetch("/api/email-accounts").then((r) => r.json()),
   });
   const [isSending, setIsSending] = useState(false);
   const [, navigate] = useLocation();
@@ -424,7 +425,7 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
         const created = await createMessage.mutateAsync({ contactId: selectedContact.id, toEmail: selectedContact.email, toName: `${selectedContact.firstName} ${selectedContact.lastName}`, subject, body });
         messageId = created.id;
       }
-      const sendRes = await fetch(`/api/messages/${messageId}/send`, {
+      const sendRes = await apiFetch(`/api/messages/${messageId}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),

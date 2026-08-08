@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect, useRef } from "react";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
@@ -556,7 +557,7 @@ function useAutoSave(data: DNAData) {
     timer.current = setTimeout(async () => {
       saveDNA(data);
       try {
-        await fetch(API_PROFILE_URL, {
+        await apiFetch(API_PROFILE_URL, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ data }),
@@ -866,7 +867,7 @@ function CustomerCard({
     if (!customer.rawTestimonial.trim()) return;
     setExtracting(true);
     try {
-      const resp = await fetch("/api/hq/testimonial-extract", {
+      const resp = await apiFetch("/api/hq/testimonial-extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: customer.rawTestimonial }),
@@ -884,7 +885,7 @@ function CustomerCard({
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const resp = await fetch("/api/hq/extract-text", { method: "POST", body: formData });
+      const resp = await apiFetch("/api/hq/extract-text", { method: "POST", body: formData });
       const data = await resp.json();
       onUpdate({ rawTestimonial: (customer.rawTestimonial ? customer.rawTestimonial + "\n\n" : "") + (data.text ?? "") });
     } catch { /* ignore */ }
@@ -1093,7 +1094,7 @@ function CompanySearchField({
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/companies?search=${encodeURIComponent(q)}&limit=8`);
+        const res = await apiFetch(`/api/companies?search=${encodeURIComponent(q)}&limit=8`);
         const json = await res.json();
         setResults(json.data ?? []);
         setOpen(true);
@@ -1531,7 +1532,7 @@ function BuyingCenterModal({ seatName, seniorities, departments, onUpdate, open,
     setSampleLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/contacts?${params}`);
+        const res = await apiFetch(`/api/contacts?${params}`);
         const json = await res.json();
         setSampleContacts(json.data ?? []);
         setSampleTotal(json.total ?? 0);
@@ -1811,7 +1812,7 @@ export default function HQ() {
   // Load from server on mount — server is the source of truth; localStorage is the fast startup cache
   useEffect(() => {
     let cancelled = false;
-    fetch(API_PROFILE_URL)
+    apiFetch(API_PROFILE_URL)
       .then(r => (r.ok ? r.json() : null))
       .then((json: { data: StoredDNA } | null) => {
         if (!cancelled && json?.data) {
@@ -1847,7 +1848,7 @@ export default function HQ() {
 
   useEffect(() => {
     setTmOptionsLoading(true);
-    fetch("/api/filters/options")
+    apiFetch("/api/filters/options")
       .then(r => r.json())
       .then((json: { industries?: string[]; companySizes?: string[]; locations?: string[] }) => {
         setTargetMarketOptions({
@@ -1879,7 +1880,7 @@ export default function HQ() {
     setTmSampleLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/companies?${params}`);
+        const res = await apiFetch(`/api/companies?${params}`);
         const json = await res.json();
         setTmSampleCompanies(json.data ?? []);
         setTmSampleTotal(json.total ?? 0);
@@ -2072,7 +2073,7 @@ export default function HQ() {
     setVoiceSummaryLoading(true);
     setTextDirtyForProfile(false);
     try {
-      const resp = await fetch("/api/hq/voice-summary", {
+      const resp = await apiFetch("/api/hq/voice-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ toneTags, communicationStyle, writingNotes, trainingText, suppressions, suppressionNotes }),
@@ -2114,7 +2115,7 @@ export default function HQ() {
     try {
       const form = new FormData();
       form.append("file", file);
-      const resp = await fetch("/api/hq/extract-text", { method: "POST", body: form });
+      const resp = await apiFetch("/api/hq/extract-text", { method: "POST", body: form });
       if (!resp.ok) throw new Error("Extraction failed");
       const { text } = await resp.json() as { text: string };
       setData(d => ({

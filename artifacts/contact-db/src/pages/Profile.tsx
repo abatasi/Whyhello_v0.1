@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "@workspace/replit-auth-web";
+import { useUser } from "@clerk/react";
 import { Download, FileDown, Users, Building2 } from "lucide-react";
 import { useListExports, downloadExportFile } from "@workspace/api-client-react";
 import type { ExportRecord } from "@workspace/api-client-react";
@@ -70,21 +70,21 @@ function ExportRow({ row }: { row: ExportRecord }) {
 }
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { data: exports, isLoading } = useListExports();
 
   const displayName = user?.firstName
     ? `${user.firstName} ${user.lastName ?? ""}`.trim()
-    : user?.email ?? "Account";
+    : user?.primaryEmailAddress?.emailAddress ?? "Account";
 
   return (
     <Shell>
       <div className="max-w-4xl mx-auto px-8 py-10 space-y-10">
         {/* User info card */}
         <div className="flex items-center gap-6">
-          {user?.profileImageUrl ? (
+          {user?.imageUrl ? (
             <img
-              src={user.profileImageUrl}
+              src={user.imageUrl}
               alt="Profile"
               className="h-16 w-16 rounded-full object-cover border-2 border-border shadow-sm"
             />
@@ -95,7 +95,7 @@ export default function Profile() {
           )}
           <div>
             <h1 className="text-2xl font-display font-bold">{displayName}</h1>
-            {user?.email && <p className="text-muted-foreground mt-0.5">{user.email}</p>}
+            {user?.primaryEmailAddress?.emailAddress && <p className="text-muted-foreground mt-0.5">{user.primaryEmailAddress.emailAddress}</p>}
           </div>
         </div>
 

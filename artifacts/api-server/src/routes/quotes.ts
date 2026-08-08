@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { db } from "@workspace/db";
 import {
   contactsTable,
@@ -8,12 +8,13 @@ import {
 } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { getAuth } from "@clerk/express";
 
 export const quotesRouter: IRouter = Router({ mergeParams: true });
 
-function getUserId(req: Parameters<Parameters<typeof quotesRouter.get>[1]>[0]): string | null {
-  const user = (req as unknown as { user?: { id?: string } }).user;
-  return user?.id ?? null;
+function getUserId(req: Request): string | null {
+  const auth = getAuth(req);
+  return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

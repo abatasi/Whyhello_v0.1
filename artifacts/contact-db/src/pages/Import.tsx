@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useEffect, useRef, useState } from "react";
 import { Upload, Download, CheckCircle2, AlertCircle, XCircle, FileText, ChevronRight, Loader2, Info } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
@@ -244,7 +245,7 @@ export default function Import() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/bulk-upload/templates")
+    apiFetch("/api/bulk-upload/templates")
       .then(r => r.json())
       .then(setTemplates);
   }, []);
@@ -276,7 +277,7 @@ export default function Import() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(`/api/bulk-upload/${selectedKey}`, { method: "POST", body: fd });
+      const res = await apiFetch(`/api/bulk-upload/${selectedKey}`, { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Import failed");
       setResult(data);

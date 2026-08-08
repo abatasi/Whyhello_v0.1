@@ -3,12 +3,13 @@ import { db } from "@workspace/db";
 import { messagesTable, contactsTable, userEmailAccountsTable } from "@workspace/db/schema";
 import { and, eq, desc, sql } from "drizzle-orm";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts";
+import { getAuth } from "@clerk/express";
 
 const router: IRouter = Router();
 
 function getUserId(req: Request): string | null {
-  const u = (req as Request & { user?: { id: string } }).user;
-  return u?.id ?? null;
+  const auth = getAuth(req);
+  return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
 router.get("/", async (req, res) => {

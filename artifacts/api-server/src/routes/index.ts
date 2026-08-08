@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
+import { requireAuth } from "../middlewares/requireAuth";
 import healthRouter from "./health";
-import authRouter from "./auth";
 import contactsRouter from "./contacts";
 import companiesRouter from "./companies";
 import filtersRouter from "./filters";
@@ -33,38 +33,43 @@ import metaRouter from "./meta";
 
 const router: IRouter = Router();
 
+// ── Public routes (no auth required) ────────────────────────────────────────
 router.use(healthRouter);
-router.use(authRouter);
+// Contacts and companies are publicly readable (public profile pages for unauthenticated users)
 router.use("/contacts", contactsRouter);
-router.use("/contacts/:contactId/insights", insightsRouter);
-router.use("/contacts/:contactId/industry-insights", industryInsightsRouter);
-router.use("/contacts/:contactId/role-insights", roleInsightsRouter);
-router.use("/contacts/:contactId/colleague-insights", colleagueInsightsRouter);
-router.use("/contacts/:contactId/counterpart-insights", counterpartInsightsRouter);
-router.use("/contacts/:contactId/chat", contactChatRouter);
 router.use("/companies", companiesRouter);
-router.use("/companies/:companyId/insights", companyInsightsRouter);
+// Reference data — filters are read-only and publicly accessible
 router.use("/filters", filtersRouter);
-router.use("/saved-searches", savedSearchesRouter);
-router.use("/lists", listsRouter);
-router.use("/exports", exportsRouter);
-router.use("/credits", creditsRouter);
-router.use("/messages", messagesRouter);
-router.use("/insight-drops", insightDropsRouter);
-router.use("/contacts/:contactId/outreach-jobs", contactJobsRouter);
-router.use("/contacts/:contactId/battlecard", battlecardRouter);
-router.use("/contacts/:contactId/chat-messages", contactChatMessagesRouter);
-router.use("/contacts/:contactId/insights", relevanceRouter);
-router.use("/contacts/:contactId/insights", quotesRouter);
-router.use("/outreach-jobs", jobsRouter);
-router.use("/insights/summarize", insightSummarizeRouter);
-router.use("/hq", dnaRouter);
-router.use("/email-accounts", emailAccountsRouter);
-router.use("/industries", industriesRouter);
-router.use("/roles", rolesRouter);
-router.use("/bulk-upload", bulkUploadRouter);
+// Proxy for external requests (no sensitive data)
 router.use("/proxy", proxyRouter);
-router.use("/meta", metaRouter);
-router.use("/meta", metaRouter);
+
+// ── Private routes (requireAuth enforces Clerk session + JIT provisioning) ───
+router.use("/contacts/:contactId/insights", requireAuth, insightsRouter);
+router.use("/contacts/:contactId/industry-insights", requireAuth, industryInsightsRouter);
+router.use("/contacts/:contactId/role-insights", requireAuth, roleInsightsRouter);
+router.use("/contacts/:contactId/colleague-insights", requireAuth, colleagueInsightsRouter);
+router.use("/contacts/:contactId/counterpart-insights", requireAuth, counterpartInsightsRouter);
+router.use("/contacts/:contactId/chat", requireAuth, contactChatRouter);
+router.use("/companies/:companyId/insights", requireAuth, companyInsightsRouter);
+router.use("/saved-searches", requireAuth, savedSearchesRouter);
+router.use("/lists", requireAuth, listsRouter);
+router.use("/exports", requireAuth, exportsRouter);
+router.use("/credits", requireAuth, creditsRouter);
+router.use("/messages", requireAuth, messagesRouter);
+router.use("/insight-drops", requireAuth, insightDropsRouter);
+router.use("/contacts/:contactId/outreach-jobs", requireAuth, contactJobsRouter);
+router.use("/contacts/:contactId/battlecard", requireAuth, battlecardRouter);
+router.use("/contacts/:contactId/chat-messages", requireAuth, contactChatMessagesRouter);
+router.use("/contacts/:contactId/insights", requireAuth, relevanceRouter);
+router.use("/contacts/:contactId/insights", requireAuth, quotesRouter);
+router.use("/outreach-jobs", requireAuth, jobsRouter);
+router.use("/insights/summarize", requireAuth, insightSummarizeRouter);
+router.use("/hq", requireAuth, dnaRouter);
+router.use("/email-accounts", requireAuth, emailAccountsRouter);
+router.use("/bulk-upload", requireAuth, bulkUploadRouter);
+router.use("/meta", requireAuth, metaRouter);
+// Reference data mutations require auth; reads are also behind auth (reference data for authenticated UI only)
+router.use("/industries", requireAuth, industriesRouter);
+router.use("/roles", requireAuth, rolesRouter);
 
 export default router;

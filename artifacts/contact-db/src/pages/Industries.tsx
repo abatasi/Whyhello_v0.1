@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Factory, ChevronRight, Search, Loader2, FileText } from "lucide-react";
@@ -65,7 +66,7 @@ export default function Industries() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: "20" });
     if (debouncedSearch) params.set("search", debouncedSearch);
-    fetch(`/api/industries?${params}`)
+    apiFetch(`/api/industries?${params}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));

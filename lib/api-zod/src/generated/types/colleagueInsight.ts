@@ -6,12 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ColleagueInsightSourceContact {
-  name: string;
-  jobTitle?: string | null;
-  companyName?: string | null;
-}
-
 export interface ColleagueInsight {
   id: number;
   contactId: number;
@@ -21,5 +15,4 @@ export interface ColleagueInsight {
   mediaType: string;
   description?: string | null;
   publishedDate?: string | null;
-  sourceContact?: ColleagueInsightSourceContact | null;
 }

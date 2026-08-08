@@ -7,11 +7,11 @@ import {
   contactInsightsTable,
 } from "@workspace/db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
-
-type AuthedReq = Request & { user: { id: string } };
+import { getAuth } from "@clerk/express";
 
 function getUserId(req: Request): string | null {
-  return (req as AuthedReq).user?.id ?? null;
+  const auth = getAuth(req);
+  return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
 const router: IRouter = Router();

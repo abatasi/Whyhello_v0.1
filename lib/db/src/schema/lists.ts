@@ -4,6 +4,7 @@ import { companiesTable } from "./companies";
 
 export const listsTable = pgTable("lists", {
   id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 }), // nullable — pre-migration rows have null
   name: varchar("name", { length: 200 }).notNull(),
   type: varchar("type", { length: 20 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),

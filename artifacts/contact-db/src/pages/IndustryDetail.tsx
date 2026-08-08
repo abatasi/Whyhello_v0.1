@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect } from "react";
 import { Link, useParams } from "wouter";
 import { Factory, ArrowLeft, ExternalLink, Loader2, FileText } from "lucide-react";
@@ -54,7 +55,7 @@ export default function IndustryDetail() {
     if (!params.id) return;
     document.title = "Industry · Whyhello";
     setLoading(true);
-    fetch(`/api/industries/${params.id}`)
+    apiFetch(`/api/industries/${params.id}`)
       .then(r => {
         if (r.status === 404) { setNotFound(true); setLoading(false); return null; }
         return r.json();

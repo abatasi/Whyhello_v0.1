@@ -2,11 +2,11 @@ import { Router, type IRouter, type Request } from "express";
 import { db } from "@workspace/db";
 import { usersTable, contactRevealsTable, companyRevealsTable, contactsTable, companiesTable } from "@workspace/db/schema";
 import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
-
-type AuthedReq = Request & { user: { id: string } };
+import { getAuth } from "@clerk/express";
 
 function getUserId(req: Request): string | null {
-  return (req as AuthedReq).user?.id ?? null;
+  const auth = getAuth(req);
+  return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
 const TIER_LIMITS: Record<string, number | null> = {

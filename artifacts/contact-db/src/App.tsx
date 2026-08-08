@@ -1,10 +1,21 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@workspace/replit-auth-web";
+import {
+  ClerkProvider,
+  SignIn,
+  SignUp,
+  Show,
+  useAuth,
+  useClerk,
+} from "@clerk/react";
+import { publishableKeyFromHost } from "@clerk/react/internal";
+import { shadcn } from "@clerk/themes";
 
 import Search from "@/pages/Search";
+import Landing from "@/pages/Landing";
 import ContactProfile from "@/pages/ContactProfile";
 import CompanyProfile from "@/pages/CompanyProfile";
 import PublicContactProfile from "@/pages/PublicContactProfile";
@@ -12,7 +23,6 @@ import PublicCompanyProfile from "@/pages/PublicCompanyProfile";
 import Lists from "@/pages/Lists";
 import ListDetail from "@/pages/ListDetail";
 import Profile from "@/pages/Profile";
-import Login from "@/pages/Login";
 import Messages from "@/pages/Messages";
 import HQ from "@/pages/HQ";
 import MultiThreading from "@/pages/MultiThreading";
@@ -34,6 +44,79 @@ const queryClient = new QueryClient({
   },
 });
 
+// REQUIRED — copy verbatim. Resolves the key from window.location.hostname so the
+// same build serves multiple Clerk custom domains.
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+
+// REQUIRED — copy verbatim. Empty in dev (Clerk hits dev FAPI directly), auto-set
+// in prod. Do NOT gate on import.meta.env.PROD / NODE_ENV.
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// Clerk passes full paths to routerPush/routerReplace, but wouter's
+// setLocation prepends the base — strip it to avoid doubling.
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || "/"
+    : path;
+}
+
+if (!clerkPubKey) {
+  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY");
+}
+
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: "clerk",
+  options: {
+    logoPlacement: "inside" as const,
+    logoLinkUrl: basePath || "/",
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+  },
+  variables: {
+    colorPrimary: "hsl(226,70%,55%)",
+    colorForeground: "hsl(222,47%,11%)",
+    colorMutedForeground: "hsl(215,16%,47%)",
+    colorDanger: "hsl(0,84%,60%)",
+    colorBackground: "hsl(210,33%,99%)",
+    colorInput: "hsl(214,32%,91%)",
+    colorInputForeground: "hsl(222,47%,11%)",
+    colorNeutral: "hsl(214,32%,91%)",
+    fontFamily: "'Inter', sans-serif",
+    borderRadius: "0.75rem",
+  },
+  elements: {
+    rootBox: "w-full flex justify-center",
+    cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg border border-border/50",
+    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
+    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
+    headerTitle: "text-foreground font-display font-bold",
+    headerSubtitle: "text-muted-foreground",
+    socialButtonsBlockButtonText: "text-foreground font-medium",
+    formFieldLabel: "text-foreground font-medium",
+    footerActionLink: "text-primary font-medium hover:text-primary/80",
+    footerActionText: "text-muted-foreground",
+    dividerText: "text-muted-foreground",
+    identityPreviewEditButton: "text-primary hover:text-primary/80",
+    formFieldSuccessText: "text-green-600",
+    alertText: "text-foreground",
+    logoBox: "flex justify-center mb-2",
+    logoImage: "h-10 w-auto",
+    socialButtonsBlockButton: "border border-border hover:bg-secondary/50 transition-colors",
+    formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
+    formFieldInput: "border-input bg-white text-foreground focus:ring-2 focus:ring-primary/30",
+    footerAction: "border-t border-border/40",
+    dividerLine: "bg-border",
+    alert: "bg-destructive/10 border border-destructive/20 rounded-lg",
+    otpCodeFieldInput: "border-input bg-white text-foreground",
+    formFieldRow: "gap-2",
+    main: "gap-4",
+  },
+};
 
 function LoadingSpinner() {
   return (
@@ -43,30 +126,81 @@ function LoadingSpinner() {
   );
 }
 
+function HomeRoute() {
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded) return <LoadingSpinner />;
+  // Signed-out users see the public landing page — never redirect to /sign-in from home.
+  if (!isSignedIn) return <Landing />;
+  return <Search />;
+}
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated, isLoading } = useAuth();
-  if (isLoading) return <LoadingSpinner />;
-  if (!isAuthenticated) return <Redirect to="/login" />;
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded) return <LoadingSpinner />;
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
   return <Component />;
 }
 
 function ContactProfileRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
-  if (isLoading) return <LoadingSpinner />;
-  return isAuthenticated ? <ContactProfile /> : <PublicContactProfile />;
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded) return <LoadingSpinner />;
+  return isSignedIn ? <ContactProfile /> : <PublicContactProfile />;
 }
 
 function CompanyProfileRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
-  if (isLoading) return <LoadingSpinner />;
-  return isAuthenticated ? <CompanyProfile /> : <PublicCompanyProfile />;
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded) return <LoadingSpinner />;
+  return isSignedIn ? <CompanyProfile /> : <PublicCompanyProfile />;
+}
+
+function SignInPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
+      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+    </div>
+  );
+}
+
+function SignUpPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
+      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+    </div>
+  );
+}
+
+// Invalidate the query cache when the signed-in user changes.
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const qc = useQueryClient();
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const unsubscribe = addListener(({ user }) => {
+      const userId = user?.id ?? null;
+      if (
+        prevUserIdRef.current !== undefined &&
+        prevUserIdRef.current !== userId
+      ) {
+        qc.clear();
+      }
+      prevUserIdRef.current = userId;
+    });
+    return unsubscribe;
+  }, [addListener, qc]);
+
+  return null;
 }
 
 function Router() {
   return (
     <Switch>
-      <Route path="/login" component={Login} />
-      <Route path="/" component={() => <ProtectedRoute component={Search} />} />
+      {/* Redirect old /login path to /sign-in */}
+      <Route path="/login" component={() => <Redirect to="/sign-in" />} />
+      {/* REQUIRED — copy "/sign-in/*?" and "/sign-up/*?" verbatim */}
+      <Route path="/sign-in/*?" component={SignInPage} />
+      <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/" component={HomeRoute} />
       <Route path="/contacts/:id" component={ContactProfileRoute} />
       <Route path="/companies/:id" component={CompanyProfileRoute} />
       <Route path="/lists" component={() => <ProtectedRoute component={Lists} />} />
@@ -86,16 +220,50 @@ function Router() {
   );
 }
 
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
+
+  return (
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      proxyUrl={clerkProxyUrl}
+      appearance={clerkAppearance}
+      signInUrl={`${basePath}/sign-in`}
+      signUpUrl={`${basePath}/sign-up`}
+      afterSignOutUrl={basePath || "/"}
+      localization={{
+        signIn: {
+          start: {
+            title: "Welcome back",
+            subtitle: "Sign in to access your account",
+          },
+        },
+        signUp: {
+          start: {
+            title: "Create your account",
+            subtitle: "Get started with Whyhello today",
+          },
+        },
+      }}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
+      <QueryClientProvider client={queryClient}>
+        <ClerkQueryClientCacheInvalidator />
+        <TooltipProvider>
+          <Router />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
+  );
+}
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <WouterRouter base={basePath}>
+      <ClerkProviderWithRoutes />
+    </WouterRouter>
   );
 }
 

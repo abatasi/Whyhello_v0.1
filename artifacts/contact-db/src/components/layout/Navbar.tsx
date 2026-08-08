@@ -1,8 +1,9 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2, Mail, Settings } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { useAuth } from "@workspace/replit-auth-web";
+import { useUser, useClerk } from "@clerk/react";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
 import { cn, getInitials } from "@/lib/utils";
 import { useListExports, downloadExportFile, useCreditsStatus } from "@workspace/api-client-react";
@@ -118,7 +119,7 @@ function GlobalSearch() {
   const { data: contactsData, isLoading: contactsLoading } = useQuery<{ data: ContactResult[] }>({
     queryKey: ["global-search", "contacts", debouncedQuery],
     queryFn: () =>
-      fetch(`/api/contacts?search=${encodeURIComponent(debouncedQuery)}&limit=5`).then((r) =>
+      apiFetch(`/api/contacts?search=${encodeURIComponent(debouncedQuery)}&limit=5`).then((r) =>
         r.json(),
       ),
     enabled,
@@ -128,7 +129,7 @@ function GlobalSearch() {
   const { data: companiesData, isLoading: companiesLoading } = useQuery<{ data: CompanyResult[] }>({
     queryKey: ["global-search", "companies", debouncedQuery],
     queryFn: () =>
-      fetch(`/api/companies?search=${encodeURIComponent(debouncedQuery)}&limit=5`).then((r) =>
+      apiFetch(`/api/companies?search=${encodeURIComponent(debouncedQuery)}&limit=5`).then((r) =>
         r.json(),
       ),
     enabled,
@@ -347,7 +348,9 @@ function NotificationsDropdown({ onClose }: { onClose: () => void }) {
 }
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const [location] = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -376,7 +379,7 @@ export function Navbar() {
 
   const displayName = user?.firstName
     ? `${user.firstName} ${user.lastName ?? ""}`.trim()
-    : user?.email ?? "Account";
+    : user?.primaryEmailAddress?.emailAddress ?? "Account";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -445,9 +448,9 @@ export function Navbar() {
 
           <div className="flex items-center gap-2">
             <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              {user?.profileImageUrl ? (
+              {user?.imageUrl ? (
                 <img
-                  src={user.profileImageUrl}
+                  src={user.imageUrl}
                   alt="Profile"
                   className="h-7 w-7 rounded-full object-cover border border-border"
                 />
@@ -472,7 +475,7 @@ export function Navbar() {
               variant="ghost"
               size="icon"
               className="rounded-full text-muted-foreground hover:text-foreground ml-1"
-              onClick={logout}
+              onClick={() => signOut({ redirectUrl: basePath || "/" })}
               title="Sign out"
             >
               <LogOut className="h-4 w-4" />

@@ -1,6 +1,5 @@
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { useGetCompany } from "@workspace/api-client-react";
-import { useAuth } from "@workspace/replit-auth-web";
 import { ArrowLeft, Building2, MapPin, Globe, ExternalLink, Users, Calendar, Linkedin } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { getInitials, formatNumber } from "@/lib/utils";
@@ -46,7 +45,8 @@ function PublicHeader({ onLogin }: { onLogin: () => void }) {
 export default function PublicCompanyProfile() {
   const [, params] = useRoute("/companies/:id");
   const id = parseInt(params?.id || "0");
-  const { login } = useAuth();
+  const [, navigate] = useLocation();
+  const login = () => navigate("/sign-in");
 
   const { data: company, isLoading, isError } = useGetCompany(id, {
     query: { enabled: !!id },

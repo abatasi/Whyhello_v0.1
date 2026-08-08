@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
+import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { contactsTable, companiesTable } from "@workspace/db/schema";
+import { contactsTable, companiesTable, listsTable } from "@workspace/db/schema";
 import { GetCompanyParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL } from "drizzle-orm";
 import { companyInsightsTable } from "@workspace/db/schema";
@@ -52,6 +53,25 @@ router.get("/", async (req, res) => {
     if (raw.listId) {
       const listIdVal = parseInt(raw.listId);
       if (!isNaN(listIdVal)) {
+        // listId filter requires auth — lists are private resources
+        const auth = getAuth(req);
+        const uid = (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId;
+        if (!uid) {
+          res.status(401).json({ error: "Authentication required to filter by list" });
+          return;
+        }
+        // Verify list ownership (NULL user_id = legacy shared list, accessible to any auth'd user)
+        const [list] = await db.select({ id: listsTable.id })
+          .from(listsTable)
+          .where(and(
+            eq(listsTable.id, listIdVal),
+            or(eq(listsTable.userId, uid), sql`${listsTable.userId} IS NULL`),
+          ))
+          .limit(1);
+        if (!list) {
+          res.status(403).json({ error: "Access denied to this list" });
+          return;
+        }
         conditions.push(
           sql`${companiesTable.id} IN (SELECT company_id FROM list_companies WHERE list_id = ${listIdVal})`
         );

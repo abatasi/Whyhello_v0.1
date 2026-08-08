@@ -4,12 +4,13 @@ import { userEmailAccountsTable } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import crypto from "node:crypto";
 import type { UserEmailAccountRow } from "@workspace/db/schema";
+import { getAuth } from "@clerk/express";
 
 const router: IRouter = Router();
 
 function getUserId(req: Request): string | null {
-  const u = (req as Request & { user?: { id: string } }).user;
-  return u?.id ?? null;
+  const auth = getAuth(req);
+  return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
 function getOrigin(req: Request): string {
@@ -182,7 +183,7 @@ const GOOGLE_SCOPES = "openid email profile https://www.googleapis.com/auth/gmai
 
 router.get("/auth/google", (req, res) => {
   const userId = getUserId(req);
-  if (!userId) { res.redirect("/api/login"); return; }
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) { res.status(503).json({ error: "Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET." }); return; }
 
@@ -276,7 +277,7 @@ const MS_SCOPES = "openid email profile offline_access https://graph.microsoft.c
 
 router.get("/auth/microsoft", (req, res) => {
   const userId = getUserId(req);
-  if (!userId) { res.redirect("/api/login"); return; }
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
   const clientId = process.env.MICROSOFT_CLIENT_ID;
   if (!clientId) { res.status(503).json({ error: "Microsoft OAuth not configured. Set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET." }); return; }
 

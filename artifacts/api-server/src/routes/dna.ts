@@ -6,12 +6,13 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { db } from "@workspace/db";
 import { dnaProfilesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+import { getAuth } from "@clerk/express";
 
 const require = createRequire(import.meta.url);
 
-type AuthedReq = Request & { user: { id: string } };
 function getUserId(req: Request): string | null {
-  return (req as AuthedReq).user?.id ?? null;
+  const auth = getAuth(req);
+  return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
 const router: IRouter = Router();

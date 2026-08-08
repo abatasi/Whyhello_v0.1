@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -64,11 +65,11 @@ export default function Settings() {
 
   const { data: accounts = [], isLoading } = useQuery<EmailAccount[]>({
     queryKey: ["email-accounts"],
-    queryFn: () => fetch("/api/email-accounts").then((r) => r.json()),
+    queryFn: () => apiFetch("/api/email-accounts").then((r) => r.json()),
   });
 
   const disconnect = useMutation({
-    mutationFn: (id: number) => fetch(`/api/email-accounts/${id}`, { method: "DELETE" }).then((r) => r.json()),
+    mutationFn: (id: number) => apiFetch(`/api/email-accounts/${id}`, { method: "DELETE" }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-accounts"] });
       toast({ title: "Account disconnected" });

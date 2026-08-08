@@ -324,6 +324,41 @@ export const GetFilterOptionsResponse = zod.object({
 });
 
 /**
+ * @summary List persisted chat messages for a contact
+ */
+export const ListChatMessagesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListChatMessagesResponseItem = zod.object({
+  id: zod.number(),
+  contactId: zod.number(),
+  role: zod.string(),
+  content: zod.string(),
+  createdAt: zod.string(),
+});
+export const ListChatMessagesResponse = zod.array(ListChatMessagesResponseItem);
+
+/**
+ * @summary Persist a single chat message for a contact
+ */
+export const CreateChatMessageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateChatMessageBody = zod.object({
+  role: zod.string(),
+  content: zod.string(),
+});
+
+/**
+ * @summary Delete all chat messages for a contact
+ */
+export const ClearChatMessagesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary List outreach jobs for a contact
  */
 export const ListOutreachJobsParams = zod.object({

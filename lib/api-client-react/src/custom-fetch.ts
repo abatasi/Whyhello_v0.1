@@ -299,7 +299,11 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  // Web auth uses Clerk session cookies (set for the domain by the Clerk SDK).
+  // credentials: 'include' ensures cookies are sent even for cross-origin
+  // requests that occur in some Replit proxy configurations.
+  // Do NOT add getToken() / Authorization: Bearer — that is for Expo/mobile only.
+  const response = await fetch(input, { credentials: 'include', ...init, method, headers });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
@@ -461,7 +462,7 @@ export default function MultiThreading() {
     } catch {}
 
     // Fallback: API
-    fetch("/api/hq/profile")
+    apiFetch("/api/hq/profile")
       .then(r => r.ok ? r.json() : null)
       .then((json: { data?: StoredShape } | null) => {
         if (json?.data) applyDna(json.data);
@@ -486,7 +487,7 @@ export default function MultiThreading() {
       if (tm.companySizes.length > 0) params.set("size", tm.companySizes.join(","));
       if (tm.locations.length > 0) params.set("location", tm.locations.join(","));
     }
-    fetch(`/api/companies?${params}`)
+    apiFetch(`/api/companies?${params}`)
       .then(r => r.json())
       .then((json: { data: CompanyResult[]; total: number }) => {
         setCompanyList(json.data ?? []);
@@ -503,7 +504,7 @@ export default function MultiThreading() {
     setOverrides({});
     setSelectedCompany(null);
     setCompanyLoading(true);
-    fetch(`/api/companies/${c.id}`)
+    apiFetch(`/api/companies/${c.id}`)
       .then(r => r.json())
       .then((data: Company) => setSelectedCompany(data))
       .catch(() => {})
