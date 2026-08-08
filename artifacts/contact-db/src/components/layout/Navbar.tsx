@@ -527,12 +527,12 @@ export function Navbar() {
     >
       <div className="w-full px-6 xl:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center">
-            {/* Circular boundary always carries the peacetime background so the
-                logo renders identically in both modes. In peacetime the circle
-                is invisible (same color as the bar); in wartime it floats as a
-                neutral bubble against the red fill. */}
-            <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center flex-shrink-0">
+          {/* Logo forcefield — bleeds to the topbar's left edge (negative margin
+              cancels the container's px-6/px-8 padding), squared left corners,
+              fully rounded right corners, always bg-background so the logo
+              stays in its natural peacetime colors regardless of mode. */}
+          <Link href="/" className="self-stretch flex items-center -ml-6 xl:-ml-8">
+            <div className="h-full pl-6 xl:pl-8 pr-8 bg-background rounded-r-full flex items-center">
               <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto" />
             </div>
           </Link>
