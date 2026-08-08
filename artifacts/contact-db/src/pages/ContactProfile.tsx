@@ -563,7 +563,11 @@ function SequencePickerModal({
 
   const { data: sequences = [], isLoading } = useQuery<{ id: number; name: string; stepCount: number; enrollmentCount: number }[]>({
     queryKey: ["sequences"],
-    queryFn: () => apiFetch("/api/sequences").then(r => r.json()),
+    queryFn: async () => {
+      const r = await apiFetch("/api/sequences");
+      if (!r.ok) throw new Error(`API error ${r.status}`);
+      return r.json();
+    },
     enabled: open,
   });
 

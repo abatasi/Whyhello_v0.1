@@ -99,17 +99,23 @@ function dayLabel(days: number, pos: number): string {
 
 // ── API hooks ──────────────────────────────────────────────────────────────
 
+async function fetchJson<T>(url: string): Promise<T> {
+  const r = await apiFetch(url);
+  if (!r.ok) throw new Error(`API error ${r.status}`);
+  return r.json();
+}
+
 function useSequences() {
   return useQuery<Sequence[]>({
     queryKey: ["sequences"],
-    queryFn: () => apiFetch("/api/sequences").then(r => r.json()),
+    queryFn: () => fetchJson<Sequence[]>("/api/sequences"),
   });
 }
 
 function useSequenceSteps(seqId: number | null) {
   return useQuery<SequenceStep[]>({
     queryKey: ["sequence-steps", seqId],
-    queryFn: () => apiFetch(`/api/sequences/${seqId}/steps`).then(r => r.json()),
+    queryFn: () => fetchJson<SequenceStep[]>(`/api/sequences/${seqId}/steps`),
     enabled: seqId !== null,
   });
 }
