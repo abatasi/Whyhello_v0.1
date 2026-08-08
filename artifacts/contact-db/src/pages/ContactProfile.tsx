@@ -2963,7 +2963,7 @@ function ContactChat({
                     className={cn(
                       "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
                       msg.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-tr-sm"
+                        ? "bg-primary text-primary-foreground rounded-tr-sm selection:bg-white/30 selection:text-white"
                         : "bg-secondary text-foreground rounded-tl-sm",
                     )}
                   >
