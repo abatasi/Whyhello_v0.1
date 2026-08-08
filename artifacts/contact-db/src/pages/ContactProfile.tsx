@@ -727,6 +727,12 @@ export default function ContactProfile() {
     return m;
   }, [relevanceData]);
 
+  const quoteMap = useMemo(() => {
+    const m = new Map<string, InsightQuote>();
+    for (const q of quotesData) m.set(`${q.signalType}-${q.signalId}`, q);
+    return m;
+  }, [quotesData]);
+
   // The live set of all insight IDs currently displayed in the panel.
   // Used to guard against stale ghost IDs that accumulate in checkedIds
   // when insight data changes between fetches (e.g. relevance-score updates
@@ -867,6 +873,7 @@ export default function ContactProfile() {
                       onToggle={toggleInsight}
                       onToggleAll={toggleCategory}
                       relevanceMap={relevanceMap}
+                      quoteMap={quoteMap}
                       onCardClick={(item) => {
                         setSelectedInsight({ item, category: cat });
                         setInsightsMode("expanded");
@@ -887,6 +894,7 @@ export default function ContactProfile() {
                     item={selectedInsight.item}
                     category={selectedInsight.category}
                     relevance={relevanceMap.get(`${selectedInsight.category.id}-${selectedInsight.item.id}`)}
+                    quote={quoteMap.get(`${selectedInsight.category.id}-${selectedInsight.item.id}`)}
                     onBack={() => setSelectedInsight(null)}
                     checkedIds={checkedIds}
                     onToggle={toggleInsight}
@@ -959,6 +967,7 @@ export default function ContactProfile() {
                             onToggleAll={toggleCategory}
                             expanded
                             relevanceMap={relevanceMap}
+                            quoteMap={quoteMap}
                             onCardClick={(item) => setSelectedInsight({ item, category: cat })}
                           />
                         );
@@ -1697,6 +1706,7 @@ function InsightDetailView({
   item,
   category,
   relevance,
+  quote,
   onBack,
   checkedIds,
   onToggle,
@@ -1706,6 +1716,7 @@ function InsightDetailView({
   item: InsightItem;
   category: InsightCategory;
   relevance?: InsightRelevanceScore;
+  quote?: InsightQuote;
   onBack: () => void;
   checkedIds: Set<string>;
   onToggle: (key: string) => void;
@@ -1887,19 +1898,19 @@ function InsightDetailView({
               {(() => { const n = loadHqCompanyName(); return n ? `Relevance to ${n}` : "Relevance"; })()}
             </span>
           </div>
-          <div className="p-4">
+          <div className="p-4 flex flex-col gap-3">
             {relevance ? (() => {
               const s = relevance.score;
               const scoreColor = s >= 75 ? "text-emerald-600" : s >= 50 ? "text-amber-500" : s >= 25 ? "text-orange-500" : "text-slate-400";
               const scoreBg   = s >= 75 ? "bg-emerald-50 border-emerald-200" : s >= 50 ? "bg-amber-50 border-amber-200" : s >= 25 ? "bg-orange-50 border-orange-200" : "bg-slate-50 border-slate-200";
               return (
                 <div className="flex gap-4">
-                  {/* Score column — 25% */}
+                  {/* Score column */}
                   <div className={cn("flex flex-col items-center justify-center rounded-xl border px-3 py-3 flex-shrink-0 w-[13%]", scoreBg)}>
                     <span className={cn("text-4xl font-black leading-none tracking-tight", scoreColor)}>{s}</span>
                     <span className={cn("text-[10px] font-bold mt-1 opacity-70", scoreColor)}>/&nbsp;100</span>
                   </div>
-                  {/* Description + tags column — 75% */}
+                  {/* Description + tags column */}
                   <div className="flex flex-col gap-2 flex-1 min-w-0">
                     <p className="text-xs text-foreground leading-relaxed">{relevance.description}</p>
                     {relevance.matchedHqSignals && relevance.matchedHqSignals.length > 0 && (
@@ -1921,6 +1932,21 @@ function InsightDetailView({
                   <div className="h-3 bg-muted rounded-full animate-pulse w-full" />
                   <div className="h-3 bg-muted rounded-full animate-pulse w-[85%]" />
                 </div>
+              </div>
+            )}
+            {/* ── Quotable power-up box ── */}
+            {quote && (
+              <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-3.5">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-300 flex-shrink-0" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Quotable</span>
+                </div>
+                <p className="text-sm text-amber-950 leading-relaxed italic">
+                  "{quote.quote}"
+                </p>
+                <p className="text-[11px] text-amber-600 font-medium mt-2 not-italic">
+                  — {quote.attribution}{quote.attributionRole ? `, ${quote.attributionRole}` : ""}
+                </p>
               </div>
             )}
           </div>
@@ -2053,6 +2079,7 @@ function InsightCardExpanded({
   checked,
   onToggle,
   relevance,
+  quote,
   onCardClick,
 }: {
   item: InsightItem;
@@ -2060,6 +2087,7 @@ function InsightCardExpanded({
   checked: boolean;
   onToggle: () => void;
   relevance?: InsightRelevanceScore;
+  quote?: InsightQuote;
   onCardClick?: () => void;
 }) {
   const key = `${category.id}-${item.id}`;
@@ -2189,9 +2217,20 @@ function InsightCardExpanded({
       <div className="flex flex-col gap-1.5 px-3 pb-3 mt-1.5">
         {relevance && (
           <TooltipProvider delayDuration={200}>
-            <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-secondary/40 border border-border/40">
-              <RelevanceBadge score={relevance.score} description={relevance.description} />
-              <p className="text-[10px] text-muted-foreground leading-snug flex-1 line-clamp-2">{relevance.description}</p>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-secondary/40 border border-border/40">
+                <RelevanceBadge score={relevance.score} description={relevance.description} />
+                <p className="text-[10px] text-muted-foreground leading-snug flex-1 line-clamp-2">{relevance.description}</p>
+              </div>
+              {quote && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Zap className="h-2.5 w-2.5 text-amber-500 fill-amber-400 flex-shrink-0" />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-amber-600">Quotable</span>
+                  </div>
+                  <p className="text-[10px] text-amber-950 leading-snug italic line-clamp-3">"{quote.quote}"</p>
+                </div>
+              )}
             </div>
           </TooltipProvider>
         )}
@@ -2246,6 +2285,7 @@ function InsightCategoryPanel({
   onToggleAll,
   expanded = false,
   relevanceMap,
+  quoteMap,
   onCardClick,
 }: {
   category: InsightCategory;
@@ -2260,6 +2300,7 @@ function InsightCategoryPanel({
   onToggleAll: (categoryId: string, catItems: InsightItem[]) => void;
   expanded?: boolean;
   relevanceMap?: Map<string, InsightRelevanceScore>;
+  quoteMap?: Map<string, InsightQuote>;
   onCardClick?: (item: InsightItem) => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -2360,6 +2401,7 @@ function InsightCategoryPanel({
                     checked={checkedIds.has(key)}
                     onToggle={() => onToggle(key)}
                     relevance={relevanceMap?.get(`${category.id}-${item.id}`)}
+                    quote={quoteMap?.get(`${category.id}-${item.id}`)}
                     onCardClick={onCardClick ? () => onCardClick(item) : undefined}
                   />
                 );

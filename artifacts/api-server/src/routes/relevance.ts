@@ -227,7 +227,7 @@ SCORING RUBRIC (0–100):
 IMPORTANT — FOR ⭐ QUOTABLE SIGNALS: The verbatim quote text is the primary signal content. Use it (not just the title) when assessing HQ alignment. The HQ Bridge note, if present, describes the connection between the quote and the seller profile — use it to validate or sharpen your assessment. Score based purely on HQ alignment; a separate bonus is applied by the system after your scores are returned.
 
 For each signal:
-- Write a 1–2 sentence description explaining WHAT in the HQ profile this signal connects to and WHY that linkage matters for outreach relevance. For ⭐ QUOTABLE signals, reference what the quote itself says.
+- Write a 1–2 sentence description explaining WHAT in the HQ profile this signal connects to and WHY that linkage matters for outreach relevance. Evaluate the insight as a whole piece of content — its topic, angle, and what it signals about the contact's context. Frame it as "This post...", "This article...", "This announcement..." — never frame the description around the quote text.
 - In "matchedHqSignals", list the SPECIFIC named items from the HQ profile that this signal touches — use the actual product names, exact differentiator phrases, pillar names, or customer profile types as they appear in the profile above. Do NOT return generic category labels like "value proposition" or "product". Return the real names and phrases (e.g. "Wealth Optimization Platform", "UHNW Family Office focus", "fee-only fiduciary model").
 
 Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
