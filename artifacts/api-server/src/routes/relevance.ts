@@ -251,17 +251,32 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
     };
     const rawScored: ScoredSignal[] = JSON.parse(match[0]);
 
-    // 7. Apply deterministic Quotable Bonus (+20) for signals with an extracted quote
+    // 7. Apply deterministic Quotable Bonus for signals with an extracted quote
     //    that scored ≥ 20 on HQ alignment — a quote that connects to nothing gets no lift.
-    const QUOTABLE_BOOST = 20;
+    //
+    //    Tiered boost by attribution proximity:
+    //      +35 — quote attributed directly to this contact (their own words)
+    //      +20 — quote attributed to someone else (colleague, peer, exec)
+    //
+    //    Self-attribution is detected by checking if the stored attribution string
+    //    contains the contact's full name (case-insensitive).
+    const QUOTABLE_BOOST_SELF = 35;   // contact's own words
+    const QUOTABLE_BOOST_OTHER = 20;  // third-party quote
     const QUOTABLE_HQ_FLOOR = 20;
+
+    const contactFullName = `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.toLowerCase().trim();
+    const isSelfAttributed = (q: QuotableInfo): boolean =>
+      q.attribution.toLowerCase().includes(contactFullName) ||
+      (contactFullName.length > 0 && contactFullName.split(" ").every((part) => q.attribution.toLowerCase().includes(part)));
+
     const scored: ScoredSignal[] = rawScored.map((s) => {
       const hqScore = Math.max(0, Math.min(100, s.score));
-      const hasQuotable = quotableKeys.has(`${s.signalType}-${s.signalId}`);
-      const finalScore = hasQuotable && hqScore >= QUOTABLE_HQ_FLOOR
-        ? Math.min(100, hqScore + QUOTABLE_BOOST)
-        : hqScore;
-      return { ...s, score: finalScore };
+      const key = `${s.signalType}-${s.signalId}`;
+      const sig = signals.find((x) => `${x.signalType}-${x.signalId}` === key);
+      const quotable = sig?.quotable;
+      if (!quotable || hqScore < QUOTABLE_HQ_FLOOR) return { ...s, score: hqScore };
+      const boost = isSelfAttributed(quotable) ? QUOTABLE_BOOST_SELF : QUOTABLE_BOOST_OTHER;
+      return { ...s, score: Math.min(100, hqScore + boost) };
     });
 
     // 8. Persist — delete old scores for this contact, insert new ones

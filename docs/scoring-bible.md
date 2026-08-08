@@ -207,17 +207,20 @@ This bonus is therefore not a judgment — it is a decree. It is applied by the 
 
 ### 4-Bis.1 La Condición del Bonus — Quotable Bonus Conditions
 
-The Quotable Bonus is applied **deterministically** after the AI has scored each signal's HQ alignment:
+The Quotable Bonus is applied **deterministically** after the AI has scored each signal's HQ alignment. The bonus amount varies by **attribution proximity** — who actually said the words:
 
-| Condition | Quotable Bonus Applied? |
-|---|---|
-| Signal has an extracted Quotable **and** HQ alignment score ≥ 20 | **Yes — add +20 points, cap at 100** |
-| Signal has an extracted Quotable **and** HQ alignment score 0–19 | **No** — a quote that connects to nothing is still noise |
-| Signal has no extracted Quotable | No |
+| Condition | Bonus | Rationale |
+|---|---|---|
+| Signal has a Quotable attributed **directly to this contact** AND HQ score ≥ 20 | **+35, cap at 100** | The contact's own words are the highest-value outreach material: proof of research, ready-to-use opener, zero paraphrase risk |
+| Signal has a Quotable attributed **to a third party** AND HQ score ≥ 20 | **+20, cap at 100** | Still immediately usable, but one step removed — the contact is associated with the topic, not the author of the words |
+| Signal has a Quotable AND HQ alignment score 0–19 | **No bonus** | A quote that connects to nothing is still noise — the gate protects signal quality |
+| Signal has no extracted Quotable | No bonus | |
 
-> **El Principio de la Cita:** *A Quotable cannot rescue a signal from irrelevance — but it elevates every signal that has earned its entry. A signal that would score 60 without a quote scores 80 with one. A signal that would score 80 scores 100.*
+Self-attribution is detected by checking whether the stored `attribution` field contains the contact's full name (case-insensitive). When a contact is quoted under a variation of their name (initials, partial name), the engine checks whether all name parts appear in the attribution string.
 
-The HQ alignment score is the gate. The Quotable Bonus is the reward beyond the gate.
+> **El Principio de la Cita:** *A Quotable cannot rescue a signal from irrelevance — but it elevates every signal that has earned its entry. The contact's own words elevate it further still: a signal that would score 60 without a quote scores 95 with the contact's direct attribution.*
+
+The HQ alignment score is the gate. The attribution proximity is the tier. The Quotable Bonus is the reward beyond the gate.
 
 ### 4-Bis.2 La Razón del Decreto — Justification
 
@@ -236,22 +239,22 @@ The AI's sole job on a ⭐ QUOTABLE signal is to assess HQ alignment using the v
 
 ### 4-Bis.4 Impacto en la Fórmula — Effect on the Composite Formula
 
-The Quotable Bonus is applied as a **flat additive post-step** after the full composite score is computed:
+The Quotable Bonus is applied as a **flat additive post-step** after the AI has scored HQ alignment:
 
 ```
-compositeScore (pre-quotable) = min(100, round(
-  baseScore × proximityMultiplier × freshnessMultiplier
-  × (1 + hqAlignmentBonus) × seniorityFitMultiplier
-))
-
-finalScore = min(100, compositeScore + quotableBonus)
+finalScore = min(100, hqAlignmentScore + quotableBonus)
 
 where:
-  quotableBonus = 20  if signal has extracted Quotable AND compositeScore ≥ 20
+  quotableBonus = 35  if signal has extracted Quotable
+                       AND attribution matches the contact themselves
+                       AND hqAlignmentScore ≥ 20
+                = 20  if signal has extracted Quotable
+                       AND attribution is a third party
+                       AND hqAlignmentScore ≥ 20
                 = 0   otherwise
 ```
 
-The cap of 100 is re-applied after the bonus. A signal that reaches 90 before the bonus caps at 100, not 110.
+The cap of 100 is re-applied after the bonus. A self-attributed signal scoring 70 on HQ alignment caps at 100, not 105.
 
 ---
 
