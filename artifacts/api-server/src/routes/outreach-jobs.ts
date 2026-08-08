@@ -352,10 +352,13 @@ These are verbatim quotes extracted from post bodies. Each entry includes the ex
 
 CRITICAL: The "[quote]" in your HOOK must be copied character-for-character from the "quote" field in one of the entries below. Never use the insight title from SELECTED SIGNALS as the quote — the title is a label, not quotable text.
 
-Recommended starters (use the Source label to name the platform, and the insight topic as a brief re: label):
-  "Came across your post on [Source] re: [topic]: '[verbatim quote from entry below]' I appreciated [one-sentence specific reaction]."
-  "Saw your [Source] post on [topic]: '[verbatim quote from entry below]' That framing of [specific idea] stood out to me."
-  "Your [Source] piece on [topic]: '[verbatim quote from entry below]' Really appreciated the way you put [specific tension] into words."
+Recommended starters (always name the platform AND include a brief topic qualifier — never leave the opener as bare "your post on LinkedIn"):
+  "Came across your post on [Source] on [topic]: '[verbatim quote from entry below]' I appreciated [one-sentence specific reaction]."
+  "Came across your post on [Source] re: [topic]: '[verbatim quote from entry below]' That framing of [specific idea] stood out to me."
+  "Saw your [Source] post on [topic]: '[verbatim quote from entry below]' Really appreciated the way you put [specific tension] into words."
+  "Your [Source] piece on [topic] caught my eye: '[verbatim quote from entry below]' [one-sentence specific reaction]."
+
+The [topic] must be a concise 2–5 word summary derived from the insight title — not the full title verbatim, not a vague word like "this". Examples: "on founder-market fit", "re: platform team models", "on AI in the clinic", "re: carbon reduction timelines".
 
 The HQ Bridge note below each quote shows how to transition into VALUE.
 Only use a quote when it genuinely elevates the message; never force one.
@@ -517,16 +520,19 @@ LAYER 1 — HOOK  (1–2 sentences)
       "You made an interesting point recently about [specific idea]. It stayed with me because [brief interpretation]."
       "I came across your conversation with [interviewer/publication]. Your comment that '[short quotation]' was a sharp way of capturing [issue]."
       "Your post about [topic] stood out, especially the way you connected [X] with [Y] — that's a connection people often miss."
-    For attributable quotes — always cite the source platform explicitly.
+    For attributable quotes — always cite the source platform AND include a brief topic qualifier.
+      Never write "Came across your post on LinkedIn:" without a topic — always follow the platform with a topic phrase.
       After invoking the quote, the reaction must be ONE short sentence naming the specific takeaway.
       No "— that stayed with me" preamble. No restatement of what the quote said.
       Correct patterns:
-        "Came across your post on [Source]: '[quote]' I really appreciated the highlight on [key takeaway]."
+        "Came across your post on [Source] on [topic]: '[quote]' I really appreciated [key takeaway]."
+        "Came across your [Source] post re: [topic]: '[quote]' Really appreciated the way you put [specific tension] into words."
         "Saw your [Source] note on [topic]: '[quote]' That framing of [specific idea] stood out to me."
-        "Came across your [Source] piece: '[quote]' Really appreciated the way you put [specific tension] into words."
-        "Your [Source] post caught my eye: '[quote]' I thought the emphasis on [specific point] was sharp."
+        "Your [Source] piece on [topic] caught my eye: '[quote]' I thought the emphasis on [specific point] was sharp."
       Wrong:
+        "Came across your post on LinkedIn: '[quote]'" (missing topic qualifier — never acceptable)
         "[quote] — that stayed with me. The way you highlighted X makes clear that Y." (too long, restates the quote)
+      The [topic] must be a concise 2–5 word phrase derived from the insight title. Never use the full title verbatim or a vague word like "this".
     Avoid: generic praise ("great post"), wholesale summary of the source, fragment sentences with no human voice.
 
   COMPANY / INDUSTRY / ROLE / COLLEAGUE / COUNTERPART — Formula: Discovery + useful substance + reason for sharing
@@ -630,7 +636,7 @@ ${linkPlacementBlock}
 
 STYLING RULES
   • Bold all verbatim quoted text — any time you include a direct quote from the buyer or a named source inside quotation marks, wrap the entire quoted passage (including the quotation marks) in **double asterisks** so it renders as bold.
-    Example: Your post on LinkedIn: **"Advisor independence means little without the infrastructure to act on it."** — that stayed with me.
+    Example: Your post on LinkedIn re: advisor independence: **"Advisor independence means little without the infrastructure to act on it."** — that stood out.
   • Apply this only to genuine verbatim quotes set off in quotation marks. Do not bold paraphrases, summaries, or your own phrasing.
   • Always separate HOOK, BRIDGE, VALUE, PROOF, and CTA with a blank line between each section — this means two line breaks between sections, producing a visible paragraph gap. This applies regardless of email length. Never compress sections into a single-spaced block.
 
