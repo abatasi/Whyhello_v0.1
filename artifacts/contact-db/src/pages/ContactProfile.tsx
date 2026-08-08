@@ -1725,6 +1725,8 @@ function InsightDetailView({
   onToggle,
   onMinimize,
   onCollapse,
+  contactId,
+  companyId,
 }: {
   item: InsightItem;
   category: InsightCategory;
