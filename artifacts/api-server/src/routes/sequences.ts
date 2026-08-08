@@ -74,12 +74,12 @@ sequencesRouter.get("/", async (req: Request, res: Response) => {
         status: sequencesTable.status,
         createdAt: sequencesTable.createdAt,
         updatedAt: sequencesTable.updatedAt,
-        stepCount: sql<number>`(SELECT COUNT(*) FROM sequence_steps WHERE sequence_id = ${sequencesTable.id})::int`,
-        enrollmentCount: sql<number>`(SELECT COUNT(*) FROM sequence_enrollments WHERE sequence_id = ${sequencesTable.id} AND status = 'active')::int`,
+        stepCount: sql<number>`(SELECT COUNT(*) FROM sequence_steps WHERE sequence_id = sequences.id)::int`,
+        enrollmentCount: sql<number>`(SELECT COUNT(*) FROM sequence_enrollments WHERE sequence_id = sequences.id AND status = 'active')::int`,
         dueCount: sql<number>`(
           SELECT COUNT(*) FROM sequence_enrollments se
           JOIN sequence_steps ss ON ss.sequence_id = se.sequence_id AND ss.position = se.current_step
-          WHERE se.sequence_id = ${sequencesTable.id}
+          WHERE se.sequence_id = sequences.id
             AND se.status = 'active'
             AND se.enrolled_at + (
               SELECT COALESCE(SUM(ss2.delay_days), 0) || ' days'
