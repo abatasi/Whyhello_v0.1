@@ -528,11 +528,13 @@ export function Navbar() {
       <div className="w-full px-6 xl:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center">
-            <img
-              src={whyhelloLogo}
-              alt="Whyhello"
-              className={cn("h-6 w-auto", wartime && "brightness-200 saturate-0")}
-            />
+            {/* Circular boundary always carries the peacetime background so the
+                logo renders identically in both modes. In peacetime the circle
+                is invisible (same color as the bar); in wartime it floats as a
+                neutral bubble against the red fill. */}
+            <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center flex-shrink-0">
+              <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto" />
+            </div>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
