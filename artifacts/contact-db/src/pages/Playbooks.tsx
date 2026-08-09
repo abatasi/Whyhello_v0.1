@@ -22,6 +22,7 @@ import {
   FlaskConical, LayoutGrid, Pencil, Copy, BookOpen,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Shell } from "@/components/layout/Shell";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -2298,8 +2299,6 @@ function PlaybooksList() {
 }
 
 // ── Shell wrapper for list view ───────────────────────────────────────────────
-
-import { Shell } from "@/components/layout/Shell";
 
 function PlaybooksListPage() {
   return <Shell><PlaybooksList /></Shell>;
