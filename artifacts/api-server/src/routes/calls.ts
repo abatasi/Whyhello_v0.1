@@ -33,15 +33,24 @@ function getTwilioConfig() {
   };
 }
 
-function isConfigured(): boolean {
+/** Phone mode only needs account credentials + a from-number. No TwiML App needed. */
+function isPhoneModeConfigured(): boolean {
+  const c = getTwilioConfig();
+  return !!(c.accountSid && c.authToken && c.phoneNumber);
+}
+
+/** Browser SDK mode additionally requires an API key pair and a TwiML App SID. */
+function isBrowserModeConfigured(): boolean {
   const c = getTwilioConfig();
   return !!(c.accountSid && c.authToken && c.apiKey && c.apiSecret && c.twimlAppSid && c.phoneNumber);
 }
 
-function notConfigured(res: Response) {
-  res.status(503).json({
-    error: "Twilio not configured. Please add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_API_KEY, TWILIO_API_SECRET, and TWILIO_TWIML_APP_SID secrets.",
-  });
+function notConfigured(res: Response, mode: "phone" | "browser" = "phone") {
+  const missing =
+    mode === "browser"
+      ? "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_API_KEY, TWILIO_API_SECRET, and TWILIO_TWIML_APP_SID"
+      : "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER";
+  res.status(503).json({ error: `Twilio not configured. Please add ${missing} to your environment secrets.` });
 }
 
 // ── Twilio webhook signature validation ──────────────────────────────────────
@@ -124,7 +133,6 @@ callsRouter.post("/token", async (req: Request, res: Response) => {
 callsRouter.post("/initiate", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
-  if (!isConfigured()) { notConfigured(res); return; }
 
   const { contactId, mode, userPhone } = req.body as {
     contactId: number;
@@ -133,8 +141,15 @@ callsRouter.post("/initiate", async (req: Request, res: Response) => {
   };
 
   if (!contactId) { res.status(400).json({ error: "contactId is required" }); return; }
-  if (mode === "phone" && !userPhone?.trim()) {
-    res.status(400).json({ error: "userPhone is required for phone mode" }); return;
+
+  // Check config based on the requested mode so phone mode works without a TwiML App SID
+  if (mode === "browser") {
+    if (!isBrowserModeConfigured()) { notConfigured(res, "browser"); return; }
+  } else {
+    if (!isPhoneModeConfigured()) { notConfigured(res, "phone"); return; }
+    if (!userPhone?.trim()) {
+      res.status(400).json({ error: "userPhone is required for phone mode" }); return;
+    }
   }
 
   try {

@@ -88,12 +88,11 @@ export function PreCallModal({
   onClose: () => void;
   onStart: (mode: "browser" | "phone", userPhone?: string) => void;
 }) {
-  const [mode, setMode] = useState<"browser" | "phone">("browser");
   const [userPhone, setUserPhone] = useState("");
 
   function handleStart() {
-    if (mode === "phone" && !userPhone.trim()) return;
-    onStart(mode, mode === "phone" ? userPhone.trim() : undefined);
+    if (!userPhone.trim()) return;
+    onStart("phone", userPhone.trim());
   }
 
   return (
@@ -112,53 +111,20 @@ export function PreCallModal({
         </DialogHeader>
 
         <div className="px-6 py-4 space-y-3">
-          {/* Mode selector */}
-          <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">How to call</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setMode("browser")}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all",
-                  mode === "browser"
-                    ? "border-emerald-400 bg-emerald-50 text-emerald-800"
-                    : "border-border/60 hover:border-border text-muted-foreground"
-                )}
-              >
-                <Volume2 className="h-5 w-5" />
-                <span className="text-[11px] font-semibold">Via browser</span>
-                <span className="text-[10px] leading-tight opacity-70">Mic & speakers</span>
-              </button>
-              <button
-                onClick={() => setMode("phone")}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all",
-                  mode === "phone"
-                    ? "border-emerald-400 bg-emerald-50 text-emerald-800"
-                    : "border-border/60 hover:border-border text-muted-foreground"
-                )}
-              >
-                <Phone className="h-5 w-5" />
-                <span className="text-[11px] font-semibold">My phone</span>
-                <span className="text-[10px] leading-tight opacity-70">We call you first</span>
-              </button>
-            </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Your phone number</label>
+            <input
+              type="tel"
+              value={userPhone}
+              onChange={(e) => setUserPhone(e.target.value)}
+              placeholder="+1 555 000 0000"
+              autoFocus
+              className="w-full px-3 py-2 text-sm rounded-lg border border-border/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Twilio will call you first, then bridge you to {contactName}.
+            </p>
           </div>
-
-          {/* Phone number input for phone mode */}
-          {mode === "phone" && (
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted-foreground">Your phone number</label>
-              <input
-                type="tel"
-                value={userPhone}
-                onChange={(e) => setUserPhone(e.target.value)}
-                placeholder="+1 555 000 0000"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-border/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              />
-              <p className="text-[10px] text-muted-foreground">We'll call this number first, then connect you to {contactName}.</p>
-            </div>
-          )}
 
           <p className="text-[10px] text-muted-foreground flex items-center gap-1">
             <CheckCheck className="h-3 w-3 text-emerald-500" />
@@ -172,7 +138,7 @@ export function PreCallModal({
             size="sm"
             className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
             onClick={handleStart}
-            disabled={mode === "phone" && !userPhone.trim()}
+            disabled={!userPhone.trim()}
           >
             <PhoneCall className="h-3.5 w-3.5" /> Start Call
           </Button>
