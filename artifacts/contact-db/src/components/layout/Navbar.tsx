@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
-  Settings, ShieldCheck, Flame, ChevronDown,
+  Settings, ShieldCheck, Flame, ChevronDown, Clock,
   Factory, Briefcase, Upload, Gauge, List,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +14,10 @@ import { useListExports, downloadExportFile, useCreditsStatus } from "@workspace
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useAppMode } from "@/contexts/AppModeContext";
+import {
+  getRecentContactVisits,
+  getRecentCompanyVisits,
+} from "@/lib/recentVisits";
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -481,29 +485,248 @@ function HQPill({ wartime }: { wartime: boolean }) {
   );
 }
 
+// ── Logo menu (replaces logo link; houses recents, notifs, settings, logout) ─
+
+type RecentItem =
+  | { type: "contact"; id: number; name: string; title: string | null; companyName: string | null; visitedAt: number }
+  | { type: "company"; id: number; name: string; industry: string | null; visitedAt: number };
+
+function LogoMenu({ wartime }: { wartime: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [notifExpanded, setNotifExpanded] = useState(false);
+  const [recents, setRecents] = useState<RecentItem[]>([]);
+  const [downloading, setDownloading] = useState<number | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const { signOut } = useClerk();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const { data: exports } = useListExports();
+  const { toast } = useToast();
+  const hasExports = (exports?.length ?? 0) > 0;
+  const recentExports = exports?.slice(0, 3) ?? [];
+
+  // Refresh recents from localStorage each time the menu opens
+  useEffect(() => {
+    if (!open) return;
+    const contacts = getRecentContactVisits().map((v) => ({
+      type: "contact" as const,
+      id: v.id,
+      name: v.name,
+      title: v.title,
+      companyName: v.companyName,
+      visitedAt: v.visitedAt,
+    }));
+    const companies = getRecentCompanyVisits().map((v) => ({
+      type: "company" as const,
+      id: v.id,
+      name: v.name,
+      industry: v.industry,
+      visitedAt: v.visitedAt,
+    }));
+    const merged = [...contacts, ...companies]
+      .sort((a, b) => b.visitedAt - a.visitedAt)
+      .slice(0, 3);
+    setRecents(merged);
+  }, [open]);
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setNotifExpanded(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const handleDownload = async (id: number, filename: string) => {
+    setDownloading(id);
+    try {
+      await downloadExportFile(id, filename);
+    } catch {
+      toast({ title: "Download failed", description: "Unable to download the file.", variant: "destructive" });
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="relative self-stretch flex items-center -ml-6 xl:-ml-8 flex-shrink-0"
+    >
+      {/* Logo trigger */}
+      <button
+        onClick={() => { setOpen((o) => !o); setNotifExpanded(false); }}
+        className={cn(
+          "h-full pl-6 xl:pl-8 pr-4 flex items-center transition-colors",
+          wartime
+            ? "bg-transparent"
+            : open
+            ? "bg-secondary/50"
+            : "bg-background hover:bg-secondary/20",
+        )}
+        aria-label="Open app menu"
+      >
+        {/* Crop the combined logo PNG to just the W mark */}
+        <div className="overflow-hidden flex-shrink-0" style={{ width: 22, height: 20 }}>
+          <img src={whyhelloLogo} alt="Whyhello" className="h-5 w-auto max-w-none" />
+        </div>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+1px)] w-72 rounded-b-xl rounded-r-xl border border-border bg-card shadow-xl z-50 overflow-hidden">
+
+          {/* ── Recents ── */}
+          {recents.length > 0 && (
+            <>
+              <div className="px-4 py-2 flex items-center gap-2 bg-muted/30 border-b border-border/60">
+                <Clock className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Recents
+                </span>
+              </div>
+              <ul>
+                {recents.map((item) => (
+                  <li key={`${item.type}-${item.id}`}>
+                    <Link
+                      href={item.type === "contact" ? `/contacts/${item.id}` : `/companies/${item.id}`}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/40 transition-colors"
+                    >
+                      {item.type === "contact" ? (
+                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                          {getInitials(item.name)}
+                        </div>
+                      ) : (
+                        <div className="h-7 w-7 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-4 w-4 text-amber-600" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {item.type === "contact"
+                            ? [item.title, item.companyName].filter(Boolean).join(" · ") || "Contact"
+                            : item.industry ?? "Company"}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <div className="border-t border-border/60" />
+            </>
+          )}
+
+          {/* ── Utilities ── */}
+          <div className="py-1">
+            {/* Notifications (expandable) */}
+            <button
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
+              onClick={() => setNotifExpanded((e) => !e)}
+            >
+              <Bell className="h-4 w-4 flex-shrink-0" />
+              <span>Notifications</span>
+              {hasExports && !notifExpanded && (
+                <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+              )}
+              <ChevronDown
+                className={cn(
+                  "ml-auto h-3.5 w-3.5 flex-shrink-0 transition-transform",
+                  notifExpanded && "rotate-180",
+                )}
+              />
+            </button>
+
+            {notifExpanded && (
+              <div className="border-t border-border/40 bg-muted/20">
+                {recentExports.length === 0 ? (
+                  <p className="px-4 py-3 text-xs text-muted-foreground">
+                    No exports yet. Open a list and export to CSV.
+                  </p>
+                ) : (
+                  <ul>
+                    {recentExports.map((ex) => (
+                      <li
+                        key={ex.id}
+                        className="px-4 py-2.5 flex items-center gap-3 border-b border-border/30 last:border-0"
+                      >
+                        <div
+                          className={cn(
+                            "h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0",
+                            ex.listType === "contacts"
+                              ? "bg-indigo-50 text-indigo-600"
+                              : "bg-amber-50 text-amber-600",
+                          )}
+                        >
+                          {ex.listType === "contacts" ? (
+                            <Users className="h-3.5 w-3.5" />
+                          ) : (
+                            <Building2 className="h-3.5 w-3.5" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{ex.listName}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {ex.memberCount} records · {formatRelative(ex.requestedAt)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDownload(ex.id, ex.filename)}
+                          disabled={downloading === ex.id}
+                          className="p-1.5 rounded hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 flex-shrink-0"
+                          title="Download CSV"
+                        >
+                          {downloading === ex.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Download className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
+            >
+              <Settings className="h-4 w-4 flex-shrink-0" />
+              <span>Settings</span>
+            </Link>
+          </div>
+
+          <div className="border-t border-border/60" />
+
+          <div className="py-1">
+            <button
+              onClick={() => { setOpen(false); signOut({ redirectUrl: basePath || "/" }); }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors text-left"
+            >
+              <LogOut className="h-4 w-4 flex-shrink-0" />
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Navbar ──────────────────────────────────────────────────────────────
 
 export function Navbar() {
   const { user } = useUser();
-  const { signOut } = useClerk();
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const [location] = useLocation();
-  const [notifOpen, setNotifOpen] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
-  const { data: exports } = useListExports();
-  const hasExports = (exports?.length ?? 0) > 0;
   const { mode } = useAppMode();
   const wartime = mode === "wartime";
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
-      }
-    }
-    if (notifOpen) document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [notifOpen]);
 
   // Lists, Industries, Roles, Import live in "More"; HQ is centered
   const navItems = [
@@ -529,16 +752,9 @@ export function Navbar() {
       {/* 3-column grid: left = logo + nav, center = HQ pill, right = utilities */}
       <div className="w-full px-6 xl:px-8 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
 
-        {/* ── Left: logo + nav ── */}
-        <div className="flex items-center gap-6 min-w-0">
-          {/* Logo forcefield — bleeds to the topbar's left edge (negative margin
-              cancels the container's px-6/px-8 padding), squared left corners,
-              fully rounded right corners. */}
-          <Link href="/" className="self-stretch flex items-center -ml-6 xl:-ml-8 flex-shrink-0">
-            <div className={cn("h-full pl-6 xl:pl-8 pr-8 rounded-r-full flex items-center", wartime ? "bg-transparent" : "bg-background")}>
-              <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto" />
-            </div>
-          </Link>
+        {/* ── Left: logo menu + nav ── */}
+        <div className="flex items-center gap-4 min-w-0">
+          <LogoMenu wartime={wartime} />
 
           <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
             {navItems.map((item) => {
@@ -577,88 +793,35 @@ export function Navbar() {
 
           <GlobalSearch wartime={wartime} />
 
-          <div ref={notifRef} className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "rounded-full relative",
-                wartime && "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]",
-              )}
-              onClick={() => setNotifOpen((o) => !o)}
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              {hasExports && (
-                <span className={cn(
-                  "absolute top-1.5 right-1.5 h-2 w-2 rounded-full",
-                  wartime ? "bg-[#A0624A]" : "bg-primary",
-                )} />
-              )}
-            </Button>
-            {notifOpen && <NotificationsDropdown onClose={() => setNotifOpen(false)} />}
-          </div>
+          <div className={cn("h-8 w-px mx-1", wartime ? "bg-[#E0BBA8]" : "bg-border")} />
 
-          <div className={cn("h-8 w-px mx-2", wartime ? "bg-[#E0BBA8]" : "bg-border")} />
-
-          <div className="flex items-center gap-2">
-            <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              {user?.imageUrl ? (
-                <img
-                  src={user.imageUrl}
-                  alt="Profile"
-                  className={cn(
-                    "h-7 w-7 rounded-full object-cover border",
-                    wartime ? "border-[#DDB99E]" : "border-border",
-                  )}
-                />
-              ) : (
-                <div className={cn(
-                  "h-7 w-7 rounded-full flex items-center justify-center font-semibold text-xs border",
-                  wartime
-                    ? "bg-[#EDD4C6] text-[#7C3E2A] border-[#DDB99E]"
-                    : "bg-primary/10 text-primary border-primary/20",
-                )}>
-                  {getInitials(displayName)}
-                </div>
-              )}
-              <span className={cn(
-                "text-sm font-medium hidden md:block",
-                wartime ? "text-[#7C3E2A]" : "",
-              )}>
-                {displayName}
-              </span>
-            </Link>
-            <Link href="/settings">
-              <Button
-                variant="ghost"
-                size="icon"
+          <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            {user?.imageUrl ? (
+              <img
+                src={user.imageUrl}
+                alt="Profile"
                 className={cn(
-                  "rounded-full",
-                  wartime
-                    ? "text-[#A0624A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
-                    : "text-muted-foreground hover:text-foreground",
+                  "h-7 w-7 rounded-full object-cover border",
+                  wartime ? "border-[#DDB99E]" : "border-border",
                 )}
-                title="Settings"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "rounded-full ml-1",
+              />
+            ) : (
+              <div className={cn(
+                "h-7 w-7 rounded-full flex items-center justify-center font-semibold text-xs border",
                 wartime
-                  ? "text-[#A0624A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              onClick={() => signOut({ redirectUrl: basePath || "/" })}
-              title="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
+                  ? "bg-[#EDD4C6] text-[#7C3E2A] border-[#DDB99E]"
+                  : "bg-primary/10 text-primary border-primary/20",
+              )}>
+                {getInitials(displayName)}
+              </div>
+            )}
+            <span className={cn(
+              "text-sm font-medium hidden md:block",
+              wartime ? "text-[#7C3E2A]" : "",
+            )}>
+              {displayName}
+            </span>
+          </Link>
         </div>
       </div>
     </header>
