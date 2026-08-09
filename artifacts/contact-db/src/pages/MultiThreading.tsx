@@ -5,11 +5,17 @@ import { Shell } from "@/components/layout/Shell";
 import { ContactProfileView, type SeatContext } from "@/pages/ContactProfile";
 import { cn } from "@/lib/utils";
 import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   Megaphone, Wallet, Vote, Crown, Briefcase, Cpu, ShieldCheck,
   ShoppingCart, Scale, Calculator, User, Wrench, MessageCircle, Ban, GraduationCap,
   Building2, Globe, X, ExternalLink, Mail, Phone, MapPin, Linkedin,
   ChevronRight, Loader2, GitBranch, Users, ChevronDown, AlertCircle,
-  Landmark, Check, ListTree,
+  Landmark, Check, ListTree, Plus, ChevronUp,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -112,6 +118,16 @@ const SENIORITY_RANK: Record<string, number> = {
   "C-Suite": 5, "VP": 4, "Director": 3, "Manager": 2, "Individual Contributor": 1,
 };
 
+const SENIORITY_OPTIONS = ["C-Suite", "VP", "Director", "Manager", "Individual Contributor"];
+
+const DEPARTMENT_OPTIONS = [
+  "Business Development", "Claims", "Clinical", "Consulting", "Content", "Creative",
+  "Customer Experience", "Customer Success", "Data", "Design", "Development", "Digital",
+  "Education", "Engineering", "Executive", "Finance", "Investment Advisor", "Investments",
+  "Legal", "Marketing", "Medical", "Merchandising", "Operations", "Product", "Production",
+  "Programs", "R&D", "Research", "Revenue", "Risk", "Sales", "Security", "Underwriting",
+];
+
 // ── Matching logic ────────────────────────────────────────────────────────────
 
 function sortBySeniority(contacts: Contact[]): Contact[] {
@@ -143,6 +159,456 @@ function matchContactsToSeat(seat: BuyingCenterSeat, contacts: Contact[]): Conta
 
 function getInitials(first: string, last: string): string {
   return `${(first[0] ?? "").toUpperCase()}${(last[0] ?? "").toUpperCase()}`;
+}
+
+// ── DNA persistence helpers ───────────────────────────────────────────────────
+
+const DNA_KEY = "whyhello_dna_v4";
+
+async function persistDnaPatch(patch: (prev: Record<string, unknown>) => Record<string, unknown>) {
+  let dna: Record<string, unknown> = {};
+  try { const raw = localStorage.getItem(DNA_KEY); if (raw) dna = JSON.parse(raw); } catch {}
+  const updated = patch(dna);
+  try { localStorage.setItem(DNA_KEY, JSON.stringify(updated)); } catch {}
+  try {
+    await apiFetch("/api/hq/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: updated }),
+    });
+  } catch {}
+}
+
+// ── Shared pill toggle ────────────────────────────────────────────────────────
+
+function PillGroup({
+  options, selected, onToggle, accent = "primary",
+}: {
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+  accent?: "primary" | "teal" | "indigo";
+}) {
+  const activeClass =
+    accent === "teal" ? "bg-teal-100 border-teal-300 text-teal-700" :
+    accent === "indigo" ? "bg-indigo-100 border-indigo-300 text-indigo-700" :
+    "bg-primary/10 border-primary/30 text-primary";
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map(o => (
+        <button
+          key={o}
+          type="button"
+          onClick={() => onToggle(o)}
+          className={cn(
+            "px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
+            selected.includes(o)
+              ? activeClass
+              : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+          )}
+        >
+          {o}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Create Target Market modal ────────────────────────────────────────────────
+
+function CreateTargetMarketModal({
+  open, onClose, onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (tm: TargetMarketConfig) => void;
+}) {
+  const [name, setName] = useState("New target market");
+  const [industries, setIndustries] = useState<string[]>([]);
+  const [companySizes, setCompanySizes] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [options, setOptions] = useState<{ industries: string[]; companySizes: string[]; locations: string[] }>({ industries: [], companySizes: [], locations: [] });
+  const [optLoading, setOptLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setName("New target market");
+    setIndustries([]); setCompanySizes([]); setLocations([]);
+    setTimeout(() => nameRef.current?.select(), 50);
+    setOptLoading(true);
+    apiFetch("/api/filters/options")
+      .then(r => r.json())
+      .then(json => setOptions({ industries: json.industries ?? [], companySizes: json.companySizes ?? [], locations: json.locations ?? [] }))
+      .catch(() => {})
+      .finally(() => setOptLoading(false));
+  }, [open]);
+
+  function toggle(arr: string[], val: string, set: (v: string[]) => void) {
+    set(arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]);
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const tm: TargetMarketConfig = {
+        id: `tm_${Date.now()}`,
+        name: name.trim() || "New target market",
+        industries, companySizes, locations,
+      };
+      await persistDnaPatch(dna => ({
+        ...dna,
+        targetMarkets: [...((dna.targetMarkets as TargetMarketConfig[]) ?? []), tm],
+      }));
+      onCreated(tm);
+      onClose();
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-[540px] max-h-[88vh] overflow-y-auto">
+        <div className="flex flex-col gap-5 pt-1">
+
+          {/* Header */}
+          <div className="pr-6">
+            <DialogTitle>New Target Market</DialogTitle>
+            <DialogDescription>
+              Define the company criteria for this customer segment. Reflects in HQ once saved.
+            </DialogDescription>
+          </div>
+
+          {/* Name */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-foreground">Name</label>
+            <input
+              ref={nameRef}
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+              placeholder="e.g. Mid-market SaaS"
+            />
+          </div>
+
+          <div className="h-px bg-border/50" />
+
+          {optLoading ? (
+            <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading filter options…
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {/* Industries */}
+              <div className="flex flex-col gap-2">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Industries</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Which industries does this segment include?</p>
+                </div>
+                {options.industries.length > 0
+                  ? <PillGroup options={options.industries} selected={industries} onToggle={v => toggle(industries, v, setIndustries)} accent="teal" />
+                  : <p className="text-xs text-muted-foreground">No industry data in your database yet.</p>}
+              </div>
+
+              {/* Company size */}
+              <div className="flex flex-col gap-2">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Company size</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">How many employees?</p>
+                </div>
+                {options.companySizes.length > 0
+                  ? <PillGroup options={options.companySizes} selected={companySizes} onToggle={v => toggle(companySizes, v, setCompanySizes)} accent="teal" />
+                  : <p className="text-xs text-muted-foreground">No company size data yet.</p>}
+              </div>
+
+              {/* Locations */}
+              <div className="flex flex-col gap-2">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Locations</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Which geographic regions?</p>
+                </div>
+                {options.locations.length > 0
+                  ? <PillGroup options={options.locations} selected={locations} onToggle={v => toggle(locations, v, setLocations)} accent="teal" />
+                  : <p className="text-xs text-muted-foreground">No location data yet.</p>}
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 border-t border-border/50">
+            <p className="text-[11px] text-muted-foreground">
+              {[industries.length && `${industries.length} industr${industries.length !== 1 ? "ies" : "y"}`,
+                companySizes.length && `${companySizes.length} size${companySizes.length !== 1 ? "s" : ""}`,
+                locations.length && `${locations.length} location${locations.length !== 1 ? "s" : ""}`]
+                .filter(Boolean).join(" · ") || "No filters selected — matches all companies"}
+            </p>
+            <div className="flex items-center gap-2">
+              <button onClick={onClose} className="px-4 py-1.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-secondary/40 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={save}
+                disabled={saving || !name.trim()}
+                className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Create Buying Center modal ─────────────────────────────────────────────────
+
+function CreateBuyingCenterModal({
+  open, onClose, onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (bc: BuyingCenterConfig) => void;
+}) {
+  const [step, setStep] = useState<1 | 2>(1);
+  const [name, setName] = useState("New buying center");
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  // seat config: { [seatName]: { seniorities, departments } }
+  const [seatConfig, setSeatConfig] = useState<Record<string, { seniorities: string[]; departments: string[] }>>({});
+  const [expandedSeat, setExpandedSeat] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setStep(1);
+    setName("New buying center");
+    setSelectedSeats([]);
+    setSeatConfig({});
+    setExpandedSeat(null);
+    setTimeout(() => nameRef.current?.select(), 50);
+  }, [open]);
+
+  function toggleSeat(seat: string) {
+    setSelectedSeats(prev =>
+      prev.includes(seat) ? prev.filter(s => s !== seat) : [...prev, seat]
+    );
+  }
+
+  function updateSeatConfig(seat: string, patch: { seniorities?: string[]; departments?: string[] }) {
+    setSeatConfig(prev => ({
+      ...prev,
+      [seat]: { seniorities: [], departments: [], ...prev[seat], ...patch },
+    }));
+  }
+
+  function toggleSeniority(seat: string, val: string) {
+    const cur = seatConfig[seat]?.seniorities ?? [];
+    updateSeatConfig(seat, { seniorities: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] });
+  }
+
+  function toggleDept(seat: string, val: string) {
+    const cur = seatConfig[seat]?.departments ?? [];
+    updateSeatConfig(seat, { departments: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] });
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const seats: BuyingCenterSeat[] = BUYING_CENTER_SEATS.map(def => ({
+        seat: def.seat,
+        seniorities: selectedSeats.includes(def.seat) ? (seatConfig[def.seat]?.seniorities ?? []) : [],
+        departments: selectedSeats.includes(def.seat) ? (seatConfig[def.seat]?.departments ?? []) : [],
+      }));
+      const bc: BuyingCenterConfig = { id: `bc_${Date.now()}`, name: name.trim() || "New buying center", seats };
+      await persistDnaPatch(dna => ({
+        ...dna,
+        buyingCenters: [...((dna.buyingCenters as BuyingCenterConfig[]) ?? []), bc],
+      }));
+      onCreated(bc);
+      onClose();
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-[560px] max-h-[88vh] overflow-y-auto">
+        <div className="flex flex-col gap-5 pt-1">
+
+          {/* Header */}
+          <div className="pr-6 flex items-start justify-between gap-4">
+            <div>
+              <DialogTitle>New Buying Center</DialogTitle>
+              <DialogDescription>
+                {step === 1
+                  ? "Name this buying center and select the seats that matter for your deals."
+                  : "Configure the seniority and department criteria for each seat."}
+              </DialogDescription>
+            </div>
+            {/* Step indicator */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
+              {([1, 2] as const).map(s => (
+                <div key={s} className={cn(
+                  "h-1.5 rounded-full transition-all",
+                  s <= step ? "bg-primary w-6" : "bg-border w-3",
+                )} />
+              ))}
+            </div>
+          </div>
+
+          {/* ── Step 1: Name + seat selection ── */}
+          {step === 1 && (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-foreground">Name</label>
+                <input
+                  ref={nameRef}
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                  placeholder="e.g. Enterprise buying center"
+                />
+              </div>
+
+              <div className="h-px bg-border/50" />
+
+              <div className="flex flex-col gap-2">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Seats</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Select the stakeholder roles relevant to this buying center. You'll configure criteria in the next step.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1 max-h-[320px] overflow-y-auto pr-1">
+                  {BUYING_CENTER_SEATS.map(def => {
+                    const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
+                    const Icon = def.icon;
+                    const active = selectedSeats.includes(def.seat);
+                    return (
+                      <button
+                        key={def.seat}
+                        type="button"
+                        onClick={() => toggleSeat(def.seat)}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all",
+                          active ? cn(colors.bg, colors.border) : "bg-card border-border/40 hover:bg-secondary/30",
+                        )}
+                      >
+                        <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border", colors.iconBg, colors.border)}>
+                          <Icon className={cn("h-3.5 w-3.5", colors.iconColor)} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn("text-xs font-semibold", active ? "text-foreground" : "text-foreground/80")}>{def.seat}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{def.role}</p>
+                        </div>
+                        <div className={cn(
+                          "h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all",
+                          active ? "bg-primary border-primary" : "border-border/60 bg-card",
+                        )}>
+                          {active && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedSeats.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground">{selectedSeats.length} seat{selectedSeats.length !== 1 ? "s" : ""} selected</p>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ── Step 2: Configure each seat ── */}
+          {step === 2 && (
+            <div className="flex flex-col gap-2">
+              {selectedSeats.map(seatName => {
+                const def = BUYING_CENTER_SEATS.find(d => d.seat === seatName)!;
+                const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
+                const Icon = def.icon;
+                const cfg = seatConfig[seatName] ?? { seniorities: [], departments: [] };
+                const isExpanded = expandedSeat === seatName;
+                const configCount = cfg.seniorities.length + cfg.departments.length;
+
+                return (
+                  <div key={seatName} className={cn("rounded-xl border overflow-hidden transition-all", isExpanded ? cn(colors.bg, colors.border) : "border-border/50 bg-card")}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedSeat(isExpanded ? null : seatName)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
+                    >
+                      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border", colors.iconBg, colors.border)}>
+                        <Icon className={cn("h-3.5 w-3.5", colors.iconColor)} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground">{seatName}</p>
+                        {configCount > 0
+                          ? <p className="text-[10px] text-muted-foreground">{configCount} criterion{configCount !== 1 ? "a" : ""} set</p>
+                          : <p className="text-[10px] text-muted-foreground/70">No criteria yet — matches any contact</p>
+                        }
+                      </div>
+                      {isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />}
+                    </button>
+
+                    {isExpanded && (
+                      <div className="border-t border-border/40 px-3 pb-3 pt-3 flex flex-col gap-3.5">
+                        <div className="flex flex-col gap-1.5">
+                          <p className="text-[11px] font-semibold text-foreground">Seniority</p>
+                          <PillGroup
+                            options={SENIORITY_OPTIONS}
+                            selected={cfg.seniorities}
+                            onToggle={v => toggleSeniority(seatName, v)}
+                            accent="indigo"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <p className="text-[11px] font-semibold text-foreground">Departments</p>
+                          <PillGroup
+                            options={DEPARTMENT_OPTIONS}
+                            selected={cfg.departments}
+                            onToggle={v => toggleDept(seatName, v)}
+                            accent="indigo"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 border-t border-border/50">
+            <button
+              onClick={step === 1 ? onClose : () => setStep(1)}
+              className="px-4 py-1.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-secondary/40 transition-colors"
+            >
+              {step === 1 ? "Cancel" : "← Back"}
+            </button>
+            {step === 1 ? (
+              <button
+                onClick={() => setStep(2)}
+                disabled={selectedSeats.length === 0 || !name.trim()}
+                className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                Configure seats →
+              </button>
+            ) : (
+              <button
+                onClick={save}
+                disabled={saving}
+                className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Create
+              </button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -186,10 +652,12 @@ function BuyingCenterSelector({
   buyingCenters,
   selectedId,
   onSelect,
+  onCreateNew,
 }: {
   buyingCenters: BuyingCenterConfig[];
   selectedId: string;
   onSelect: (id: string) => void;
+  onCreateNew: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -204,15 +672,6 @@ function BuyingCenterSelector({
     return () => document.removeEventListener("mousedown", handle);
   }, [open]);
 
-  if (buyingCenters.length <= 1) {
-    return (
-      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200">
-        <ListTree className="h-3 w-3 text-indigo-500 flex-shrink-0" />
-        <span className="text-xs font-semibold text-indigo-700 truncate">{selected?.name ?? "Default"}</span>
-      </div>
-    );
-  }
-
   return (
     <div ref={ref} className="relative">
       <button
@@ -220,7 +679,9 @@ function BuyingCenterSelector({
         className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors text-left"
       >
         <ListTree className="h-3 w-3 text-indigo-500 flex-shrink-0" />
-        <span className="flex-1 text-xs font-semibold text-indigo-700 truncate">{selected?.name ?? "Default"}</span>
+        <span className="flex-1 text-xs font-semibold text-indigo-700 truncate">
+          {selected?.name ?? "No buying center"}
+        </span>
         <ChevronDown className={cn("h-3 w-3 text-indigo-400 flex-shrink-0 transition-transform", open && "rotate-180")} />
       </button>
 
@@ -235,7 +696,7 @@ function BuyingCenterSelector({
               <button
                 key={bc.id}
                 onClick={() => { onSelect(bc.id); setOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/40 text-left transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/40 text-left transition-colors border-b border-border/30 last:border-0"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{bc.name}</p>
@@ -245,6 +706,13 @@ function BuyingCenterSelector({
               </button>
             );
           })}
+          <button
+            onClick={() => { setOpen(false); onCreateNew(); }}
+            className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-indigo-50 text-left transition-colors border-t border-border/40"
+          >
+            <Plus className="h-3.5 w-3.5 text-indigo-500 flex-shrink-0" />
+            <span className="text-xs font-semibold text-indigo-600">Create new buying center</span>
+          </button>
         </div>
       )}
     </div>
@@ -256,10 +724,12 @@ function TargetMarketSelector({
   targetMarkets,
   selectedId,
   onSelect,
+  onCreateNew,
 }: {
   targetMarkets: TargetMarketConfig[];
   selectedId: string;
   onSelect: (id: string) => void;
+  onCreateNew: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -317,7 +787,7 @@ function TargetMarketSelector({
               <button
                 key={tm.id}
                 onClick={() => { onSelect(tm.id); setOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/40 text-left transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/40 text-left transition-colors border-b border-border/30 last:border-0"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{tm.name}</p>
@@ -329,14 +799,13 @@ function TargetMarketSelector({
               </button>
             );
           })}
-          {targetMarkets.length === 0 && (
-            <div className="px-3 py-4 text-center">
-              <p className="text-xs text-muted-foreground">No target markets in HQ yet.</p>
-              <Link href="/hq">
-                <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in HQ →</span>
-              </Link>
-            </div>
-          )}
+          <button
+            onClick={() => { setOpen(false); onCreateNew(); }}
+            className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-teal-50 text-left transition-colors border-t border-border/40"
+          >
+            <Plus className="h-3.5 w-3.5 text-teal-500 flex-shrink-0" />
+            <span className="text-xs font-semibold text-teal-600">Create new target market</span>
+          </button>
         </div>
       )}
     </div>
@@ -416,6 +885,8 @@ export default function MultiThreading() {
   const [targetMarkets, setTargetMarkets] = useState<TargetMarketConfig[]>([]);
   const [selectedTmId, setSelectedTmId] = useState<string>("");
   const [dnaLoaded, setDnaLoaded] = useState(false);
+  const [createTmOpen, setCreateTmOpen] = useState(false);
+  const [createBcOpen, setCreateBcOpen] = useState(false);
 
   const [companyList, setCompanyList] = useState<CompanyResult[]>([]);
   const [companyListLoading, setCompanyListLoading] = useState(false);
@@ -598,18 +1069,20 @@ export default function MultiThreading() {
                   targetMarkets={targetMarkets}
                   selectedId={selectedTmId}
                   onSelect={id => setSelectedTmId(id)}
+                  onCreateNew={() => setCreateTmOpen(true)}
                 />
               </div>
             )}
 
             {/* Buying center selector */}
-            {dnaLoaded && buyingCenters.length > 0 && (
+            {dnaLoaded && (
               <div className="flex flex-col gap-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Buying Center</p>
                 <BuyingCenterSelector
                   buyingCenters={buyingCenters}
                   selectedId={selectedBcId}
                   onSelect={id => { setSelectedBcId(id); setActiveTabSeat(null); setOverrides({}); }}
+                  onCreateNew={() => setCreateBcOpen(true)}
                 />
               </div>
             )}
@@ -853,6 +1326,27 @@ export default function MultiThreading() {
 
         </div>
       </div>
+
+      <CreateTargetMarketModal
+        open={createTmOpen}
+        onClose={() => setCreateTmOpen(false)}
+        onCreated={tm => {
+          setTargetMarkets(prev => [...prev, tm]);
+          setSelectedTmId(tm.id);
+        }}
+      />
+
+      <CreateBuyingCenterModal
+        open={createBcOpen}
+        onClose={() => setCreateBcOpen(false)}
+        onCreated={bc => {
+          setBuyingCenters(prev => [...prev, bc]);
+          setSelectedBcId(bc.id);
+          setActiveTabSeat(null);
+          setOverrides({});
+        }}
+      />
+
     </Shell>
   );
 }
