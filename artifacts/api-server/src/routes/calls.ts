@@ -178,13 +178,13 @@ callsRouter.post("/initiate", async (req: Request, res: Response) => {
     if (mode === "phone") {
       // Use Twilio REST API to call the user's phone, then bridge to contact
       const client = twilio(config.accountSid, config.authToken);
+      // Note: trial accounts block statusCallbackEvent and statusCallbackMethod —
+      // use only the base parameters Twilio trial permits.
       const twilioCall = await client.calls.create({
         to: userPhone!.trim(),
         from: config.phoneNumber,
         url: `${origin}/api/calls/bridge-twiml?callId=${call.id}&contactPhone=${encodeURIComponent(contact.phone)}`,
         statusCallback: `${origin}/api/calls/status?callId=${call.id}`,
-        statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
-        statusCallbackMethod: "POST",
       });
       await db.update(callsTable)
         .set({ twilioCallSid: twilioCall.sid, status: "ringing", updatedAt: new Date() })
