@@ -1,0 +1,361 @@
+The experience should combine:
+
+The approachable automation-building experience of Mailchimp
+The spatial freedom of a Miro canvas
+The node-based logic of a modern workflow builder
+The polished, compact interface of a contemporary B2B SaaS product
+
+This should be a functional sandbox prototype, not a static mockup. Users should be able to construct a multi-touch sales playbook by dragging building blocks onto an open canvas and connecting them into a sequence.
+
+Page structure
+
+Create a full-screen application with three primary areas:
+
+1. Compact top bar
+
+Include:
+
+Whyhello logo or small wordmark
+Editable playbook name: “Untitled Playbook”
+Status indicator: Draft
+Undo and redo
+Test Playbook
+Save Playbook
+Publish button
+Overflow menu
+
+Keep the top bar compact to maximize canvas space.
+
+2. Left building-block panel
+
+Create a collapsible sidebar titled Building Blocks.
+
+Include a search field and organize the blocks into these groups:
+
+Starting Points
+
+Prospect Added
+Begins when a prospect is manually added or enrolled from a list.
+
+Trigger Detected
+Begins when Whyhello identifies a relevant personal, company, role or industry event.
+
+Added to Playbook
+A simple universal starting point for manually or automatically enrolled prospects.
+
+Touchpoints
+
+Send Email
+Creates an email step using a selected Whyhello insight and messaging objective.
+
+Send LinkedIn Message
+Creates a LinkedIn connection request, direct message or follow-up.
+
+Make Call
+Creates a call task with a generated opener, voicemail and talking points.
+
+Flow Controls
+
+Time Delay
+Waits for a defined period before proceeding. Support minutes, hours, business days, calendar days or a specific date and time.
+
+Split Path
+Creates two or more branches based on prospect behaviour, available data or a user-defined condition.
+
+Outcomes
+
+Meeting Booked
+Marks the objective as achieved and removes the prospect from further outreach.
+
+Reply Received
+Routes prospects who respond through email or LinkedIn.
+
+Exit Playbook
+Stops all remaining actions for the prospect.
+
+Sequence Complete
+Marks the playbook as completed when the prospect reaches the end.
+
+Each block in the sidebar should have:
+
+A recognizable icon
+Block name
+One-line description
+A drag handle
+A distinct but restrained category colour
+
+Blocks should be draggable from the panel onto the canvas.
+
+3. Infinite canvas
+
+Build a large, pannable and zoomable workspace.
+
+Users should be able to:
+
+Drag blocks onto the canvas
+Reposition blocks freely
+Connect blocks using directional connector lines
+Select and edit a block
+Delete or duplicate a block
+Insert a block between two existing blocks
+Select and move multiple blocks
+Pan by dragging the empty canvas
+Zoom in and out
+Use “Fit to screen”
+Undo and redo changes
+
+Add a subtle dot grid to reinforce the spatial canvas without making it visually noisy.
+
+Place zoom controls in the bottom-right corner:
+
+Zoom out
+Current zoom percentage
+Zoom in
+Fit to screen
+Mini-map toggle
+
+Include a small mini-map when the playbook extends beyond the visible area.
+
+Initial canvas state
+
+Preload the canvas with a simple example:
+
+Prospect Added
+↓
+Send Email
+↓
+Wait 2 business days
+↓
+Split Path: Did the prospect reply?
+
+The split should create two labelled branches:
+
+YES branch
+
+Reply Received
+↓
+Exit Playbook
+
+NO branch
+
+Make Call
+↓
+Wait 3 business days
+↓
+Send LinkedIn Message
+↓
+Sequence Complete
+
+The example should immediately demonstrate how a sequence works without overwhelming the user.
+
+Block design
+
+Each canvas block should be a compact rounded card containing:
+
+Category icon
+Block type
+Configured summary
+Status or warning indicator
+Connection points above and below
+Overflow menu
+Drag affordance
+
+Use colour primarily as a category identifier:
+
+Starting Points: soft violet
+Touchpoints: soft blue
+Flow Controls: warm amber
+Outcomes: soft green
+Errors or incomplete blocks: restrained red
+
+Selected blocks should receive a stronger outline and subtle shadow.
+
+Keep connectors clean and directional. Connector lines should automatically adjust when blocks are moved. Use smooth elbow or curved paths and visible arrowheads.
+
+Block configuration drawer
+
+When a block is clicked, open a right-side configuration drawer. Do not navigate away from the canvas.
+
+Send Email settings
+
+Include:
+
+Step name
+Email type: Initial Email, Follow-up, Value Share, Breakup Email
+Outside-in insight category:
+Automatic
+Personal
+Company
+Industry
+Role
+Colleague
+Counterpart
+Messaging objective:
+Interrupt
+Engage
+Educate
+Offer
+Subject line
+Message preview
+Call to action
+Send timing
+Generate with Whyhello button
+Send LinkedIn settings
+
+Include:
+
+Step name
+LinkedIn action:
+View Profile
+Send Connection Request
+Send Message
+Send Follow-up
+Outside-in insight category
+Messaging objective
+Character count
+Message preview
+Generate with Whyhello button
+Make Call settings
+
+Include:
+
+Step name
+Call objective
+Outside-in insight category
+Generated call opener
+Discovery question
+Voicemail script
+Post-call disposition options
+Optional follow-up action
+Time Delay settings
+
+Include:
+
+Delay amount
+Unit
+Business days versus calendar days
+Prospect timezone toggle
+Allowed contact days
+Allowed contact hours
+Resume date preview
+
+Display the configured block as a natural summary such as:
+
+“Wait 3 business days”
+or
+“Wait until Tuesday at 9:00 AM in the prospect’s timezone.”
+
+Split Path settings
+
+Allow the user to select a condition:
+
+Email opened
+Link clicked
+Email replied to
+LinkedIn reply received
+Call connected
+Meeting booked
+No engagement
+Insight available
+Contact data available
+Prospect field matches
+Custom condition
+
+Allow two or more branches. Branch labels should be editable, such as:
+
+Yes / No
+Engaged / Not Engaged
+Connected / Voicemail / No Answer
+Personal Insight Available / Not Available
+
+Users should be able to add another branch.
+
+Outcome settings
+
+Allow the user to:
+
+Name the outcome
+Stop future touches
+Remove the prospect from the playbook
+Update prospect status
+Create a follow-up task
+Move the prospect into another playbook
+Smart building behaviour
+
+Make construction feel fast and forgiving.
+
+When a user hovers over a connector between two blocks, display a small + button. Clicking it should open a compact searchable menu of blocks that can be inserted at that point.
+
+When a user drops a new block below an existing block, automatically suggest connecting it.
+
+When a Split Path is added, automatically generate two branches and prompt the user to define the condition.
+
+If a Touchpoint is placed directly after another Touchpoint, show a non-blocking suggestion:
+
+“Consider adding a time delay between these touches.”
+
+If the playbook contains an incomplete block, show a warning icon on both the block and the Publish button.
+
+Test mode
+
+The Test Playbook button should open a test panel where the user can select a sample prospect and simulate movement through the playbook.
+
+Show:
+
+Which prospect data is available
+Which insight Whyhello would select
+The generated message at each touchpoint
+How each split condition evaluates
+The path the prospect would follow
+Any missing data or configuration
+
+Highlight the active path directly on the canvas during the simulation.
+
+Playbook summary
+
+Add a collapsible summary panel showing:
+
+Total touchpoints
+Total duration
+Email count
+LinkedIn count
+Call count
+Number of branches
+Earliest possible completion
+Longest possible completion
+Missing configurations
+Estimated playbook intensity: Light, Balanced or Persistent
+Empty state
+
+When the canvas has no blocks, display:
+
+Build your playbook
+
+“Drag a starting point onto the canvas or begin with a proven Whyhello template.”
+
+Include two buttons:
+
+Start from Scratch
+Choose a Playbook
+
+“Choose a Playbook” should open the canned playbook library containing Standard, Quick Burst, Compressed Campaign, Slow Burn, Executive Touch, Social-First, Phone-Forward, Strategic Account, Nurture and Email-Only.
+
+Selecting a canned playbook should populate the same visual canvas with fully editable blocks. Canned and custom playbooks must use the same underlying builder.
+
+Visual direction
+
+Use a clean off-white canvas with white cards, subtle borders and restrained shadows. The interface should feel spacious, intelligent and sophisticated without becoming sterile.
+
+Avoid oversized navigation, excessive gradients or cartoon-like automation graphics. Prioritize canvas space and information density.
+
+The user should feel like they are assembling a sales strategy visually, not configuring a complicated technical workflow.
+
+Use polished microinteractions:
+
+Blocks lift slightly while dragging
+Valid drop areas illuminate
+Connector lines animate subtly when created
+The configuration drawer slides in smoothly
+Saving produces a brief, unobtrusive confirmation
+
+Make the prototype responsive for desktop and large tablets, but optimize the primary experience for a desktop workspace.
