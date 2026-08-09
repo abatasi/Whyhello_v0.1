@@ -37,7 +37,7 @@ function CreditTracker({ wartime }: { wartime: boolean }) {
     tier === "enterprise" ? "Enterprise" : tier === "professional" ? "Pro" : "Free";
 
   const colorClass = wartime
-    ? "text-red-100 bg-red-800/60 border-red-700/60"
+    ? "text-[#7C3E2A] bg-[#EDD4C6] border-[#DDB99E]"
     : isUnlimited
     ? "text-primary bg-primary/10 border-primary/20"
     : pct >= 0.9
@@ -166,7 +166,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
         size="icon"
         className={cn(
           "rounded-full",
-          wartime && "text-red-100 hover:bg-red-800/60 hover:text-white",
+          wartime && "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]",
         )}
         onClick={() => setOpen(true)}
         aria-label="Search"
@@ -181,10 +181,10 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
       <div className={cn(
         "flex items-center gap-2 border rounded-full px-3 py-1.5 w-72 transition-all",
         wartime
-          ? "bg-red-800/50 border-red-700/60 text-white"
+          ? "bg-[#EDD4C6] border-[#DDB99E] text-[#5C2E22]"
           : "bg-secondary/50 border-border",
       )}>
-        <Search className={cn("h-4 w-4 flex-shrink-0", wartime ? "text-red-300" : "text-muted-foreground")} />
+        <Search className={cn("h-4 w-4 flex-shrink-0", wartime ? "text-[#A0624A]" : "text-muted-foreground")} />
         <input
           ref={inputRef}
           type="text"
@@ -193,7 +193,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
           onChange={(e) => setQuery(e.target.value)}
           className={cn(
             "flex-1 bg-transparent text-sm outline-none min-w-0",
-            wartime ? "placeholder:text-red-300/70 text-white" : "placeholder:text-muted-foreground",
+            wartime ? "placeholder:text-[#A0624A]/70 text-[#5C2E22]" : "placeholder:text-muted-foreground",
           )}
         />
         {query ? (
@@ -201,7 +201,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
             onClick={() => setQuery("")}
             className={cn(
               "transition-colors flex-shrink-0",
-              wartime ? "text-red-300 hover:text-white" : "text-muted-foreground hover:text-foreground",
+              wartime ? "text-[#A0624A] hover:text-[#5C2E22]" : "text-muted-foreground hover:text-foreground",
             )}
             aria-label="Clear"
           >
@@ -212,7 +212,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
             onClick={closeSearch}
             className={cn(
               "transition-colors flex-shrink-0",
-              wartime ? "text-red-300 hover:text-white" : "text-muted-foreground hover:text-foreground",
+              wartime ? "text-[#A0624A] hover:text-[#5C2E22]" : "text-muted-foreground hover:text-foreground",
             )}
             aria-label="Close search"
           >
@@ -401,8 +401,8 @@ function MoreDropdown({ wartime }: { wartime: boolean }) {
           "flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
           wartime
             ? isMoreActive
-              ? "bg-red-800 text-white"
-              : "text-red-100 hover:bg-red-800/60 hover:text-white"
+              ? "bg-[#E0BBA8] text-[#5C2E22]"
+              : "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
             : isMoreActive
             ? "bg-secondary/50 text-foreground"
             : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
@@ -452,8 +452,8 @@ function ModeToggle({ wartime }: { wartime: boolean }) {
         title="Switch to Peacetime mode"
         className={cn(
           "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all select-none",
-          "bg-red-700/80 text-red-100 border border-red-600/60",
-          "hover:bg-red-700 hover:text-white",
+          "bg-[#E8C4B0] text-[#7C3E2A] border border-[#DDB99E]",
+          "hover:bg-[#E0BBA8] hover:text-[#5C2E22]",
         )}
       >
         <Flame className="h-3.5 w-3.5" />
@@ -521,7 +521,7 @@ export function Navbar() {
       className={cn(
         "sticky top-0 z-50 w-full border-b transition-colors duration-300",
         wartime
-          ? "border-[#9a4d2d] bg-[#B55B35]"
+          ? "border-[#e8c9b8] bg-[#F4E2D8]"
           : "border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
       )}
     >
@@ -550,8 +550,8 @@ export function Navbar() {
                     "px-4 py-2 rounded-lg transition-colors",
                     wartime
                       ? isActive
-                        ? "bg-red-800 text-white"
-                        : "text-red-100 hover:bg-red-800/60 hover:text-white"
+                        ? "bg-[#E0BBA8] text-[#5C2E22]"
+                        : "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
                       : isActive
                       ? "bg-secondary/50 text-foreground"
                       : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
@@ -569,7 +569,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <ModeToggle wartime={wartime} />
 
-          <div className={cn("h-4 w-px mx-1", wartime ? "bg-red-700/60" : "bg-border")} />
+          <div className={cn("h-4 w-px mx-1", wartime ? "bg-[#E8C4B0]/60" : "bg-border")} />
 
           <CreditTracker wartime={wartime} />
 
@@ -581,7 +581,7 @@ export function Navbar() {
               size="icon"
               className={cn(
                 "rounded-full relative",
-                wartime && "text-red-100 hover:bg-red-800/60 hover:text-white",
+                wartime && "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]",
               )}
               onClick={() => setNotifOpen((o) => !o)}
               aria-label="Notifications"
@@ -590,14 +590,14 @@ export function Navbar() {
               {hasExports && (
                 <span className={cn(
                   "absolute top-1.5 right-1.5 h-2 w-2 rounded-full",
-                  wartime ? "bg-red-300" : "bg-primary",
+                  wartime ? "bg-[#A0624A]" : "bg-primary",
                 )} />
               )}
             </Button>
             {notifOpen && <NotificationsDropdown onClose={() => setNotifOpen(false)} />}
           </div>
 
-          <div className={cn("h-8 w-px mx-2", wartime ? "bg-red-800" : "bg-border")} />
+          <div className={cn("h-8 w-px mx-2", wartime ? "bg-[#E0BBA8]" : "bg-border")} />
 
           <div className="flex items-center gap-2">
             <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -607,14 +607,14 @@ export function Navbar() {
                   alt="Profile"
                   className={cn(
                     "h-7 w-7 rounded-full object-cover border",
-                    wartime ? "border-red-700" : "border-border",
+                    wartime ? "border-[#DDB99E]" : "border-border",
                   )}
                 />
               ) : (
                 <div className={cn(
                   "h-7 w-7 rounded-full flex items-center justify-center font-semibold text-xs border",
                   wartime
-                    ? "bg-red-800/60 text-red-100 border-red-700"
+                    ? "bg-[#EDD4C6] text-[#7C3E2A] border-[#DDB99E]"
                     : "bg-primary/10 text-primary border-primary/20",
                 )}>
                   {getInitials(displayName)}
@@ -622,7 +622,7 @@ export function Navbar() {
               )}
               <span className={cn(
                 "text-sm font-medium hidden md:block",
-                wartime ? "text-red-100" : "",
+                wartime ? "text-[#7C3E2A]" : "",
               )}>
                 {displayName}
               </span>
@@ -634,7 +634,7 @@ export function Navbar() {
                 className={cn(
                   "rounded-full",
                   wartime
-                    ? "text-red-300 hover:bg-red-800/60 hover:text-white"
+                    ? "text-[#A0624A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
                     : "text-muted-foreground hover:text-foreground",
                 )}
                 title="Settings"
@@ -648,7 +648,7 @@ export function Navbar() {
               className={cn(
                 "rounded-full ml-1",
                 wartime
-                  ? "text-red-300 hover:bg-red-800/60 hover:text-white"
+                  ? "text-[#A0624A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
                   : "text-muted-foreground hover:text-foreground",
               )}
               onClick={() => signOut({ redirectUrl: basePath || "/" })}
