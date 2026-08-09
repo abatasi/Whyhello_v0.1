@@ -212,7 +212,7 @@ function makeEdge(source: string, target: string, label?: string, sourceHandle?:
     id: `e_${source}_${target}_${Date.now()}`,
     source,
     target,
-    sourceHandle: sourceHandle ?? null,
+    ...(sourceHandle ? { sourceHandle } : {}),
     type: "playbook",
     markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: "#94a3b8" },
     style: { stroke: "#94a3b8", strokeWidth: 1.5 },
@@ -471,7 +471,7 @@ function PlaybookNodeComponent({ data, selected, id }: NodeProps) {
   const def = BLOCK_BY_ID[nodeData.blockType];
   if (!def) return null;
   const cat = CATEGORIES[def.category];
-  const Icon = def.icon as React.ComponentType<{ className?: string }>;
+  const Icon = def.Icon as React.ComponentType<{ className?: string }>;
   const complete = nodeComplete(nodeData);
   const isSplit = nodeData.blockType === "split-path";
   const branches = nodeData.branches ?? ["YES", "NO"];
@@ -560,7 +560,7 @@ function PlaybookNodeComponent({ data, selected, id }: NodeProps) {
       )}
 
       {/* Bottom handle */}
-      {!isSplit && def.category !== "outcome" && (
+      {!isSplit && !["exit-playbook", "sequence-complete"].includes(nodeData.blockType) && (
         <Handle
           type="source"
           position={Position.Bottom}
@@ -1399,13 +1399,24 @@ function CanvasInner({
   const { screenToFlowPosition, fitView } = useReactFlow();
   const { toast } = useToast();
 
-  const storageKey = `playbook_canvas_${playbookId}`;
+  const storageKey = `playbook_canvas_v2_${playbookId}`;
 
-  // Load initial state
+  // Load initial state — v2 key discards any pre-fix cached data
   const initialState = useMemo<CanvasState>(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw) as CanvasState;
+        // Sanitize edges: strip sourceHandle when null so React Flow doesn't warn
+        parsed.edges = (parsed.edges ?? []).map(e => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { sourceHandle, ...rest } = e as any;
+          return (sourceHandle !== null && sourceHandle !== undefined)
+            ? { ...rest, sourceHandle }
+            : rest;
+        });
+        return parsed;
+      }
     } catch {}
     return buildDefaultCanvas();
   }, [storageKey]);
