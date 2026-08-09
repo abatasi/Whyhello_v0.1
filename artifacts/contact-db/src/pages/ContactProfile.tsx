@@ -660,9 +660,8 @@ function PlaybookPickerModal({
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export default function ContactProfile() {
-  const [, params] = useRoute("/contacts/:id");
-  const id = parseInt(params?.id || "0");
+export function ContactProfileView({ contactId, embedded }: { contactId: number; embedded?: boolean }) {
+  const id = contactId;
 
   const { data: contact, isLoading, isError } = useGetContact(id, { query: { enabled: !!id } });
   const competitorIds = useCompetitorIds();
@@ -830,7 +829,7 @@ export default function ContactProfile() {
   };
 
   useEffect(() => {
-    if (contact) {
+    if (contact && !embedded) {
       document.title = `${contact.firstName} ${contact.lastName} on Whyhello`;
       recordContactVisit(
         contact.id,
@@ -839,8 +838,8 @@ export default function ContactProfile() {
         contact.company?.name ?? null,
       );
     }
-    return () => { document.title = "Whyhello"; };
-  }, [contact]);
+    return () => { if (!embedded) document.title = "Whyhello"; };
+  }, [contact, embedded]);
 
   const categoryData: Record<string, InsightItem[]> = {
     personal:     personalInsights as InsightItem[],
@@ -890,47 +889,36 @@ export default function ContactProfile() {
 
   if (isLoading) {
     return (
-      <Shell>
-        <div className="p-8 animate-pulse space-y-6 max-w-7xl mx-auto">
-          <div className="h-6 w-24 bg-muted rounded" />
-          <div className="grid grid-cols-[30%_1fr_30%] gap-5">
-            <div className="space-y-3">
-              {[...Array(6)].map((_, i) => <div key={i} className="h-10 bg-muted rounded-xl" />)}
-            </div>
-            <div className="space-y-4">
-              <div className="h-40 bg-muted rounded-2xl" />
-              <div className="h-32 bg-muted rounded-2xl" />
-            </div>
-            <div className="space-y-3">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-muted rounded-xl" />)}
-            </div>
+      <div className="p-8 animate-pulse space-y-6 max-w-7xl mx-auto">
+        <div className="h-6 w-24 bg-muted rounded" />
+        <div className="grid grid-cols-[30%_1fr_30%] gap-5">
+          <div className="space-y-3">
+            {[...Array(6)].map((_, i) => <div key={i} className="h-10 bg-muted rounded-xl" />)}
+          </div>
+          <div className="space-y-4">
+            <div className="h-40 bg-muted rounded-2xl" />
+            <div className="h-32 bg-muted rounded-2xl" />
+          </div>
+          <div className="space-y-3">
+            {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-muted rounded-xl" />)}
           </div>
         </div>
-      </Shell>
+      </div>
     );
   }
 
   if (isError || !contact) {
     return (
-      <Shell>
-        <div className="p-8 text-center mt-20">
-          <h2 className="text-2xl font-bold mb-4">Contact not found</h2>
-          <Link href="/"><Button>Back to Search</Button></Link>
-        </div>
-      </Shell>
+      <div className="p-8 text-center mt-20">
+        <h2 className="text-2xl font-bold mb-4">Contact not found</h2>
+        <Link href="/"><Button>Back to Search</Button></Link>
+      </div>
     );
   }
 
   return (
-    <Shell>
-      <div className="flex flex-col overflow-hidden bg-[#F8FAFC]" style={{ height: "calc(100vh - 4rem)" }}>
-        {/* Back nav */}
-        <div className="px-6 pt-3 pb-2 flex-shrink-0">
-          <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1.5">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Directory
-          </Link>
-        </div>
+    <>
+      <div className="flex flex-col overflow-hidden bg-[#F8FAFC] h-full">
 
         {/* ── Three-column grid ─────────────────────────────────────────── */}
         <div className="flex-1 min-h-0 px-6 pb-4 grid gap-5 overflow-hidden transition-[grid-template-columns] duration-200" style={{ gridTemplateColumns: `${insightsMode === "collapsed" ? "3rem" : insightsMode === "expanded" ? "50%" : "20%"} 1fr ${insightsMode === "expanded" ? "3rem" : outreachCollapsed ? "3rem" : "20%"}`, gridTemplateRows: "minmax(0, 1fr)" }}>
@@ -1585,6 +1573,29 @@ export default function ContactProfile() {
           onDismiss={() => setShowLostFriendo(false)}
         />
       )}
+    </>
+  );
+}
+
+// ── Route-based ContactProfile page (wraps ContactProfileView with Shell) ───
+
+export default function ContactProfile() {
+  const [, params] = useRoute("/contacts/:id");
+  const id = parseInt(params?.id || "0");
+  return (
+    <Shell>
+      <div className="flex flex-col overflow-hidden bg-[#F8FAFC]" style={{ height: "calc(100vh - 4rem)" }}>
+        {/* Back nav */}
+        <div className="px-6 pt-3 pb-2 flex-shrink-0">
+          <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1.5">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Directory
+          </Link>
+        </div>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ContactProfileView contactId={id} />
+        </div>
+      </div>
     </Shell>
   );
 }

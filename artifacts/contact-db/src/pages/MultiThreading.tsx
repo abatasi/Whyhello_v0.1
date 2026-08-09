@@ -1,7 +1,8 @@
 import { apiFetch } from "@/lib/apiFetch";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
+import { ContactProfileView } from "@/pages/ContactProfile";
 import { cn } from "@/lib/utils";
 import {
   Megaphone, Wallet, Vote, Crown, Briefcase, Cpu, ShieldCheck,
@@ -424,7 +425,7 @@ export default function MultiThreading() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companyLoading, setCompanyLoading] = useState(false);
 
-  const [activeSeat, setActiveSeat] = useState<string | null>(null);
+  const [activeTabContactId, setActiveTabContactId] = useState<number | null>(null);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
 
   // ── Derived active BC / TM ──
@@ -478,7 +479,7 @@ export default function MultiThreading() {
     setCompanyList([]);
     setCompanyListTotal(0);
     setSelectedCompany(null);
-    setActiveSeat(null);
+    setActiveTabContactId(null);
     setOverrides({});
     setCompanyFilter("");
     const params = new URLSearchParams({ limit: "200", sortBy: "name" });
@@ -500,7 +501,7 @@ export default function MultiThreading() {
   // ── Select a company from the picklist ──
   function selectCompany(c: CompanyResult) {
     if (selectedCompany?.id === c.id) return;
-    setActiveSeat(null);
+    setActiveTabContactId(null);
     setOverrides({});
     setSelectedCompany(null);
     setCompanyLoading(true);
@@ -530,12 +531,23 @@ export default function MultiThreading() {
     return matches[0];
   }
 
-  // ── Derived active seat values ──
-  const activeDef = activeSeat ? BUYING_CENTER_SEATS.find(s => s.seat === activeSeat) ?? null : null;
-  const activeConfig = activeSeat && activeBc ? activeBc.seats.find(s => s.seat === activeSeat) ?? null : null;
-  const activeContact = activeSeat ? getActiveContact(activeSeat) : null;
-  const activeMatches = activeSeat ? getMatches(activeSeat) : [];
-  const activeColors = activeDef ? (COLOR_MAP[activeDef.color] ?? COLOR_MAP.slate) : null;
+  // ── Tabs: one per unique matched contact across configured seats ──
+  const tabs = useMemo(() => {
+    if (!selectedCompany || !activeBc) return [];
+    const seen = new Set<number>();
+    const result: { contact: Contact; seatName: string; seatDef: typeof BUYING_CENTER_SEATS[0] }[] = [];
+    for (const def of configuredSeatDefs) {
+      const contact = getActiveContact(def.seat);
+      if (contact && !seen.has(contact.id)) {
+        seen.add(contact.id);
+        result.push({ contact, seatName: def.seat, seatDef: def });
+      }
+    }
+    return result;
+  }, [selectedCompany, activeBc, configuredSeatDefs, overrides]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Effective active tab: explicit selection or auto-first
+  const effectiveTabContactId = activeTabContactId ?? tabs[0]?.contact.id ?? null;
 
   const allUnconfigured = dnaLoaded && buyingCenters.length === 0;
 
@@ -578,7 +590,7 @@ export default function MultiThreading() {
               <BuyingCenterSelector
                 buyingCenters={buyingCenters}
                 selectedId={selectedBcId}
-                onSelect={id => { setSelectedBcId(id); setActiveSeat(null); setOverrides({}); }}
+                onSelect={id => { setSelectedBcId(id); setActiveTabContactId(null); setOverrides({}); }}
               />
             )}
 
@@ -669,7 +681,7 @@ export default function MultiThreading() {
         </div>
 
         {/* ── Right panel ── */}
-        <div className="flex-1 min-w-0 overflow-y-auto bg-[#F8FAFC]">
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-[#F8FAFC]">
 
           {/* No company selected */}
           {!selectedCompany && !companyLoading && (
@@ -696,309 +708,94 @@ export default function MultiThreading() {
             </div>
           )}
 
-          {/* Company loaded — buying center grid */}
-          {selectedCompany && !activeSeat && (
-            <div className="p-6 flex flex-col gap-5 max-w-4xl">
-              {/* Company header */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
-                    <Building2 className="h-5 w-5 text-amber-600" />
+          {/* Company loaded — tab belt + embedded profile */}
+          {selectedCompany && !companyLoading && (
+            <>
+              {/* ── Tab belt ── */}
+              <div className="flex-shrink-0 bg-white border-b border-border/60 flex items-end overflow-x-auto px-3 pt-2 gap-px">
+
+                {/* Company pill at the start */}
+                <div className="flex items-center gap-2 px-3 py-2 mb-px mr-2 flex-shrink-0">
+                  <div className="h-5 w-5 rounded-md bg-amber-100 border border-amber-200 flex items-center justify-center flex-shrink-0">
+                    <Building2 className="h-3 w-3 text-amber-600" />
                   </div>
-                  <div>
-                    <h2 className="text-base font-bold text-foreground leading-tight">{selectedCompany.name}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {[selectedCompany.industry, selectedCompany.size, selectedCompany.location].filter(Boolean).join(" · ")}
-                      {selectedCompany.contacts.length > 0 && ` · ${selectedCompany.contacts.length} contact${selectedCompany.contacts.length !== 1 ? "s" : ""}`}
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate max-w-[140px]">{selectedCompany.name}</p>
+                    <p className="text-[9px] text-muted-foreground/60 truncate max-w-[140px]">
+                      {[selectedCompany.industry, selectedCompany.size].filter(Boolean).join(" · ")}
                     </p>
                   </div>
+                  {activeBc && (
+                    <span className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded px-1.5 py-0.5 whitespace-nowrap flex-shrink-0">
+                      {activeBc.name}
+                    </span>
+                  )}
+                  <div className="w-px h-5 bg-border/60 mx-1 flex-shrink-0" />
                 </div>
-                {activeBc && (
-                  <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg px-2.5 py-1.5 flex-shrink-0 whitespace-nowrap">
-                    {activeBc.name}
-                  </span>
+
+                {/* One tab per matched contact */}
+                {tabs.length === 0 ? (
+                  <div className="flex items-center gap-2 px-3 py-2 mb-px text-muted-foreground">
+                    <ListTree className="h-3.5 w-3.5" />
+                    <p className="text-xs">
+                      {configuredSeatDefs.length === 0
+                        ? "No seats configured — "
+                        : "No contacts match this buying center — "}
+                    </p>
+                    <Link href="/hq">
+                      <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in HQ →</span>
+                    </Link>
+                  </div>
+                ) : (
+                  tabs.map(tab => {
+                    const isActive = effectiveTabContactId === tab.contact.id;
+                    const colors = COLOR_MAP[tab.seatDef.color] ?? COLOR_MAP.slate;
+                    return (
+                      <button
+                        key={tab.contact.id}
+                        onClick={() => setActiveTabContactId(tab.contact.id)}
+                        className={cn(
+                          "flex items-center gap-2 px-3 pt-2 pb-2.5 rounded-t-xl border-t border-l border-r text-left flex-shrink-0 min-w-0 transition-all duration-150",
+                          isActive
+                            ? "bg-[#F8FAFC] border-border/50 -mb-px relative z-10 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]"
+                            : "bg-white/40 border-transparent hover:bg-white/80 hover:border-border/30"
+                        )}
+                        style={{ maxWidth: 200 }}
+                      >
+                        <ContactAvatar contact={tab.contact} size="sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-foreground leading-tight truncate">
+                            {tab.contact.firstName} {tab.contact.lastName}
+                          </p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <tab.seatDef.icon className={cn("h-2.5 w-2.5 flex-shrink-0", isActive ? colors.iconColor : "text-muted-foreground/40")} />
+                            <p className={cn("text-[9px] font-medium truncate", isActive ? colors.iconColor : "text-muted-foreground/60")}>
+                              {tab.seatName}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })
                 )}
               </div>
 
-              {/* Seat grid or empty state */}
-              {configuredSeatDefs.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-10 text-center rounded-xl border border-dashed border-border/60 bg-secondary/20">
-                  <ListTree className="h-8 w-8 text-muted-foreground/30" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground mb-1">No seats configured</p>
-                    <p className="text-xs text-muted-foreground">"{activeBc?.name}" needs seats defined in HQ first.</p>
-                  </div>
-                  <Link href="/hq">
-                    <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">Configure in HQ →</span>
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {configuredSeatDefs.map(def => {
-                    const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
-                    const matches = getMatches(def.seat);
-                    const contact = getActiveContact(def.seat);
-                    return (
-                      <button
-                        key={def.seat}
-                        onClick={() => setActiveSeat(def.seat)}
-                        className={cn(
-                          "flex flex-col gap-3 p-4 rounded-xl border text-left transition-all hover:shadow-sm",
-                          contact ? cn(colors.bg, colors.border) : "bg-orange-50/60 border-orange-200/80 hover:border-orange-300"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0", contact ? colors.iconBg : "bg-orange-100")}>
-                            <def.icon className={cn("h-3.5 w-3.5", contact ? colors.iconColor : "text-orange-500")} />
-                          </div>
-                          <p className={cn("text-[11px] font-semibold flex-1 truncate", contact ? colors.iconColor : "text-orange-600")}>{def.seat}</p>
-                          {matches.length > 1 && (
-                            <span className="text-[9px] font-semibold bg-white/70 rounded-full px-1.5 py-0.5 text-muted-foreground flex-shrink-0">+{matches.length - 1}</span>
-                          )}
-                        </div>
-                        {contact ? (
-                          <div className="flex items-center gap-2.5">
-                            <ContactAvatar contact={contact} size="sm" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-foreground truncate">{contact.firstName} {contact.lastName}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{contact.jobTitle ?? "—"}</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-[11px] text-orange-500/80 font-medium">No match found</p>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Seat selected, no match found */}
-          {selectedCompany && activeSeat && activeMatches.length === 0 && activeDef && activeColors && (
-            <div className="h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
-              <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center border", activeColors.iconBg, activeColors.border)}>
-                <activeDef.icon className={cn("h-7 w-7", activeColors.iconColor)} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground mb-1">No match at {selectedCompany.name}</p>
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  No contacts match the criteria for the {activeSeat} seat.
-                </p>
-              </div>
-              {activeConfig && (
-                <div className="flex flex-col gap-1.5 items-start bg-card rounded-xl border border-border/60 p-4 text-left w-full max-w-xs">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Criteria for {activeSeat}</p>
-                  {activeConfig.seniorities.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {activeConfig.seniorities.map(s => <SenioritySwatch key={s} value={s} />)}
-                    </div>
-                  )}
-                  {activeConfig.departments.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {activeConfig.departments.map(d => (
-                        <span key={d} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-secondary text-muted-foreground border-border/60">{d}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <AlertCircle className="h-3.5 w-3.5" />
-                {selectedCompany.contacts.length} contact{selectedCompany.contacts.length !== 1 ? "s" : ""} at {selectedCompany.name} — none match
-              </div>
-            </div>
-          )}
-
-          {/* Contact found */}
-          {selectedCompany && activeSeat && activeContact && activeDef && activeColors && (
-            <div className="max-w-2xl mx-auto p-8 flex flex-col gap-6">
-
-              {/* Contact header card */}
-              <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
-                <div className={cn("px-6 py-5 flex items-start gap-5 border-b border-border/40", activeColors.bg)}>
-                  <ContactAvatar contact={activeContact} size="lg" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h2 className="text-lg font-bold text-foreground leading-tight">
-                          {activeContact.firstName} {activeContact.lastName}
-                        </h2>
-                        <p className="text-sm text-muted-foreground mt-0.5">{activeContact.jobTitle ?? "—"}</p>
-                      </div>
-                      <Link href={`/contacts/${activeContact.id}`}>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer flex-shrink-0 mt-0.5">
-                          View profile
-                          <ExternalLink className="h-3 w-3" />
-                        </div>
-                      </Link>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                      {activeContact.seniority && <SenioritySwatch value={activeContact.seniority} />}
-                      {activeContact.department && (
-                        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border", activeColors.chipBg, activeColors.border, activeColors.chipText)}>
-                          {activeContact.department}
-                        </span>
-                      )}
-                      <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border", activeColors.iconBg, activeColors.border, activeColors.iconColor)}>
-                        <activeDef.icon className="h-2.5 w-2.5" />
-                        {activeSeat}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contact details */}
-                <div className="px-6 py-4 grid grid-cols-2 gap-3">
-                  {activeContact.email && (
-                    <a href={`mailto:${activeContact.email}`} className="flex items-center gap-2.5 text-sm text-foreground hover:text-primary transition-colors group min-w-0">
-                      <div className="h-7 w-7 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                        <Mail className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                      <span className="truncate">{activeContact.email}</span>
-                    </a>
-                  )}
-                  {activeContact.phone && (
-                    <a href={`tel:${activeContact.phone}`} className="flex items-center gap-2.5 text-sm text-foreground hover:text-primary transition-colors group min-w-0">
-                      <div className="h-7 w-7 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                        <Phone className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                      <span className="truncate">{activeContact.phone}</span>
-                    </a>
-                  )}
-                  {activeContact.location && (
-                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground min-w-0">
-                      <div className="h-7 w-7 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
-                      <span className="truncate">{activeContact.location}</span>
-                    </div>
-                  )}
-                  {activeContact.linkedinUrl && (
-                    <a href={activeContact.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-sm text-foreground hover:text-primary transition-colors group min-w-0">
-                      <div className="h-7 w-7 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                        <Linkedin className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                      <span className="truncate">LinkedIn</span>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground/50 group-hover:text-primary flex-shrink-0 transition-colors" />
-                    </a>
-                  )}
-                  {!activeContact.email && !activeContact.phone && !activeContact.location && !activeContact.linkedinUrl && (
-                    <p className="col-span-2 text-xs text-muted-foreground/50">No contact details available</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Company mini-card */}
-              {activeContact.companyName && (
-                <Link href={`/companies/${activeContact.companyId}`}>
-                  <div className="bg-card rounded-2xl border border-border/60 shadow-sm px-5 py-4 flex items-center gap-4 hover:border-border transition-colors cursor-pointer">
-                    <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{activeContact.companyName}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {[activeContact.companyIndustry, activeContact.companySize].filter(Boolean).join(" · ")}
-                      </p>
-                    </div>
-                    <ExternalLink className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
-                  </div>
-                </Link>
-              )}
-
-              {/* Seat match card */}
-              <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
-                <div className={cn("px-5 py-3 border-b border-border/40 flex items-center justify-between", activeColors.bg)}>
-                  <div className="flex items-center gap-2">
-                    <activeDef.icon className={cn("h-4 w-4", activeColors.iconColor)} />
-                    <p className="text-sm font-semibold text-foreground">Seat: {activeSeat}</p>
-                    {activeBc && (
-                      <span className="text-[10px] text-muted-foreground font-medium">· {activeBc.name}</span>
-                    )}
-                  </div>
-                  <SwitchContactButton
-                    matches={activeMatches}
-                    selectedId={overrides[activeSeat] ?? activeMatches[0]?.id ?? -1}
-                    onSelect={id => setOverrides(prev => ({ ...prev, [activeSeat!]: id }))}
+              {/* ── Profile area ── */}
+              {effectiveTabContactId ? (
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <ContactProfileView
+                    key={effectiveTabContactId}
+                    contactId={effectiveTabContactId}
+                    embedded
                   />
                 </div>
-                <div className="px-5 py-4 flex flex-col gap-3">
-                  <p className="text-xs text-muted-foreground font-medium">Matching criteria defined in HQ</p>
-                  <div className="flex flex-col gap-2">
-                    {activeConfig && activeConfig.seniorities.length > 0 && (
-                      <div className="flex items-start gap-2">
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide w-20 flex-shrink-0 pt-0.5">Seniority</span>
-                        <div className="flex flex-wrap gap-1">
-                          {activeConfig.seniorities.map(s => <SenioritySwatch key={s} value={s} />)}
-                        </div>
-                      </div>
-                    )}
-                    {activeConfig && activeConfig.departments.length > 0 && (
-                      <div className="flex items-start gap-2">
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide w-20 flex-shrink-0 pt-0.5">Department</span>
-                        <div className="flex flex-wrap gap-1">
-                          {activeConfig.departments.map(d => (
-                            <span key={d} className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border", activeColors.chipBg, activeColors.border, activeColors.chipText)}>
-                              {d}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 pt-1 border-t border-border/40">
-                    <Users className="h-3 w-3 text-muted-foreground" />
-                    <p className="text-[11px] text-muted-foreground">
-                      {activeMatches.length} contact{activeMatches.length !== 1 ? "s" : ""} at {selectedCompany.name} match this seat
-                      {activeMatches.length > 1 ? " — showing most senior by default" : ""}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* All matches list */}
-              {activeMatches.length > 1 && (
-                <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-border/40 bg-secondary/20">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      All matches for this seat ({activeMatches.length})
-                    </p>
-                  </div>
-                  <div className="divide-y divide-border/40">
-                    {activeMatches.map(c => {
-                      const isSelected = (overrides[activeSeat!] ?? activeMatches[0]?.id) === c.id;
-                      return (
-                        <button
-                          key={c.id}
-                          onClick={() => setOverrides(prev => ({ ...prev, [activeSeat!]: c.id }))}
-                          className={cn(
-                            "w-full flex items-center gap-4 px-5 py-3 text-left transition-colors hover:bg-secondary/30",
-                            isSelected && "bg-secondary/20"
-                          )}
-                        >
-                          <ContactAvatar contact={c} size="sm" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground">{c.firstName} {c.lastName}</p>
-                            <p className="text-xs text-muted-foreground truncate">{c.jobTitle ?? "—"}</p>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {c.seniority && <SenioritySwatch value={c.seniority} />}
-                            {isSelected && (
-                              <div className="h-5 w-5 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center">
-                                <Check className="h-3 w-3 text-emerald-600" />
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center gap-3 text-muted-foreground">
+                  <Users className="h-5 w-5" />
+                  <p className="text-sm">No matched contacts to display.</p>
                 </div>
               )}
-
-            </div>
+            </>
           )}
 
         </div>
