@@ -427,6 +427,9 @@ export default function MultiThreading() {
 
   const [activeTabSeat, setActiveTabSeat] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
+  const [bannerDismissed, setBannerDismissed] = useState(() =>
+    sessionStorage.getItem("mt-banner-dismissed") === "1"
+  );
 
   // ── Derived active BC / TM ──
   const activeBc = buyingCenters.find(bc => bc.id === selectedBcId) ?? buyingCenters[0] ?? null;
@@ -554,6 +557,25 @@ export default function MultiThreading() {
   // ── Render ──
   return (
     <Shell>
+      {/* ── Announcement bar ── */}
+      {!bannerDismissed && (
+        <div className="flex-shrink-0 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 px-4 py-2.5 flex items-center gap-3">
+          <div className="flex-1 flex items-center justify-center gap-2.5 min-w-0">
+            <GitBranch className="h-3.5 w-3.5 text-white/80 flex-shrink-0" />
+            <p className="text-xs text-white/95 text-center leading-snug">
+              <span className="font-semibold text-white">Deals move faster when you engage the whole buying group:</span>
+              {" "}multi-threading increases win rates by 130% on deals over $50K.
+            </p>
+          </div>
+          <button
+            onClick={() => { setBannerDismissed(true); sessionStorage.setItem("mt-banner-dismissed", "1"); }}
+            className="flex-shrink-0 text-white/60 hover:text-white transition-colors ml-2"
+            aria-label="Dismiss"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
       <div className="flex-1 flex overflow-hidden min-h-0">
 
         {/* ── Left panel ── */}
