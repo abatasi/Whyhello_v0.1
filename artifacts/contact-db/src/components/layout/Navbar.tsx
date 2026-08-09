@@ -560,12 +560,8 @@ function LogoMenu({ wartime }: { wartime: boolean }) {
       <button
         onClick={() => { setOpen((o) => !o); setNotifExpanded(false); }}
         className={cn(
-          "h-full pl-6 xl:pl-8 pr-4 flex items-center transition-colors",
-          wartime
-            ? "bg-transparent"
-            : open
-            ? "bg-secondary/50"
-            : "bg-background hover:bg-secondary/20",
+          "h-full pl-6 xl:pl-8 pr-4 flex items-center",
+          wartime ? "bg-transparent" : "bg-background",
         )}
         aria-label="Open app menu"
       >
@@ -753,7 +749,7 @@ export function Navbar() {
       <div className="w-full px-6 xl:px-8 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
 
         {/* ── Left: logo menu + nav ── */}
-        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex items-center gap-1 min-w-0">
           <LogoMenu wartime={wartime} />
 
           <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
