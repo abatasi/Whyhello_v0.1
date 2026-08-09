@@ -568,7 +568,7 @@ function PlaybookPickerModal({
   const { toast } = useToast();
   const [enrolling, setEnrolling] = useState<number | null>(null);
 
-  const { data: sequences = [], isLoading } = useQuery<{ id: number; name: string; stepCount: number; enrollmentCount: number }[]>({
+  const { data: playbooks = [], isLoading } = useQuery<{ id: number; name: string; stepCount: number; enrollmentCount: number }[]>({
     queryKey: ["playbooks"],
     queryFn: async () => {
       const r = await apiFetch("/api/playbooks");
