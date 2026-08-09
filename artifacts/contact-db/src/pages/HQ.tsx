@@ -7,9 +7,10 @@ import {
   Save, CheckCircle2, Landmark, Sparkles, Upload, X, FileText,
   Loader2, RefreshCw, Ban, PenLine, TrendingDown, TrendingUp,
   Info, BarChart3, Users, Users2, Target, Globe, MessageSquare, Shield, Search, MapPin,
-  Megaphone, Wallet, Vote, Crown, Briefcase, Cpu, ShieldCheck,
+  Megaphone, Wallet, Vote, Crown, Briefcase, Cpu, ShieldCheck, Flame,
   ShoppingCart, Scale, Calculator, User, Wrench, MessageCircle, GraduationCap,
 } from "lucide-react";
+import { useAppMode } from "@/contexts/AppModeContext";
 import {
   Dialog, DialogContent, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -1806,6 +1807,8 @@ const HQ_NAV: {
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function HQ() {
+  const { mode, toggleMode } = useAppMode();
+  const wartime = mode === "wartime";
   const [data, setData] = useState<DNAData>(loadDNA);
   const saved = useAutoSave(data);
 
@@ -2202,6 +2205,53 @@ export default function HQ() {
                 </div>
               </button>
             ))}
+
+            {/* Mode selector */}
+            <div className="mt-2 pt-2 border-t border-border/60">
+              <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mode</p>
+              <button
+                onClick={() => { if (wartime) toggleMode(); }}
+                className={cn(
+                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all border",
+                  !wartime
+                    ? "bg-primary/8 border-primary/20"
+                    : "border-transparent hover:bg-secondary/60"
+                )}
+              >
+                <div className={cn(
+                  "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border",
+                  !wartime ? "bg-primary/10 border-primary/20" : "bg-secondary/60 border-border/50"
+                )}>
+                  <ShieldCheck className={cn("h-4 w-4", !wartime ? "text-primary" : "text-muted-foreground")} />
+                </div>
+                <div className="min-w-0">
+                  <p className={cn("text-sm font-semibold leading-tight", !wartime ? "text-primary" : "text-foreground")}>Peacetime</p>
+                  <p className="text-[10px] mt-0.5 text-muted-foreground leading-snug">Expand & warm pipeline</p>
+                </div>
+                {!wartime && <div className="ml-auto h-4 w-4 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><div className="h-1.5 w-1.5 rounded-full bg-white" /></div>}
+              </button>
+              <button
+                onClick={() => { if (!wartime) toggleMode(); }}
+                className={cn(
+                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all border",
+                  wartime
+                    ? "bg-[#F4E2D8] border-[#DDB99E]"
+                    : "border-transparent hover:bg-secondary/60"
+                )}
+              >
+                <div className={cn(
+                  "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border",
+                  wartime ? "bg-[#E8C4B0] border-[#DDB99E]" : "bg-secondary/60 border-border/50"
+                )}>
+                  <Flame className={cn("h-4 w-4", wartime ? "text-[#7C3E2A]" : "text-muted-foreground")} />
+                </div>
+                <div className="min-w-0">
+                  <p className={cn("text-sm font-semibold leading-tight", wartime ? "text-[#7C3E2A]" : "text-foreground")}>Wartime</p>
+                  <p className="text-[10px] mt-0.5 text-muted-foreground leading-snug">Focus & close deals</p>
+                </div>
+                {wartime && <div className="ml-auto h-4 w-4 rounded-full bg-[#7C3E2A] flex items-center justify-center flex-shrink-0"><div className="h-1.5 w-1.5 rounded-full bg-[#F4E2D8]" /></div>}
+              </button>
+            </div>
           </nav>
 
           {/* Right content pane */}

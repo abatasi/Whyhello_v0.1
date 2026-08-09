@@ -441,50 +441,27 @@ function MoreDropdown({ wartime }: { wartime: boolean }) {
   );
 }
 
-// ── HQ pill + dropdown ────────────────────────────────────────────────────────
-// Single pill shows HQ label + current mode. Opens a dropdown with a link to
-// the HQ page and a Mode section where Peacetime / Wartime can be toggled.
+// ── HQ pill — simple link, no dropdown ───────────────────────────────────────
+// Navigates to /hq. Shows current mode alongside the HQ label.
+// Mode is only toggled inside the HQ module itself.
 
-function HQDropdown({ wartime }: { wartime: boolean }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+function HQPill({ wartime }: { wartime: boolean }) {
   const [location] = useLocation();
-  const { mode, toggleMode } = useAppMode();
-  const isHQActive = location.startsWith("/hq");
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    if (open) {
-      document.addEventListener("mousedown", handleClick);
-      document.addEventListener("keydown", handleKey);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [open]);
-
+  const isActive = location.startsWith("/hq");
   const ModeIcon = wartime ? Flame : ShieldCheck;
   const modeLabel = wartime ? "Wartime" : "Peacetime";
 
   return (
-    <div ref={ref} className="relative">
-      {/* Pill button */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
+    <Link href="/hq">
+      <span
+        title="HQ — messaging, scoring & calibration"
         className={cn(
-          "flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all select-none border",
+          "flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all select-none border cursor-pointer",
           wartime
-            ? open || isHQActive
+            ? isActive
               ? "bg-[#7C3E2A] text-[#F4E2D8] border-[#7C3E2A]"
               : "bg-[#E8C4B0] text-[#7C3E2A] border-[#DDB99E] hover:bg-[#E0BBA8] hover:text-[#5C2E22]"
-            : open || isHQActive
+            : isActive
             ? "bg-foreground text-background border-foreground"
             : "bg-secondary text-foreground border-border hover:bg-secondary/80",
         )}
@@ -494,105 +471,13 @@ function HQDropdown({ wartime }: { wartime: boolean }) {
         <span className={cn(
           "h-3.5 w-px",
           wartime
-            ? (open || isHQActive) ? "bg-[#F4E2D8]/40" : "bg-[#DDB99E]"
-            : (open || isHQActive) ? "bg-background/30" : "bg-border",
+            ? isActive ? "bg-[#F4E2D8]/40" : "bg-[#DDB99E]"
+            : isActive ? "bg-background/30" : "bg-border",
         )} />
         <ModeIcon className="h-3.5 w-3.5 flex-shrink-0" />
         <span>{modeLabel}</span>
-        <ChevronDown className={cn("h-3 w-3 flex-shrink-0 opacity-60 transition-transform", open && "rotate-180")} />
-      </button>
-
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 rounded-xl border border-border bg-card shadow-xl z-50 overflow-hidden">
-          {/* Go to HQ link */}
-          <Link
-            href="/hq"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-3 hover:bg-secondary/40 transition-colors border-b border-border/60"
-          >
-            <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Gauge className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">Go to HQ</p>
-              <p className="text-xs text-muted-foreground">Messaging, scoring & calibration</p>
-            </div>
-          </Link>
-
-          {/* Mode section */}
-          <div className="px-4 py-2.5 border-b border-border/60">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Mode</p>
-            <div className="space-y-1.5">
-              {/* Peacetime */}
-              <button
-                onClick={() => { if (wartime) toggleMode(); setOpen(false); }}
-                className={cn(
-                  "w-full flex items-start gap-3 px-3 py-2.5 rounded-lg border transition-all text-left",
-                  !wartime
-                    ? "bg-primary/8 border-primary/25 text-foreground"
-                    : "border-transparent hover:bg-secondary/40 text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <div className={cn(
-                  "mt-0.5 h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0",
-                  !wartime ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
-                )}>
-                  <ShieldCheck className="h-3 w-3" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold leading-tight">Peacetime</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                    Build relationships, expand coverage, and warm up your pipeline.
-                  </p>
-                </div>
-                {!wartime && (
-                  <div className="mt-1 flex-shrink-0 h-4 w-4 rounded-full bg-primary flex items-center justify-center ml-auto">
-                    <div className="h-1.5 w-1.5 rounded-full bg-white" />
-                  </div>
-                )}
-              </button>
-
-              {/* Wartime */}
-              <button
-                onClick={() => { if (!wartime) toggleMode(); setOpen(false); }}
-                className={cn(
-                  "w-full flex items-start gap-3 px-3 py-2.5 rounded-lg border transition-all text-left",
-                  wartime
-                    ? "bg-[#F4E2D8] border-[#DDB99E] text-[#5C2E22]"
-                    : "border-transparent hover:bg-secondary/40 text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <div className={cn(
-                  "mt-0.5 h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0",
-                  wartime ? "bg-[#E8C4B0] text-[#7C3E2A]" : "bg-muted text-muted-foreground",
-                )}>
-                  <Flame className="h-3 w-3" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold leading-tight">Wartime</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                    Focus on high-value targets, accelerate outreach, and close deals.
-                  </p>
-                </div>
-                {wartime && (
-                  <div className="mt-1 flex-shrink-0 h-4 w-4 rounded-full bg-[#7C3E2A] flex items-center justify-center ml-auto">
-                    <div className="h-1.5 w-1.5 rounded-full bg-[#F4E2D8]" />
-                  </div>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Footer hint */}
-          <div className="px-4 py-2">
-            <p className="text-[10px] text-muted-foreground">
-              Mode affects how the app surfaces contacts, messaging tone, and prioritization signals.
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
+      </span>
+    </Link>
   );
 }
 
@@ -684,7 +569,7 @@ export function Navbar() {
         </div>
 
         {/* ── Center: HQ pill ── */}
-        <HQDropdown wartime={wartime} />
+        <HQPill wartime={wartime} />
 
         {/* ── Right: utilities ── */}
         <div className="flex items-center gap-2 justify-end">
