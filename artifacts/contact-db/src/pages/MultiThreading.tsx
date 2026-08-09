@@ -425,7 +425,7 @@ export default function MultiThreading() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companyLoading, setCompanyLoading] = useState(false);
 
-  const [activeTabContactId, setActiveTabContactId] = useState<number | null>(null);
+  const [activeTabSeat, setActiveTabSeat] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
 
   // ── Derived active BC / TM ──
@@ -479,7 +479,7 @@ export default function MultiThreading() {
     setCompanyList([]);
     setCompanyListTotal(0);
     setSelectedCompany(null);
-    setActiveTabContactId(null);
+    setActiveTabSeat(null);
     setOverrides({});
     setCompanyFilter("");
     const params = new URLSearchParams({ limit: "200", sortBy: "name" });
@@ -501,7 +501,7 @@ export default function MultiThreading() {
   // ── Select a company from the picklist ──
   function selectCompany(c: CompanyResult) {
     if (selectedCompany?.id === c.id) return;
-    setActiveTabContactId(null);
+    setActiveTabSeat(null);
     setOverrides({});
     setSelectedCompany(null);
     setCompanyLoading(true);
@@ -531,23 +531,18 @@ export default function MultiThreading() {
     return matches[0];
   }
 
-  // ── Tabs: one per unique matched contact across configured seats ──
+  // ── Tabs: one per configured seat (contact may repeat across seats) ──
   const tabs = useMemo(() => {
     if (!selectedCompany || !activeBc) return [];
-    const seen = new Set<number>();
-    const result: { contact: Contact; seatName: string; seatDef: typeof BUYING_CENTER_SEATS[0] }[] = [];
-    for (const def of configuredSeatDefs) {
-      const contact = getActiveContact(def.seat);
-      if (contact && !seen.has(contact.id)) {
-        seen.add(contact.id);
-        result.push({ contact, seatName: def.seat, seatDef: def });
-      }
-    }
-    return result;
+    return configuredSeatDefs.map(def => ({
+      seatName: def.seat,
+      seatDef: def,
+      contact: getActiveContact(def.seat),
+    }));
   }, [selectedCompany, activeBc, configuredSeatDefs, overrides]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Effective active tab: explicit selection or auto-first
-  const effectiveTabContactId = activeTabContactId ?? tabs[0]?.contact.id ?? null;
+  const effectiveTab = tabs.find(t => t.seatName === (activeTabSeat ?? tabs[0]?.seatName)) ?? null;
 
   const allUnconfigured = dnaLoaded && buyingCenters.length === 0;
 
@@ -590,7 +585,7 @@ export default function MultiThreading() {
               <BuyingCenterSelector
                 buyingCenters={buyingCenters}
                 selectedId={selectedBcId}
-                onSelect={id => { setSelectedBcId(id); setActiveTabContactId(null); setOverrides({}); }}
+                onSelect={id => { setSelectedBcId(id); setActiveTabSeat(null); setOverrides({}); }}
               />
             )}
 
@@ -733,7 +728,7 @@ export default function MultiThreading() {
                   <div className="w-px h-5 bg-border/60 mx-1 flex-shrink-0" />
                 </div>
 
-                {/* One tab per matched contact */}
+                {/* One tab per configured seat */}
                 {tabs.length === 0 ? (
                   <div className="flex items-center gap-2 px-3 py-2 mb-px text-muted-foreground">
                     <ListTree className="h-3.5 w-3.5" />
@@ -748,12 +743,12 @@ export default function MultiThreading() {
                   </div>
                 ) : (
                   tabs.map(tab => {
-                    const isActive = effectiveTabContactId === tab.contact.id;
+                    const isActive = effectiveTab?.seatName === tab.seatName;
                     const colors = COLOR_MAP[tab.seatDef.color] ?? COLOR_MAP.slate;
                     return (
                       <button
-                        key={tab.contact.id}
-                        onClick={() => setActiveTabContactId(tab.contact.id)}
+                        key={tab.seatName}
+                        onClick={() => setActiveTabSeat(tab.seatName)}
                         className={cn(
                           "flex items-center gap-2 px-3 pt-2 pb-2.5 rounded-t-xl border-t border-l border-r text-left flex-shrink-0 min-w-0 transition-all duration-150",
                           isActive
@@ -762,10 +757,18 @@ export default function MultiThreading() {
                         )}
                         style={{ maxWidth: 200 }}
                       >
-                        <ContactAvatar contact={tab.contact} size="sm" />
+                        {tab.contact ? (
+                          <ContactAvatar contact={tab.contact} size="sm" />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                            <tab.seatDef.icon className="h-3.5 w-3.5 text-orange-500" />
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-foreground leading-tight truncate">
-                            {tab.contact.firstName} {tab.contact.lastName}
+                            {tab.contact
+                              ? `${tab.contact.firstName} ${tab.contact.lastName}`
+                              : "No match"}
                           </p>
                           <div className="flex items-center gap-1 mt-0.5">
                             <tab.seatDef.icon className={cn("h-2.5 w-2.5 flex-shrink-0", isActive ? colors.iconColor : "text-muted-foreground/40")} />
@@ -781,13 +784,28 @@ export default function MultiThreading() {
               </div>
 
               {/* ── Profile area ── */}
-              {effectiveTabContactId ? (
+              {effectiveTab?.contact ? (
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <ContactProfileView
-                    key={effectiveTabContactId}
-                    contactId={effectiveTabContactId}
+                    key={`${effectiveTab.seatName}-${effectiveTab.contact.id}`}
+                    contactId={effectiveTab.contact.id}
                     embedded
                   />
+                </div>
+              ) : effectiveTab && !effectiveTab.contact ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground p-8 text-center">
+                  <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center border",
+                    (COLOR_MAP[effectiveTab.seatDef.color] ?? COLOR_MAP.slate).iconBg,
+                    (COLOR_MAP[effectiveTab.seatDef.color] ?? COLOR_MAP.slate).border
+                  )}>
+                    <effectiveTab.seatDef.icon className={cn("h-6 w-6", (COLOR_MAP[effectiveTab.seatDef.color] ?? COLOR_MAP.slate).iconColor)} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-1">No match for {effectiveTab.seatName}</p>
+                    <p className="text-xs text-muted-foreground max-w-xs">
+                      No contacts at {selectedCompany.name} match the criteria for this seat.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center gap-3 text-muted-foreground">
