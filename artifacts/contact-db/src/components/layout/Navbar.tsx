@@ -521,7 +521,7 @@ export function Navbar() {
       className={cn(
         "sticky top-0 z-50 w-full border-b transition-colors duration-300",
         wartime
-          ? "border-red-800 bg-red-900"
+          ? "border-[#9a4d2d] bg-[#B55B35]"
           : "border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
       )}
     >
