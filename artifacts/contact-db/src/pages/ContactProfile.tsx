@@ -41,8 +41,9 @@ import {
   Users, Handshake, MessageSquare, Sparkles, PenLine,
   StickyNote, Globe, ChevronRight, ChevronLeft,
   Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp, ArrowUpDown, Quote,
-  Activity, Clock, Eye, MousePointerClick, CheckCheck, ListChecks, Volume2,
+  Activity, Clock, Eye, MousePointerClick, CheckCheck, ListChecks, Volume2, Check,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
@@ -58,6 +59,56 @@ import {
   PostCallPanel,
   useVoiceCall,
 } from "@/components/VoiceCall";
+
+// ── Buying Center seat context (used when embedded in Multi-threading) ────────
+
+const SEAT_COLOR_MAP: Record<string, { iconBg: string; iconColor: string; chipBg: string; chipText: string; border: string; bg: string }> = {
+  violet:  { bg: "bg-violet-50/60",  iconBg: "bg-violet-100",  iconColor: "text-violet-600",  chipBg: "bg-violet-100",  chipText: "text-violet-700",  border: "border-violet-200"  },
+  emerald: { bg: "bg-emerald-50/60", iconBg: "bg-emerald-100", iconColor: "text-emerald-600", chipBg: "bg-emerald-100", chipText: "text-emerald-700", border: "border-emerald-200" },
+  blue:    { bg: "bg-blue-50/60",    iconBg: "bg-blue-100",    iconColor: "text-blue-600",    chipBg: "bg-blue-100",    chipText: "text-blue-700",    border: "border-blue-200"    },
+  amber:   { bg: "bg-amber-50/60",   iconBg: "bg-amber-100",   iconColor: "text-amber-600",   chipBg: "bg-amber-100",   chipText: "text-amber-700",   border: "border-amber-200"   },
+  slate:   { bg: "bg-slate-50/60",   iconBg: "bg-slate-100",   iconColor: "text-slate-500",   chipBg: "bg-slate-100",   chipText: "text-slate-600",   border: "border-slate-200"   },
+  sky:     { bg: "bg-sky-50/60",     iconBg: "bg-sky-100",     iconColor: "text-sky-600",     chipBg: "bg-sky-100",     chipText: "text-sky-700",     border: "border-sky-200"     },
+  rose:    { bg: "bg-rose-50/60",    iconBg: "bg-rose-100",    iconColor: "text-rose-600",    chipBg: "bg-rose-100",    chipText: "text-rose-600",    border: "border-rose-200"    },
+};
+
+const SEAT_DESCRIPTIONS: Record<string, (firstName: string) => string> = {
+  "Business Champion":               fn => `As Business Champion, ${fn} is responsible for championing this solution internally and rallying cross-functional buy-in.`,
+  "Economic Buyer":                  fn => `As Economic Buyer, ${fn} controls the budget and holds final authority over the purchasing decision.`,
+  "Technical Buyer":                 fn => `As Technical Buyer, ${fn} evaluates technical fit and leads the solution assessment.`,
+  "Decision Maker":                  fn => `As Decision Maker, ${fn} has the authority to make the final call and move the deal forward.`,
+  "End User":                        fn => `As End User, ${fn} will use the solution day-to-day — their satisfaction drives adoption and renewal.`,
+  "Executive Sponsor":               fn => `As Executive Sponsor, ${fn} connects this initiative to executive priorities and provides top-level backing.`,
+  "Business Owner":                  fn => `As Business Owner, ${fn} owns the business problem this solution is meant to solve.`,
+  "Security or Compliance Reviewer": fn => `As Security or Compliance Reviewer, ${fn} assesses risk and ensures regulatory requirements are met.`,
+  "Procurement":                     fn => `As Procurement, ${fn} manages the commercial and purchasing process.`,
+  "Legal":                           fn => `As Legal, ${fn} reviews and negotiates contractual obligations.`,
+  "Finance":                         fn => `As Finance contact, ${fn} validates costs, ROI, and budget alignment.`,
+  "Implementer":                     fn => `As Implementer, ${fn} will own deployment and configuration.`,
+  "Influencer":                      fn => `As Influencer, ${fn} shapes requirements and builds internal opinion.`,
+  "Blocker":                         fn => `As a potential Blocker, ${fn} has the ability to delay or oppose the purchase.`,
+  "Coach":                           fn => `As Coach, ${fn} helps navigate the account and understand internal dynamics.`,
+};
+
+export type SeatContactMini = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  jobTitle?: string | null;
+  seniority?: string | null;
+  department?: string | null;
+};
+
+export type SeatContext = {
+  seatName: string;
+  seatRole: string;
+  icon: React.ElementType;
+  colorKey: string;
+  matches: SeatContactMini[];
+  allCompanyContacts: SeatContactMini[];
+  currentContactId: number;
+  onReassign: (contactId: number) => void;
+};
 
 // ── Media type config ──────────────────────────────────────────────────────
 
@@ -660,7 +711,7 @@ function PlaybookPickerModal({
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export function ContactProfileView({ contactId, embedded }: { contactId: number; embedded?: boolean }) {
+export function ContactProfileView({ contactId, embedded, seatContext }: { contactId: number; embedded?: boolean; seatContext?: SeatContext }) {
   const id = contactId;
 
   const { data: contact, isLoading, isError } = useGetContact(id, { query: { enabled: !!id } });
@@ -685,6 +736,7 @@ export function ContactProfileView({ contactId, embedded }: { contactId: number;
   const { data: quotesData = [], refetch: refetchQuotes } = useGetInsightQuotes(id, { query: { enabled: !!id } });
   const quotesMutation = useExtractInsightQuotes();
   const hasAutoExtractedQuotesRef = useRef<number | null>(null);
+  const [reassignOpen, setReassignOpen] = useState(false);
 
   // Effect 1: show toast whenever scores are settled and max ≤ 50
   useEffect(() => {
@@ -1249,6 +1301,97 @@ export function ContactProfileView({ contactId, embedded }: { contactId: number;
                       </>
                     )}
                   </div>
+
+                  {/* ── Buying Center seat badge (embedded only) ── */}
+                  {embedded && seatContext && (() => {
+                    const colors = SEAT_COLOR_MAP[seatContext.colorKey] ?? SEAT_COLOR_MAP.slate;
+                    const SeatIcon = seatContext.icon;
+                    const description = (SEAT_DESCRIPTIONS[seatContext.seatName] ?? ((fn: string) => `${fn} occupies the ${seatContext.seatName} role in this buying center.`))(contact.firstName);
+                    const matchIds = new Set(seatContext.matches.map(c => c.id));
+                    const otherContacts = seatContext.allCompanyContacts.filter(c => !matchIds.has(c.id));
+                    return (
+                      <div className={cn("mt-3 rounded-xl border p-3 flex items-start gap-3", colors.border, colors.bg)}>
+                        <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5", colors.iconBg)}>
+                          <SeatIcon className={cn("h-4 w-4", colors.iconColor)} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className={cn("text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border", colors.chipBg, colors.chipText, colors.border)}>
+                              {seatContext.seatName}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+                        </div>
+                        <Popover open={reassignOpen} onOpenChange={setReassignOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="gap-1.5 h-7 text-[11px] flex-shrink-0 mt-0.5">
+                              <RefreshCw className="h-3 w-3" /> Re-assign
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent align="end" className="w-72 p-0 overflow-hidden">
+                            <div className="px-3 py-2.5 border-b border-border/60 bg-secondary/30">
+                              <p className="text-xs font-semibold text-foreground">Re-assign {seatContext.seatName}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">Select a contact to fill this seat</p>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto py-1">
+                              {seatContext.matches.length > 0 && (
+                                <>
+                                  <div className="px-3 pt-2 pb-1">
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">Best Matches</p>
+                                  </div>
+                                  {seatContext.matches.map(c => {
+                                    const isCurrent = c.id === seatContext.currentContactId;
+                                    return (
+                                      <button
+                                        key={c.id}
+                                        onClick={() => { seatContext.onReassign(c.id); setReassignOpen(false); }}
+                                        className={cn("w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/50 transition-colors", isCurrent && "bg-secondary/40")}
+                                      >
+                                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
+                                          {((c.firstName[0] ?? "") + (c.lastName[0] ?? "")).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-semibold text-foreground truncate">{c.firstName} {c.lastName}</p>
+                                          {c.jobTitle && <p className="text-[10px] text-muted-foreground truncate">{c.jobTitle}</p>}
+                                        </div>
+                                        {isCurrent && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
+                                      </button>
+                                    );
+                                  })}
+                                </>
+                              )}
+                              {otherContacts.length > 0 && (
+                                <>
+                                  <div className={cn("px-3 pt-2 pb-1", seatContext.matches.length > 0 && "border-t border-border/40 mt-1")}>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">Other Contacts</p>
+                                  </div>
+                                  {otherContacts.map(c => {
+                                    const isCurrent = c.id === seatContext.currentContactId;
+                                    return (
+                                      <button
+                                        key={c.id}
+                                        onClick={() => { seatContext.onReassign(c.id); setReassignOpen(false); }}
+                                        className={cn("w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/50 transition-colors", isCurrent && "bg-secondary/40")}
+                                      >
+                                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-500 flex-shrink-0">
+                                          {((c.firstName[0] ?? "") + (c.lastName[0] ?? "")).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-semibold text-foreground truncate">{c.firstName} {c.lastName}</p>
+                                          {c.jobTitle && <p className="text-[10px] text-muted-foreground truncate">{c.jobTitle}</p>}
+                                        </div>
+                                        {isCurrent && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
+                                      </button>
+                                    );
+                                  })}
+                                </>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    );
+                  })()}
 
                   {contact.bio && (
                     <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2">

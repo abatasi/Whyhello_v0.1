@@ -2,7 +2,7 @@ import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
-import { ContactProfileView } from "@/pages/ContactProfile";
+import { ContactProfileView, type SeatContext } from "@/pages/ContactProfile";
 import { cn } from "@/lib/utils";
 import {
   Megaphone, Wallet, Vote, Crown, Briefcase, Cpu, ShieldCheck,
@@ -521,14 +521,14 @@ export default function MultiThreading() {
   }
 
   function getActiveContact(seatName: string): Contact | null {
-    const matches = getMatches(seatName);
-    if (matches.length === 0) return null;
     const overrideId = overrides[seatName];
     if (overrideId) {
-      const override = matches.find(c => c.id === overrideId);
+      // Allow any company contact as an override, not just matched ones
+      const override = selectedCompany?.contacts.find(c => c.id === overrideId);
       if (override) return override;
     }
-    return matches[0];
+    const matches = getMatches(seatName);
+    return matches.length > 0 ? matches[0] : null;
   }
 
   // ── Tabs: one per configured seat (contact may repeat across seats) ──
@@ -790,6 +790,16 @@ export default function MultiThreading() {
                     key={`${effectiveTab.seatName}-${effectiveTab.contact.id}`}
                     contactId={effectiveTab.contact.id}
                     embedded
+                    seatContext={{
+                      seatName: effectiveTab.seatName,
+                      seatRole: effectiveTab.seatDef.role,
+                      icon: effectiveTab.seatDef.icon,
+                      colorKey: effectiveTab.seatDef.color,
+                      matches: getMatches(effectiveTab.seatName),
+                      allCompanyContacts: selectedCompany?.contacts ?? [],
+                      currentContactId: effectiveTab.contact.id,
+                      onReassign: (contactId) => setOverrides(prev => ({ ...prev, [effectiveTab.seatName]: contactId })),
+                    }}
                   />
                 </div>
               ) : effectiveTab && !effectiveTab.contact ? (
