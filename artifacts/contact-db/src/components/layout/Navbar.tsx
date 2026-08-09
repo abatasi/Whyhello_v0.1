@@ -569,9 +569,9 @@ function LogoMenu({ wartime }: { wartime: boolean }) {
         )}
         aria-label="Open app menu"
       >
-        {/* Crop the combined logo PNG to just the W mark */}
-        <div className="overflow-hidden flex-shrink-0" style={{ width: 22, height: 20 }}>
-          <img src={whyhelloLogo} alt="Whyhello" className="h-5 w-auto max-w-none" />
+        {/* Crop the combined logo PNG to just the W mark (clip right side to hide wordmark) */}
+        <div className="overflow-hidden flex-shrink-0" style={{ width: 36, height: 24 }}>
+          <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto max-w-none" />
         </div>
       </button>
 
