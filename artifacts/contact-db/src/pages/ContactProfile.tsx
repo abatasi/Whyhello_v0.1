@@ -149,7 +149,7 @@ interface OutputType {
 
 const OUTPUT_TYPES: OutputType[] = [
   { id: "intro_email",      label: "Single Email",      icon: Mail,        color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-200",   description: "A personalized first-touch email tailored to this contact's background and current context." },
-  { id: "email_sequence",   label: "Email Sequence",    icon: Layers,      color: "text-violet-600",  bg: "bg-violet-50",  border: "border-violet-200", description: "A multi-step email cadence built around this contact's role, interests, and timing." },
+  { id: "email_sequence",   label: "Email Playbook",    icon: Layers,      color: "text-violet-600",  bg: "bg-violet-50",  border: "border-violet-200", description: "A multi-step email cadence built around this contact's role, interests, and timing." },
   { id: "battlecard",       label: "Battlecard",        icon: Shield,      color: "text-rose-600",    bg: "bg-rose-50",    border: "border-rose-200",   description: "A competitive one-pager to prep your team for this deal — objections, differentiators, and positioning." },
   { id: "sales_simulation", label: "Sales Simulation",  icon: Theater,     color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200",  description: "Simulate a sales call with this contact as the prospect so you can practice before the real thing." },
   { id: "talk_track",       label: "Talk Track",        icon: Mic2,        color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", description: "A structured verbal guide to keep your next conversation focused, confident, and on point." },
@@ -552,9 +552,9 @@ function BattlecardModal({ open, onClose, contactId, contactName, onGenerate }: 
   );
 }
 
-// ── SequencePickerModal ────────────────────────────────────────────────────
+// ── PlaybookPickerModal ────────────────────────────────────────────────────
 
-function SequencePickerModal({
+function PlaybookPickerModal({
   open,
   onClose,
   contactId,
@@ -569,9 +569,9 @@ function SequencePickerModal({
   const [enrolling, setEnrolling] = useState<number | null>(null);
 
   const { data: sequences = [], isLoading } = useQuery<{ id: number; name: string; stepCount: number; enrollmentCount: number }[]>({
-    queryKey: ["sequences"],
+    queryKey: ["playbooks"],
     queryFn: async () => {
-      const r = await apiFetch("/api/sequences");
+      const r = await apiFetch("/api/playbooks");
       if (!r.ok) throw new Error(`API error ${r.status}`);
       return r.json();
     },
@@ -581,7 +581,7 @@ function SequencePickerModal({
   async function handleEnroll(seqId: number) {
     setEnrolling(seqId);
     try {
-      const res = await apiFetch(`/api/sequences/${seqId}/enrollments`, {
+      const res = await apiFetch(`/api/playbooks/${seqId}/enrollments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contactIds: [contactId] }),
@@ -590,7 +590,7 @@ function SequencePickerModal({
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? "Failed to enroll");
       }
-      toast({ title: "Enrolled", description: `${contactName} added to sequence` });
+      toast({ title: "Enrolled", description: `${contactName} added to playbook` });
       onClose();
     } catch (err) {
       toast({
@@ -607,7 +607,7 @@ function SequencePickerModal({
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b border-border/60">
-          <DialogTitle className="text-base">Add to Sequence</DialogTitle>
+          <DialogTitle className="text-base">Add to Playbook</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5">
             Choose a sequence to enroll {contactName} into.
           </DialogDescription>
@@ -615,19 +615,19 @@ function SequencePickerModal({
         <div className="overflow-y-auto" style={{ maxHeight: 400 }}>
           {isLoading ? (
             <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading sequences…
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading playbooks…
             </div>
-          ) : sequences.length === 0 ? (
+          ) : playbooks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3 text-center text-muted-foreground">
               <ListChecks className="h-8 w-8 opacity-30" />
               <div>
-                <p className="text-sm font-medium">No sequences yet</p>
-                <p className="text-xs mt-0.5">Create a sequence first from the Sequences page.</p>
+                <p className="text-sm font-medium">No playbooks yet</p>
+                <p className="text-xs mt-0.5">Create a playbook first from the Playbooks page.</p>
               </div>
             </div>
           ) : (
             <ul className="divide-y divide-border/40">
-              {sequences.map(seq => (
+              {playbooks.map(seq => (
                 <li key={seq.id} className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/20 transition-colors">
                   <div className="h-8 w-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
                     <Mail className="h-4 w-4 text-indigo-600" />
@@ -1228,7 +1228,7 @@ export default function ContactProfile() {
                           <CallButton contactPhone={contact.phone} onInitiate={openPreCall} />
                         )}
                         <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setSeqPickerOpen(true)}>
-                          <ListChecks className="h-3.5 w-3.5" /> Add to Sequence
+                          <ListChecks className="h-3.5 w-3.5" /> Add to Playbook
                         </Button>
                         {contact.linkedinUrl && (
                           <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer">
@@ -1532,7 +1532,7 @@ export default function ContactProfile() {
       })()}
 
       {/* ── Sequence picker modal ── */}
-      <SequencePickerModal
+      <PlaybookPickerModal
         open={seqPickerOpen}
         onClose={() => setSeqPickerOpen(false)}
         contactId={id}

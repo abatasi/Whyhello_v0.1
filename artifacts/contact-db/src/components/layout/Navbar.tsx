@@ -507,7 +507,7 @@ export function Navbar() {
     { label: "Directory", href: "/" },
     { label: "Lists", href: "/lists" },
     { label: "Message Center", href: "/messages" },
-    { label: "Sequences", href: "/sequences" },
+    { label: "Playbooks", href: "/playbooks" },
     { label: "HQ", href: "/hq" },
     { label: "Multi-threading", href: "/multithreading" },
   ];

@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface Sequence {
+interface Playbook {
   id: number;
   name: string;
   description: string | null;
@@ -30,9 +30,9 @@ interface Sequence {
   updatedAt: string;
 }
 
-interface SequenceStep {
+interface PlaybookStep {
   id: number;
-  sequenceId: number;
+  playbookId: number;
   position: number;
   delayDays: number;
   subject: string;
@@ -43,7 +43,7 @@ interface SequenceStep {
 
 interface Enrollment {
   id: number;
-  sequenceId: number;
+  playbookId: number;
   contactId: number;
   currentStep: number;
   status: string;
@@ -105,25 +105,25 @@ async function fetchJson<T>(url: string): Promise<T> {
   return r.json();
 }
 
-function useSequences() {
-  return useQuery<Sequence[]>({
-    queryKey: ["sequences"],
-    queryFn: () => fetchJson<Sequence[]>("/api/sequences"),
+function usePlaybooks() {
+  return useQuery<Playbook[]>({
+    queryKey: ["playbooks"],
+    queryFn: () => fetchJson<Playbook[]>("/api/playbooks"),
   });
 }
 
-function useSequenceSteps(seqId: number | null) {
-  return useQuery<SequenceStep[]>({
-    queryKey: ["sequence-steps", seqId],
-    queryFn: () => fetchJson<SequenceStep[]>(`/api/sequences/${seqId}/steps`),
+function usePlaybookSteps(seqId: number | null) {
+  return useQuery<PlaybookStep[]>({
+    queryKey: ["playbook-steps", seqId],
+    queryFn: () => fetchJson<PlaybookStep[]>(`/api/playbooks/${seqId}/steps`),
     enabled: seqId !== null,
   });
 }
 
 function useEnrollments(seqId: number | null) {
   return useQuery<Enrollment[]>({
-    queryKey: ["sequence-enrollments", seqId],
-    queryFn: () => apiFetch(`/api/sequences/${seqId}/enrollments`).then(r => r.json()),
+    queryKey: ["playbook-enrollments", seqId],
+    queryFn: () => apiFetch(`/api/playbooks/${seqId}/enrollments`).then(r => r.json()),
     enabled: seqId !== null,
     refetchInterval: 30000,
   });
@@ -283,7 +283,7 @@ function SendStepModal({
     if (!enrollment) return;
     setSending(true);
     try {
-      const res = await apiFetch(`/api/sequences/${enrollment.sequenceId}/enrollments/${enrollment.id}/send-step`, {
+      const res = await apiFetch(`/api/playbooks/${enrollment.playbookId}/enrollments/${enrollment.id}/send-step`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subject: subject || undefined, body: body || undefined }),
@@ -366,12 +366,12 @@ function StepCard({
   onMoveUp,
   onMoveDown,
 }: {
-  step: SequenceStep;
+  step: PlaybookStep;
   index: number;
   total: number;
   seqId: number;
   onDelete: (id: number) => void;
-  onSave: (id: number, data: Partial<SequenceStep>) => void;
+  onSave: (id: number, data: Partial<PlaybookStep>) => void;
   onMoveUp: (id: number) => void;
   onMoveDown: (id: number) => void;
 }) {
@@ -403,13 +403,13 @@ function StepCard({
   async function handleGenerate() {
     setGenerating(true);
     try {
-      const res = await apiFetch(`/api/sequences/${seqId}/steps/${step.id}/generate`, {
+      const res = await apiFetch(`/api/playbooks/${seqId}/steps/${step.id}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Generation failed");
-      const updated: SequenceStep = await res.json();
+      const updated: PlaybookStep = await res.json();
       setSubject(updated.subject);
       setBody(updated.body);
       toast({ title: "Generated", description: `Step ${index + 1} content ready` });
@@ -529,9 +529,9 @@ function StepCard({
   );
 }
 
-// ── Sequence Builder (detail page) ─────────────────────────────────────────
+// ── Playbook Builder (detail page) ─────────────────────────────────────────
 
-function SequenceBuilder({ seqId }: { seqId: number }) {
+function PlaybookBuilder({ seqId }: { seqId: number }) {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -541,39 +541,39 @@ function SequenceBuilder({ seqId }: { seqId: number }) {
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [sendTarget, setSendTarget] = useState<Enrollment | null>(null);
 
-  const { data: seqList } = useQuery<Sequence[]>({ queryKey: ["sequences"] });
+  const { data: seqList } = useQuery<Playbook[]>({ queryKey: ["playbooks"] });
   const seq = seqList?.find(s => s.id === seqId);
-  const { data: steps = [], isLoading: stepsLoading } = useSequenceSteps(seqId);
+  const { data: steps = [], isLoading: stepsLoading } = usePlaybookSteps(seqId);
   const { data: enrollments = [], isLoading: enrollLoading } = useEnrollments(seqId);
 
   const alreadyEnrolled = new Set(enrollments.map(e => e.contactId));
 
   // ── Step mutations ──
   async function addStep() {
-    const res = await apiFetch(`/api/sequences/${seqId}/steps`, {
+    const res = await apiFetch(`/api/playbooks/${seqId}/steps`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ delayDays: steps.length === 0 ? 0 : 3 }),
     });
     if (!res.ok) { toast({ title: "Failed to add step", variant: "destructive" }); return; }
-    qc.invalidateQueries({ queryKey: ["sequence-steps", seqId] });
-    qc.invalidateQueries({ queryKey: ["sequences"] });
+    qc.invalidateQueries({ queryKey: ["playbook-steps", seqId] });
+    qc.invalidateQueries({ queryKey: ["playbooks"] });
   }
 
   async function deleteStep(id: number) {
-    await apiFetch(`/api/sequences/${seqId}/steps/${id}`, { method: "DELETE" });
-    qc.invalidateQueries({ queryKey: ["sequence-steps", seqId] });
-    qc.invalidateQueries({ queryKey: ["sequences"] });
+    await apiFetch(`/api/playbooks/${seqId}/steps/${id}`, { method: "DELETE" });
+    qc.invalidateQueries({ queryKey: ["playbook-steps", seqId] });
+    qc.invalidateQueries({ queryKey: ["playbooks"] });
   }
 
-  async function saveStep(id: number, data: Partial<SequenceStep>) {
-    const res = await apiFetch(`/api/sequences/${seqId}/steps/${id}`, {
+  async function saveStep(id: number, data: Partial<PlaybookStep>) {
+    const res = await apiFetch(`/api/playbooks/${seqId}/steps/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!res.ok) { toast({ title: "Failed to save step", variant: "destructive" }); return; }
-    qc.invalidateQueries({ queryKey: ["sequence-steps", seqId] });
+    qc.invalidateQueries({ queryKey: ["playbook-steps", seqId] });
   }
 
   async function moveStep(id: number, direction: "up" | "down") {
@@ -583,12 +583,12 @@ function SequenceBuilder({ seqId }: { seqId: number }) {
     if (newIdx < 0 || newIdx >= steps.length) return;
     const reordered = [...steps];
     [reordered[currentIdx], reordered[newIdx]] = [reordered[newIdx], reordered[currentIdx]];
-    await apiFetch(`/api/sequences/${seqId}/steps/reorder`, {
+    await apiFetch(`/api/playbooks/${seqId}/steps/reorder`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stepIds: reordered.map(s => s.id) }),
     });
-    qc.invalidateQueries({ queryKey: ["sequence-steps", seqId] });
+    qc.invalidateQueries({ queryKey: ["playbook-steps", seqId] });
   }
 
   // ── Name editing ──
@@ -598,40 +598,40 @@ function SequenceBuilder({ seqId }: { seqId: number }) {
   }
   async function saveName() {
     if (!nameInput.trim()) { setEditingName(false); return; }
-    await apiFetch(`/api/sequences/${seqId}`, {
+    await apiFetch(`/api/playbooks/${seqId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: nameInput }),
     });
-    qc.invalidateQueries({ queryKey: ["sequences"] });
+    qc.invalidateQueries({ queryKey: ["playbooks"] });
     setEditingName(false);
   }
 
   // ── Enroll ──
   async function handleEnroll(contactIds: number[]) {
-    const res = await apiFetch(`/api/sequences/${seqId}/enrollments`, {
+    const res = await apiFetch(`/api/playbooks/${seqId}/enrollments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contactIds }),
     });
     if (!res.ok) { toast({ title: "Enrollment failed", variant: "destructive" }); return; }
-    qc.invalidateQueries({ queryKey: ["sequence-enrollments", seqId] });
-    qc.invalidateQueries({ queryKey: ["sequences"] });
+    qc.invalidateQueries({ queryKey: ["playbook-enrollments", seqId] });
+    qc.invalidateQueries({ queryKey: ["playbooks"] });
     toast({ title: `${contactIds.length} contact${contactIds.length > 1 ? "s" : ""} enrolled` });
   }
 
   async function handleEnrollmentAction(enrollmentId: number, action: "pause" | "resume" | "remove") {
     if (action === "remove") {
-      await apiFetch(`/api/sequences/${seqId}/enrollments/${enrollmentId}`, { method: "DELETE" });
+      await apiFetch(`/api/playbooks/${seqId}/enrollments/${enrollmentId}`, { method: "DELETE" });
     } else {
-      await apiFetch(`/api/sequences/${seqId}/enrollments/${enrollmentId}`, {
+      await apiFetch(`/api/playbooks/${seqId}/enrollments/${enrollmentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: action === "pause" ? "paused" : "active" }),
       });
     }
-    qc.invalidateQueries({ queryKey: ["sequence-enrollments", seqId] });
-    qc.invalidateQueries({ queryKey: ["sequences"] });
+    qc.invalidateQueries({ queryKey: ["playbook-enrollments", seqId] });
+    qc.invalidateQueries({ queryKey: ["playbooks"] });
   }
 
   const dueEnrollments = enrollments.filter(e => e.isDue && e.status === "active");
@@ -642,11 +642,11 @@ function SequenceBuilder({ seqId }: { seqId: number }) {
         {/* Header */}
         <div className="flex items-center gap-4 px-6 py-4 border-b border-border/60 flex-shrink-0">
           <button
-            onClick={() => navigate("/sequences")}
+            onClick={() => navigate("/playbooks")}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Sequences
+            Playbooks
           </button>
           <div className="h-4 w-px bg-border" />
           {editingName ? (
@@ -663,7 +663,7 @@ function SequenceBuilder({ seqId }: { seqId: number }) {
             </div>
           ) : (
             <button onClick={startEditName} className="flex items-center gap-2 group">
-              <h1 className="text-base font-semibold text-foreground">{seq?.name ?? "Sequence"}</h1>
+              <h1 className="text-base font-semibold text-foreground">{seq?.name ?? "Playbook"}</h1>
               <Pencil className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           )}
@@ -711,7 +711,7 @@ function SequenceBuilder({ seqId }: { seqId: number }) {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">No steps yet</p>
-                    <p className="text-xs text-muted-foreground mt-1">Add your first step to start building this sequence.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Add your first step to start building this playbook.</p>
                   </div>
                   <Button onClick={addStep} className="gap-1.5">
                     <Plus className="h-4 w-4" /> Add First Step
@@ -758,7 +758,7 @@ function SequenceBuilder({ seqId }: { seqId: number }) {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">No contacts enrolled</p>
-                    <p className="text-xs text-muted-foreground mt-1">Enroll contacts to start sending this sequence.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Enroll contacts to start sending this playbook.</p>
                   </div>
                   <Button size="sm" onClick={() => setEnrollOpen(true)} className="gap-1.5">
                     <Plus className="h-3.5 w-3.5" /> Enroll Contacts
@@ -889,17 +889,17 @@ function SequenceBuilder({ seqId }: { seqId: number }) {
         onClose={() => setSendTarget(null)}
         enrollment={sendTarget}
         onSent={() => {
-          qc.invalidateQueries({ queryKey: ["sequence-enrollments", seqId] });
-          qc.invalidateQueries({ queryKey: ["sequences"] });
+          qc.invalidateQueries({ queryKey: ["playbook-enrollments", seqId] });
+          qc.invalidateQueries({ queryKey: ["playbooks"] });
         }}
       />
     </Shell>
   );
 }
 
-// ── Sequences List ─────────────────────────────────────────────────────────
+// ── Playbooks List ─────────────────────────────────────────────────────────
 
-function SequencesList() {
+function PlaybooksList() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -907,7 +907,7 @@ function SequencesList() {
   const [newName, setNewName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: sequences = [], isLoading } = useSequences();
+  const { data: playbooks = [], isLoading } = usePlaybooks();
 
   useEffect(() => {
     if (creating) setTimeout(() => nameInputRef.current?.focus(), 50);
@@ -915,24 +915,24 @@ function SequencesList() {
 
   async function handleCreate() {
     if (!newName.trim()) return;
-    const res = await apiFetch("/api/sequences", {
+    const res = await apiFetch("/api/playbooks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newName.trim() }),
     });
-    if (!res.ok) { toast({ title: "Failed to create sequence", variant: "destructive" }); return; }
-    const seq: Sequence = await res.json();
-    qc.invalidateQueries({ queryKey: ["sequences"] });
+    if (!res.ok) { toast({ title: "Failed to create playbook", variant: "destructive" }); return; }
+    const seq: Playbook = await res.json();
+    qc.invalidateQueries({ queryKey: ["playbooks"] });
     setCreating(false);
     setNewName("");
-    navigate(`/sequences/${seq.id}`);
+    navigate(`/playbooks/${seq.id}`);
   }
 
   async function handleDelete(id: number, e: React.MouseEvent) {
     e.stopPropagation();
-    if (!confirm("Delete this sequence? This will remove all steps and enrollment data.")) return;
-    await apiFetch(`/api/sequences/${id}`, { method: "DELETE" });
-    qc.invalidateQueries({ queryKey: ["sequences"] });
+    if (!confirm("Delete this playbook? This will remove all steps and enrollment data.")) return;
+    await apiFetch(`/api/playbooks/${id}`, { method: "DELETE" });
+    qc.invalidateQueries({ queryKey: ["playbooks"] });
   }
 
   return (
@@ -941,15 +941,15 @@ function SequencesList() {
         {/* Page header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-foreground">Email Sequences</h1>
+            <h1 className="text-xl font-bold text-foreground">Email Playbooks</h1>
             <p className="text-sm text-muted-foreground mt-0.5">Build multi-step outreach campaigns and manage enrolled contacts.</p>
           </div>
           <Button onClick={() => setCreating(true)} className="gap-1.5">
-            <Plus className="h-4 w-4" /> New Sequence
+            <Plus className="h-4 w-4" /> New Playbook
           </Button>
         </div>
 
-        {/* New sequence inline form */}
+        {/* New playbook inline form */}
         {creating && (
           <div className="mb-4 rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center gap-3">
             <input
@@ -957,7 +957,7 @@ function SequencesList() {
               value={newName}
               onChange={e => setNewName(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") handleCreate(); if (e.key === "Escape") { setCreating(false); setNewName(""); } }}
-              placeholder="Sequence name…"
+              placeholder="Playbook name…"
               className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
             <Button size="sm" onClick={handleCreate} disabled={!newName.trim()}>Create</Button>
@@ -967,32 +967,32 @@ function SequencesList() {
           </div>
         )}
 
-        {/* Sequences grid */}
+        {/* Playbooks grid */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20 gap-2 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" /> Loading sequences…
+            <Loader2 className="h-5 w-5 animate-spin" /> Loading playbooks…
           </div>
-        ) : sequences.length === 0 && !creating ? (
+        ) : playbooks.length === 0 && !creating ? (
           <div className="flex flex-col items-center justify-center py-24 gap-5 text-center rounded-2xl border border-dashed border-border/60 bg-secondary/20">
             <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
               <ListChecks className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <p className="text-base font-semibold text-foreground">No sequences yet</p>
+              <p className="text-base font-semibold text-foreground">No playbooks yet</p>
               <p className="text-sm text-muted-foreground mt-1 max-w-xs leading-snug">
-                Create your first email sequence to start building multi-step outreach campaigns.
+                Create your first email playbook to start building multi-step outreach campaigns.
               </p>
             </div>
             <Button onClick={() => setCreating(true)} className="gap-1.5">
-              <Plus className="h-4 w-4" /> Create First Sequence
+              <Plus className="h-4 w-4" /> Create First Playbook
             </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sequences.map(seq => (
+            {playbooks.map(seq => (
               <button
                 key={seq.id}
-                onClick={() => navigate(`/sequences/${seq.id}`)}
+                onClick={() => navigate(`/playbooks/${seq.id}`)}
                 className="group rounded-xl border border-border/60 bg-card hover:border-primary/30 hover:shadow-md transition-all p-5 text-left"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
@@ -1037,12 +1037,12 @@ function SequencesList() {
 
 // ── Page router ────────────────────────────────────────────────────────────
 
-export default function Sequences() {
-  const [matchDetail, params] = useRoute("/sequences/:id");
+export default function Playbooks() {
+  const [matchDetail, params] = useRoute("/playbooks/:id");
   const seqId = matchDetail ? parseInt(params!.id) : null;
 
   if (seqId !== null) {
-    return <SequenceBuilder seqId={seqId} />;
+    return <PlaybookBuilder seqId={seqId} />;
   }
-  return <SequencesList />;
+  return <PlaybooksList />;
 }

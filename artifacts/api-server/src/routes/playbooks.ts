@@ -23,7 +23,7 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts.js";
 import crypto from "node:crypto";
 
-export const sequencesRouter: IRouter = Router();
+export const playbooksRouter: IRouter = Router();
 
 function getUserId(req: Request): string | null {
   const auth = getAuth(req);
@@ -62,7 +62,7 @@ function injectTracking(html: string, token: string, baseUrl: string): string {
 
 // ── Sequences list + create ────────────────────────────────────────────────
 
-sequencesRouter.get("/", async (req: Request, res: Response) => {
+playbooksRouter.get("/", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   try {
@@ -101,11 +101,11 @@ sequencesRouter.get("/", async (req: Request, res: Response) => {
     res.json(seqs);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to fetch sequences" });
+    res.status(500).json({ error: "Failed to fetch playbooks" });
   }
 });
 
-sequencesRouter.post("/", async (req: Request, res: Response) => {
+playbooksRouter.post("/", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   try {
@@ -119,13 +119,13 @@ sequencesRouter.post("/", async (req: Request, res: Response) => {
     res.status(201).json(seq);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to create sequence" });
+    res.status(500).json({ error: "Failed to create playbook" });
   }
 });
 
 // ── Single sequence ────────────────────────────────────────────────────────
 
-sequencesRouter.get("/:id", async (req: Request, res: Response) => {
+playbooksRouter.get("/:id", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const id = parseInt(String(req.params.id));
@@ -139,7 +139,7 @@ sequencesRouter.get("/:id", async (req: Request, res: Response) => {
   }
 });
 
-sequencesRouter.patch("/:id", async (req: Request, res: Response) => {
+playbooksRouter.patch("/:id", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const id = parseInt(String(req.params.id));
@@ -154,11 +154,11 @@ sequencesRouter.patch("/:id", async (req: Request, res: Response) => {
     if (!seq) { res.status(404).json({ error: "Sequence not found" }); return; }
     res.json(seq);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update sequence" });
+    res.status(500).json({ error: "Failed to update playbook" });
   }
 });
 
-sequencesRouter.delete("/:id", async (req: Request, res: Response) => {
+playbooksRouter.delete("/:id", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const id = parseInt(String(req.params.id));
@@ -166,13 +166,13 @@ sequencesRouter.delete("/:id", async (req: Request, res: Response) => {
     await db.delete(sequencesTable).where(and(eq(sequencesTable.id, id), eq(sequencesTable.userId, userId)));
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete sequence" });
+    res.status(500).json({ error: "Failed to delete playbook" });
   }
 });
 
 // ── Steps ──────────────────────────────────────────────────────────────────
 
-sequencesRouter.get("/:id/steps", async (req: Request, res: Response) => {
+playbooksRouter.get("/:id/steps", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -189,7 +189,7 @@ sequencesRouter.get("/:id/steps", async (req: Request, res: Response) => {
   }
 });
 
-sequencesRouter.post("/:id/steps", async (req: Request, res: Response) => {
+playbooksRouter.post("/:id/steps", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -219,7 +219,7 @@ sequencesRouter.post("/:id/steps", async (req: Request, res: Response) => {
   }
 });
 
-sequencesRouter.patch("/:id/steps/:stepId", async (req: Request, res: Response) => {
+playbooksRouter.patch("/:id/steps/:stepId", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -248,7 +248,7 @@ sequencesRouter.patch("/:id/steps/:stepId", async (req: Request, res: Response) 
   }
 });
 
-sequencesRouter.delete("/:id/steps/:stepId", async (req: Request, res: Response) => {
+playbooksRouter.delete("/:id/steps/:stepId", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -276,7 +276,7 @@ sequencesRouter.delete("/:id/steps/:stepId", async (req: Request, res: Response)
   }
 });
 
-sequencesRouter.post("/:id/steps/reorder", async (req: Request, res: Response) => {
+playbooksRouter.post("/:id/steps/reorder", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -302,7 +302,7 @@ sequencesRouter.post("/:id/steps/reorder", async (req: Request, res: Response) =
 
 // ── Step generation ────────────────────────────────────────────────────────
 
-sequencesRouter.post("/:id/steps/:stepId/generate", async (req: Request, res: Response) => {
+playbooksRouter.post("/:id/steps/:stepId/generate", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -421,7 +421,7 @@ Rules:
 
 // ── Enrollments ────────────────────────────────────────────────────────────
 
-sequencesRouter.get("/:id/enrollments", async (req: Request, res: Response) => {
+playbooksRouter.get("/:id/enrollments", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -509,7 +509,7 @@ sequencesRouter.get("/:id/enrollments", async (req: Request, res: Response) => {
   }
 });
 
-sequencesRouter.post("/:id/enrollments", async (req: Request, res: Response) => {
+playbooksRouter.post("/:id/enrollments", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -534,7 +534,7 @@ sequencesRouter.post("/:id/enrollments", async (req: Request, res: Response) => 
   }
 });
 
-sequencesRouter.patch("/:id/enrollments/:enrollmentId", async (req: Request, res: Response) => {
+playbooksRouter.patch("/:id/enrollments/:enrollmentId", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -557,7 +557,7 @@ sequencesRouter.patch("/:id/enrollments/:enrollmentId", async (req: Request, res
   }
 });
 
-sequencesRouter.delete("/:id/enrollments/:enrollmentId", async (req: Request, res: Response) => {
+playbooksRouter.delete("/:id/enrollments/:enrollmentId", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
@@ -576,7 +576,7 @@ sequencesRouter.delete("/:id/enrollments/:enrollmentId", async (req: Request, re
 
 // ── Send step ──────────────────────────────────────────────────────────────
 
-sequencesRouter.post("/:id/enrollments/:enrollmentId/send-step", async (req: Request, res: Response) => {
+playbooksRouter.post("/:id/enrollments/:enrollmentId/send-step", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
