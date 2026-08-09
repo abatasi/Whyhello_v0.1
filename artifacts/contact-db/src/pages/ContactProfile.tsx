@@ -889,7 +889,7 @@ export function ContactProfileView({ contactId, embedded }: { contactId: number;
 
   if (isLoading) {
     return (
-      <div className="p-8 animate-pulse space-y-6 max-w-7xl mx-auto">
+      <div className={cn("p-8 animate-pulse space-y-6 max-w-7xl mx-auto", embedded && "h-full overflow-hidden")}>
         <div className="h-6 w-24 bg-muted rounded" />
         <div className="grid grid-cols-[30%_1fr_30%] gap-5">
           <div className="space-y-3">
@@ -909,7 +909,7 @@ export function ContactProfileView({ contactId, embedded }: { contactId: number;
 
   if (isError || !contact) {
     return (
-      <div className="p-8 text-center mt-20">
+      <div className={cn("p-8 text-center mt-20", embedded && "h-full flex flex-col items-center justify-center mt-0")}>
         <h2 className="text-2xl font-bold mb-4">Contact not found</h2>
         <Link href="/"><Button>Back to Search</Button></Link>
       </div>
