@@ -582,33 +582,36 @@ export default function MultiThreading() {
         <div className="w-80 flex-shrink-0 border-r border-border/60 bg-card flex flex-col overflow-hidden">
 
           {/* Panel header */}
-          <div className="px-4 pt-4 pb-3 border-b border-border/60 flex-shrink-0 flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                <GitBranch className="h-3.5 w-3.5 text-primary" />
+          <div className="px-4 pt-4 pb-3 border-b border-border/60 flex-shrink-0 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                <GitBranch className="h-5 w-5 text-primary" />
               </div>
-              <div>
-                <h1 className="text-sm font-bold text-foreground leading-tight">Multi-threading</h1>
-                <p className="text-[10px] text-muted-foreground">Target market · Buying center</p>
-              </div>
+              <h1 className="text-base font-bold text-foreground leading-tight">Multi-threading</h1>
             </div>
 
             {/* Target market selector */}
             {dnaLoaded && (
-              <TargetMarketSelector
-                targetMarkets={targetMarkets}
-                selectedId={selectedTmId}
-                onSelect={id => setSelectedTmId(id)}
-              />
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Target Market</p>
+                <TargetMarketSelector
+                  targetMarkets={targetMarkets}
+                  selectedId={selectedTmId}
+                  onSelect={id => setSelectedTmId(id)}
+                />
+              </div>
             )}
 
             {/* Buying center selector */}
             {dnaLoaded && buyingCenters.length > 0 && (
-              <BuyingCenterSelector
-                buyingCenters={buyingCenters}
-                selectedId={selectedBcId}
-                onSelect={id => { setSelectedBcId(id); setActiveTabSeat(null); setOverrides({}); }}
-              />
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Buying Center</p>
+                <BuyingCenterSelector
+                  buyingCenters={buyingCenters}
+                  selectedId={selectedBcId}
+                  onSelect={id => { setSelectedBcId(id); setActiveTabSeat(null); setOverrides({}); }}
+                />
+              </div>
             )}
 
           </div>
