@@ -107,6 +107,8 @@ const CATEGORIES: Record<string, {
   },
 };
 
+const CATEGORIES_ORDER = ["starting-point", "touchpoint", "flow-control", "outcome"] as const;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type IconType = React.ComponentType<any>;
 
@@ -222,6 +224,28 @@ function makeEdge(source: string, target: string, label?: string, sourceHandle?:
   };
 }
 
+function makePlaceholder(position: { x: number; y: number }): Node<PlaybookNodeData> {
+  return {
+    id: uid(),
+    type: "placeholder",
+    position,
+    draggable: false,
+    data: { blockType: "placeholder" },
+  };
+}
+
+/** Appends a placeholder node at the end of any canvas (after the terminal node). */
+function withPlaceholder(state: CanvasState): CanvasState {
+  const hasOutgoing = new Set(state.edges.map(e => e.source));
+  const terminal = state.nodes.find(n => !hasOutgoing.has(n.id));
+  if (!terminal) return state;
+  const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 });
+  return {
+    nodes: [...state.nodes, ph],
+    edges: [...state.edges, makeEdge(terminal.id, ph.id)],
+  };
+}
+
 function delayLabel(d: PlaybookNodeData): string {
   if (!d.delayAmount) return "Time Delay";
   return `Wait ${d.delayAmount} ${d.delayUnit ?? "days"}`;
@@ -249,9 +273,20 @@ function formatRelative(iso: string | null): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-// ── Default example canvas ────────────────────────────────────────────────────
+// ── Starter canvas (new playbook) ─────────────────────────────────────────────
 
-function buildDefaultCanvas(): CanvasState {
+function buildStarterCanvas(): CanvasState {
+  const n1 = makeNode("prospect-added", { x: 360, y: 80 });
+  const ph = makePlaceholder({ x: 360, y: 220 });
+  return {
+    nodes: [n1, ph],
+    edges: [makeEdge(n1.id, ph.id)],
+  };
+}
+
+// ── Strategic Account canned canvas ──────────────────────────────────────────
+
+function buildStrategicAccount(): CanvasState {
   const n1 = makeNode("prospect-added", { x: 360, y: 20 });
   const n2 = makeNode("send-email", { x: 360, y: 160 }, { emailType: "Initial Email", subject: "Quick thought on your team" });
   const n3 = makeNode("time-delay", { x: 360, y: 300 }, { delayAmount: 2, delayUnit: "business days", isBusinessDays: true });
@@ -262,7 +297,6 @@ function buildDefaultCanvas(): CanvasState {
   const n8 = makeNode("time-delay", { x: 620, y: 760 }, { delayAmount: 3, delayUnit: "business days", isBusinessDays: true });
   const n9 = makeNode("send-linkedin", { x: 620, y: 900 }, { linkedinAction: "Send Message" });
   const n10 = makeNode("sequence-complete", { x: 620, y: 1040 });
-
   const nodes = [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10];
   const edges = [
     makeEdge(n1.id, n2.id),
@@ -338,9 +372,9 @@ function buildPhoneForward(): CanvasState {
 }
 
 const CANNED_PLAYBOOKS: CannedPlaybook[] = [
-  { id: "standard", name: "Standard", description: "A balanced mix of emails and a call over three weeks. The go-to starting point.", touchpoints: 4, duration: "~3 weeks", intensity: "Balanced", build: buildStandard },
-  { id: "email-only", name: "Email-Only", description: "Four emails across a month. Ideal for high-volume prospecting.", touchpoints: 4, duration: "~4 weeks", intensity: "Light", build: buildEmailOnly },
-  { id: "phone-forward", name: "Phone-Forward", description: "Opens and closes with calls, supported by email. For reps who love the phone.", touchpoints: 5, duration: "~2.5 weeks", intensity: "Persistent", build: buildPhoneForward },
+  { id: "standard", name: "Standard", description: "A balanced mix of emails and a call over three weeks. The go-to starting point.", touchpoints: 4, duration: "~3 weeks", intensity: "Balanced", build: () => withPlaceholder(buildStandard()) },
+  { id: "email-only", name: "Email-Only", description: "Four emails across a month. Ideal for high-volume prospecting.", touchpoints: 4, duration: "~4 weeks", intensity: "Light", build: () => withPlaceholder(buildEmailOnly()) },
+  { id: "phone-forward", name: "Phone-Forward", description: "Opens and closes with calls, supported by email. For reps who love the phone.", touchpoints: 5, duration: "~2.5 weeks", intensity: "Persistent", build: () => withPlaceholder(buildPhoneForward()) },
   {
     id: "quick-burst", name: "Quick Burst", description: "High intensity over 5 business days. For time-sensitive opportunities.", touchpoints: 4, duration: "5 days", intensity: "Persistent",
     build: () => {
@@ -354,8 +388,8 @@ const CANNED_PLAYBOOKS: CannedPlaybook[] = [
       const n8 = makeNode("send-email", { x: 360, y: 1000 }, { emailType: "Breakup Email" });
       const n9 = makeNode("sequence-complete", { x: 360, y: 1140 });
       const nodes = [n1, n2, n3, n4, n5, n6, n7, n8, n9];
-      const edges = [n1, n2, n3, n4, n5, n6, n7, n8].map((n, i) => makeEdge(n.id, nodes[i + 1].id));
-      return { nodes, edges };
+      const edges = nodes.slice(0, -1).map((n, i) => makeEdge(n.id, nodes[i + 1].id));
+      return withPlaceholder({ nodes, edges });
     },
   },
   {
@@ -371,8 +405,8 @@ const CANNED_PLAYBOOKS: CannedPlaybook[] = [
       const n8 = makeNode("send-email", { x: 360, y: 1000 }, { emailType: "Breakup Email" });
       const n9 = makeNode("sequence-complete", { x: 360, y: 1140 });
       const nodes = [n1, n2, n3, n4, n5, n6, n7, n8, n9];
-      const edges = [n1, n2, n3, n4, n5, n6, n7, n8].map((n, i) => makeEdge(n.id, nodes[i + 1].id));
-      return { nodes, edges };
+      const edges = nodes.slice(0, -1).map((n, i) => makeEdge(n.id, nodes[i + 1].id));
+      return withPlaceholder({ nodes, edges });
     },
   },
   {
@@ -396,7 +430,7 @@ const CANNED_PLAYBOOKS: CannedPlaybook[] = [
       }
       nodes.push(makeNode("sequence-complete", { x: 360, y }));
       const edges = nodes.slice(0, -1).map((n, i) => makeEdge(n.id, nodes[i + 1].id));
-      return { nodes, edges };
+      return withPlaceholder({ nodes, edges });
     },
   },
   {
@@ -411,7 +445,7 @@ const CANNED_PLAYBOOKS: CannedPlaybook[] = [
       const n7 = makeNode("sequence-complete", { x: 360, y: 860 });
       const nodes = [n1, n2, n3, n4, n5, n6, n7];
       const edges = nodes.slice(0, -1).map((n, i) => makeEdge(n.id, nodes[i + 1].id));
-      return { nodes, edges };
+      return withPlaceholder({ nodes, edges });
     },
   },
   {
@@ -428,12 +462,12 @@ const CANNED_PLAYBOOKS: CannedPlaybook[] = [
       const n9 = makeNode("sequence-complete", { x: 360, y: 1140 });
       const nodes = [n1, n2, n3, n4, n5, n6, n7, n8, n9];
       const edges = nodes.slice(0, -1).map((n, i) => makeEdge(n.id, nodes[i + 1].id));
-      return { nodes, edges };
+      return withPlaceholder({ nodes, edges });
     },
   },
   {
     id: "strategic-account", name: "Strategic Account", description: "Multi-channel with split paths for different response types. Built for complex deals.", touchpoints: 6, duration: "~5 weeks", intensity: "Balanced",
-    build: () => buildDefaultCanvas(),
+    build: () => buildStrategicAccount(),
   },
   {
     id: "compressed", name: "Compressed Campaign", description: "Full sequence in under two weeks. For pipeline that needs to move fast.", touchpoints: 5, duration: "~10 days", intensity: "Persistent",
@@ -459,10 +493,159 @@ const CANNED_PLAYBOOKS: CannedPlaybook[] = [
       }
       nodes.push(makeNode("sequence-complete", { x: 360, y }));
       const edges = nodes.slice(0, -1).map((n, i) => makeEdge(n.id, nodes[i + 1].id));
-      return { nodes, edges };
+      return withPlaceholder({ nodes, edges });
     },
   },
 ];
+
+// ── Placeholder "Add a step" node ─────────────────────────────────────────────
+
+function PlaceholderNode({ data }: NodeProps) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filteredBlocks = useMemo(
+    () => BLOCKS.filter(b => b.category !== "starting-point" && (!search || b.label.toLowerCase().includes(search.toLowerCase()))),
+    [search],
+  );
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!open) return;
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as unknown as globalThis.Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const blockType = e.dataTransfer.getData("application/playbook-block");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (blockType && typeof (data as any).onAddBlock === "function") (data as any).onAddBlock(blockType);
+  }
+
+  function selectBlock(blockType: string) {
+    setOpen(false);
+    setSearch("");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof (data as any).onAddBlock === "function") (data as any).onAddBlock(blockType);
+  }
+
+  return (
+    <div ref={ref} style={{ position: "relative", minWidth: 220 }}>
+      {/* Incoming handle */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="!w-3 !h-3 !border-2 !border-white !bg-slate-300 !rounded-full"
+        style={{ top: -6 }}
+      />
+
+      {/* Card */}
+      <div
+        className={cn(
+          "flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-dashed cursor-pointer select-none transition-all",
+          dragOver
+            ? "border-primary bg-primary/5 shadow-md"
+            : open
+              ? "border-primary/60 bg-primary/3 shadow-sm"
+              : "border-slate-300 bg-white/80 hover:border-primary/50 hover:bg-primary/5",
+        )}
+        onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOver(true); }}
+        onDragLeave={e => { e.stopPropagation(); setDragOver(false); }}
+        onDrop={handleDrop}
+        onClick={() => setOpen(v => !v)}
+      >
+        <div className={cn(
+          "h-7 w-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors flex-shrink-0",
+          dragOver || open ? "border-primary bg-primary/10" : "border-dashed border-slate-300 bg-slate-50",
+        )}>
+          <Plus className={cn("h-3.5 w-3.5 transition-colors", dragOver || open ? "text-primary" : "text-slate-400")} />
+        </div>
+        <div>
+          <p className={cn("text-xs font-semibold transition-colors", dragOver ? "text-primary" : open ? "text-primary/80" : "text-slate-400")}>
+            {dragOver ? "Drop to add step" : "Add a step"}
+          </p>
+          {!dragOver && (
+            <p className="text-[10px] text-slate-300 mt-0.5">Click or drag a block here</p>
+          )}
+        </div>
+      </div>
+
+      {/* Block picker dropdown */}
+      {open && (
+        <div
+          className="absolute top-full left-0 mt-1.5 w-64 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden nodrag nopan nowheel"
+          style={{ pointerEvents: "all" }}
+        >
+          {/* Search */}
+          <div className="px-3 py-2 border-b border-border/40">
+            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/30 px-2 py-1.5">
+              <Search className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+              <input
+                autoFocus
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search blocks…"
+                className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/40"
+                onClick={e => e.stopPropagation()}
+              />
+              {search && (
+                <button onClick={e => { e.stopPropagation(); setSearch(""); }}>
+                  <X className="h-3 w-3 text-muted-foreground/50" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Block list */}
+          <div className="max-h-72 overflow-y-auto">
+            {CATEGORIES_ORDER.map(catKey => {
+              if (catKey === "starting-point") return null;
+              const catBlocks = filteredBlocks.filter(b => b.category === catKey);
+              if (!catBlocks.length) return null;
+              const cat = CATEGORIES[catKey];
+              return (
+                <div key={catKey}>
+                  <div className="px-3 py-1.5 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider bg-secondary/20 border-b border-border/30">
+                    {cat.label}
+                  </div>
+                  {catBlocks.map(b => {
+                    const BlockIcon = b.Icon as React.ComponentType<{ className?: string }>;
+                    return (
+                      <button
+                        key={b.id}
+                        onClick={e => { e.stopPropagation(); selectBlock(b.id); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-secondary/40 text-left transition-colors border-b border-border/20 last:border-0"
+                      >
+                        <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center flex-shrink-0 border", cat.iconBg, cat.border)}>
+                          <BlockIcon className={cn("h-3 w-3", cat.iconText)} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">{b.label}</p>
+                          <p className="text-[10px] text-muted-foreground/60">{b.description.substring(0, 40)}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {filteredBlocks.length === 0 && (
+              <p className="text-xs text-muted-foreground/50 text-center py-6">No blocks match "{search}"</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Custom Node ───────────────────────────────────────────────────────────────
 
@@ -1381,7 +1564,7 @@ function ZoomControls({ showMinimap, onToggleMinimap }: { showMinimap: boolean; 
 
 // ── Node + edge type maps ─────────────────────────────────────────────────────
 
-const nodeTypes = { playbook: PlaybookNodeComponent };
+const nodeTypes = { playbook: PlaybookNodeComponent, placeholder: PlaceholderNode };
 const edgeTypes = { playbook: PlaybookEdge };
 
 // ── Canvas inner (must be inside ReactFlowProvider) ───────────────────────────
@@ -1399,26 +1582,35 @@ function CanvasInner({
   const { screenToFlowPosition, fitView } = useReactFlow();
   const { toast } = useToast();
 
-  const storageKey = `playbook_canvas_v2_${playbookId}`;
+  const storageKey = `playbook_canvas_v3_${playbookId}`;
 
-  // Load initial state — v2 key discards any pre-fix cached data
+  // Load initial state — v3 key; sanitize & migrate older cached canvases
   const initialState = useMemo<CanvasState>(() => {
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
         const parsed = JSON.parse(raw) as CanvasState;
-        // Sanitize edges: strip sourceHandle when null so React Flow doesn't warn
+        // Sanitize edges: strip null sourceHandle so React Flow doesn't warn
         parsed.edges = (parsed.edges ?? []).map(e => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { sourceHandle, ...rest } = e as any;
-          return (sourceHandle !== null && sourceHandle !== undefined)
-            ? { ...rest, sourceHandle }
-            : rest;
+          return (sourceHandle !== null && sourceHandle !== undefined) ? { ...rest, sourceHandle } : rest;
         });
+        // Migrate: ensure a placeholder exists at the end
+        const hasPlaceholder = parsed.nodes.some(n => (n.data as PlaybookNodeData).blockType === "placeholder");
+        if (!hasPlaceholder) {
+          const hasOutgoing = new Set(parsed.edges.map(e => e.source));
+          const terminal = parsed.nodes.find(n => !hasOutgoing.has(n.id));
+          if (terminal) {
+            const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 });
+            parsed.nodes.push(ph);
+            parsed.edges.push(makeEdge(terminal.id, ph.id));
+          }
+        }
         return parsed;
       }
     } catch {}
-    return buildDefaultCanvas();
+    return buildStarterCanvas();
   }, [storageKey]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<PlaybookNodeData>>(initialState.nodes);
@@ -1481,7 +1673,11 @@ function CanvasInner({
   const [insertMenu, setInsertMenu] = useState<{ edgeId: string; x: number; y: number } | null>(null);
   const [insertSearch, setInsertSearch] = useState("");
 
-  const isEmpty = nodes.length === 0;
+  // Stable refs so callbacks always read latest state without stale closures
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  useEffect(() => { edgesRef.current = edges; }, [edges]);
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -1624,6 +1820,26 @@ function CanvasInner({
     setInsertMenu(null);
   }
 
+  // Add block at the end of the chain (called by PlaceholderNode)
+  const addBlockAtEnd = useCallback((blockType: string) => {
+    const currNodes = nodesRef.current;
+    const currEdges = edgesRef.current;
+    const ph = currNodes.find(n => (n.data as PlaybookNodeData).blockType === "placeholder");
+    if (!ph) return;
+    const newNode = makeNode(blockType, ph.position);
+    const newPh = makePlaceholder({ x: ph.position.x, y: ph.position.y + 140 });
+    const inEdge = currEdges.find(e => e.target === ph.id);
+    const newEdges: Edge[] = [
+      ...currEdges.filter(e => e.target !== ph.id && e.source !== ph.id),
+      ...(inEdge ? [{ ...makeEdge(inEdge.source, newNode.id, undefined, inEdge.sourceHandle as string | undefined), type: "playbook" as const }] : []),
+      { ...makeEdge(newNode.id, newPh.id), type: "playbook" as const },
+    ];
+    const newNodes = [...currNodes.filter(n => n.id !== ph.id), newNode, newPh];
+    setNodes(newNodes);
+    setEdges(newEdges);
+    commitToHistory(newNodes, newEdges);
+  }, [setNodes, setEdges]);
+
   // Canned playbook
   function applyCanned(canned: CannedPlaybook) {
     const state = canned.build();
@@ -1655,7 +1871,16 @@ function CanvasInner({
     return false;
   }, [nodes, edges]);
 
-  // Wire edge data.onInsert
+  // Wire callbacks into node data (placeholder gets onAddBlock; edges get onInsert)
+  const nodesWithCallbacks = useMemo(() =>
+    nodes.map(n =>
+      (n.data as PlaybookNodeData).blockType === "placeholder"
+        ? { ...n, data: { ...n.data, onAddBlock: addBlockAtEnd } }
+        : n
+    ),
+    [nodes, addBlockAtEnd]
+  );
+
   const edgesWithInsert = useMemo(() =>
     edges.map(e => ({ ...e, type: "playbook", data: { ...((e.data as object) ?? {}), onInsert: onInsertOnEdge } })),
     [edges, onInsertOnEdge]
@@ -1703,20 +1928,8 @@ function CanvasInner({
 
         {/* Canvas */}
         <div className="flex-1 relative overflow-hidden" onDragOver={onDragOver} onDrop={onDrop}>
-          {isEmpty && (
-            <EmptyCanvas
-              onScratch={() => {
-                const n = makeNode("prospect-added", { x: 300, y: 200 });
-                setNodes([n]);
-                setEdges([]);
-                commitToHistory([n], []);
-              }}
-              onTemplate={() => setShowCanned(true)}
-            />
-          )}
-
           <ReactFlow
-            nodes={nodes}
+            nodes={nodesWithCallbacks}
             edges={edgesWithInsert}
             onNodesChange={onNodesChangeWithHistory}
             onEdgesChange={onEdgesChangeWithHistory}
