@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
   Mail, Settings, ShieldCheck, Flame, ChevronDown, MoreHorizontal,
-  Factory, Briefcase, Upload,
+  Factory, Briefcase, Upload, Gauge,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUser, useClerk } from "@clerk/react";
@@ -440,6 +440,34 @@ function MoreDropdown({ wartime }: { wartime: boolean }) {
   );
 }
 
+// ── HQ badge ─────────────────────────────────────────────────────────────────
+
+function HQBadge({ wartime }: { wartime: boolean }) {
+  const [location] = useLocation();
+  const isActive = location.startsWith("/hq");
+
+  return (
+    <Link href="/hq">
+      <span
+        title="HQ — calibrate messaging & scoring"
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all select-none cursor-pointer",
+          wartime
+            ? isActive
+              ? "bg-[#7C3E2A] text-[#F4E2D8] border border-[#7C3E2A]"
+              : "bg-[#E0BBA8] text-[#7C3E2A] border border-[#DDB99E] hover:bg-[#D4A898] hover:text-[#5C2E22]"
+            : isActive
+            ? "bg-foreground text-background border border-foreground"
+            : "bg-secondary text-foreground border border-border hover:bg-secondary/80",
+        )}
+      >
+        <Gauge className="h-3.5 w-3.5 flex-shrink-0" />
+        HQ
+      </span>
+    </Link>
+  );
+}
+
 // ── Mode toggle ──────────────────────────────────────────────────────────────
 
 function ModeToggle({ wartime }: { wartime: boolean }) {
@@ -502,13 +530,12 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [notifOpen]);
 
-  // Industries, Roles, Import moved into the "More" dropdown
+  // HQ lives on the right side as a badge; Industries, Roles, Import in "More"
   const navItems = [
     { label: "Directory", href: "/" },
     { label: "Lists", href: "/lists" },
     { label: "Message Center", href: "/messages" },
     { label: "Playbooks", href: "/playbooks" },
-    { label: "HQ", href: "/hq" },
     { label: "Multi-threading", href: "/multithreading" },
   ];
 
@@ -567,6 +594,8 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <HQBadge wartime={wartime} />
+
           <ModeToggle wartime={wartime} />
 
           <div className={cn("h-4 w-px mx-1", wartime ? "bg-[#E8C4B0]/60" : "bg-border")} />
