@@ -560,7 +560,7 @@ function LogoMenu({ wartime }: { wartime: boolean }) {
       <button
         onClick={() => { setOpen((o) => !o); setNotifExpanded(false); }}
         className={cn(
-          "h-full pl-6 xl:pl-8 pr-4 flex items-center",
+          "h-full pl-6 xl:pl-8 pr-4 flex items-center cursor-pointer",
           wartime ? "bg-transparent" : "bg-background",
         )}
         aria-label="Open app menu"
