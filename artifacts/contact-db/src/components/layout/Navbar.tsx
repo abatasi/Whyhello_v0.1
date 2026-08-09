@@ -532,7 +532,7 @@ export function Navbar() {
               fully rounded right corners, always bg-background so the logo
               stays in its natural peacetime colors regardless of mode. */}
           <Link href="/" className="self-stretch flex items-center -ml-6 xl:-ml-8">
-            <div className="h-full pl-6 xl:pl-8 pr-8 bg-background rounded-r-full flex items-center">
+            <div className={cn("h-full pl-6 xl:pl-8 pr-8 rounded-r-full flex items-center", wartime ? "bg-transparent" : "bg-background")}>
               <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto" />
             </div>
           </Link>
