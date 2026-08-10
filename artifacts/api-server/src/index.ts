@@ -31,11 +31,15 @@ app.listen(port, () => {
     process.env.TWILIO_PHONE_NUMBER
   );
   if (twilioConfigured) {
-    console.log("\n📞 Twilio Voice — Webhook URLs to configure in Twilio Console:");
-    console.log("   TwiML App Voice URL:  <your-domain>/api/calls/outbound-twiml  (POST)");
-    console.log("   Status Callback:      set per-call automatically");
-    console.log("   Recording Callback:   set per-call automatically");
-    console.log("   TwiML App SID:", process.env.TWILIO_TWIML_APP_SID);
+    const base = process.env.TWILIO_WEBHOOK_BASE_URL?.replace(/\/$/, "")
+      ?? `https://${process.env.REPLIT_DEV_DOMAIN ?? "<your-domain>"}`;
+    console.log("\n📞 Twilio Voice — configure these in the Twilio Console:");
+    console.log(`   TwiML App Voice URL:  ${base}/api/calls/outbound-twiml  (HTTP POST)`);
+    console.log(`   TwiML App SID: ${process.env.TWILIO_TWIML_APP_SID}`);
+    if (!process.env.TWILIO_WEBHOOK_BASE_URL) {
+      console.log("   ⚠️  Set TWILIO_WEBHOOK_BASE_URL to your public domain for reliable webhook signature validation.");
+      console.log(`      e.g. TWILIO_WEBHOOK_BASE_URL=https://${process.env.REPLIT_DEV_DOMAIN ?? "<your-domain>"}`);
+    }
     console.log("");
   } else {
     console.log("\n📞 Twilio Voice: Not configured. Add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,");

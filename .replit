@@ -27,3 +27,8 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.development]
+TWILIO_WEBHOOK_BASE_URL = "https://f4a4155c-2926-4faf-b4db-4fa352c8f96c-00-1a789vjagxie3.spock.replit.dev"

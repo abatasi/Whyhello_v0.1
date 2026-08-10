@@ -16,9 +16,31 @@ function getUserId(req: Request): string | null {
   return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
+/**
+ * Returns the public origin (scheme + host) to use when constructing webhook URLs.
+ *
+ * Priority:
+ *   1. TWILIO_WEBHOOK_BASE_URL env var — set this to your deployed domain, e.g.
+ *      "https://my-app.repl.co".  Eliminates all proxy-header uncertainty and is
+ *      required for Twilio's HMAC signature validation to succeed reliably.
+ *   2. x-forwarded-proto / x-forwarded-host headers set by the Replit proxy.
+ *   3. Bare host header (dev fallback — not accessible to Twilio).
+ *
+ * The host is normalised: port :443 is stripped for https, :80 for http, so that
+ * the reconstructed URL matches the URL Twilio signs.
+ */
 function getOrigin(req: Request): string {
-  const proto = req.headers["x-forwarded-proto"] || "https";
-  const host = req.headers["x-forwarded-host"] || req.headers["host"] || "localhost";
+  const envBase = process.env.TWILIO_WEBHOOK_BASE_URL?.replace(/\/$/, "");
+  if (envBase) return envBase;
+
+  const proto = (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0].trim() || "https";
+  const rawHost = (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0].trim()
+    || (req.headers["host"] as string | undefined)
+    || "localhost";
+
+  // Strip default ports — Twilio signs URLs without :443 or :80
+  const host = rawHost.replace(/:443$/, "").replace(/:80$/, "");
+
   return `${proto}://${host}`;
 }
 
@@ -73,10 +95,9 @@ function requireTwilioSignature(req: Request, res: Response): boolean {
     return false;
   }
 
-  const proto = (req.headers["x-forwarded-proto"] as string) || "https";
-  const host = (req.headers["x-forwarded-host"] as string) || (req.headers["host"] as string) || "";
-  // Reconstruct the exact URL Twilio signed, including any query string
-  const fullUrl = `${proto}://${host}${req.originalUrl}`;
+  // Reconstruct the exact URL Twilio signed, including any query string.
+  // Use getOrigin() so the base always matches however webhook URLs were generated.
+  const fullUrl = `${getOrigin(req)}${req.originalUrl}`;
 
   const isValid = twilio.validateRequest(authToken, signature, fullUrl, req.body ?? {});
   if (!isValid) {
