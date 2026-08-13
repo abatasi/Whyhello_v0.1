@@ -60,9 +60,19 @@ async function buildAll() {
     bundle: true,
     format: "cjs",
     outfile: path.resolve(distDir, "index.cjs"),
+    // Inject a file:// URL helper at the top of the CJS bundle.
+    // esbuild's `define` cannot replace import.meta.url with an arbitrary
+    // expression, so we inject a one-liner that creates a proper file URL
+    // from __filename, then point import.meta.url at that identifier.
+    // This fixes any dependency that calls fileURLToPath(import.meta.url) —
+    // the original "__filename" replacement gave fileURLToPath a bare path,
+    // causing "TypeError: Invalid URL" at runtime.
+    banner: {
+      js: 'const __importMetaUrl=require("url").pathToFileURL(__filename).href;',
+    },
     define: {
       "process.env.NODE_ENV": '"production"',
-      "import.meta.url": "__filename",
+      "import.meta.url": "__importMetaUrl",
     },
     minify: true,
     external: externals,
