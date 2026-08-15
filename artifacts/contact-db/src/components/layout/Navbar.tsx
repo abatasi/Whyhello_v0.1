@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
   Settings, ShieldCheck, Flame, ChevronDown, Clock,
-  Factory, Briefcase, Upload, Gauge, List,
+  Factory, Briefcase, Upload, Gauge, List, Milestone,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUser, useClerk } from "@clerk/react";
@@ -374,19 +374,29 @@ function NotificationsDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ── More dropdown (Lists, Industries, Roles, Import) ─────────────────────────
+// ── More dropdown (Lists, Industries, Roles, Import, Roadmap*) ───────────────
 
-const moreItems = [
+const MASTER_EMAIL = "abatasi@gmail.com";
+
+const baseMoreItems = [
   { label: "Lists", href: "/lists", icon: List },
   { label: "Industries", href: "/industries", icon: Factory },
   { label: "Roles", href: "/roles", icon: Briefcase },
   { label: "Import", href: "/import", icon: Upload },
 ];
 
+const masterMoreItems = [
+  { label: "Roadmap", href: "/roadmap", icon: Milestone },
+];
+
 function MoreDropdown({ wartime }: { wartime: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [location] = useLocation();
+  const { user } = useUser();
+
+  const isMaster = user?.primaryEmailAddress?.emailAddress === MASTER_EMAIL;
+  const moreItems = isMaster ? [...baseMoreItems, ...masterMoreItems] : baseMoreItems;
 
   const isMoreActive = moreItems.some((item) => location.startsWith(item.href));
 

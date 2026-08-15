@@ -34,6 +34,7 @@ import IndustryDetail from "@/pages/IndustryDetail";
 import Roles from "@/pages/Roles";
 import RoleDetail from "@/pages/RoleDetail";
 import Playbooks from "@/pages/Playbooks";
+import Roadmap from "@/pages/Roadmap";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -219,6 +220,7 @@ function Router() {
       <Route path="/roles/:id" component={() => <ProtectedRoute component={RoleDetail} />} />
       <Route path="/playbooks" component={() => <ProtectedRoute component={Playbooks} />} />
       <Route path="/playbooks/:id" component={() => <ProtectedRoute component={Playbooks} />} />
+      <Route path="/roadmap" component={() => <ProtectedRoute component={Roadmap} />} />
       <Route component={NotFound} />
     </Switch>
   );
