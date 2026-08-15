@@ -195,6 +195,14 @@ const BLOCKS: BlockDef[] = [
 
 const BLOCK_BY_ID = Object.fromEntries(BLOCKS.map(b => [b.id, b]));
 
+/** Block types that are terminal outcomes — no placeholder should follow them. */
+const OUTCOME_BLOCK_TYPES = new Set(
+  BLOCKS.filter(b => b.category === "outcome").map(b => b.id)
+);
+function isOutcomeBlock(blockType: string): boolean {
+  return OUTCOME_BLOCK_TYPES.has(blockType);
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 let _idCounter = 1;
@@ -235,11 +243,13 @@ function makePlaceholder(position: { x: number; y: number }): Node<PlaybookNodeD
   };
 }
 
-/** Appends a placeholder node at the end of any canvas (after the terminal node). */
+/** Appends a placeholder node at the end of any canvas (after the terminal node),
+ *  unless the terminal node is an outcome block — those are always final. */
 function withPlaceholder(state: CanvasState): CanvasState {
   const hasOutgoing = new Set(state.edges.map(e => e.source));
   const terminal = state.nodes.find(n => !hasOutgoing.has(n.id));
   if (!terminal) return state;
+  if (isOutcomeBlock((terminal.data as PlaybookNodeData).blockType as string)) return state;
   const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 });
   return {
     nodes: [...state.nodes, ph],
@@ -1597,12 +1607,22 @@ function CanvasInner({
           const { sourceHandle, ...rest } = e as any;
           return (sourceHandle !== null && sourceHandle !== undefined) ? { ...rest, sourceHandle } : rest;
         });
-        // Migrate: ensure a placeholder exists at the end
+        // Migrate: strip any placeholder that was incorrectly placed after an outcome node
+        {
+          const phIds = new Set(parsed.nodes.filter(n => (n.data as PlaybookNodeData).blockType === "placeholder").map(n => n.id));
+          const outcomeIds = new Set(parsed.nodes.filter(n => isOutcomeBlock((n.data as PlaybookNodeData).blockType as string)).map(n => n.id));
+          const spuriousPhIds = new Set(parsed.edges.filter(e => outcomeIds.has(e.source) && phIds.has(e.target)).map(e => e.target));
+          if (spuriousPhIds.size > 0) {
+            parsed.nodes = parsed.nodes.filter(n => !spuriousPhIds.has(n.id));
+            parsed.edges = parsed.edges.filter(e => !spuriousPhIds.has(e.target) && !spuriousPhIds.has(e.source));
+          }
+        }
+        // Migrate: ensure a placeholder exists at the end (if terminal is not an outcome)
         const hasPlaceholder = parsed.nodes.some(n => (n.data as PlaybookNodeData).blockType === "placeholder");
         if (!hasPlaceholder) {
           const hasOutgoing = new Set(parsed.edges.map(e => e.source));
           const terminal = parsed.nodes.find(n => !hasOutgoing.has(n.id));
-          if (terminal) {
+          if (terminal && !isOutcomeBlock((terminal.data as PlaybookNodeData).blockType as string)) {
             const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 });
             parsed.nodes.push(ph);
             parsed.edges.push(makeEdge(terminal.id, ph.id));
@@ -1769,9 +1789,30 @@ function CanvasInner({
 
   // Delete node
   function deleteNode(id: string) {
+    const deletedNode = nodes.find(n => n.id === id);
+    const deletedData = deletedNode?.data as PlaybookNodeData | undefined;
+    const deletedIsOutcome = !!deletedData && isOutcomeBlock(deletedData.blockType as string);
+    // Was the deleted node terminal (no outgoing edges)?
+    const deletedIsTerminal = !edges.some(e => e.source === id);
+
     setNodes(prev => {
       const next = prev.filter(n => n.id !== id);
-      const nextEdges = edges.filter(e => e.source !== id && e.target !== id);
+      let nextEdges = edges.filter(e => e.source !== id && e.target !== id);
+
+      if (deletedIsOutcome && deletedIsTerminal) {
+        // The outcome was at the end — restore a placeholder on the new terminal node
+        const hasOutgoing = new Set(nextEdges.map(e => e.source));
+        const terminal = next.find(n => !hasOutgoing.has(n.id) && (n.data as PlaybookNodeData).blockType !== "placeholder");
+        if (terminal) {
+          const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 });
+          const newNodes = [...next, ph];
+          nextEdges = [...nextEdges, makeEdge(terminal.id, ph.id)];
+          setEdges(nextEdges);
+          commitToHistory(newNodes, nextEdges);
+          return newNodes;
+        }
+      }
+
       setEdges(nextEdges);
       commitToHistory(next, nextEdges);
       return next;
@@ -1828,17 +1869,25 @@ function CanvasInner({
     const ph = currNodes.find(n => (n.data as PlaybookNodeData).blockType === "placeholder");
     if (!ph) return;
     const newNode = makeNode(blockType, ph.position);
-    const newPh = makePlaceholder({ x: ph.position.x, y: ph.position.y + 140 });
     const inEdge = currEdges.find(e => e.target === ph.id);
-    const newEdges: Edge[] = [
-      ...currEdges.filter(e => e.target !== ph.id && e.source !== ph.id),
-      ...(inEdge ? [{ ...makeEdge(inEdge.source, newNode.id, undefined, inEdge.sourceHandle as string | undefined), type: "playbook" as const }] : []),
-      { ...makeEdge(newNode.id, newPh.id), type: "playbook" as const },
-    ];
-    const newNodes = [...currNodes.filter(n => n.id !== ph.id), newNode, newPh];
-    setNodes(newNodes);
-    setEdges(newEdges);
-    commitToHistory(newNodes, newEdges);
+    const baseEdges = currEdges.filter(e => e.target !== ph.id && e.source !== ph.id);
+    const incomingEdge = inEdge ? [{ ...makeEdge(inEdge.source, newNode.id, undefined, inEdge.sourceHandle as string | undefined), type: "playbook" as const }] : [];
+
+    if (isOutcomeBlock(blockType)) {
+      // Outcome nodes are terminal — drop the placeholder, don't add a new one
+      const newNodes = [...currNodes.filter(n => n.id !== ph.id), newNode];
+      const newEdges: Edge[] = [...baseEdges, ...incomingEdge];
+      setNodes(newNodes);
+      setEdges(newEdges);
+      commitToHistory(newNodes, newEdges);
+    } else {
+      const newPh = makePlaceholder({ x: ph.position.x, y: ph.position.y + 140 });
+      const newNodes = [...currNodes.filter(n => n.id !== ph.id), newNode, newPh];
+      const newEdges: Edge[] = [...baseEdges, ...incomingEdge, { ...makeEdge(newNode.id, newPh.id), type: "playbook" as const }];
+      setNodes(newNodes);
+      setEdges(newEdges);
+      commitToHistory(newNodes, newEdges);
+    }
   }, [setNodes, setEdges]);
 
   // Canned playbook
