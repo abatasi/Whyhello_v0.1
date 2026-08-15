@@ -293,6 +293,7 @@ export default function Roadmap() {
 
   return (
     <Shell>
+      <div className="flex-1 overflow-y-auto">
       <div className="mx-auto max-w-5xl px-4 py-8 space-y-10">
         {/* ── Page header */}
         <div className="flex flex-col gap-2">
@@ -348,6 +349,7 @@ export default function Roadmap() {
         <p className="text-center text-xs text-muted-foreground pb-4">
           Timelines are estimates and subject to change based on scope and priority shifts.
         </p>
+      </div>
       </div>
     </Shell>
   );
