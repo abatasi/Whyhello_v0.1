@@ -10,6 +10,7 @@ import {
   dnaProfilesTable,
   insightRelevanceScoresTable,
   insightQuotesTable,
+  contactMetaScoresTable,
 } from "@workspace/db/schema";
 import { eq, and, inArray, ne, gt, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
@@ -298,7 +299,46 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       );
     }
 
-    // 9. Return the scored list
+    // 9. Compute and upsert the contact-level Meta Score.
+    //    metaScore = round(mean(personalBest, companyBest, industryBest, roleBest))
+    //    Categories without any scored signals default to 0.
+    const bestByCategory = { personal: 0, company: 0, industry: 0, role: 0 };
+    for (const s of scored) {
+      const cat = s.signalType as keyof typeof bestByCategory;
+      if (cat in bestByCategory) {
+        bestByCategory[cat] = Math.max(bestByCategory[cat], s.score);
+      }
+    }
+    const metaScore = Math.round(
+      (bestByCategory.personal + bestByCategory.company + bestByCategory.industry + bestByCategory.role) / 4
+    );
+    const now = new Date();
+    await db
+      .insert(contactMetaScoresTable)
+      .values({
+        contactId,
+        metaScore,
+        personalBest: bestByCategory.personal,
+        companyBest: bestByCategory.company,
+        industryBest: bestByCategory.industry,
+        roleBest: bestByCategory.role,
+        signalCount: scored.length,
+        computedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: contactMetaScoresTable.contactId,
+        set: {
+          metaScore,
+          personalBest: bestByCategory.personal,
+          companyBest: bestByCategory.company,
+          industryBest: bestByCategory.industry,
+          roleBest: bestByCategory.role,
+          signalCount: scored.length,
+          computedAt: now,
+        },
+      });
+
+    // 10. Return the scored list
     res.json(
       scored.map((s) => ({
         signalType: s.signalType,
@@ -312,6 +352,38 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
   } catch (err) {
     console.error("Relevance score error:", err);
     res.status(500).json({ error: "Failed to score relevance" });
+  }
+});
+
+// ── GET /api/contacts/:contactId/insights/relevance/meta ─────────────────────
+// Returns the stored meta (aggregate) score for this contact, or null if scoring
+// has never been run for them.
+
+router.get("/relevance/meta", async (req, res) => {
+  try {
+    const contactId = parseInt(req.params.contactId);
+    if (isNaN(contactId)) { res.status(400).json({ error: "Invalid contact ID" }); return; }
+
+    const [row] = await db
+      .select()
+      .from(contactMetaScoresTable)
+      .where(eq(contactMetaScoresTable.contactId, contactId))
+      .limit(1);
+
+    if (!row) { res.json(null); return; }
+
+    res.json({
+      metaScore: row.metaScore,
+      personalBest: row.personalBest,
+      companyBest: row.companyBest,
+      industryBest: row.industryBest,
+      roleBest: row.roleBest,
+      signalCount: row.signalCount,
+      computedAt: row.computedAt,
+    });
+  } catch (err) {
+    console.error("Meta score GET error:", err);
+    res.status(500).json({ error: "Failed to load meta score" });
   }
 });
 

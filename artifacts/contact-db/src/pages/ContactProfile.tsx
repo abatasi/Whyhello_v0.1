@@ -21,10 +21,12 @@ import {
   useInsightMeta,
   useGetInsightRelevance,
   useTriggerInsightRelevance,
+  useGetContactMetaScore,
   useGetTopRelevantContact,
   useGetInsightQuotes,
   useExtractInsightQuotes,
   type InsightRelevanceScore,
+  type ContactMetaScore,
   type TopRelevantContact,
   type InsightQuote,
 } from "@workspace/api-client-react";
@@ -123,6 +125,63 @@ const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; col
 
 function getMediaConfig(type: string) {
   return MEDIA_CONFIG[type] ?? { label: type, icon: ExternalLink, color: "text-muted-foreground", bg: "bg-secondary border-border" };
+}
+
+// ── MetaScoreBadge ──────────────────────────────────────────────────────────
+
+function MetaScoreBadge({ metaScore }: { metaScore: ContactMetaScore }) {
+  const { metaScore: score, personalBest, companyBest, industryBest, roleBest, signalCount } = metaScore;
+
+  const colorClass =
+    score >= 75 ? "bg-violet-50 text-violet-700 border-violet-200" :
+    score >= 50 ? "bg-blue-50 text-blue-700 border-blue-200" :
+    score >= 25 ? "bg-slate-50 text-slate-600 border-slate-200" :
+                  "bg-slate-50 text-slate-400 border-slate-200";
+
+  const tier =
+    score >= 75 ? "Strong" :
+    score >= 50 ? "Good" :
+    score >= 25 ? "Fair" : "Weak";
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={cn(
+          "inline-flex items-center gap-1 rounded-full border font-bold cursor-default flex-shrink-0 px-2 py-0.5 text-[10px]",
+          colorClass
+        )}>
+          <Activity className="h-2.5 w-2.5" />
+          {score}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={4} className="max-w-[240px] p-3">
+        <p className="text-[10px] font-bold text-foreground mb-2">Meta Score: {score}/100 — {tier}</p>
+        <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">
+          Aggregate relevance across all four signal categories. Higher = richer, more actionable signal picture.
+        </p>
+        <div className="space-y-1">
+          {[
+            { label: "Personal", value: personalBest },
+            { label: "Company", value: companyBest },
+            { label: "Industry", value: industryBest },
+            { label: "Role", value: roleBest },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex items-center gap-2">
+              <span className="text-[9px] text-muted-foreground w-14 flex-shrink-0">{label}</span>
+              <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full", value >= 75 ? "bg-violet-400" : value >= 50 ? "bg-blue-400" : value >= 25 ? "bg-slate-400" : "bg-slate-200")}
+                  style={{ width: `${value}%` }}
+                />
+              </div>
+              <span className="text-[9px] font-medium text-foreground w-5 text-right flex-shrink-0">{value}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[9px] text-muted-foreground mt-2">{signalCount} signal{signalCount !== 1 ? "s" : ""} scored</p>
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 // ── RelevanceBadge ─────────────────────────────────────────────────────────
@@ -730,6 +789,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
   const [jobRefetchTrigger, setJobRefetchTrigger] = useState(0);
   const { data: relevanceData = [], refetch: refetchRelevance } = useGetInsightRelevance(id, { query: { enabled: !!id } });
   const relevanceMutation = useTriggerInsightRelevance();
+  const { data: metaScore } = useGetContactMetaScore(id, { query: { enabled: !!id } });
   const hasAutoScoredRef = useRef<number | null>(null); // stores the contactId that was last scored
   const [showLostFriendo, setShowLostFriendo] = useState(false);
   const { data: topContact } = useGetTopRelevantContact(id, showLostFriendo);
@@ -1254,6 +1314,9 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                         </h1>
                         {contact.seniority && (
                           <Badge variant="success" className="text-xs">{contact.seniority}</Badge>
+                        )}
+                        {metaScore != null && (
+                          <MetaScoreBadge metaScore={metaScore} />
                         )}
                       </div>
                     </div>

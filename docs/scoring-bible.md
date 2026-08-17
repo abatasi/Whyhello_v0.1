@@ -248,10 +248,10 @@ where:
   quotableBonus = 35  if signal has extracted Quotable
                        AND attribution matches the contact themselves
                        AND hqAlignmentScore ≥ 20
-                = 20  if signal has extracted Quotable
+                 = 20  if signal has extracted Quotable
                        AND attribution is a third party
                        AND hqAlignmentScore ≥ 20
-                = 0   otherwise
+                 = 0   otherwise
 ```
 
 The cap of 100 is re-applied after the bonus. A self-attributed signal scoring 70 on HQ alignment caps at 100, not 105.
@@ -396,6 +396,87 @@ These are the unsolved mysteries — questions the platform has not yet answered
 
 <div align="center">⚜ ✠ ⚜</div>
 
+## Libro Octavo · El Marcador de la Persona
+### *La Puntuación Agregada del Contacto — The Contact Meta Score*
+
+> *"Una señal excelente no hace a un contacto excelente. La riqueza de un contacto se mide por la amplitud de su cuadro de señales, no por la altura de su mejor cima."*
+
+The Meta Score is a **contact-level aggregate** — a single number (0–100) that answers a different question than the individual signal scores. Where a signal score answers *"how useful is this specific piece of content for outreach?"*, the Meta Score answers:
+
+> **"How rich and actionable is this contact's overall signal picture?"**
+
+It is the signal portfolio score, not the signal score. It tells the seller not which signal to use, but whether this contact is worth investing outreach effort in at all.
+
+### 8.1 La Fórmula del Marcador de la Persona — Meta Score Formula
+
+```
+metaScore = round(
+  (personalBest + companyBest + industryBest + roleBest) / 4
+)
+
+where:
+  personalBest  = highest individual signal score among all Personal signals (0 if none)
+  companyBest   = highest individual signal score among all Company signals (0 if none)
+  industryBest  = highest individual signal score among all Industry signals (0 if none)
+  roleBest      = highest individual signal score among all Role signals (0 if none)
+```
+
+The result is in the range **0–100**. Categories without any scored signals contribute **0** — not because their signals are bad, but because they are absent. A contact with no company signals has a gap in their signal picture; the Meta Score reflects that gap.
+
+> **La Ley de los Cuatro Pilares:** *A contact who scores 90 in Personal but 0 in Company, Industry, and Role earns a Meta Score of 22.5 → 23. A contact who scores 70 in all four categories earns 70. Breadth is as important as height.*
+
+### 8.2 El Propósito del Marcador — What the Meta Score Is For
+
+The Meta Score serves three distinct purposes:
+
+**1. Contact Prioritization**
+Before a seller has run a generation job, the Meta Score tells them which contacts have the richest available signal picture. A contact with a Meta Score of 75 is worth researching; a contact with a Meta Score of 12 may need more signals before outreach is worthwhile.
+
+**2. Portfolio Health**
+The breakdown by category (personalBest, companyBest, industryBest, roleBest) surfaces gaps. A contact with personalBest=0 is missing the highest-value signal type — that is a signal collection gap, not an outreach blocker.
+
+**3. Algorithmic Triage**
+In future automation contexts (e.g. batch outreach, sequence enrollment), the Meta Score is the primary sorting key for contact prioritization before signal-level selection begins.
+
+### 8.3 Las Reglas del Marcador — Meta Score Rules
+
+**8:1** — The Meta Score is computed only from the **four core categories**: Personal, Company, Industry, and Role. Colleague and Counterpart signals do not contribute to the Meta Score — they are derived from other contacts' content, not from the contact's own signal picture.
+
+**8:2** — The Meta Score uses **only the best score per category** (`personalBest`, etc.), not the average across all signals in a category. A contact with ten mediocre personal signals scores the same as a contact with one excellent personal signal — what matters is the ceiling, not the volume.
+
+**8:3** — The Meta Score is **computed and stored deterministically** after each scoring run (`/relevance/score`). It is never computed on demand from raw signals — it is always a stored result derived from the same scored array that produced the individual signal scores.
+
+**8:4** — The Meta Score is stored in the `contact_meta_scores` table with one row per contact (unique on `contact_id`). Each scoring run upserts this row. There is no history; the current Meta Score represents the current scoring run only.
+
+**8:5** — The Meta Score **does not replace individual signal scores** and does not affect message generation. The Tribunal (§5.1) uses individual signal scores for all selection decisions. The Meta Score operates at the contact level, above the signal level.
+
+**8:6** — A contact that has never been scored has **no Meta Score** (NULL). The platform must not assume a Meta Score of 0 for unscored contacts — absence of a score means absence of scoring, not absence of relevance.
+
+### 8.4 Los Grados del Marcador — Meta Score Tiers
+
+| Meta Score | Grado | Interpretation |
+|---|---|---|
+| 75–100 | **Fuerte** | Rich, multi-category signal picture; high outreach readiness |
+| 50–74 | **Bueno** | Solid signal coverage in most categories; ready for outreach |
+| 25–49 | **Adecuado** | Partial coverage; some categories are weak or absent |
+| 1–24 | **Débil** | Thin signal picture; consider enrichment before outreach |
+| 0 | **Sin señales** | No qualifying signals in any core category |
+| NULL | **No puntuado** | Scoring has not yet been run for this contact |
+
+### 8.5 La Parábola del Retablo Incompleto
+
+> *Dos vendedores miraban sus carteras. El primero tenía un contacto con una puntuación de 95 en una sola señal personal — una cita poderosa. El segundo tenía un contacto con puntuaciones de 70, 68, 72 y 65 en las cuatro categorías.*
+>
+> *El primer vendedor preguntó: "¿Por qué mi contacto de 95 tiene un Meta Score de 24, mientras que el tuyo de 70 tiene un Meta Score de 69?"*
+>
+> *El segundo respondió: "Porque yo puedo escribir un correo sobre lo que dijo, lo que hace su empresa, lo que está pasando en su industria, y lo que preocupa a alguien en su rol. Tú solo puedes escribir sobre lo que dijo. Ambos son buenos openers. Pero yo tengo un retablo completo. Tú tienes un solo panel."*
+>
+> *Así habló el Meta Score: no juzga el brillo de una señal, sino la riqueza del cuadro.*
+
+---
+
+<div align="center">⚜ ✠ ⚜</div>
+
 ## El Retablo · La Puntuación en la Práctica
 ### *Un Panel del Ejemplo — The Score in Practice*
 
@@ -426,6 +507,20 @@ compositeScore = min(100, round(75 × 1.30 × 1.00 × 1.10 × 1.10))
 
 **Panel V — La Sentencia**
 Score capped at 100. *Excelente.* This signal wins the HOOK position in all variants that include personal signals. The Tribunal has spoken.
+
+---
+
+**Panel VI — El Meta Score de Agnes**
+Suppose Agnes also has a company signal at 65, an industry signal at 48, and a role signal at 55.
+
+```
+metaScore = round((100 + 65 + 48 + 55) / 4)
+           = round(268 / 4)
+           = round(67)
+           = 67
+```
+
+*Bueno.* Agnes has a strong, well-rounded signal picture. Her personal signal is exceptional; her company and role signals are solid; her industry coverage is adequate. She is ready for outreach across all four variant types.
 
 ---
 

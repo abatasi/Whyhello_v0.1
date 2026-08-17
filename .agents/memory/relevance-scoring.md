@@ -1,35 +1,41 @@
 ---
 name: Relevance Scoring System
-description: Architecture for scoring outside-in signals against HQ inside-out signals — table, API routes, client hooks, and UI.
+description: Outside-in signal scoring pipeline — DB tables, API routes, client hooks, and UI components. Includes meta score.
 ---
 
-## What it is
-Each outside-in signal (personal/company/industry/role/colleague/counterpart) gets a Relevance score (0–100) computed by AI against the user's HQ/DNA profile. Scores persist in `insight_relevance_scores` table and surface in the Insights panel.
+## Tables
+- `insight_relevance_scores` — one row per (contactId, signalType, signalId). Signal-level scores 0–100.
+- `contact_meta_scores` — one row per contactId (unique). Aggregate meta score across Personal/Company/Industry/Role.
 
-## DB table
-`insight_relevance_scores`: contact_id, signal_type, signal_id, score (int 0-100), description (text), matched_hq_signals (JSON text), computed_at.
+## API routes (artifacts/api-server/src/routes/relevance.ts)
+- `GET  /api/contacts/:contactId/insights/relevance` — returns all stored signal scores
+- `POST /api/contacts/:contactId/insights/relevance/score` — AI scores all signals, persists, then upserts meta score
+- `GET  /api/contacts/:contactId/insights/relevance/meta` — returns stored ContactMetaScore or null
+- `GET  /api/contacts/:contactId/insights/relevance/top-contact` — returns highest avg-scored other contact
 
-## API routes (mounted at `/contacts/:contactId/insights`)
-- `GET /relevance` — returns stored scores for a contact
-- `POST /relevance/score` — fetches all 6 signal categories + HQ profile, calls gpt-5-mini, persists results, returns scored list. Deletes old scores before inserting new ones.
-
-**Why:** Both routes are on the same mount path as `insightsRouter` (which only handles `GET /`) — no conflict.
-
-**AI prompt constraint:** Never set max_tokens or max_completion_tokens with gpt-5-mini (produces empty output).
+## Meta Score formula
+```
+metaScore = round((personalBest + companyBest + industryBest + roleBest) / 4)
+```
+- Only core four categories count (not colleague/counterpart)
+- Missing categories → 0
+- Computed and upserted inside the POST /score handler — never computed on demand
 
 ## Client hooks (lib/api-client-react/src/relevance.ts)
-- `useGetInsightRelevance(contactId)` — GET
-- `useTriggerInsightRelevance()` — mutation POST
+- `useGetInsightRelevance(contactId)` → InsightRelevanceScore[]
+- `useGetContactMetaScore(contactId)` → ContactMetaScore | null
+- `useGetTopRelevantContact(contactId, enabled)` → TopRelevantContact | null
+- `useTriggerInsightRelevance()` → mutation; on success invalidates both relevance and meta queryKeys
 
-## UI (ContactProfile.tsx)
-- `InsightRelevanceBar` component: "Score Relevance" button + "Sort: Relevance" toggle (visible after scoring)
-- `RelevanceBadge` component: colored score pill (green ≥75, amber ≥50, orange ≥25, slate <25) with tooltip showing description
-- `relevanceMap`: Map<"type-id", InsightRelevanceScore> built with useMemo
-- `sortedCategoryData`: sorts items by score desc within each category when sortByRelevance=true
-- Compact list mode: xs badge shown after source line
-- Expanded card mode: full description block above action buttons
+## IMPORTANT: dist types must be kept in sync
+The package exports from `./src/index.ts` but has a stale `dist/` folder.
+TypeScript in the frontend resolves to `dist/relevance.d.ts` (not src).
+Any new types/hooks added to `src/relevance.ts` must also be manually added to `dist/relevance.d.ts`.
 
-## Faisal Karmali (test contact)
-- Contact id = 3673, CIBC Wood Gundy (company id = 29)
-- Seeded via `seed-faisal.ts` which runs after seedProductionContactInsightsIfNeeded
-- Has: 5 personal insights (pre-existing), 3 company insights (CIBC), 2 colleague insights, 2 counterpart insights, + shared Wealth Management industry + Investment Advisor role insights
+## UI
+- `RelevanceBadge` — signal-level score badge (green/amber/orange/slate by tier)
+- `MetaScoreBadge` — contact-level meta score badge (violet/blue/slate); shown in profile header next to seniority badge; tooltip shows per-category breakdown bars
+- Both in ContactProfile.tsx
+
+## Doctrine
+- Changes to scoring logic must update `docs/scoring-bible.md` in the same turn (Libro Octavo covers meta score)

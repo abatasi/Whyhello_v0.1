@@ -23,3 +23,4 @@ export * from "./insight-relevance-scores";
 export * from "./insight-quotes";
 export * from "./sequences";
 export * from "./calls";
+export * from "./contact-meta-scores";
