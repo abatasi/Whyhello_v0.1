@@ -181,8 +181,15 @@ function RoadmapCard({ item }: { item: RoadmapItem }) {
       )}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        {/* Badges row — sits above title on mobile, floats right on sm+ */}
+        <div className="flex flex-row items-center gap-1.5 sm:order-last sm:flex-col sm:items-end sm:shrink-0">
+          <StatusBadge status={item.status} />
+          <span className={cn("text-xs font-medium px-2 py-0.5 rounded-md", item.accent.badge, item.accent.badgeText)}>
+            {item.quarter}
+          </span>
+        </div>
+        <div className="flex items-start gap-3">
           <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", item.accent.iconBg)}>
             <Icon className={cn("h-5 w-5", item.accent.iconText)} />
           </div>
@@ -190,12 +197,6 @@ function RoadmapCard({ item }: { item: RoadmapItem }) {
             <h3 className="text-base font-semibold text-foreground leading-snug">{item.title}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{item.tagline}</p>
           </div>
-        </div>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <StatusBadge status={item.status} />
-          <span className={cn("text-xs font-medium px-2 py-0.5 rounded-md", item.accent.badge, item.accent.badgeText)}>
-            {item.quarter}
-          </span>
         </div>
       </div>
 
@@ -213,16 +214,14 @@ function RoadmapCard({ item }: { item: RoadmapItem }) {
       </ul>
 
       {/* Footer chips */}
-      <div className="flex flex-wrap gap-2 pt-1 border-t border-current/10">
-        <div className="flex items-center gap-1.5 rounded-lg bg-background/60 dark:bg-black/20 border border-border px-3 py-1.5 text-xs text-foreground">
-          <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-          <span className="font-medium text-muted-foreground mr-0.5">Build time:</span>
-          {item.timeEstimate}
+      <div className="flex flex-col gap-2 pt-1 border-t border-current/10 sm:flex-row sm:flex-wrap">
+        <div className="flex items-start gap-1.5 rounded-lg bg-background/60 dark:bg-black/20 border border-border px-3 py-1.5 text-xs text-foreground">
+          <Clock className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+          <span><span className="font-medium text-muted-foreground">Build time: </span>{item.timeEstimate}</span>
         </div>
-        <div className="flex items-center gap-1.5 rounded-lg bg-background/60 dark:bg-black/20 border border-border px-3 py-1.5 text-xs text-foreground">
-          <Cpu className="h-3 w-3 text-muted-foreground shrink-0" />
-          <span className="font-medium text-muted-foreground mr-0.5">Compute:</span>
-          {item.computeEstimate}
+        <div className="flex items-start gap-1.5 rounded-lg bg-background/60 dark:bg-black/20 border border-border px-3 py-1.5 text-xs text-foreground">
+          <Cpu className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+          <span><span className="font-medium text-muted-foreground">Compute: </span>{item.computeEstimate}</span>
         </div>
       </div>
     </div>
