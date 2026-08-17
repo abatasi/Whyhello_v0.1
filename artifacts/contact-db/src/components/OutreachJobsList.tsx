@@ -633,14 +633,17 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
           isCompleted && "bg-card border-border/60 hover:border-primary/40 hover:shadow-sm cursor-pointer"
         )}
       >
-        <div className="flex items-center gap-2.5">
-          <div className="flex-shrink-0">
+        {/* Two-row layout: title on top, subtitle + actions on bottom */}
+        <div className="flex items-start gap-2.5">
+          {/* Status icon — top-aligned */}
+          <div className="flex-shrink-0 pt-[3px]">
             {isGenerating && <GeneratingBars />}
             {isCompleted && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
             {isFailed && <XCircle className="h-3.5 w-3.5 text-red-400" />}
           </div>
 
           <div className="flex-1 min-w-0">
+            {/* Row 1: title + variant count pill */}
             <div className="flex items-center gap-1.5 min-w-0">
               <p className="text-xs font-semibold text-foreground leading-snug truncate">{job.title}</p>
               {isCompleted && variants.length > 0 && (
@@ -650,99 +653,103 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
                 </span>
               )}
             </div>
-            <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">
-              {isGenerating
-                ? isBattlecard
-                  ? <span className="text-blue-500/80 font-medium tracking-wide">Building your battlecard…</span>
-                  : <span className="text-blue-500/80 font-medium tracking-wide">Writing your email…</span>
-                : isFailed
-                  ? <span className="text-red-400 font-medium">Generation failed</span>
-                  : isBattlecard
-                    ? <>{job.type.replace(/_/g, " ")} · {timeAgo(job.createdAt)}</>
-                    : <>{job.type.replace(/_/g, " ")} · {job.params?.length} · {job.params?.tone} · {timeAgo(job.createdAt)}</>
-              }
-            </p>
-          </div>
 
-          {isCompleted && (
-            <div
-              className="flex items-center gap-1 flex-shrink-0"
-              onClick={e => e.stopPropagation()}
-            >
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 gap-1.5 text-xs font-semibold px-2.5"
-                onClick={() => isBattlecard ? downloadBattlecard() : openViewer("result")}
-              >
-                {isBattlecard ? <Download className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                {primaryLabel}
-              </Button>
+            {/* Row 2: subtitle (left) + action buttons (right) */}
+            <div className="flex items-center justify-between gap-2 mt-1.5">
+              <p className="text-[10px] text-muted-foreground capitalize truncate">
+                {isGenerating
+                  ? isBattlecard
+                    ? <span className="text-blue-500/80 font-medium tracking-wide">Building your battlecard…</span>
+                    : <span className="text-blue-500/80 font-medium tracking-wide">Writing your email…</span>
+                  : isFailed
+                    ? <span className="text-red-400 font-medium">Generation failed</span>
+                    : isBattlecard
+                      ? <>{job.type.replace(/_/g, " ")} · {timeAgo(job.createdAt)}</>
+                      : <>{job.type.replace(/_/g, " ")} · {job.params?.length} · {job.params?.tone} · {timeAgo(job.createdAt)}</>
+                }
+              </p>
 
-              {hasStructure && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 gap-1.5 text-xs font-semibold px-2.5 text-violet-600 border-violet-200 hover:bg-violet-50"
-                  onClick={() => openViewer("structure")}
-                  title="View message anatomy"
+              {isCompleted && (
+                <div
+                  className="flex items-center gap-1 flex-shrink-0"
+                  onClick={e => e.stopPropagation()}
                 >
-                  <Layers className="h-3 w-3" />
-                </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1.5 text-xs font-semibold px-2.5"
+                    onClick={() => isBattlecard ? downloadBattlecard() : openViewer("result")}
+                  >
+                    {isBattlecard ? <Download className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    {primaryLabel}
+                  </Button>
+
+                  {hasStructure && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1.5 text-xs font-semibold px-2.5 text-violet-600 border-violet-200 hover:bg-violet-50"
+                      onClick={() => openViewer("structure")}
+                      title="View message anatomy"
+                    >
+                      <Layers className="h-3 w-3" />
+                    </Button>
+                  )}
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                        title="More actions"
+                      >
+                        <MoreVertical className="h-3.5 w-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48 text-xs">
+                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={shareJob}>
+                        <Share2 className="h-3.5 w-3.5" />
+                        Share
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => setRenaming(true)}>
+                        <PenLine className="h-3.5 w-3.5" />
+                        Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={downloadFile}>
+                        <Download className="h-3.5 w-3.5" />
+                        Download
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("structure")}>
+                        <Layers className="h-3.5 w-3.5" />
+                        Message Structure
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("prompt")}>
+                        <BookOpen className="h-3.5 w-3.5" />
+                        View prompt &amp; sources
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="gap-2 text-xs cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50"
+                        onClick={() => setConfirmDelete(true)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               )}
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                    title="More actions"
-                  >
-                    <MoreVertical className="h-3.5 w-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 text-xs">
-                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={shareJob}>
-                    <Share2 className="h-3.5 w-3.5" />
-                    Share
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => setRenaming(true)}>
-                    <PenLine className="h-3.5 w-3.5" />
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={downloadFile}>
-                    <Download className="h-3.5 w-3.5" />
-                    Download
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("structure")}>
-                    <Layers className="h-3.5 w-3.5" />
-                    Message Structure
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("prompt")}>
-                    <BookOpen className="h-3.5 w-3.5" />
-                    View prompt &amp; sources
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="gap-2 text-xs cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50"
-                    onClick={() => setConfirmDelete(true)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isFailed && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+                  title="Delete"
+                  className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
             </div>
-          )}
-
-          {isFailed && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
-              title="Delete"
-              className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-            >
-              <Trash2 className="h-3 w-3" />
-            </button>
-          )}
+          </div>
         </div>
       </div>
 
