@@ -1,0 +1,23 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "gsF5ir5BOtIbFWmJOUs_J"
+uri = "file://docs/scraping-torah.md"
+type = "text"
+title = "Scraping Torah"
+description = "Whyhello scraping and signal-quality doctrine in Markdown format."
+
+[[outputs]]
+id = "M5W6_t_cIbc_kL7K4cqQo"
+uri = "file://docs/scoring-bible.md"
+type = "text"
+title = "Scoring Bible"
+description = "Whyhello relevance-scoring doctrine, including the Contact Meta Score, in Markdown format."
+
+[[outputs]]
+id = "fCD6npfNp3iGgP1gsjLNw"
+uri = "file://docs/messaging-quran.md"
+type = "text"
+title = "Messaging Quran"
+description = "Whyhello messaging and outreach doctrine in Markdown format."
