@@ -21,3 +21,17 @@ uri = "file://docs/messaging-quran.md"
 type = "text"
 title = "Messaging Quran"
 description = "Whyhello messaging and outreach doctrine in Markdown format."
+
+[[outputs]]
+id = "VYJd1U5uC2gskktqeY8_d"
+uri = "file://.agents/outputs/role-insights.md"
+type = "text"
+title = "Role Insights"
+description = "14 Role insight records exported as Markdown."
+
+[[outputs]]
+id = "Q0L8tGLg6Q5HRRhyxyp9E"
+uri = "file://.agents/outputs/industry-insights.md"
+type = "text"
+title = "Industry Insights"
+description = "11 Industry insight records exported as Markdown."
