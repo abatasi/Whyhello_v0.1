@@ -35,3 +35,17 @@ uri = "file://.agents/outputs/industry-insights.md"
 type = "text"
 title = "Industry Insights"
 description = "11 Industry insight records exported as Markdown."
+
+[[outputs]]
+id = "hqGGlddz1GsgFeiAY_Izm"
+uri = "file://.agents/outputs/role-insights.csv"
+type = "table"
+title = "Role Insights CSV"
+description = "14 Role insight records in CSV format."
+
+[[outputs]]
+id = "yMaJ30pwLO-em9BLx5c1g"
+uri = "file://.agents/outputs/industry-insights.csv"
+type = "table"
+title = "Industry Insights CSV"
+description = "11 Industry insight records in CSV format."
