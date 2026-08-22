@@ -154,7 +154,11 @@ function MetaScoreBadge({ metaScore }: { metaScore: ContactMetaScore }) {
           {score}
         </span>
       </TooltipTrigger>
-      <TooltipContent side="bottom" sideOffset={4} className="max-w-[240px] p-3">
+      <TooltipContent
+        side="bottom"
+        sideOffset={4}
+        className="z-[300] max-w-[240px] border border-border/80 bg-card p-3 text-foreground shadow-xl ring-1 ring-black/5"
+      >
         <p className="text-[10px] font-bold text-foreground mb-2">Meta Score: {score}/100 — {tier}</p>
         <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">
           Aggregate relevance across all four signal categories. Higher = richer, more actionable signal picture.
