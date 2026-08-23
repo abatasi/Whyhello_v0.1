@@ -6,6 +6,7 @@ import {
   Lock, CheckCircle2, Circle, Loader2, ChevronRight,
   Mic2, FileText, BarChart3, Bell, Search, Trophy,
   Timer, ArrowRight, Sparkles, Flame,
+  Video, Users, CalendarCheck2, BookOpen,
 } from "lucide-react";
 
 // ── Master access ─────────────────────────────────────────────────────────────
@@ -142,6 +143,33 @@ const items: RoadmapItem[] = [
       badge: "bg-emerald-100 dark:bg-emerald-900/40",
       badgeText: "text-emerald-700 dark:text-emerald-300",
       dot: "bg-emerald-500",
+    },
+  },
+  {
+    id: "notetaker",
+    title: "Meeting Notetaker",
+    quarter: "Q4 2026",
+    status: "planned",
+    icon: Video,
+    tagline: "Auto-join every Google Meet, Teams, and Zoom. Leave with structured notes.",
+    particulars: [
+      { icon: CalendarCheck2, text: "Calendar integration auto-detects upcoming meetings and dispatches a bot attendee — no manual setup per call" },
+      { icon: Mic2,           text: "Real-time transcription via OpenAI Whisper with speaker diarization — every voice attributed to the right person" },
+      { icon: Users,          text: "Attendee list matched against Whyhello contacts and companies; new names create draft contact records automatically" },
+      { icon: BookOpen,       text: "Structured meeting brief auto-generated: agenda summary, key decisions, objections raised, and competitor mentions" },
+      { icon: CheckCircle2,   text: "Action items extracted and surfaced as follow-up tasks with suggested owners and due dates" },
+      { icon: Sparkles,       text: "Post-meeting intelligence injected into the contact timeline and used to sharpen subsequent outreach drafts" },
+    ],
+    timeEstimate: "6–9 weeks",
+    computeEstimate: "$0.02–0.06 / min of audio · ~$0.01 / GPT summary · ~$5/mo bot infrastructure",
+    accent: {
+      bg: "bg-teal-50 dark:bg-teal-950/20",
+      border: "border-teal-200 dark:border-teal-800/50",
+      iconBg: "bg-teal-100 dark:bg-teal-900/40",
+      iconText: "text-teal-600 dark:text-teal-400",
+      badge: "bg-teal-100 dark:bg-teal-900/40",
+      badgeText: "text-teal-700 dark:text-teal-300",
+      dot: "bg-teal-500",
     },
   },
 ];

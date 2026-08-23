@@ -20,6 +20,7 @@ import {
   Minus, Maximize2, Map, Undo2, Redo2, Save, Upload,
   AlertCircle, Check, GripVertical, SlidersHorizontal,
   FlaskConical, LayoutGrid, Pencil, Copy, BookOpen,
+  Crown, Link2, Link2Off, Users,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Shell } from "@/components/layout/Shell";
@@ -73,11 +74,27 @@ interface PlaybookNodeData extends Record<string, unknown> {
   updateStatus?: string;
   createFollowUp?: boolean;
   moveToPlaybook?: string;
+  // multi-thread fields
+  laneId?: string;
+  isPrimary?: boolean;        // true on prospect-added node of the primary lane
+  primaryNodeId?: string;     // ID of the corresponding primary-lane node (for cascade)
+  cascadeOverridden?: boolean; // true if this sub-lane node was manually edited
+  contactId?: number;          // attached contact
+  contactName?: string;        // attached contact display name
+}
+
+interface ProspectEntry {
+  laneId: string;
+  contactId?: number;
+  contactName?: string;
+  isPrimary: boolean;
+  cascadeEnabled: boolean;
 }
 
 interface CanvasState {
   nodes: Node<PlaybookNodeData>[];
   edges: Edge[];
+  prospects?: ProspectEntry[];
 }
 
 // ── Block catalogue ───────────────────────────────────────────────────────────
@@ -109,6 +126,11 @@ const CATEGORIES: Record<string, {
 };
 
 const CATEGORIES_ORDER = ["starting-point", "touchpoint", "flow-control", "outcome"] as const;
+
+// Multi-prospect constants
+const PRIMARY_LANE_ID = "lane_primary";
+const LANE_WIDTH = 460; // px between lane x-centres
+const CASCADE_ELIGIBLE_BLOCKS = new Set(["send-email", "send-linkedin", "make-call", "time-delay"]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type IconType = React.ComponentType<any>;
@@ -208,6 +230,11 @@ function isOutcomeBlock(blockType: string): boolean {
 let _idCounter = 1;
 function uid() { return `n_${Date.now()}_${_idCounter++}`; }
 
+/** Get two-letter initials from a name */
+function getInitials(name: string): string {
+  return name.split(" ").filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase() ?? "").join("");
+}
+
 function makeNode(blockType: string, position: { x: number; y: number }, extraData?: Partial<PlaybookNodeData>): Node<PlaybookNodeData> {
   const def = BLOCK_BY_ID[blockType];
   return {
@@ -233,28 +260,134 @@ function makeEdge(source: string, target: string, label?: string, sourceHandle?:
   };
 }
 
-function makePlaceholder(position: { x: number; y: number }): Node<PlaybookNodeData> {
+function makePlaceholder(position: { x: number; y: number }, extraData?: Partial<PlaybookNodeData>): Node<PlaybookNodeData> {
   return {
     id: uid(),
     type: "placeholder",
     position,
     draggable: false,
-    data: { blockType: "placeholder" },
+    data: { blockType: "placeholder", ...extraData },
+  };
+}
+
+/** Assign laneId and prospects array to a canvas state (used for canned builders) */
+function withPrimaryLane(state: CanvasState): CanvasState {
+  return {
+    ...state,
+    nodes: state.nodes.map(n => {
+      const nd = n.data as PlaybookNodeData;
+      return {
+        ...n,
+        data: {
+          ...nd,
+          laneId: nd.laneId ?? PRIMARY_LANE_ID,
+          ...(nd.blockType === "prospect-added" ? { isPrimary: nd.isPrimary ?? true } : {}),
+        },
+      };
+    }),
+    prospects: state.prospects ?? [{
+      laneId: PRIMARY_LANE_ID,
+      isPrimary: true,
+      cascadeEnabled: true,
+    }],
   };
 }
 
 /** Appends a placeholder node at the end of any canvas (after the terminal node),
- *  unless the terminal node is an outcome block — those are always final. */
+ *  unless the terminal node is an outcome block — those are always final.
+ *  Also applies primary lane IDs. */
 function withPlaceholder(state: CanvasState): CanvasState {
   const hasOutgoing = new Set(state.edges.map(e => e.source));
   const terminal = state.nodes.find(n => !hasOutgoing.has(n.id));
-  if (!terminal) return state;
-  if (isOutcomeBlock((terminal.data as PlaybookNodeData).blockType as string)) return state;
+  if (!terminal) return withPrimaryLane(state);
+  if (isOutcomeBlock((terminal.data as PlaybookNodeData).blockType as string)) return withPrimaryLane(state);
   const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 });
-  return {
+  return withPrimaryLane({
     nodes: [...state.nodes, ph],
     edges: [...state.edges, makeEdge(terminal.id, ph.id)],
-  };
+  });
+}
+
+/** Cascade: propagate primary node changes to linked sub-lane nodes */
+function applyPrimaryChange(
+  changedNodeId: string,
+  newData: Partial<PlaybookNodeData>,
+  currentNodes: Node<PlaybookNodeData>[],
+  prospects: ProspectEntry[],
+): Node<PlaybookNodeData>[] {
+  const changedNode = currentNodes.find(n => n.id === changedNodeId);
+  if (!changedNode) return currentNodes;
+  const blockType = (changedNode.data as PlaybookNodeData).blockType as string;
+  if (!CASCADE_ELIGIBLE_BLOCKS.has(blockType)) return currentNodes;
+
+  const subLanes = new Set(prospects.filter(p => !p.isPrimary && p.cascadeEnabled).map(p => p.laneId));
+  if (subLanes.size === 0) return currentNodes;
+
+  // Fields that should not cascade (lane-specific)
+  const { laneId: _l, isPrimary: _ip, primaryNodeId: _pni, cascadeOverridden: _co, contactId: _ci, contactName: _cn, ...cascadeData } = newData as Record<string, unknown>;
+
+  return currentNodes.map(n => {
+    const nd = n.data as PlaybookNodeData;
+    if (
+      nd.primaryNodeId === changedNodeId &&
+      subLanes.has(nd.laneId ?? "") &&
+      !nd.cascadeOverridden
+    ) {
+      return { ...n, data: { ...nd, ...cascadeData } };
+    }
+    return n;
+  });
+}
+
+/** Clone the primary lane's nodes/edges for a new prospect */
+function cloneLaneForProspect(
+  primaryLaneId: string,
+  newLaneId: string,
+  currentNodes: Node<PlaybookNodeData>[],
+  currentEdges: Edge[],
+  newContactId: number | undefined,
+  newContactName: string,
+  xOffset: number,
+): { newNodes: Node<PlaybookNodeData>[]; newEdges: Edge[] } {
+  const primaryNodes = currentNodes.filter(n => (n.data as PlaybookNodeData).laneId === primaryLaneId);
+  const primaryNodeIds = new Set(primaryNodes.map(n => n.id));
+
+  // Create ID mapping: old ID → new ID
+  const idMap: Record<string, string> = {};
+  primaryNodes.forEach(n => { idMap[n.id] = uid(); });
+
+  const newNodes: Node<PlaybookNodeData>[] = primaryNodes.map(n => {
+    const nd = n.data as PlaybookNodeData;
+    const isProspectAdded = nd.blockType === "prospect-added";
+    const isCascadeEligible = CASCADE_ELIGIBLE_BLOCKS.has(nd.blockType as string);
+
+    return {
+      ...n,
+      id: idMap[n.id],
+      position: { x: n.position.x + xOffset, y: n.position.y },
+      data: {
+        ...nd,
+        laneId: newLaneId,
+        isPrimary: false,
+        primaryNodeId: (isCascadeEligible || isProspectAdded) ? n.id : undefined,
+        cascadeOverridden: false,
+        ...(isProspectAdded ? { contactId: newContactId, contactName: newContactName } : {}),
+      },
+    };
+  });
+
+  // Clone edges internal to the primary lane, re-mapping IDs
+  const newEdges: Edge[] = currentEdges
+    .filter(e => primaryNodeIds.has(e.source) && primaryNodeIds.has(e.target))
+    .map(e => ({
+      ...e,
+      id: `e_${idMap[e.source]}_${idMap[e.target]}_${Date.now()}`,
+      source: idMap[e.source],
+      target: idMap[e.target],
+      sourceHandle: e.sourceHandle ? e.sourceHandle.replace(e.source, idMap[e.source]) : undefined,
+    }));
+
+  return { newNodes, newEdges };
 }
 
 function delayLabel(d: PlaybookNodeData): string {
@@ -287,11 +420,12 @@ function formatRelative(iso: string | null): string {
 // ── Starter canvas (new playbook) ─────────────────────────────────────────────
 
 function buildStarterCanvas(): CanvasState {
-  const n1 = makeNode("prospect-added", { x: 360, y: 80 });
-  const ph = makePlaceholder({ x: 360, y: 220 });
+  const n1 = makeNode("prospect-added", { x: 360, y: 80 }, { laneId: PRIMARY_LANE_ID, isPrimary: true });
+  const ph = makePlaceholder({ x: 360, y: 220 }, { laneId: PRIMARY_LANE_ID });
   return {
     nodes: [n1, ph],
     edges: [makeEdge(n1.id, ph.id)],
+    prospects: [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }],
   };
 }
 
@@ -320,7 +454,7 @@ function buildStrategicAccount(): CanvasState {
     makeEdge(n8.id, n9.id),
     makeEdge(n9.id, n10.id),
   ];
-  return { nodes, edges };
+  return withPrimaryLane({ nodes, edges });
 }
 
 // ── Canned playbook library ───────────────────────────────────────────────────
@@ -670,6 +804,13 @@ function PlaybookNodeComponent({ data, selected, id }: NodeProps) {
   const isSplit = nodeData.blockType === "split-path";
   const branches = nodeData.branches ?? ["YES", "NO"];
 
+  // Multi-prospect indicators
+  const isProspectAdded = nodeData.blockType === "prospect-added";
+  const isPrimaryNode = nodeData.isPrimary === true;
+  const isCascadeLinked = !!(nodeData.primaryNodeId) && CASCADE_ELIGIBLE_BLOCKS.has(nodeData.blockType);
+  const isCascadeOverridden = isCascadeLinked && nodeData.cascadeOverridden === true;
+  const isCascadeActive = isCascadeLinked && !isCascadeOverridden;
+
   let summary = "";
   switch (nodeData.blockType) {
     case "send-email":
@@ -717,17 +858,39 @@ function PlaybookNodeComponent({ data, selected, id }: NodeProps) {
       {/* Card header */}
       <div className={cn("flex items-center gap-2.5 px-3 py-2.5 rounded-t-xl border-b", cat.bg, cat.border)}>
         <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0", cat.iconBg)}>
-          <Icon className={cn("h-3.5 w-3.5", cat.iconText)} />
+          {/* Show contact initials for prospect-added with a contact */}
+          {isProspectAdded && nodeData.contactName ? (
+            <span className="text-[10px] font-bold text-violet-700">{getInitials(nodeData.contactName)}</span>
+          ) : (
+            <Icon className={cn("h-3.5 w-3.5", cat.iconText)} />
+          )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className={cn("text-[11px] font-bold truncate", cat.text)}>{nodeData.label ?? def.label}</p>
+          <p className={cn("text-[11px] font-bold truncate", cat.text)}>
+            {isProspectAdded && nodeData.contactName ? nodeData.contactName : (nodeData.label ?? def.label)}
+          </p>
         </div>
+        {/* Crown badge for Primary prospect node */}
+        {isProspectAdded && isPrimaryNode && (
+          <Crown className="h-3 w-3 text-amber-500 flex-shrink-0" aria-label="Primary thread" />
+        )}
+        {/* Cascade status icons */}
+        {isCascadeActive && (
+          <Link2 className="h-3 w-3 text-blue-400 flex-shrink-0" aria-label="Cascades from Primary" />
+        )}
+        {isCascadeOverridden && (
+          <Link2Off className="h-3 w-3 text-amber-400 flex-shrink-0" aria-label="Customised — not cascading" />
+        )}
         {!complete && <AlertCircle className="h-3.5 w-3.5 text-red-400 flex-shrink-0" />}
       </div>
 
       {/* Card body */}
       <div className="px-3 py-2.5">
-        <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{summary}</p>
+        {isProspectAdded && !nodeData.contactName ? (
+          <p className="text-[11px] text-muted-foreground/60 leading-relaxed italic">No contact linked — click to assign</p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{summary}</p>
+        )}
       </div>
 
       {/* Split branches */}
@@ -900,18 +1063,127 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
+// ── Contact Search (used inside ConfigDrawer for prospect-added nodes) ─────────
+
+interface ContactResult { id: number; firstName: string; lastName: string; title?: string; company?: string; }
+
+function ContactSearch({ currentContactId, currentContactName, onSelect }: {
+  currentContactId?: number;
+  currentContactName?: string;
+  onSelect: (id: number, name: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ContactResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as globalThis.Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  function handleQueryChange(v: string) {
+    setQuery(v);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!v.trim()) { setResults([]); setOpen(false); return; }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await apiFetch(`/api/contacts?search=${encodeURIComponent(v)}&limit=8`);
+        const json = await res.json();
+        const list: ContactResult[] = (json.contacts ?? json ?? []).slice(0, 8);
+        setResults(list);
+        setOpen(list.length > 0);
+      } catch { setResults([]); } finally { setLoading(false); }
+    }, 350);
+  }
+
+  function select(c: ContactResult) {
+    const name = `${c.firstName} ${c.lastName}`.trim();
+    onSelect(c.id, name);
+    setQuery(name);
+    setOpen(false);
+  }
+
+  function clear() {
+    onSelect(0, "");
+    setQuery("");
+    setResults([]);
+  }
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      {currentContactId && !query ? (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-violet-200 bg-violet-50">
+          <div className="h-6 w-6 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0">
+            <span className="text-[9px] font-bold text-violet-700">{getInitials(currentContactName ?? "?")}</span>
+          </div>
+          <span className="text-xs font-semibold text-violet-700 flex-1 min-w-0 truncate">{currentContactName}</span>
+          <button onClick={clear} className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+          <Search className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
+          <input
+            value={query}
+            onChange={e => handleQueryChange(e.target.value)}
+            onFocus={() => results.length > 0 && setOpen(true)}
+            placeholder="Search contacts…"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40"
+          />
+          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground/50 flex-shrink-0" />}
+          {query && !loading && <button onClick={() => { setQuery(""); setResults([]); setOpen(false); }}><X className="h-3 w-3 text-muted-foreground/50" /></button>}
+        </div>
+      )}
+      {open && results.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden max-h-52 overflow-y-auto">
+          {results.map(c => (
+            <button
+              key={c.id}
+              onClick={() => select(c)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-secondary/40 text-left transition-colors border-b border-border/20 last:border-0"
+            >
+              <div className="h-6 w-6 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-[9px] font-bold text-violet-600">{getInitials(`${c.firstName} ${c.lastName}`)}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-foreground truncate">{c.firstName} {c.lastName}</p>
+                {(c.title || c.company) && (
+                  <p className="text-[10px] text-muted-foreground truncate">{[c.title, c.company].filter(Boolean).join(" · ")}</p>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ConfigDrawer({
   node,
   onClose,
   onUpdate,
   onDelete,
   onDuplicate,
+  prospects,
+  allNodes,
 }: {
   node: Node<PlaybookNodeData> | null;
   onClose: () => void;
   onUpdate: (id: string, data: Partial<PlaybookNodeData>) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  prospects: ProspectEntry[];
+  allNodes: Node<PlaybookNodeData>[];
 }) {
   const { toast } = useToast();
   const [generating, setGenerating] = useState(false);
@@ -919,19 +1191,42 @@ function ConfigDrawer({
   const def = data ? BLOCK_BY_ID[data.blockType] : null;
 
   if (!node || !data || !def) return null;
+  const safeNode = node;
+  const safeData = data;
   const cat = CATEGORIES[def.category];
 
-  function upd(patch: Partial<PlaybookNodeData>) { onUpdate(node.id, patch); }
+  function upd(patch: Partial<PlaybookNodeData>) { onUpdate(safeNode.id, patch); }
+
+  // Cascade metadata
+  const isPrimaryLane = safeData.laneId === PRIMARY_LANE_ID;
+  const isSubLaneLinked = !isPrimaryLane && !!safeData.primaryNodeId && CASCADE_ELIGIBLE_BLOCKS.has(safeData.blockType);
+  const subLaneCount = prospects.filter(p => !p.isPrimary && p.cascadeEnabled).length;
+  const cascadeEligible = CASCADE_ELIGIBLE_BLOCKS.has(safeData.blockType);
+  const showCascadeInfo = isPrimaryLane && cascadeEligible && subLaneCount > 0;
+  const showCascadeToggle = isSubLaneLinked;
+
+  // Get the prospect name for this sub-lane
+  const thisProspect = prospects.find(p => p.laneId === safeData.laneId);
+
+  function handleRelink() {
+    // Re-enable cascade and immediately copy primary node's data
+    const primaryNode = allNodes.find(n => n.id === safeData.primaryNodeId);
+    if (!primaryNode) { upd({ cascadeOverridden: false }); return; }
+    const pd = primaryNode.data as PlaybookNodeData;
+    // Copy cascade-eligible data from primary (strip lane-specific fields)
+    const { laneId: _l, isPrimary: _ip, primaryNodeId: _pni, cascadeOverridden: _co, contactId: _ci, contactName: _cn, ...cascadeFields } = pd as Record<string, unknown>;
+    upd({ ...cascadeFields as Partial<PlaybookNodeData>, cascadeOverridden: false });
+  }
 
   async function handleGenerate() {
-    if (!["send-email", "send-linkedin", "make-call"].includes(data.blockType)) return;
+    if (!["send-email", "send-linkedin", "make-call"].includes(safeData.blockType)) return;
     setGenerating(true);
     await new Promise(r => setTimeout(r, 1200));
-    if (data.blockType === "send-email") {
-      upd({ subject: `Re: Your ${data.insightCategory?.toLowerCase() ?? "company"} news`, emailBody: `Hi {{first_name}},\n\nI noticed your recent activity and wanted to reach out with a perspective that might be relevant.\n\n[Generated content will appear here based on Whyhello insights]\n\n{{cta}}\n\n[Your Name]` });
-    } else if (data.blockType === "send-linkedin") {
+    if (safeData.blockType === "send-email") {
+      upd({ subject: `Re: Your ${safeData.insightCategory?.toLowerCase() ?? "company"} news`, emailBody: `Hi {{first_name}},\n\nI noticed your recent activity and wanted to reach out with a perspective that might be relevant.\n\n[Generated content will appear here based on Whyhello insights]\n\n{{cta}}\n\n[Your Name]` });
+    } else if (safeData.blockType === "send-linkedin") {
       upd({ linkedinBody: `Hi {{first_name}}, I came across your profile and [generated insight-driven connection note] would love to connect.` });
-    } else if (data.blockType === "make-call") {
+    } else if (safeData.blockType === "make-call") {
       upd({ opener: `Hi {{first_name}}, this is [Name] from [Company]. I noticed [insight] and thought it was worth a quick call.`, voicemail: `Hi {{first_name}}, [Name] from [Company]. I'll keep this brief — [value prop]. I'll follow up by email but feel free to reach back on [number]. Thanks!` });
     }
     toast({ title: "Generated", description: "Content drafted from Whyhello insights" });
@@ -967,12 +1262,72 @@ function ConfigDrawer({
       {/* Drawer body */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-5">
 
+        {/* Cascade status banner for sub-lane linked nodes */}
+        {showCascadeToggle && (
+          <div className={cn(
+            "flex items-start gap-2.5 px-3 py-2.5 rounded-xl border text-xs",
+            data.cascadeOverridden
+              ? "bg-amber-50 border-amber-200"
+              : "bg-blue-50 border-blue-200",
+          )}>
+            {data.cascadeOverridden
+              ? <Link2Off className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+              : <Link2 className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
+            }
+            <div className="flex-1 min-w-0">
+              <p className={cn("font-semibold", data.cascadeOverridden ? "text-amber-700" : "text-blue-700")}>
+                {data.cascadeOverridden ? "Customised for " + (thisProspect?.contactName ?? "this thread") : "Linked to Primary"}
+              </p>
+              <p className={cn("mt-0.5 text-[10px]", data.cascadeOverridden ? "text-amber-600" : "text-blue-600")}>
+                {data.cascadeOverridden
+                  ? "Changes to Primary won't affect this step."
+                  : "Changes to Primary's step will cascade here."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Customise / Re-link toggle */}
+        {showCascadeToggle && (
+          <>
+            <Toggle
+              checked={data.cascadeOverridden === true}
+              onChange={v => {
+                if (v) {
+                  upd({ cascadeOverridden: true });
+                } else {
+                  handleRelink();
+                }
+              }}
+              label={`Customise for ${thisProspect?.contactName ?? "this thread"}`}
+            />
+            <div className="h-px bg-border/40" />
+          </>
+        )}
+
         {/* Step name */}
         <Field label="Step name">
           <TextInput value={data.label ?? def.label} onChange={v => upd({ label: v })} placeholder="Step name" />
         </Field>
 
         <div className="h-px bg-border/40" />
+
+        {/* ── Prospect Added — contact picker ── */}
+        {data.blockType === "prospect-added" && (
+          <Field label="Linked contact" hint="Assign a contact to this thread.">
+            <ContactSearch
+              currentContactId={data.contactId}
+              currentContactName={data.contactName}
+              onSelect={(id, name) => {
+                if (id === 0) {
+                  upd({ contactId: undefined, contactName: undefined });
+                } else {
+                  upd({ contactId: id, contactName: name });
+                }
+              }}
+            />
+          </Field>
+        )}
 
         {/* ── Send Email ── */}
         {data.blockType === "send-email" && (<>
@@ -1136,6 +1491,16 @@ function ConfigDrawer({
             <TextInput value={data.moveToPlaybook ?? ""} onChange={v => upd({ moveToPlaybook: v })} placeholder="Select another playbook…" />
           </Field>
         </>)}
+
+        {/* Cascade info for primary lane */}
+        {showCascadeInfo && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 mt-1">
+            <Link2 className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+            <p className="text-[11px] text-blue-700">
+              Cascades to <span className="font-semibold">{subLaneCount}</span> thread{subLaneCount !== 1 ? "s" : ""}
+            </p>
+          </div>
+        )}
 
       </div>
     </div>
@@ -1573,6 +1938,269 @@ function ZoomControls({ showMinimap, onToggleMinimap }: { showMinimap: boolean; 
   );
 }
 
+// ── Thread Roster ─────────────────────────────────────────────────────────────
+
+// Stable colors for threads
+const LANE_COLORS = [
+  "bg-violet-100 text-violet-700 border-violet-200",
+  "bg-blue-100 text-blue-700 border-blue-200",
+  "bg-emerald-100 text-emerald-700 border-emerald-200",
+  "bg-rose-100 text-rose-700 border-rose-200",
+  "bg-amber-100 text-amber-700 border-amber-200",
+  "bg-cyan-100 text-cyan-700 border-cyan-200",
+];
+
+function ProspectRoster({
+  prospects,
+  onToggleCascade,
+  onRemove,
+  onAddProspect,
+}: {
+  prospects: ProspectEntry[];
+  onToggleCascade: (laneId: string) => void;
+  onRemove: (laneId: string) => void;
+  onAddProspect: () => void;
+}) {
+  const [removeConfirm, setRemoveConfirm] = useState<string | null>(null);
+  const subLaneCount = prospects.filter(p => !p.isPrimary).length;
+
+  if (prospects.length === 0) {
+    return (
+      <div className="h-10 flex items-center gap-2 px-4 border-b border-border/40 bg-card/50 flex-shrink-0">
+        <Users className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
+        <p className="text-xs text-muted-foreground/60">Single-thread — assign a contact to the starting node to add more</p>
+        <div className="flex-1" />
+        <button
+          onClick={onAddProspect}
+          disabled={true}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-dashed border-border/60 text-xs font-semibold text-muted-foreground/50 cursor-not-allowed"
+        >
+          <Plus className="h-3 w-3" />
+          Add Thread
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-10 flex items-center gap-2 px-4 py-1.5 border-b border-border/40 bg-card/50 flex-shrink-0 flex-wrap">
+      <Users className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
+      <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+        {prospects.map((p, idx) => {
+          const colorClass = LANE_COLORS[idx % LANE_COLORS.length];
+          const displayName = p.contactName ?? (p.isPrimary ? "Primary Thread" : `Thread ${idx + 1}`);
+          const initials = getInitials(displayName);
+          const isConfirming = removeConfirm === p.laneId;
+
+          return (
+            <div
+              key={p.laneId}
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded-full border text-[11px] font-semibold transition-all",
+                colorClass,
+              )}
+            >
+              {/* Initials */}
+              <span className="font-bold text-[9px]">{initials || "?"}</span>
+              {/* Primary crown */}
+              {p.isPrimary && <Crown className="h-2.5 w-2.5 text-amber-500 flex-shrink-0" aria-label="Primary" />}
+              {/* Name */}
+              <span className="max-w-[100px] truncate">{displayName}</span>
+              {/* Cascade toggle (sub-lanes only) */}
+              {!p.isPrimary && (
+                <button
+                  onClick={() => onToggleCascade(p.laneId)}
+                  title={p.cascadeEnabled ? "Cascade on — click to disable" : "Cascade off — click to enable"}
+                  className="flex-shrink-0 hover:opacity-70 transition-opacity"
+                >
+                  {p.cascadeEnabled
+                    ? <Link2 className="h-2.5 w-2.5" />
+                    : <Link2Off className="h-2.5 w-2.5 opacity-50" />
+                  }
+                </button>
+              )}
+              {/* Remove button (sub-lanes only) */}
+              {!p.isPrimary && !isConfirming && (
+                <button
+                  onClick={() => setRemoveConfirm(p.laneId)}
+                  title="Remove this thread"
+                  className="flex-shrink-0 hover:opacity-70 transition-opacity ml-0.5"
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              )}
+              {/* Confirm remove */}
+              {!p.isPrimary && isConfirming && (
+                <div className="flex items-center gap-1 ml-0.5">
+                  <button
+                    onClick={() => { onRemove(p.laneId); setRemoveConfirm(null); }}
+                    className="text-[9px] font-bold hover:underline"
+                  >
+                    Remove
+                  </button>
+                  <button onClick={() => setRemoveConfirm(null)} className="text-[9px] hover:underline">
+                    Cancel
+                  </button>
+                </div>
+              )}
+              {/* Primary can't be removed while sub-lanes exist */}
+              {p.isPrimary && subLaneCount > 0 && (
+                <span className="text-[9px] opacity-50 ml-0.5" title="Remove all threads first">🔒</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Add Thread button */}
+      <button
+        onClick={onAddProspect}
+        disabled={!prospects.some(p => p.contactId)}
+        title={!prospects.some(p => p.contactId) ? "Link a contact to the Primary thread first" : "Add another thread"}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-dashed border-border text-xs font-semibold text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+      >
+        <Plus className="h-3 w-3" />
+        Add Thread
+      </button>
+    </div>
+  );
+}
+
+// ── Add Thread Modal ──────────────────────────────────────────────────────────
+
+function AddProspectModal({
+  open,
+  onClose,
+  onAdd,
+  existingContactIds,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onAdd: (contactId: number, contactName: string) => void;
+  existingContactIds: Set<number>;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ContactResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<ContactResult | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!open) { setQuery(""); setResults([]); setSelected(null); }
+  }, [open]);
+
+  function handleQueryChange(v: string) {
+    setQuery(v);
+    setSelected(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!v.trim()) { setResults([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await apiFetch(`/api/contacts?search=${encodeURIComponent(v)}&limit=10`);
+        const json = await res.json();
+        setResults((json.contacts ?? json ?? []).slice(0, 10));
+      } catch { setResults([]); } finally { setLoading(false); }
+    }, 350);
+  }
+
+  function handleAdd() {
+    if (!selected) return;
+    const name = `${selected.firstName} ${selected.lastName}`.trim();
+    onAdd(selected.id, name);
+    onClose();
+  }
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+      <div className="bg-card rounded-2xl border border-border shadow-2xl w-[420px] max-h-[80vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/60">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <p className="text-sm font-bold">Add Thread</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground"><X className="h-4 w-4" /></button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto flex flex-col gap-4 p-5">
+          <p className="text-xs text-muted-foreground">Search for a contact to add as a new thread. Their sequence starts as a copy of the Primary thread, with changes cascading from it by default.</p>
+
+          {/* Search */}
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5">
+            <Search className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+            <input
+              autoFocus
+              value={query}
+              onChange={e => handleQueryChange(e.target.value)}
+              placeholder="Search contacts by name…"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40"
+            />
+            {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/50 flex-shrink-0" />}
+            {query && !loading && <button onClick={() => { setQuery(""); setResults([]); setSelected(null); }}><X className="h-3.5 w-3.5 text-muted-foreground/50" /></button>}
+          </div>
+
+          {/* Results */}
+          {results.length > 0 && (
+            <div className="flex flex-col gap-1">
+              {results.map(c => {
+                const alreadyAdded = existingContactIds.has(c.id);
+                const isSelected = selected?.id === c.id;
+                const name = `${c.firstName} ${c.lastName}`.trim();
+                return (
+                  <button
+                    key={c.id}
+                    disabled={alreadyAdded}
+                    onClick={() => !alreadyAdded && setSelected(c)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all",
+                      alreadyAdded
+                        ? "opacity-40 cursor-not-allowed border-border/30 bg-secondary/20"
+                        : isSelected
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border/60 hover:bg-secondary/30 hover:shadow-sm",
+                    )}
+                  >
+                    <div className="h-8 w-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-violet-700">{getInitials(name)}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{name}</p>
+                      {(c.title || c.company) && (
+                        <p className="text-xs text-muted-foreground truncate">{[c.title, c.company].filter(Boolean).join(" · ")}</p>
+                      )}
+                    </div>
+                    {isSelected && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
+                    {alreadyAdded && <span className="text-[10px] text-muted-foreground flex-shrink-0">Added</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {query && !loading && results.length === 0 && (
+            <p className="text-xs text-muted-foreground/60 text-center py-4">No contacts found for "{query}"</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border/60">
+          <button onClick={onClose} className="px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-secondary/40 transition-colors">Cancel</button>
+          <button
+            onClick={handleAdd}
+            disabled={!selected}
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          >
+            <Plus className="h-4 w-4" />
+            Add Thread
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Node + edge type maps ─────────────────────────────────────────────────────
 
 const nodeTypes = { playbook: PlaybookNodeComponent, placeholder: PlaceholderNode };
@@ -1580,7 +2208,11 @@ const edgeTypes = { playbook: PlaybookEdge };
 
 // ── Canvas inner (must be inside ReactFlowProvider) ───────────────────────────
 
-interface HistoryEntry { nodes: Node<PlaybookNodeData>[]; edges: Edge[] }
+interface HistoryEntry {
+  nodes: Node<PlaybookNodeData>[];
+  edges: Edge[];
+  prospects: ProspectEntry[];
+}
 
 function CanvasInner({
   playbookId, playbookName, playbookStatus,
@@ -1588,17 +2220,28 @@ function CanvasInner({
 }: {
   playbookId: number; playbookName: string; playbookStatus: string;
   onNameChange: (n: string) => void; onBack: () => void;
-  onSave: (nodes: Node<PlaybookNodeData>[], edges: Edge[]) => void; saving: boolean;
+  onSave: (nodes: Node<PlaybookNodeData>[], edges: Edge[], prospects: ProspectEntry[]) => void; saving: boolean;
 }) {
   const { screenToFlowPosition, fitView } = useReactFlow();
   const { toast } = useToast();
 
   const storageKey = `playbook_canvas_v3_${playbookId}`;
 
-  // Load initial state — v3 key; sanitize & migrate older cached canvases
+  // Load initial state — v3 key (fall back to legacy key and migrate); sanitize & migrate older cached canvases
   const initialState = useMemo<CanvasState>(() => {
     try {
-      const raw = localStorage.getItem(storageKey);
+      // Try v3 first; if absent, try legacy key and promote to v3
+      const legacyKey = `playbook_canvas_${playbookId}`;
+      let raw = localStorage.getItem(storageKey);
+      if (!raw) {
+        const legacyRaw = localStorage.getItem(legacyKey);
+        if (legacyRaw) {
+          // Promote to v3 and clean up legacy
+          localStorage.setItem(storageKey, legacyRaw);
+          localStorage.removeItem(legacyKey);
+          raw = legacyRaw;
+        }
+      }
       if (raw) {
         const parsed = JSON.parse(raw) as CanvasState;
         // Sanitize edges: strip null sourceHandle so React Flow doesn't warn
@@ -1617,16 +2260,47 @@ function CanvasInner({
             parsed.edges = parsed.edges.filter(e => !spuriousPhIds.has(e.target) && !spuriousPhIds.has(e.source));
           }
         }
-        // Migrate: ensure a placeholder exists at the end (if terminal is not an outcome)
-        const hasPlaceholder = parsed.nodes.some(n => (n.data as PlaybookNodeData).blockType === "placeholder");
+        // Migrate: ensure a placeholder exists at the end (if terminal is not an outcome) for single-lane canvases
+        const primaryNodes = parsed.nodes.filter(n => {
+          const nd = n.data as PlaybookNodeData;
+          return !nd.laneId || nd.laneId === PRIMARY_LANE_ID;
+        });
+        const hasPlaceholder = primaryNodes.some(n => (n.data as PlaybookNodeData).blockType === "placeholder");
         if (!hasPlaceholder) {
           const hasOutgoing = new Set(parsed.edges.map(e => e.source));
-          const terminal = parsed.nodes.find(n => !hasOutgoing.has(n.id));
+          const terminal = primaryNodes.find(n => !hasOutgoing.has(n.id));
           if (terminal && !isOutcomeBlock((terminal.data as PlaybookNodeData).blockType as string)) {
-            const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 });
+            const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 }, { laneId: PRIMARY_LANE_ID });
             parsed.nodes.push(ph);
             parsed.edges.push(makeEdge(terminal.id, ph.id));
           }
+        }
+        // Migrate: add prospects array if missing
+        if (!parsed.prospects) {
+          const primaryProspectNode = parsed.nodes.find(n => (n.data as PlaybookNodeData).blockType === "prospect-added");
+          const pnd = primaryProspectNode?.data as PlaybookNodeData | undefined;
+          parsed.prospects = [{
+            laneId: PRIMARY_LANE_ID,
+            contactId: pnd?.contactId,
+            contactName: pnd?.contactName,
+            isPrimary: true,
+            cascadeEnabled: true,
+          }];
+          // Assign laneId to nodes that don't have one
+          parsed.nodes = parsed.nodes.map(n => {
+            const nd = n.data as PlaybookNodeData;
+            if (!nd.laneId) {
+              return {
+                ...n,
+                data: {
+                  ...nd,
+                  laneId: PRIMARY_LANE_ID,
+                  ...(nd.blockType === "prospect-added" ? { isPrimary: true } : {}),
+                },
+              };
+            }
+            return n;
+          });
         }
         return parsed;
       }
@@ -1636,13 +2310,22 @@ function CanvasInner({
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<PlaybookNodeData>>(initialState.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
+  const [prospects, setProspects] = useState<ProspectEntry[]>(initialState.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }]);
 
   // History for undo/redo
-  const historyRef = useRef<HistoryEntry[]>([{ nodes: initialState.nodes, edges: initialState.edges }]);
+  const historyRef = useRef<HistoryEntry[]>([{
+    nodes: initialState.nodes,
+    edges: initialState.edges,
+    prospects: initialState.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }],
+  }]);
   const historyIndexRef = useRef(0);
 
-  function pushHistory(n: Node<PlaybookNodeData>[], e: Edge[]) {
-    const entry = { nodes: JSON.parse(JSON.stringify(n)), edges: JSON.parse(JSON.stringify(e)) };
+  function pushHistory(n: Node<PlaybookNodeData>[], e: Edge[], p: ProspectEntry[]) {
+    const entry = {
+      nodes: JSON.parse(JSON.stringify(n)),
+      edges: JSON.parse(JSON.stringify(e)),
+      prospects: JSON.parse(JSON.stringify(p)),
+    };
     historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
     historyRef.current.push(entry);
     historyIndexRef.current = historyRef.current.length - 1;
@@ -1662,6 +2345,7 @@ function CanvasInner({
     const prev = historyRef.current[historyIndexRef.current];
     setNodes(prev.nodes);
     setEdges(prev.edges);
+    setProspects(prev.prospects);
     updateHistoryState();
   }
 
@@ -1671,11 +2355,12 @@ function CanvasInner({
     const next = historyRef.current[historyIndexRef.current];
     setNodes(next.nodes);
     setEdges(next.edges);
+    setProspects(next.prospects);
     updateHistoryState();
   }
 
-  function commitToHistory(n: Node<PlaybookNodeData>[], e: Edge[]) {
-    pushHistory(n, e);
+  function commitToHistory(n: Node<PlaybookNodeData>[], e: Edge[], p: ProspectEntry[]) {
+    pushHistory(n, e, p);
     updateHistoryState();
   }
 
@@ -1689,6 +2374,7 @@ function CanvasInner({
   const [showTest, setShowTest] = useState(false);
   const [showMinimap, setShowMinimap] = useState(false);
   const [showCanned, setShowCanned] = useState(false);
+  const [showAddProspect, setShowAddProspect] = useState(false);
 
   // Insert block menu
   const [insertMenu, setInsertMenu] = useState<{ edgeId: string; x: number; y: number } | null>(null);
@@ -1697,13 +2383,15 @@ function CanvasInner({
   // Stable refs so callbacks always read latest state without stale closures
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
+  const prospectsRef = useRef(prospects);
   useEffect(() => { nodesRef.current = nodes; }, [nodes]);
   useEffect(() => { edgesRef.current = edges; }, [edges]);
+  useEffect(() => { prospectsRef.current = prospects; }, [prospects]);
 
   // Auto-save to localStorage
   useEffect(() => {
-    try { localStorage.setItem(storageKey, JSON.stringify({ nodes, edges })); } catch {}
-  }, [nodes, edges, storageKey]);
+    try { localStorage.setItem(storageKey, JSON.stringify({ nodes, edges, prospects })); } catch {}
+  }, [nodes, edges, prospects, storageKey]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -1732,41 +2420,41 @@ function CanvasInner({
     const blockType = e.dataTransfer.getData("application/playbook-block");
     if (!blockType) return;
     const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-    const newNode = makeNode(blockType, position);
+    const newNode = makeNode(blockType, position, { laneId: PRIMARY_LANE_ID });
     setNodes(prev => {
       const next = [...prev, newNode];
-      commitToHistory(next, edges);
+      commitToHistory(next, edgesRef.current, prospectsRef.current);
       return next;
     });
-  }, [screenToFlowPosition, setNodes, edges]);
+  }, [screenToFlowPosition, setNodes]);
 
   // Connect
   const onConnect = useCallback((params: Connection) => {
     const edge = makeEdge(params.source!, params.target!, undefined, params.sourceHandle ?? undefined);
     setEdges(prev => {
       const next = addEdge({ ...edge, type: "playbook" }, prev);
-      commitToHistory(nodes, next);
+      commitToHistory(nodesRef.current, next, prospectsRef.current);
       return next;
     });
-  }, [setEdges, nodes]);
+  }, [setEdges]);
 
   // Node change — commit to history on drag stop
-  const onNodesChangeWithHistory = useCallback((changes: NodeChange[]) => {
+  const onNodesChangeWithHistory = useCallback((changes: NodeChange<Node<PlaybookNodeData>>[]) => {
     const hasDragStop = changes.some(c => c.type === "position" && c.dragging === false);
     onNodesChange(changes);
     if (hasDragStop) {
-      setNodes(curr => { commitToHistory(curr, edges); return curr; });
+      setNodes(curr => { commitToHistory(curr, edgesRef.current, prospectsRef.current); return curr; });
     }
-  }, [onNodesChange, setNodes, edges]);
+  }, [onNodesChange, setNodes]);
 
   // Edge change
   const onEdgesChangeWithHistory = useCallback((changes: EdgeChange[]) => {
     const hasRemove = changes.some(c => c.type === "remove");
     onEdgesChange(changes);
     if (hasRemove) {
-      setEdges(curr => { commitToHistory(nodes, curr); return curr; });
+      setEdges(curr => { commitToHistory(nodesRef.current, curr, prospectsRef.current); return curr; });
     }
-  }, [onEdgesChange, setEdges, nodes]);
+  }, [onEdgesChange, setEdges]);
 
   // Node selection
   const onNodeClick = useCallback((_e: React.MouseEvent, node: Node) => {
@@ -1778,11 +2466,57 @@ function CanvasInner({
     setInsertMenu(null);
   }, []);
 
-  // Update node data
+  // Update node data — with cascade support
   function updateNode(id: string, patch: Partial<PlaybookNodeData>) {
     setNodes(prev => {
-      const next = prev.map(n => n.id === id ? { ...n, data: { ...n.data, ...patch } } : n);
-      commitToHistory(next, edges);
+      const node = prev.find(n => n.id === id);
+      const nodeData = node?.data as PlaybookNodeData | undefined;
+      const isPrimaryLane = nodeData?.laneId === PRIMARY_LANE_ID;
+      const hasParent = !!nodeData?.primaryNodeId;
+      const isSubLaneLinked = !isPrimaryLane && hasParent;
+
+      // If user manually edits a sub-lane linked node (not explicitly setting cascadeOverridden), mark it as overridden
+      const effectivePatch =
+        isSubLaneLinked && !("cascadeOverridden" in patch)
+          ? { ...patch, cascadeOverridden: true }
+          : patch;
+
+      // Update the target node
+      let next = prev.map(n => n.id === id ? { ...n, data: { ...n.data, ...effectivePatch } } : n);
+
+      // If primary lane and cascade-eligible, propagate to sub-lanes
+      if (isPrimaryLane) {
+        next = applyPrimaryChange(id, patch, next, prospectsRef.current);
+      }
+
+      // If re-enabling cascade (cascadeOverridden: false), immediately sync primary data
+      if (effectivePatch.cascadeOverridden === false && nodeData?.primaryNodeId) {
+        const primaryNode = prev.find(n => n.id === nodeData.primaryNodeId);
+        if (primaryNode) {
+          const pd = primaryNode.data as PlaybookNodeData;
+          const { laneId: _l, isPrimary: _ip, primaryNodeId: _pni, cascadeOverridden: _co, contactId: _ci, contactName: _cn, ...cascadeFields } = pd as Record<string, unknown>;
+          next = next.map(n => n.id === id ? { ...n, data: { ...n.data, ...cascadeFields, cascadeOverridden: false } } : n);
+        }
+      }
+
+      // Update prospects array if a prospect-added node's contact changes (including clearing — check key presence, not value)
+      if (nodeData?.blockType === "prospect-added" && ("contactId" in patch || "contactName" in patch)) {
+        const updatedProspects = prospectsRef.current.map(p =>
+          p.laneId === nodeData.laneId
+            ? {
+                ...p,
+                ...("contactId" in patch ? { contactId: (effectivePatch as PlaybookNodeData).contactId } : {}),
+                ...("contactName" in patch ? { contactName: (effectivePatch as PlaybookNodeData).contactName } : {}),
+              }
+            : p
+        );
+        setProspects(updatedProspects);
+        commitToHistory(next, edgesRef.current, updatedProspects);
+        prospectsRef.current = updatedProspects;
+        return next;
+      }
+
+      commitToHistory(next, edgesRef.current, prospectsRef.current);
       return next;
     });
   }
@@ -1792,7 +2526,6 @@ function CanvasInner({
     const deletedNode = nodes.find(n => n.id === id);
     const deletedData = deletedNode?.data as PlaybookNodeData | undefined;
     const deletedIsOutcome = !!deletedData && isOutcomeBlock(deletedData.blockType as string);
-    // Was the deleted node terminal (no outgoing edges)?
     const deletedIsTerminal = !edges.some(e => e.source === id);
 
     setNodes(prev => {
@@ -1800,21 +2533,21 @@ function CanvasInner({
       let nextEdges = edges.filter(e => e.source !== id && e.target !== id);
 
       if (deletedIsOutcome && deletedIsTerminal) {
-        // The outcome was at the end — restore a placeholder on the new terminal node
         const hasOutgoing = new Set(nextEdges.map(e => e.source));
         const terminal = next.find(n => !hasOutgoing.has(n.id) && (n.data as PlaybookNodeData).blockType !== "placeholder");
         if (terminal) {
-          const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 });
+          const laneId = (terminal.data as PlaybookNodeData).laneId ?? PRIMARY_LANE_ID;
+          const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 }, { laneId });
           const newNodes = [...next, ph];
           nextEdges = [...nextEdges, makeEdge(terminal.id, ph.id)];
           setEdges(nextEdges);
-          commitToHistory(newNodes, nextEdges);
+          commitToHistory(newNodes, nextEdges, prospectsRef.current);
           return newNodes;
         }
       }
 
       setEdges(nextEdges);
-      commitToHistory(next, nextEdges);
+      commitToHistory(next, nextEdges, prospectsRef.current);
       return next;
     });
   }
@@ -1823,8 +2556,14 @@ function CanvasInner({
   function duplicateNode(id: string) {
     const src = nodes.find(n => n.id === id);
     if (!src) return;
-    const newNode = makeNode(src.data.blockType as string, { x: src.position.x + 40, y: src.position.y + 40 }, src.data as Partial<PlaybookNodeData>);
-    setNodes(prev => { const next = [...prev, newNode]; commitToHistory(next, edges); return next; });
+    const srcData = src.data as PlaybookNodeData;
+    const newNode = makeNode(src.data.blockType as string, { x: src.position.x + 40, y: src.position.y + 40 }, {
+      ...srcData,
+      // Strip cascade linkage from duplicated node
+      primaryNodeId: undefined,
+      cascadeOverridden: undefined,
+    });
+    setNodes(prev => { const next = [...prev, newNode]; commitToHistory(next, edgesRef.current, prospectsRef.current); return next; });
   }
 
   // Insert via + button on edge
@@ -1847,61 +2586,128 @@ function CanvasInner({
     const srcNode = nodes.find(n => n.id === edge.source);
     const tgtNode = nodes.find(n => n.id === edge.target);
     if (!srcNode || !tgtNode) return;
+    const laneId = (srcNode.data as PlaybookNodeData).laneId ?? PRIMARY_LANE_ID;
     const newNode = makeNode(blockType, {
       x: (srcNode.position.x + tgtNode.position.x) / 2 - 110,
       y: (srcNode.position.y + tgtNode.position.y) / 2,
-    });
+    }, { laneId });
     const newEdge1 = makeEdge(edge.source, newNode.id, undefined, edge.sourceHandle ?? undefined);
     const newEdge2 = makeEdge(newNode.id, edge.target);
     setNodes(prev => { const next = [...prev, newNode]; return next; });
     setEdges(prev => {
       const next = [...prev.filter(e => e.id !== insertMenu.edgeId), { ...newEdge1, type: "playbook" }, { ...newEdge2, type: "playbook" }];
-      commitToHistory([...nodes, newNode], next);
+      commitToHistory([...nodesRef.current, newNode], next, prospectsRef.current);
       return next;
     });
     setInsertMenu(null);
   }
 
-  // Add block at the end of the chain (called by PlaceholderNode)
-  const addBlockAtEnd = useCallback((blockType: string) => {
+  // Add block at the end of the chain (called by PlaceholderNode via closure)
+  const addBlockAtLane = useCallback((blockType: string, phId: string) => {
     const currNodes = nodesRef.current;
     const currEdges = edgesRef.current;
-    const ph = currNodes.find(n => (n.data as PlaybookNodeData).blockType === "placeholder");
+    const currProspects = prospectsRef.current;
+    const ph = currNodes.find(n => n.id === phId);
     if (!ph) return;
-    const newNode = makeNode(blockType, ph.position);
+    const phData = ph.data as PlaybookNodeData;
+    const laneId = phData.laneId ?? PRIMARY_LANE_ID;
+
+    const newNode = makeNode(blockType, ph.position, { laneId });
     const inEdge = currEdges.find(e => e.target === ph.id);
     const baseEdges = currEdges.filter(e => e.target !== ph.id && e.source !== ph.id);
     const incomingEdge = inEdge ? [{ ...makeEdge(inEdge.source, newNode.id, undefined, inEdge.sourceHandle as string | undefined), type: "playbook" as const }] : [];
 
     if (isOutcomeBlock(blockType)) {
-      // Outcome nodes are terminal — drop the placeholder, don't add a new one
       const newNodes = [...currNodes.filter(n => n.id !== ph.id), newNode];
       const newEdges: Edge[] = [...baseEdges, ...incomingEdge];
       setNodes(newNodes);
       setEdges(newEdges);
-      commitToHistory(newNodes, newEdges);
+      commitToHistory(newNodes, newEdges, currProspects);
     } else {
-      const newPh = makePlaceholder({ x: ph.position.x, y: ph.position.y + 140 });
+      const newPh = makePlaceholder({ x: ph.position.x, y: ph.position.y + 140 }, { laneId });
       const newNodes = [...currNodes.filter(n => n.id !== ph.id), newNode, newPh];
       const newEdges: Edge[] = [...baseEdges, ...incomingEdge, { ...makeEdge(newNode.id, newPh.id), type: "playbook" as const }];
       setNodes(newNodes);
       setEdges(newEdges);
-      commitToHistory(newNodes, newEdges);
+      commitToHistory(newNodes, newEdges, currProspects);
     }
   }, [setNodes, setEdges]);
+
+  // Add a new thread (clone from primary)
+  function addProspectLane(contactId: number, contactName: string) {
+    const currNodes = nodesRef.current;
+    const currEdges = edgesRef.current;
+    const currProspects = prospectsRef.current;
+
+    const newLaneId = `lane_${Date.now()}`;
+    const laneIndex = currProspects.length; // 0=primary, 1=first sub, ...
+    const xOffset = laneIndex * LANE_WIDTH;
+
+    const { newNodes, newEdges } = cloneLaneForProspect(
+      PRIMARY_LANE_ID,
+      newLaneId,
+      currNodes,
+      currEdges,
+      contactId,
+      contactName,
+      xOffset,
+    );
+
+    const allNodes = [...currNodes, ...newNodes];
+    const allEdges = [...currEdges, ...newEdges];
+    const newProspects: ProspectEntry[] = [
+      ...currProspects,
+      { laneId: newLaneId, contactId, contactName, isPrimary: false, cascadeEnabled: true },
+    ];
+
+    setNodes(allNodes);
+    setEdges(allEdges);
+    setProspects(newProspects);
+    commitToHistory(allNodes, allEdges, newProspects);
+    setTimeout(() => fitView({ padding: 0.15, duration: 500 }), 100);
+    toast({ title: `${contactName} added`, description: "A new lane has been created, linked to the Primary sequence." });
+  }
+
+  // Remove a thread
+  function removeProspectLane(laneId: string) {
+    const currNodes = nodesRef.current;
+    const currEdges = edgesRef.current;
+    const currProspects = prospectsRef.current;
+
+    const removedIds = new Set(currNodes.filter(n => (n.data as PlaybookNodeData).laneId === laneId).map(n => n.id));
+    const newNodes = currNodes.filter(n => !removedIds.has(n.id));
+    const newEdges = currEdges.filter(e => !removedIds.has(e.source) && !removedIds.has(e.target));
+    const newProspects = currProspects.filter(p => p.laneId !== laneId);
+
+    setNodes(newNodes);
+    setEdges(newEdges);
+    setProspects(newProspects);
+    commitToHistory(newNodes, newEdges, newProspects);
+    toast({ title: "Thread removed", description: "The thread has been removed from the canvas." });
+  }
+
+  // Toggle cascade for a thread
+  function toggleProspectCascade(laneId: string) {
+    const newProspects = prospectsRef.current.map(p =>
+      p.laneId === laneId ? { ...p, cascadeEnabled: !p.cascadeEnabled } : p
+    );
+    setProspects(newProspects);
+    // Note: no history entry for cascade toggle (not a canvas change)
+  }
 
   // Canned playbook
   function applyCanned(canned: CannedPlaybook) {
     const state = canned.build();
     setNodes(state.nodes);
     setEdges(state.edges);
-    commitToHistory(state.nodes, state.edges);
+    setProspects(state.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }]);
+    commitToHistory(state.nodes, state.edges, state.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }]);
     setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 100);
   }
 
   // Save
   function save() {
-    externalSave(nodes, edges);
+    externalSave(nodes, edges, prospects);
   }
 
   // Publish
@@ -1921,14 +2727,14 @@ function CanvasInner({
     return false;
   }, [nodes, edges]);
 
-  // Wire callbacks into node data (placeholder gets onAddBlock; edges get onInsert)
+  // Wire callbacks into node data (placeholder gets onAddBlock via closure over its own ID)
   const nodesWithCallbacks = useMemo(() =>
     nodes.map(n =>
       (n.data as PlaybookNodeData).blockType === "placeholder"
-        ? { ...n, data: { ...n.data, onAddBlock: addBlockAtEnd } }
+        ? { ...n, data: { ...n.data, onAddBlock: (blockType: string) => addBlockAtLane(blockType, n.id) } }
         : n
     ),
-    [nodes, addBlockAtEnd]
+    [nodes, addBlockAtLane]
   );
 
   const edgesWithInsert = useMemo(() =>
@@ -1939,6 +2745,12 @@ function CanvasInner({
   const filteredInsertBlocks = useMemo(() =>
     BLOCKS.filter(b => !insertSearch || b.label.toLowerCase().includes(insertSearch.toLowerCase())),
     [insertSearch]
+  );
+
+  // Existing contact IDs for the Add Thread modal
+  const existingContactIds = useMemo(() =>
+    new Set(prospects.filter(p => p.contactId).map(p => p.contactId!)),
+    [prospects]
   );
 
   return (
@@ -1970,6 +2782,14 @@ function CanvasInner({
           <button className="text-amber-600 hover:text-amber-800 text-xs font-semibold">Dismiss</button>
         </div>
       )}
+
+      {/* Thread Roster */}
+      <ProspectRoster
+        prospects={prospects}
+        onToggleCascade={toggleProspectCascade}
+        onRemove={removeProspectLane}
+        onAddProspect={() => setShowAddProspect(true)}
+      />
 
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
@@ -2089,12 +2909,21 @@ function CanvasInner({
               onUpdate={updateNode}
               onDelete={deleteNode}
               onDuplicate={duplicateNode}
+              prospects={prospects}
+              allNodes={nodes as Node<PlaybookNodeData>[]}
             />
           </div>
         )}
       </div>
 
       <CannedLibraryModal open={showCanned} onClose={() => setShowCanned(false)} onSelect={applyCanned} />
+
+      <AddProspectModal
+        open={showAddProspect}
+        onClose={() => setShowAddProspect(false)}
+        onAdd={addProspectLane}
+        existingContactIds={existingContactIds}
+      />
     </div>
   );
 }
@@ -2110,10 +2939,10 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
   const { data: seqList } = useQuery<PlaybookMeta[]>({ queryKey: ["playbooks"], queryFn: () => apiFetch("/api/playbooks").then(r => r.json()) });
   const seq = seqList?.find(s => s.id === playbookId);
 
-  async function handleSave(nodes: Node<PlaybookNodeData>[], edges: Edge[]) {
+  async function handleSave(nodes: Node<PlaybookNodeData>[], edges: Edge[], prospects: ProspectEntry[]) {
     setSaving(true);
     try {
-      const canvas = JSON.stringify({ nodes, edges });
+      const canvas = JSON.stringify({ nodes, edges, prospects });
       await apiFetch(`/api/playbooks/${playbookId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -2198,6 +3027,7 @@ function PlaybooksList() {
     await apiFetch(`/api/playbooks/${id}`, { method: "DELETE" });
     qc.invalidateQueries({ queryKey: ["playbooks"] });
     localStorage.removeItem(`playbook_canvas_${id}`);
+    localStorage.removeItem(`playbook_canvas_v3_${id}`);
     toast({ title: "Deleted" });
   }
 
@@ -2256,9 +3086,17 @@ function PlaybooksList() {
         ) : (
           <div className="grid grid-cols-1 gap-3 max-w-4xl">
             {playbooks.map(pb => {
-              const storageKey = `playbook_canvas_${pb.id}`;
+              const storageKey = `playbook_canvas_v3_${pb.id}`;
               let blockCount = 0;
-              try { const raw = localStorage.getItem(storageKey); if (raw) { const cs = JSON.parse(raw) as CanvasState; blockCount = cs.nodes.length; } } catch {}
+              let prospectCount = 0;
+              try {
+                const raw = localStorage.getItem(storageKey);
+                if (raw) {
+                  const cs = JSON.parse(raw) as CanvasState;
+                  blockCount = cs.nodes.filter(n => (n.data as PlaybookNodeData).blockType !== "placeholder").length;
+                  prospectCount = (cs.prospects ?? []).filter(p => p.contactId).length;
+                }
+              } catch {}
               return (
                 <div
                   key={pb.id}
@@ -2273,6 +3111,11 @@ function PlaybooksList() {
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-[11px] text-muted-foreground">Updated {formatRelative(pb.updatedAt)}</span>
                       {blockCount > 0 && <span className="text-[11px] text-muted-foreground">{blockCount} block{blockCount !== 1 ? "s" : ""}</span>}
+                      {prospectCount > 0 && (
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
+                          <Users className="h-2.5 w-2.5" /> {prospectCount} thread{prospectCount !== 1 ? "s" : ""}
+                        </span>
+                      )}
                       {pb.enrollmentCount > 0 && <span className="text-[11px] text-muted-foreground">{pb.enrollmentCount} enrolled</span>}
                     </div>
                   </div>
@@ -2335,7 +3178,7 @@ function PlaybooksList() {
             });
             const seq: PlaybookMeta = await res.json();
             const state = canned.build();
-            localStorage.setItem(`playbook_canvas_${seq.id}`, JSON.stringify(state));
+            localStorage.setItem(`playbook_canvas_v3_${seq.id}`, JSON.stringify(state));
             qc.invalidateQueries({ queryKey: ["playbooks"] });
             navigate(`/playbooks/${seq.id}`);
           } finally {
