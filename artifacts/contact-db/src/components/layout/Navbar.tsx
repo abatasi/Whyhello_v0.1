@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
   Settings, ShieldCheck, Flame, ChevronDown, Clock,
-  Factory, Briefcase, Upload, Gauge, List, Milestone,
+  Factory, Briefcase, Upload, Gauge, List, Milestone, Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUser, useClerk } from "@clerk/react";
@@ -730,21 +730,29 @@ function LogoMenu({ wartime }: { wartime: boolean }) {
 
 export function Navbar() {
   const { user } = useUser();
+  const { signOut } = useClerk();
   const [location] = useLocation();
   const { mode } = useAppMode();
   const wartime = mode === "wartime";
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-  // Lists, Industries, Roles, Import live in "More"; HQ is centered
   const navItems = [
-    { label: "Directory", href: "/" },
-    { label: "Message Center", href: "/messages" },
-    { label: "Playbooks", href: "/playbooks" },
-    { label: "Multi-threading", href: "/multithreading" },
+    { label: "Directory",       href: "/",               icon: Users    },
+    { label: "Message Center",  href: "/messages",       icon: Bell     },
+    { label: "Playbooks",       href: "/playbooks",      icon: List     },
+    { label: "Multi-threading", href: "/multithreading", icon: Zap      },
   ];
 
   const displayName = user?.firstName
     ? `${user.firstName} ${user.lastName ?? ""}`.trim()
     : user?.primaryEmailAddress?.emailAddress ?? "Account";
+
+  const isMaster = user?.primaryEmailAddress?.emailAddress === MASTER_EMAIL;
+  const moreItems = isMaster ? [...baseMoreItems, ...masterMoreItems] : baseMoreItems;
+  const allMobileItems = [...navItems, ...moreItems];
+
+  function closeMobile() { setMobileOpen(false); }
 
   return (
     <header
@@ -755,14 +763,13 @@ export function Navbar() {
           : "border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
       )}
     >
-      {/* 3-column grid: left = logo + nav, center = HQ pill, right = utilities */}
-      <div className="w-full px-6 xl:px-8 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+      {/* ── Desktop bar (md+) — 3-column grid ── */}
+      <div className="hidden md:grid w-full px-6 xl:px-8 h-16 grid-cols-[1fr_auto_1fr] items-center gap-4">
 
-        {/* ── Left: logo menu + nav ── */}
+        {/* Left: logo menu + nav */}
         <div className="flex items-center gap-1 min-w-0">
           <LogoMenu wartime={wartime} />
-
-          <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+          <nav className="flex items-center gap-1 text-sm font-medium">
             {navItems.map((item) => {
               const isActive = item.href === "/"
                 ? location === "/" || location === ""
@@ -774,12 +781,8 @@ export function Navbar() {
                   className={cn(
                     "px-4 py-2 rounded-lg transition-colors whitespace-nowrap",
                     wartime
-                      ? isActive
-                        ? "bg-[#E0BBA8] text-[#5C2E22]"
-                        : "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
-                      : isActive
-                      ? "bg-secondary/50 text-foreground"
-                      : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
+                      ? isActive ? "bg-[#E0BBA8] text-[#5C2E22]" : "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
+                      : isActive ? "bg-secondary/50 text-foreground" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
                   )}
                 >
                   {item.label}
@@ -790,46 +793,128 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* ── Center: HQ pill ── */}
+        {/* Center: HQ pill */}
         <HQPill wartime={wartime} />
 
-        {/* ── Right: utilities ── */}
+        {/* Right: utilities */}
         <div className="flex items-center gap-2 justify-end">
           <CreditTracker wartime={wartime} />
-
           <GlobalSearch wartime={wartime} />
-
           <div className={cn("h-8 w-px mx-1", wartime ? "bg-[#E0BBA8]" : "bg-border")} />
-
           <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             {user?.imageUrl ? (
-              <img
-                src={user.imageUrl}
-                alt="Profile"
-                className={cn(
-                  "h-7 w-7 rounded-full object-cover border",
-                  wartime ? "border-[#DDB99E]" : "border-border",
-                )}
-              />
+              <img src={user.imageUrl} alt="Profile" className={cn("h-7 w-7 rounded-full object-cover border", wartime ? "border-[#DDB99E]" : "border-border")} />
             ) : (
-              <div className={cn(
-                "h-7 w-7 rounded-full flex items-center justify-center font-semibold text-xs border",
-                wartime
-                  ? "bg-[#EDD4C6] text-[#7C3E2A] border-[#DDB99E]"
-                  : "bg-primary/10 text-primary border-primary/20",
-              )}>
+              <div className={cn("h-7 w-7 rounded-full flex items-center justify-center font-semibold text-xs border", wartime ? "bg-[#EDD4C6] text-[#7C3E2A] border-[#DDB99E]" : "bg-primary/10 text-primary border-primary/20")}>
                 {getInitials(displayName)}
               </div>
             )}
-            <span className={cn(
-              "text-sm font-medium hidden md:block",
-              wartime ? "text-[#7C3E2A]" : "",
-            )}>
-              {displayName}
-            </span>
+            <span className={cn("text-sm font-medium", wartime ? "text-[#7C3E2A]" : "")}>{displayName}</span>
           </Link>
         </div>
       </div>
+
+      {/* ── Mobile bar (< md) ── */}
+      <div className="md:hidden flex items-center px-4 h-14 gap-2">
+        {/* W logo mark */}
+        <div className="overflow-hidden flex-shrink-0" style={{ width: 36, height: 24 }}>
+          <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto max-w-none" />
+        </div>
+
+        <div className="flex-1" />
+
+        {/* HQ pill */}
+        <HQPill wartime={wartime} />
+
+        {/* Hamburger / close */}
+        <button
+          onClick={() => setMobileOpen(v => !v)}
+          className={cn(
+            "p-2 -mr-1 rounded-lg transition-colors flex-shrink-0",
+            wartime ? "text-[#7C3E2A] hover:bg-[#EDD4C6]" : "text-foreground hover:bg-secondary/40",
+          )}
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {/* ── Mobile drawer ── */}
+      {mobileOpen && (
+        <div
+          className={cn(
+            "md:hidden border-t overflow-y-auto",
+            "max-h-[calc(100svh-3.5rem)]",
+            wartime ? "border-[#e8c9b8] bg-[#F4E2D8]" : "border-border bg-background",
+          )}
+        >
+          {/* Nav + more items */}
+          <nav className="px-3 pt-3 pb-1 flex flex-col gap-0.5">
+            {allMobileItems.map(({ label, href, icon: Icon }) => {
+              const isActive = href === "/"
+                ? location === "/" || location === ""
+                : location.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={closeMobile}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors",
+                    wartime
+                      ? isActive ? "bg-[#E0BBA8] text-[#5C2E22]" : "text-[#7C3E2A] hover:bg-[#EDD4C6]/60"
+                      : isActive ? "bg-secondary/60 text-foreground" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-4 w-4 flex-shrink-0 opacity-70" />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className={cn("h-px mx-4 my-2", wartime ? "bg-[#e8c9b8]" : "bg-border/60")} />
+
+          {/* Profile row */}
+          <Link
+            href="/profile"
+            onClick={closeMobile}
+            className={cn(
+              "flex items-center gap-3 mx-3 px-3 py-3 my-1 rounded-xl transition-colors",
+              wartime ? "hover:bg-[#EDD4C6]/60" : "hover:bg-secondary/30",
+            )}
+          >
+            {user?.imageUrl ? (
+              <img src={user.imageUrl} alt="Profile" className={cn("h-9 w-9 rounded-full object-cover border flex-shrink-0", wartime ? "border-[#DDB99E]" : "border-border")} />
+            ) : (
+              <div className={cn("h-9 w-9 rounded-full flex items-center justify-center font-semibold text-sm border flex-shrink-0", wartime ? "bg-[#EDD4C6] text-[#7C3E2A] border-[#DDB99E]" : "bg-primary/10 text-primary border-primary/20")}>
+                {getInitials(displayName)}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className={cn("text-sm font-semibold truncate", wartime ? "text-[#5C2E22]" : "text-foreground")}>{displayName}</p>
+              <p className="text-xs text-muted-foreground">Profile &amp; settings</p>
+            </div>
+            <CreditTracker wartime={wartime} />
+          </Link>
+
+          <div className={cn("h-px mx-4 my-2", wartime ? "bg-[#e8c9b8]" : "bg-border/60")} />
+
+          {/* Sign out */}
+          <div className="px-3 pb-4">
+            <button
+              onClick={() => { closeMobile(); signOut({ redirectUrl: basePath || "/" }); }}
+              className={cn(
+                "flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-medium text-left transition-colors",
+                wartime ? "text-[#7C3E2A] hover:bg-[#EDD4C6]/60" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
+              )}
+            >
+              <LogOut className="h-4 w-4 flex-shrink-0" />
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
