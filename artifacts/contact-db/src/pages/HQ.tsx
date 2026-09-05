@@ -578,7 +578,7 @@ function useAutoSave(data: DNAData) {
 function Section({
   icon: Icon, title, subtitle,
   accentBg, accentBorder, accentColor,
-  defaultOpen = true, children,
+  children,
 }: {
   icon: React.ElementType;
   title: string;
@@ -586,16 +586,11 @@ function Section({
   accentBg: string;
   accentBorder: string;
   accentColor: string;
-  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-4 px-6 py-5 text-left hover:bg-secondary/20 transition-colors"
-      >
+      <div className="w-full flex items-center gap-4 px-6 py-5 text-left">
         <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border flex-shrink-0", accentBg, accentBorder)}>
           <Icon className={cn("h-5 w-5", accentColor)} />
         </div>
@@ -603,13 +598,10 @@ function Section({
           <p className="text-sm font-bold text-foreground">{title}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
         </div>
-        <ChevronDown className={cn("h-4 w-4 text-muted-foreground/60 transition-transform flex-shrink-0", open && "rotate-180")} />
-      </button>
-      {open && (
-        <div className="border-t border-border/40 px-6 py-6 flex flex-col gap-6">
-          {children}
-        </div>
-      )}
+      </div>
+      <div className="border-t border-border/40 px-6 py-6 flex flex-col gap-6">
+        {children}
+      </div>
     </div>
   );
 }
