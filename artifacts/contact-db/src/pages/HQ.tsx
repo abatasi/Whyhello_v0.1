@@ -76,6 +76,11 @@ function mergeDNA(parsed: StoredDNA): DNAData {
     products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: (p.economicBenefits ?? []).map(eb => ({ label: "", ...eb })) })),
     customers: (parsed.customers ?? []).map(c => ({
       ...c,
+      companyId: c.companyId ?? null,
+      companyName: c.companyName ?? "",
+      companyIndustry: c.companyIndustry ?? "",
+      companySize: c.companySize ?? "",
+      companyHeadquarters: c.companyHeadquarters ?? "",
       testimonialAttribution: c.testimonialAttribution === "named" ? "named" : "anonymized",
       anonymizedCustomerLabel: c.anonymizedCustomerLabel ?? "",
       economicBenefits: (c.economicBenefits ?? []).map(eb => ({ label: "", ...eb })),
@@ -352,6 +357,11 @@ interface Customer {
   id: string;
   rawTestimonial: string;
   customerProfile: string;
+  companyId: number | null;
+  companyName: string;
+  companyIndustry: string;
+  companySize: string;
+  companyHeadquarters: string;
   testimonialAttribution: "named" | "anonymized";
   anonymizedCustomerLabel: string;
   startingSituation: string;
@@ -361,6 +371,43 @@ interface Customer {
   results: string;
   economicBenefits: EconomicBenefit[];
   customerQuote: string;
+}
+
+function companyScaleLabel(size: string | null, employeeCount: number | null): string {
+  if (employeeCount) {
+    if (employeeCount >= 5_000) return "large";
+    if (employeeCount >= 200) return "mid-sized";
+    if (employeeCount < 50) return "small";
+  }
+  const normalized = (size ?? "").toLowerCase().replace(/,/g, "");
+  const upperBound = Number(normalized.match(/\d+/g)?.at(-1) ?? 0);
+  if (normalized.includes("10000") || normalized.includes("5000+") || upperBound >= 5_000) return "large";
+  if (upperBound >= 200) return "mid-sized";
+  if (upperBound > 0) return "small";
+  return "";
+}
+
+function industryCompanyLabel(industry: string | null): string {
+  const value = (industry ?? "").trim().toLowerCase();
+  if (!value) return "company";
+  if (value.includes("technology") || value.includes("software")) return "technology firm";
+  if (value.includes("retail")) return "retailer";
+  if (value.includes("financial") || value.includes("bank")) return "financial services firm";
+  if (value.includes("health")) return "healthcare organization";
+  if (value.includes("manufactur")) return "manufacturer";
+  return `${value} company`;
+}
+
+function buildAnonymizedCompanyLabel(company: CompanyOption): string {
+  const scale = companyScaleLabel(company.size, company.employeeCount);
+  const companyType = industryCompanyLabel(company.industry);
+  const headquarters = company.location?.trim() || company.country?.trim();
+  return [
+    "A",
+    scale,
+    companyType,
+    headquarters ? `headquartered in ${headquarters}` : "",
+  ].filter(Boolean).join(" ");
 }
 
 interface MarketPosition {
@@ -872,8 +919,36 @@ function CustomerCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: customer.rawTestimonial }),
       });
-      const extracted = await resp.json();
-      onUpdate(extracted);
+      const extracted = await resp.json() as Partial<Customer>;
+      const extractedCompanyName = extracted.companyName?.trim();
+
+      if (extractedCompanyName) {
+        const companyResp = await apiFetch(
+          `/api/companies?search=${encodeURIComponent(extractedCompanyName)}&limit=8`,
+        );
+        const companyJson = await companyResp.json() as { data?: CompanyOption[] };
+        const candidates = companyJson.data ?? [];
+        const company = candidates.find(
+          candidate => candidate.name.toLowerCase() === extractedCompanyName.toLowerCase(),
+        );
+
+        if (company) {
+          const headquarters = company.location?.trim() || company.country?.trim() || "";
+          onUpdate({
+            ...extracted,
+            companyId: company.id,
+            companyName: company.name,
+            companyIndustry: company.industry ?? "",
+            companySize: company.size ?? (company.employeeCount ? `${company.employeeCount.toLocaleString()} employees` : ""),
+            companyHeadquarters: headquarters,
+            anonymizedCustomerLabel: buildAnonymizedCompanyLabel(company),
+          });
+        } else {
+          onUpdate(extracted);
+        }
+      } else {
+        onUpdate(extracted);
+      }
       setShowSource(false);
     } catch { /* ignore */ }
     setExtracting(false);
@@ -946,6 +1021,57 @@ function CustomerCard({
         </div>
 
         {/* Structured fields */}
+        <div className="rounded-xl border border-sky-200 bg-sky-50/40 p-4 flex flex-col gap-3">
+          <div>
+            <p className="text-xs font-bold text-foreground">Match company from your database</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Pull Industry, Company Size, and Headquarters to create a safe anonymous description.
+            </p>
+          </div>
+          <CompanySearchField
+            name={customer.companyName ?? ""}
+            companyId={customer.companyId ?? null}
+            onSelect={company => {
+              const headquarters = company.location?.trim() || company.country?.trim() || "";
+              onUpdate({
+                companyId: company.id,
+                companyName: company.name,
+                companyIndustry: company.industry ?? "",
+                companySize: company.size ?? (company.employeeCount ? `${company.employeeCount.toLocaleString()} employees` : ""),
+                companyHeadquarters: headquarters,
+                customerProfile: [
+                  company.name,
+                  company.industry,
+                  company.size,
+                  headquarters,
+                ].filter(Boolean).join(" · "),
+                anonymizedCustomerLabel: buildAnonymizedCompanyLabel(company),
+              });
+            }}
+            onClear={() => onUpdate({
+              companyId: null,
+              companyName: "",
+              companyIndustry: "",
+              companySize: "",
+              companyHeadquarters: "",
+            })}
+          />
+          {customer.companyId && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                ["Industry", customer.companyIndustry],
+                ["Company size", customer.companySize],
+                ["Headquarters", customer.companyHeadquarters],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg border border-sky-100 bg-white/70 px-3 py-2">
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <p className="text-xs font-medium text-foreground mt-0.5">{value || "Not available"}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <Field label="Customer profile" hint="Company, industry, role, size">
             <Textarea value={customer.customerProfile} onChange={v => onUpdate({ customerProfile: v })} placeholder="e.g. Mid-market SaaS company, 200-person team, VP of Revenue Operations" rows={2} />
@@ -1113,7 +1239,16 @@ function CustomerCard({
 
 // ── CompanySearchField ────────────────────────────────────────────────────────
 
-interface CompanyOption { id: number; name: string; website: string | null; industry: string | null; }
+interface CompanyOption {
+  id: number;
+  name: string;
+  website: string | null;
+  industry: string | null;
+  size: string | null;
+  location: string | null;
+  country: string | null;
+  employeeCount: number | null;
+}
 interface CompanySample { id: number; name: string; industry: string | null; size: string | null; location: string | null; }
 
 function CompanySearchField({
@@ -1201,7 +1336,9 @@ function CompanySearchField({
               <Building2 className="h-3.5 w-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <div className="text-sm font-medium text-foreground truncate">{c.name}</div>
-                {c.industry && <div className="text-[11px] text-muted-foreground truncate">{c.industry}</div>}
+                <div className="text-[11px] text-muted-foreground truncate">
+                  {[c.industry, c.size, c.location || c.country].filter(Boolean).join(" · ")}
+                </div>
               </div>
             </button>
           ))}
@@ -2068,6 +2205,11 @@ export default function HQ() {
     id: crypto.randomUUID(),
     rawTestimonial: "",
     customerProfile: "",
+    companyId: null,
+    companyName: "",
+    companyIndustry: "",
+    companySize: "",
+    companyHeadquarters: "",
     testimonialAttribution: "anonymized",
     anonymizedCustomerLabel: "",
     startingSituation: "",

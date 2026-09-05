@@ -42,6 +42,11 @@ interface Product { id: string; name: string; tagline: string; features: string;
 interface Customer {
   id: string;
   customerProfile: string;
+  companyId: number | null;
+  companyName: string;
+  companyIndustry: string;
+  companySize: string;
+  companyHeadquarters: string;
   testimonialAttribution: "named" | "anonymized";
   anonymizedCustomerLabel: string;
   results: string;
@@ -77,6 +82,11 @@ async function fetchSellerDNA(userId: string | null): Promise<SellerDNA | null> 
       customers: (parsed.customers ?? []).map((c: Partial<Customer>) => ({
         id: c.id ?? "", customerProfile: c.customerProfile ?? "", results: c.results ?? "",
         customerTransformation: c.customerTransformation ?? "", customerQuote: c.customerQuote ?? "",
+        companyId: c.companyId ?? null,
+        companyName: c.companyName ?? "",
+        companyIndustry: c.companyIndustry ?? "",
+        companySize: c.companySize ?? "",
+        companyHeadquarters: c.companyHeadquarters ?? "",
         testimonialAttribution: c.testimonialAttribution === "named" ? "named" : "anonymized",
         anonymizedCustomerLabel: c.anonymizedCustomerLabel ?? "",
         economicBenefits: c.economicBenefits ?? [],

@@ -136,6 +136,11 @@ interface Customer {
   id: string;
   rawTestimonial: string;
   customerProfile: string;      // who they are (role, industry, size)
+  companyId: number | null;      // optional link to Whyhello's company database
+  companyName: string;
+  companyIndustry: string;
+  companySize: string;
+  companyHeadquarters: string;
   testimonialAttribution: "named" | "anonymized";
   anonymizedCustomerLabel: string; // safe replacement, e.g. "a large retailer in North America"
   startingSituation: string;    // before state
@@ -159,6 +164,14 @@ Every customer proof point must carry an explicit attribution permission:
 - **Anonymized** — messaging must never reveal the company name or identifying details. It must use `anonymizedCustomerLabel`; if that label is blank, use the generic phrase “an anonymized customer.”
 
 Attribution permission governs the transformation, results, economic benefits, and direct quote as one indivisible proof point. A verbatim quote does not override an anonymization requirement.
+
+When a customer is matched to Whyhello's company database, Industry, Company Size, and Headquarters are copied into the proof point. These attributes generate the default anonymous description in the form:
+
+> A [size] [industry company type] headquartered in [location]
+
+For example: “A large technology firm headquartered in the United States.” The user may edit this description, but generated messaging must use the stored anonymous description rather than reconstructing or exposing the linked company name.
+
+After testimonial extraction, the system should use the explicitly stated company name to search Whyhello's company database automatically. Link only an exact case-insensitive name match. When no exact match exists, retain the extracted name and present search candidates for user correction; never silently link a merely similar company.
 
 ### 2.6 Competitors
 

@@ -191,6 +191,7 @@ router.post("/testimonial-extract", async (req, res) => {
 
 Return ONLY a valid JSON object with these exact keys (use empty string "" if a field cannot be determined):
 {
+  "companyName": "Exact customer company name if explicitly stated, otherwise empty string",
   "customerProfile": "Brief description of the customer — company name, industry, size, role of the contact if known",
   "startingSituation": "The before state — what problem, pain, or situation they were experiencing before the solution",
   "customerPriorities": "What they were trying to achieve — their goals and priorities",
