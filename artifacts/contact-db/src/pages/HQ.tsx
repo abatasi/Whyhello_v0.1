@@ -2151,7 +2151,7 @@ export default function HQ() {
 
   return (
     <Shell>
-      <div className="w-full max-w-[1400px] mx-auto py-8 px-8 flex flex-col gap-6">
+      <div className="w-full max-w-[1400px] mx-auto py-8 px-8 flex-1 min-h-0 overflow-y-auto flex flex-col gap-6">
 
         {/* Page header */}
         <div className="flex items-start justify-between">
