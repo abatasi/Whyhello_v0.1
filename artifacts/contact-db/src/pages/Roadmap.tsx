@@ -172,6 +172,33 @@ const items: RoadmapItem[] = [
       dot: "bg-teal-500",
     },
   },
+  {
+    id: "sales-simulation",
+    title: "AI Sales Simulation Environment",
+    quarter: "Q4 2026",
+    status: "planned",
+    icon: Video,
+    tagline: "Rehearse the real meeting before it happens — with AI versions of the buyers in the room.",
+    particulars: [
+      { icon: Users,        text: "Run a one-to-one simulation with a contact or an account simulation with multiple contacts from the same company" },
+      { icon: Video,        text: "Familiar meeting-room interface modelled on Teams and Zoom, with participant tiles, controls, speaking indicators, and meeting states" },
+      { icon: Search,       text: "Each AI contact is grounded in Whyhello's gathered insights, role, seniority, company context, priorities, likely concerns, and individual perspective" },
+      { icon: Mic2,         text: "Live voice-based discussion: the user speaks naturally and each AI participant responds in character, including realistic follow-up questions and objections" },
+      { icon: Sparkles,     text: "Multi-thread account dynamics: contacts may agree, challenge one another, introduce competing priorities, or influence the discussion from their functional viewpoint" },
+      { icon: BarChart3,    text: "Post-simulation coaching report covering discovery quality, value articulation, objection handling, stakeholder coverage, talk ratio, missed opportunities, and recommended practice" },
+    ],
+    timeEstimate: "10–14 weeks",
+    computeEstimate: "~$0.10–0.40 / min depending on participant count, real-time voice model, and transcript analysis",
+    accent: {
+      bg: "bg-fuchsia-50 dark:bg-fuchsia-950/20",
+      border: "border-fuchsia-200 dark:border-fuchsia-800/50",
+      iconBg: "bg-fuchsia-100 dark:bg-fuchsia-900/40",
+      iconText: "text-fuchsia-600 dark:text-fuchsia-400",
+      badge: "bg-fuchsia-100 dark:bg-fuchsia-900/40",
+      badgeText: "text-fuchsia-700 dark:text-fuchsia-300",
+      dot: "bg-fuchsia-500",
+    },
+  },
 ];
 
 // ── Status badge ───────────────────────────────────────────────────────────────
