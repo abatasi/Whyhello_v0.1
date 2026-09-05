@@ -74,7 +74,12 @@ function mergeDNA(parsed: StoredDNA): DNAData {
     voice: { ...d.voice, ...(parsed.voice ?? {}) },
     company: { ...d.company, ...(parsed.company ?? {}) },
     products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: (p.economicBenefits ?? []).map(eb => ({ label: "", ...eb })) })),
-    customers: (parsed.customers ?? []).map(c => ({ ...c, economicBenefits: (c.economicBenefits ?? []).map(eb => ({ label: "", ...eb })) })),
+    customers: (parsed.customers ?? []).map(c => ({
+      ...c,
+      testimonialAttribution: c.testimonialAttribution === "named" ? "named" : "anonymized",
+      anonymizedCustomerLabel: c.anonymizedCustomerLabel ?? "",
+      economicBenefits: (c.economicBenefits ?? []).map(eb => ({ label: "", ...eb })),
+    })),
     marketPosition: { ...d.marketPosition, ...(parsed.marketPosition ?? {}) },
     competitors: (parsed.competitors ?? []).map(c => ({
       ...c,
@@ -347,6 +352,8 @@ interface Customer {
   id: string;
   rawTestimonial: string;
   customerProfile: string;
+  testimonialAttribution: "named" | "anonymized";
+  anonymizedCustomerLabel: string;
   startingSituation: string;
   customerPriorities: string;
   solutionProvided: string;
@@ -961,6 +968,53 @@ function CustomerCard({
         <Field label="Results" hint="Specific measurable outcomes">
           <Textarea value={customer.results} onChange={v => onUpdate({ results: v })} placeholder={"3× increase in qualified meetings booked\n80% reduction in prospect research time\n47% higher email reply rates"} rows={3} />
         </Field>
+
+        {/* Testimonial attribution permission */}
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 flex flex-col gap-3">
+          <div>
+            <p className="text-xs font-bold text-foreground">Testimonial attribution</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Control whether generated messaging may identify this customer.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onUpdate({ testimonialAttribution: "named" })}
+              className={cn(
+                "rounded-xl border px-3 py-3 text-left transition-all",
+                customer.testimonialAttribution === "named"
+                  ? "border-indigo-300 bg-white ring-1 ring-indigo-200"
+                  : "border-border/60 bg-white/60 hover:border-indigo-200",
+              )}
+            >
+              <p className="text-xs font-semibold text-foreground">Use in full</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Company name may be included, e.g. “Acme Retail”.</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => onUpdate({ testimonialAttribution: "anonymized" })}
+              className={cn(
+                "rounded-xl border px-3 py-3 text-left transition-all",
+                customer.testimonialAttribution !== "named"
+                  ? "border-indigo-300 bg-white ring-1 ring-indigo-200"
+                  : "border-border/60 bg-white/60 hover:border-indigo-200",
+              )}
+            >
+              <p className="text-xs font-semibold text-foreground">Anonymize</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Never reveal the company name or identifying details.</p>
+            </button>
+          </div>
+          {customer.testimonialAttribution !== "named" && (
+            <Field label="Anonymous description" hint="The safe description used in generated messaging">
+              <Input
+                value={customer.anonymizedCustomerLabel ?? ""}
+                onChange={v => onUpdate({ anonymizedCustomerLabel: v })}
+                placeholder="e.g. A large retailer in North America"
+              />
+            </Field>
+          )}
+        </div>
 
         {/* Economic benefits */}
         <div className="pt-3 border-t border-border/40">
@@ -2010,7 +2064,20 @@ export default function HQ() {
   }
   // ── Customer helpers ──
   function addCustomer() {
-    const c: Customer = { id: crypto.randomUUID(), rawTestimonial: "", customerProfile: "", startingSituation: "", customerPriorities: "", solutionProvided: "", customerTransformation: "", results: "", economicBenefits: [], customerQuote: "" };
+  const c: Customer = {
+    id: crypto.randomUUID(),
+    rawTestimonial: "",
+    customerProfile: "",
+    testimonialAttribution: "anonymized",
+    anonymizedCustomerLabel: "",
+    startingSituation: "",
+    customerPriorities: "",
+    solutionProvided: "",
+    customerTransformation: "",
+    results: "",
+    economicBenefits: [],
+    customerQuote: "",
+  };
     setData(d => ({ ...d, customers: [...d.customers, c] }));
   }
   function updateCustomer(id: string, patch: Partial<Customer>) {

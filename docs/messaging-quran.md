@@ -136,6 +136,8 @@ interface Customer {
   id: string;
   rawTestimonial: string;
   customerProfile: string;      // who they are (role, industry, size)
+  testimonialAttribution: "named" | "anonymized";
+  anonymizedCustomerLabel: string; // safe replacement, e.g. "a large retailer in North America"
   startingSituation: string;    // before state
   customerPriorities: string;   // what they cared about
   solutionProvided: string;     // what was delivered
@@ -148,6 +150,15 @@ interface Customer {
 
 Customer EBs use **simple past tense** (proof: this already happened).
 Product EBs use **present tense** (promise: this is what the product does).
+
+#### Law of Testimonial Attribution
+
+Every customer proof point must carry an explicit attribution permission:
+
+- **Named** — messaging may identify the company using the stored customer profile.
+- **Anonymized** — messaging must never reveal the company name or identifying details. It must use `anonymizedCustomerLabel`; if that label is blank, use the generic phrase “an anonymized customer.”
+
+Attribution permission governs the transformation, results, economic benefits, and direct quote as one indivisible proof point. A verbatim quote does not override an anonymization requirement.
 
 ### 2.6 Competitors
 
@@ -845,6 +856,10 @@ From the `customers` array, select the proof point where `customerProfile` most 
 - `results` as the supporting detail
 - `customerQuote` as optional close
 - Customer EBs as past-tense quantified validation of the product EB claim
+
+Before rendering the proof, enforce `testimonialAttribution`:
+- For `named`, the customer/company may be identified.
+- For `anonymized`, replace the identity with `anonymizedCustomerLabel` and suppress all stored names or identifying details. If no safe label exists, say “an anonymized customer.”
 
 ### 5.5 Hook Selection (Outside-In Lead)
 

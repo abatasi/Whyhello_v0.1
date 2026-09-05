@@ -39,7 +39,16 @@ function fmtInsight(i: InsightRow, showUrl = false) {
 
 interface EconomicBenefit { id: string; description: string; amount: string; unit: string; frequency: string }
 interface Product { id: string; name: string; tagline: string; features: string; outcomes: string; persona: string; economicBenefits: EconomicBenefit[] }
-interface Customer { id: string; customerProfile: string; results: string; customerTransformation: string; customerQuote: string; economicBenefits: EconomicBenefit[] }
+interface Customer {
+  id: string;
+  customerProfile: string;
+  testimonialAttribution: "named" | "anonymized";
+  anonymizedCustomerLabel: string;
+  results: string;
+  customerTransformation: string;
+  customerQuote: string;
+  economicBenefits: EconomicBenefit[];
+}
 interface SellerDNA {
   company: { name: string; valueWedge: string; positioning: string; differentiators: string; pillars: [string, string, string] };
   products: Product[];
@@ -68,6 +77,8 @@ async function fetchSellerDNA(userId: string | null): Promise<SellerDNA | null> 
       customers: (parsed.customers ?? []).map((c: Partial<Customer>) => ({
         id: c.id ?? "", customerProfile: c.customerProfile ?? "", results: c.results ?? "",
         customerTransformation: c.customerTransformation ?? "", customerQuote: c.customerQuote ?? "",
+        testimonialAttribution: c.testimonialAttribution === "named" ? "named" : "anonymized",
+        anonymizedCustomerLabel: c.anonymizedCustomerLabel ?? "",
         economicBenefits: c.economicBenefits ?? [],
       })),
     };
@@ -101,11 +112,20 @@ function buildSellerContext(dna: SellerDNA | null): string {
 
   dna.customers.slice(0, 2).forEach(c => {
     if (!c.customerProfile && !c.results) return;
+    const canNameCustomer = c.testimonialAttribution === "named";
+    const safeCustomerLabel = canNameCustomer
+      ? c.customerProfile
+      : c.anonymizedCustomerLabel.trim() || "An anonymized customer";
     lines.push(`\nCustomer proof point:`);
-    if (c.customerProfile) lines.push(`  Profile: ${c.customerProfile}`);
+    lines.push(
+      canNameCustomer
+        ? "  Attribution permission: NAMED — the customer/company name may be used."
+        : "  Attribution permission: ANONYMIZED — never reveal the customer/company name or identifying details.",
+    );
+    if (safeCustomerLabel) lines.push(`  Safe attribution: ${safeCustomerLabel}`);
     if (c.customerTransformation) lines.push(`  Transformation: ${c.customerTransformation}`);
     if (c.results) lines.push(`  Results: ${c.results}`);
-    if (c.customerQuote) lines.push(`  Quote: "${c.customerQuote}"`);
+    if (c.customerQuote) lines.push(`  Quote: "${c.customerQuote}" — attribute only as ${safeCustomerLabel}`);
   });
 
   return lines.length ? lines.join("\n") : "  No seller context configured — infer a credible value prop from the conversation context.";
