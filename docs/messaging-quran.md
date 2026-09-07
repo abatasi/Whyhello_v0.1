@@ -940,9 +940,9 @@ EB sentences must be **full declarative sentences**, not bare label fragments. P
 
 **Gain (Product — present tense):**
 ```
-Our [product name] {predicate} — **{amount} {unit}**, {freq}.
+Our [product name] {predicate}, gaining **{amount} {unit}** {freq}.
 ```
-Example: *Our Advisor Partnership Platform protects recurring revenue by successfully transferring client assets — **$9,000 per $1M of AUM retained**, each year.*
+Example: *Our Advisor Partnership Platform protects recurring revenue by successfully transferring client assets, gaining **$9,000 per $1M of AUM retained** each year.*
 
 **Pain (Product — present tense):**
 ```
@@ -952,11 +952,11 @@ Example: *Our Advisor Partnership Platform eliminates manual compliance reportin
 
 **Gain (Customer — simple past):**
 ```
-[permitted customer identity] {predicate} — **{amount} {unit}**, {freq}.
+[permitted customer identity] {predicate}, gaining **{amount} {unit}** {freq}.
 ```
-Named example: *Acme Corp generated revenue from assets under management — **1.2% per $1M of net-new AUM**, each year.*
+Named example: *Acme Corp generated revenue from assets under management, gaining **1.2% per $1M of net-new AUM** each year.*
 
-Anonymized example: *A large technology firm headquartered in North America generated revenue from assets under management — **1.2% per $1M of net-new AUM**, each year.*
+Anonymized example: *A large technology firm headquartered in North America generated revenue from assets under management, gaining **1.2% per $1M of net-new AUM** each year.*
 
 **Pain (Customer — simple past):**
 ```

@@ -329,7 +329,7 @@ function EBSummary({ parts, colorClass, iconClass }: {
       <p className={cn("text-xs leading-relaxed italic", colorClass.includes("rose") ? "text-rose-700" : "text-emerald-700")}>
         <span className="not-italic">{parts.subject} </span>
         <strong className="not-italic font-semibold">{parts.predicate}</strong>
-        {hasAmount && parts.type === "gain" && <> — {quantifier}</>}
+        {hasAmount && parts.type === "gain" && <>, gaining {quantifier}</>}
         {hasAmount && parts.type === "pain" && <>, saving {quantifier}</>}
         {parts.freq && <span className="not-italic">, {parts.freq}</span>}
         <span className="not-italic">.</span>
