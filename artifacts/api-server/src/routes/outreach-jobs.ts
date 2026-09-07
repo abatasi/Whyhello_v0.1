@@ -619,10 +619,13 @@ LAYER 4 — PROOF  (EB sentence + optional customer reference)
   EB sentences must be full declarative sentences — never bare label fragments.
   Prefix with "Our [product name]" and write the verb phrase as a natural predicate.
 
-  Gain EB format : "Our [product name] **[verb phrase], valued on average at [amount] [unit] [frequency].**"
-    Example: "Our Advisor Partnership Platform **protects recurring revenue by successfully transferring client assets, valued on average at $9,000 per $1M of AUM retained each year.**"
+  Gain EB format : "Our [product name] **[verb phrase], gaining on average [amount] [unit] [frequency].**"
+    Example: "Our Advisor Partnership Platform **protects recurring revenue by successfully transferring client assets, gaining on average $9,000 per $1M of AUM retained yearly.**"
   Pain EB format : "Our [product name] **[verb phrase], saving on average [amount] [unit] [frequency].**"
-    Example: "Our Advisor Partnership Platform **eliminates manual compliance reporting, saving on average $80K per advisor each year.**"
+    Example: "Our Advisor Partnership Platform **eliminates manual compliance reporting, saving on average $80K per advisor yearly.**"
+
+  Chain frequency directly to the quantified amount and unit with no separating comma.
+  Use compact terms such as "yearly", "monthly", "weekly", "one-time", or "per transaction" rather than "each year" or "every month".
 
   The "on average" qualifier is mandatory — it signals a typical or representative figure rather than a guarantee, which is both more honest and more credible to a sophisticated buyer.
   Bold covers the entire predicate — verb phrase through the final unit/frequency — so the full economic claim reads as a single emphatic unit.
@@ -678,7 +681,7 @@ STYLING RULES
   • Bold the crux of the VALUE layer — wrap the key outcome phrase (the specific capability or result) in **double asterisks**.
     Example: "That's exactly what [Company] was built for — **giving senior advisors the planning resources and open investment access needed to address complex life-change scenarios while preserving a differentiated, advisor-owned practice.**"
   • Bold the entire EB sentence predicate in the PROOF layer — from the verb phrase through the final unit/frequency, so the full economic claim reads as one emphatic unit.
-    Example: "Our Advisor Partnership Platform **protects recurring revenue by successfully transferring client assets, valued on average at $9,000 per $1M of AUM retained each year.**"
+    Example: "Our Advisor Partnership Platform **protects recurring revenue by successfully transferring client assets, gaining on average $9,000 per $1M of AUM retained yearly.**"
   • Always separate HOOK, BRIDGE, VALUE, PROOF, and CTA with a blank line between each section — this means two line breaks between sections, producing a visible paragraph gap. This applies regardless of email length. Never compress sections into a single-spaced block.
 
 ABSOLUTE PROHIBITIONS

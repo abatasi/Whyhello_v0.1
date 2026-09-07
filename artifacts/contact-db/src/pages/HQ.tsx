@@ -114,10 +114,10 @@ function saveDNA(data: DNAData) {
 
 function frequencyPhrase(freq: string): string {
   switch (freq) {
-    case "yearly":          return "each year";
-    case "monthly":         return "each month";
-    case "weekly":          return "each week";
-    case "one-time":        return "as a one-time benefit";
+    case "yearly":          return "yearly";
+    case "monthly":         return "monthly";
+    case "weekly":          return "weekly";
+    case "one-time":        return "one-time";
     case "per-transaction": return "per transaction";
     default:                return freq;
   }
@@ -331,7 +331,7 @@ function EBSummary({ parts, colorClass, iconClass }: {
         <strong className="not-italic font-semibold">{parts.predicate}</strong>
         {hasAmount && parts.type === "gain" && <><span className="not-italic font-normal">, gaining </span>{quantifier}</>}
         {hasAmount && parts.type === "pain" && <>, saving {quantifier}</>}
-        {parts.freq && <span className="not-italic">, {parts.freq}</span>}
+        {parts.freq && <span className="not-italic"> {parts.freq}</span>}
         <span className="not-italic">.</span>
       </p>
     </div>

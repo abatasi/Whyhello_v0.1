@@ -925,14 +925,15 @@ The algorithm:
 
 ### 6.3 Frequency Rendering (`frequencyPhrase`)
 
-| Key | Product (present) | Customer (past) |
-|---|---|---|
-| `one-time` | `in a single engagement` | `in a single engagement` |
-| `monthly` | `every month` | `every month` |
-| `quarterly` | `each quarter` | `each quarter` |
-| `annually` | `each year` | `each year` |
-| `per-event` | `per occurrence` | `per occurrence` |
-| `ongoing` | `on an ongoing basis` | `on an ongoing basis` |
+| Key | Rendered phrase |
+|---|---|
+| `yearly` | `yearly` |
+| `monthly` | `monthly` |
+| `weekly` | `weekly` |
+| `one-time` | `one-time` |
+| `per-transaction` | `per transaction` |
+
+Frequency is chained directly to the amount and unit without a separating comma: **“$120,000 per $100M in AUM yearly”**, not **“$120,000 per $100M in AUM, each year.”**
 
 ### 6.4 Sentence Assembly
 
@@ -942,29 +943,29 @@ EB sentences must be **full declarative sentences**, not bare label fragments. P
 ```
 Our [product name] {predicate}, gaining **{amount} {unit}** {freq}.
 ```
-Example: *Our Advisor Partnership Platform protects recurring revenue by successfully transferring client assets, gaining **$9,000 per $1M of AUM retained** each year.*
+Example: *Our Advisor Partnership Platform protects recurring revenue by successfully transferring client assets, gaining **$9,000 per $1M of AUM retained** yearly.*
 
 **Pain (Product — present tense):**
 ```
 Our [product name] {predicate}, saving **{amount} {unit}** {freq}.
 ```
-Example: *Our Advisor Partnership Platform eliminates manual compliance reporting, saving **$80K per advisor** each year.*
+Example: *Our Advisor Partnership Platform eliminates manual compliance reporting, saving **$80K per advisor** yearly.*
 
 **Gain (Customer — simple past):**
 ```
 [permitted customer identity] {predicate}, gaining **{amount} {unit}** {freq}.
 ```
-Named example: *Acme Corp generated revenue from assets under management, gaining **1.2% per $1M of net-new AUM** each year.*
+Named example: *Acme Corp generated revenue from assets under management, gaining **1.2% per $1M of net-new AUM** yearly.*
 
-Anonymized example: *A large technology firm headquartered in North America generated revenue from assets under management, gaining **1.2% per $1M of net-new AUM** each year.*
+Anonymized example: *A large technology firm headquartered in North America generated revenue from assets under management, gaining **1.2% per $1M of net-new AUM** yearly.*
 
 **Pain (Customer — simple past):**
 ```
 [permitted customer identity] {predicate}, saving **{amount} {unit}** {freq}.
 ```
-Named example: *Acme Corp eliminated manual compliance reporting, saving **$80K per advisor** each year.*
+Named example: *Acme Corp eliminated manual compliance reporting, saving **$80K per advisor** yearly.*
 
-Anonymized example: *A large technology firm headquartered in North America eliminated manual compliance reporting, saving **$80K per advisor** each year.*
+Anonymized example: *A large technology firm headquartered in North America eliminated manual compliance reporting, saving **$80K per advisor** yearly.*
 
 For every Customer EB sentence, the subject must be the linked company name when attribution is `named`, or the saved anonymous description when attribution is `anonymized`. If the anonymous description is blank, use “An anonymized customer.” Never begin an anonymized Customer EB sentence with the stored company name.
 
