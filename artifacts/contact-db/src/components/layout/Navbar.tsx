@@ -763,13 +763,13 @@ export function Navbar() {
           : "border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
       )}
     >
-      {/* ── Desktop bar (md+) — 3-column grid ── */}
-      <div className="hidden md:grid w-full px-6 xl:px-8 h-16 grid-cols-[1fr_auto_1fr] items-center gap-4">
+      {/* ── Desktop bar (md+) — navigation left, utilities right ── */}
+      <div className="hidden md:flex w-full px-4 lg:px-6 xl:px-8 h-16 items-center gap-3">
 
         {/* Left: logo menu + nav */}
         <div className="flex items-center gap-1 min-w-0">
           <LogoMenu wartime={wartime} />
-          <nav className="flex items-center gap-1 text-sm font-medium">
+          <nav className="flex items-center gap-0.5 xl:gap-1 text-sm font-medium">
             {navItems.map((item) => {
               const isActive = item.href === "/"
                 ? location === "/" || location === ""
@@ -779,7 +779,7 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-4 py-2 rounded-lg transition-colors whitespace-nowrap",
+                    "px-2 lg:px-3 xl:px-4 py-2 rounded-lg transition-colors whitespace-nowrap",
                     wartime
                       ? isActive ? "bg-[#E0BBA8] text-[#5C2E22]" : "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
                       : isActive ? "bg-secondary/50 text-foreground" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
@@ -793,11 +793,9 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Center: HQ pill */}
-        <HQPill wartime={wartime} />
-
         {/* Right: utilities */}
-        <div className="flex items-center gap-2 justify-end">
+        <div className="ml-auto flex items-center gap-1.5 lg:gap-2 justify-end flex-shrink-0">
+          <HQPill wartime={wartime} />
           <CreditTracker wartime={wartime} />
           <GlobalSearch wartime={wartime} />
           <div className={cn("h-8 w-px mx-1", wartime ? "bg-[#E0BBA8]" : "bg-border")} />
@@ -809,7 +807,7 @@ export function Navbar() {
                 {getInitials(displayName)}
               </div>
             )}
-            <span className={cn("text-sm font-medium", wartime ? "text-[#7C3E2A]" : "")}>{displayName}</span>
+            <span className={cn("hidden xl:block text-sm font-medium", wartime ? "text-[#7C3E2A]" : "")}>{displayName}</span>
           </Link>
         </div>
       </div>
