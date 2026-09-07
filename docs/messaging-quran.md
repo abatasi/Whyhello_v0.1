@@ -952,15 +952,21 @@ Example: *Our Advisor Partnership Platform eliminates manual compliance reportin
 
 **Gain (Customer — simple past):**
 ```
-Our [product name] {predicate} — **{amount} {unit}**, {freq}.
+[permitted customer identity] {predicate} — **{amount} {unit}**, {freq}.
 ```
-Example: *Our Advisor Partnership Platform generated revenue from assets under management — **1.2% per $1M of net-new AUM**, each year.*
+Named example: *Acme Corp generated revenue from assets under management — **1.2% per $1M of net-new AUM**, each year.*
+
+Anonymized example: *A large technology firm headquartered in North America generated revenue from assets under management — **1.2% per $1M of net-new AUM**, each year.*
 
 **Pain (Customer — simple past):**
 ```
-Our [product name] {predicate}, saving **{amount} {unit}** {freq}.
+[permitted customer identity] {predicate}, saving **{amount} {unit}** {freq}.
 ```
-Example: *Our Advisor Partnership Platform eliminated manual compliance reporting, saving **$80K per advisor** each year.*
+Named example: *Acme Corp eliminated manual compliance reporting, saving **$80K per advisor** each year.*
+
+Anonymized example: *A large technology firm headquartered in North America eliminated manual compliance reporting, saving **$80K per advisor** each year.*
+
+For every Customer EB sentence, the subject must be the linked company name when attribution is `named`, or the saved anonymous description when attribution is `anonymized`. If the anonymous description is blank, use “An anonymized customer.” Never begin an anonymized Customer EB sentence with the stored company name.
 
 **Company-level proof (credentials, scale, differentiators):**
 Use first-person "We" — never repeat the company name once the email is underway.

@@ -306,6 +306,13 @@ function buildCustomerEBParts(customerName: string, eb: EconomicBenefit): EBSumm
   };
 }
 
+function customerEBSubject(customer: Customer): string {
+  if (customer.testimonialAttribution === "named") {
+    return customer.companyName.trim() || customer.customerProfile.trim() || "This customer";
+  }
+  return customer.anonymizedCustomerLabel.trim() || "An anonymized customer";
+}
+
 function EBSummary({ parts, colorClass, iconClass }: {
   parts: EBSummaryParts;
   colorClass: string;
@@ -1204,7 +1211,7 @@ function CustomerCard({
 
                 {/* Natural language confirmation */}
                 {(() => {
-                  const parts = buildCustomerEBParts(customer.customerProfile, eb);
+                  const parts = buildCustomerEBParts(customerEBSubject(customer), eb);
                   return parts ? (
                     <EBSummary
                       parts={parts}
