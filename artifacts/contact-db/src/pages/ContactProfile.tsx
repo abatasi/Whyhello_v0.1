@@ -262,8 +262,8 @@ interface OutputType {
 }
 
 const OUTPUT_TYPES: OutputType[] = [
-  { id: "intro_email",      label: "Single Email",      icon: Mail,        color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-200",   description: "A personalized first-touch email tailored to this contact's background and current context." },
-  { id: "email_sequence",   label: "Email Playbook",    icon: Layers,      color: "text-violet-600",  bg: "bg-violet-50",  border: "border-violet-200", description: "A multi-step email cadence built around this contact's role, interests, and timing." },
+  { id: "intro_email",      label: "Single Message",    icon: Mail,        color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-200",   description: "A personalized first-touch message tailored to this contact's background and current context." },
+  { id: "email_sequence",   label: "Playbook",          icon: Layers,      color: "text-violet-600",  bg: "bg-violet-50",  border: "border-violet-200", description: "A multi-step outreach cadence built around this contact's role, interests, and timing." },
   { id: "battlecard",       label: "Battlecard",        icon: Shield,      color: "text-rose-600",    bg: "bg-rose-50",    border: "border-rose-200",   description: "A competitive one-pager to prep your team for this deal — objections, differentiators, and positioning." },
   { id: "sales_simulation", label: "Sales Simulation",  icon: Theater,     color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200",  description: "Simulate a sales call with this contact as the prospect so you can practice before the real thing." },
   { id: "talk_track",       label: "Talk Track",        icon: Mic2,        color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", description: "A structured verbal guide to keep your next conversation focused, confident, and on point." },
@@ -390,7 +390,7 @@ function IntroEmailModal({
             <Mail className="h-5 w-5 text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <DialogTitle className="text-base font-semibold">Single Email</DialogTitle>
+            <DialogTitle className="text-base font-semibold">Single Message</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
               Craft a first-touch email using this contact's intelligence. Configure the parameters below, then generate.
             </DialogDescription>
@@ -600,7 +600,7 @@ function IntroEmailModal({
             }}
           >
             <Wand2 className="h-3.5 w-3.5" />
-            Generate Single Email
+            Generate Single Message
           </Button>
         </div>
 
@@ -870,7 +870,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
       id,
       data: {
         type: "intro_email",
-        title: `Single Email — ${lengthLabel}, ${toneLabel}`,
+        title: `Single Message — ${lengthLabel}, ${toneLabel}`,
         params: { length: params.length, tone: params.tone, selectedInsightKeys: params.selectedInsightKeys, voiceProfile: params.voiceProfile },
       },
     }, {
