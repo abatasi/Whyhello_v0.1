@@ -325,7 +325,7 @@ const EMAIL_TONES = ["Professional", "Friendly", "Direct", "Warm", "Authoritativ
 const EMPTY_RELEVANCE_MAP = new Map<string, InsightRelevanceScore>();
 
 function IntroEmailModal({
-  open, onClose, onGenerate, checkedIds, categoryData, relevanceMap = EMPTY_RELEVANCE_MAP,
+  open, onClose, onGenerate, checkedIds, categoryData, relevanceMap = EMPTY_RELEVANCE_MAP, quoteMap = new Map(),
 }: {
   open: boolean;
   onClose: () => void;
@@ -333,6 +333,7 @@ function IntroEmailModal({
   checkedIds: Set<string>;
   categoryData: Record<string, InsightItem[]>;
   relevanceMap?: Map<string, InsightRelevanceScore>;
+  quoteMap?: Map<string, InsightQuote>;
 }) {
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
   const [tone, setTone] = useState("professional");
@@ -547,6 +548,15 @@ function IntroEmailModal({
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           {rel && (
                             <RelevanceBadge score={rel.score} description={rel.description} size="xs" />
+                          )}
+                          {quoteMap.has(key) && (
+                            <span
+                              title="This insight has an attached quotable"
+                              className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"
+                            >
+                              <Quote className="h-2.5 w-2.5" />
+                              Quotable
+                            </span>
                           )}
                           <span className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded-full", category.accentBg, category.color)}>
                             {category.label}
@@ -1676,6 +1686,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
         checkedIds={checkedIds}
         categoryData={categoryData}
         relevanceMap={relevanceMap}
+        quoteMap={quoteMap}
       />
 
       {/* ── Battlecard modal ── */}
