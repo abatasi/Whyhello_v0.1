@@ -397,7 +397,7 @@ function IntroEmailModal({
         </div>
 
         {/* ── Body ── */}
-        <div className="grid grid-cols-[1fr_1px_1fr] gap-0 px-0 flex-1 overflow-y-auto">
+        <div className="grid grid-cols-[3fr_1px_2fr] gap-0 px-0 flex-1 overflow-y-auto">
 
           {/* Left column: email shape */}
           <div className="px-7 py-6 space-y-6">
