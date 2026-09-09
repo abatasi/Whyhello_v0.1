@@ -399,7 +399,7 @@ function IntroEmailModal({
         {/* ── Body ── */}
         <div
           className="grid gap-0 px-0 flex-1 overflow-y-auto"
-          style={{ gridTemplateColumns: "minmax(0, 3fr) 1px minmax(0, 2fr)" }}
+          style={{ gridTemplateColumns: "minmax(0, 1.1fr) 1px minmax(0, 1fr)" }}
         >
 
           {/* Left column: email shape */}
