@@ -219,11 +219,15 @@ OUTSIDE-IN SIGNALS TO SCORE:
 ${signalsList}
 
 SCORING RUBRIC (0–100):
-- 80-100: Direct, strong connection — signal explicitly surfaces a problem, goal, or context the seller directly addresses
+- 96-100: Exceptional and rare — reserve for a direct quote or statement from this contact that unmistakably maps to multiple named HQ items and creates an immediately usable outreach angle
+- 90-95: Very strong connection — direct, specific, and highly usable, but not exceptional
+- 80-89: Strong connection — signal explicitly surfaces a problem, goal, or context the seller directly addresses
 - 60-79: Clear connection — signal meaningfully relates to the seller's value proposition, product, or ideal customer profile
 - 40-59: Moderate connection — some overlap, but indirect or partial
 - 20-39: Weak connection — only tangential overlap
 - 0-19: No meaningful connection to the seller's offering
+
+Scores above 95 must be rare. Do not use 96-100 for an ordinary strong match, a generic topic overlap, or a third-party quote. When in doubt, score 90-95.
 
 IMPORTANT — FOR ⭐ QUOTABLE SIGNALS: The verbatim quote text is the primary signal content. Use it (not just the title) when assessing HQ alignment. The HQ Bridge note, if present, describes the connection between the quote and the seller profile — use it to validate or sharpen your assessment. Score based purely on HQ alignment; a separate bonus is applied by the system after your scores are returned.
 
@@ -264,20 +268,37 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
     const QUOTABLE_BOOST_SELF = 35;   // contact's own words
     const QUOTABLE_BOOST_OTHER = 20;  // third-party quote
     const QUOTABLE_HQ_FLOOR = 20;
+    const ORDINARY_SCORE_CEILING = 95;
+    const EXCEPTIONAL_SCORE_FLOOR = 96;
 
     const contactFullName = `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.toLowerCase().trim();
     const isSelfAttributed = (q: QuotableInfo): boolean =>
-      q.attribution.toLowerCase().includes(contactFullName) ||
-      (contactFullName.length > 0 && contactFullName.split(" ").every((part) => q.attribution.toLowerCase().includes(part)));
+      contactFullName.length > 0 && (
+        q.attribution.toLowerCase().includes(contactFullName) ||
+        contactFullName.split(" ").every((part) => q.attribution.toLowerCase().includes(part))
+      );
 
     const scored: ScoredSignal[] = rawScored.map((s) => {
-      const hqScore = Math.max(0, Math.min(100, s.score));
+      const hqScore = Math.round(Math.max(0, Math.min(100, s.score)));
       const key = `${s.signalType}-${s.signalId}`;
       const sig = signals.find((x) => `${x.signalType}-${x.signalId}` === key);
       const quotable = sig?.quotable;
-      if (!quotable || hqScore < QUOTABLE_HQ_FLOOR) return { ...s, score: hqScore };
+      if (!quotable || hqScore < QUOTABLE_HQ_FLOOR) {
+        return { ...s, score: Math.min(ORDINARY_SCORE_CEILING, hqScore) };
+      }
       const boost = isSelfAttributed(quotable) ? QUOTABLE_BOOST_SELF : QUOTABLE_BOOST_OTHER;
-      return { ...s, score: Math.min(100, hqScore + boost) };
+      const boostedScore = Math.min(ORDINARY_SCORE_CEILING, hqScore + boost);
+      // A 96–100 score is reserved for an unusually strong, self-attributed
+      // quote that the AI itself judged exceptional. The bonus must not turn
+      // an ordinary strong signal into a top-of-scale score.
+      const exceptionalDirectQuote =
+        isSelfAttributed(quotable) &&
+        hqScore >= EXCEPTIONAL_SCORE_FLOOR &&
+        (s.matchedHqSignals?.length ?? 0) >= 2;
+      return {
+        ...s,
+        score: exceptionalDirectQuote ? hqScore : boostedScore,
+      };
     });
 
     // 8. Persist — delete old scores for this contact, insert new ones

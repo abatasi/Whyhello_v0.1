@@ -211,12 +211,14 @@ The Quotable Bonus is applied **deterministically** after the AI has scored each
 
 | Condition | Bonus | Rationale |
 |---|---|---|
-| Signal has a Quotable attributed **directly to this contact** AND HQ score ≥ 20 | **+35, cap at 100** | The contact's own words are the highest-value outreach material: proof of research, ready-to-use opener, zero paraphrase risk |
-| Signal has a Quotable attributed **to a third party** AND HQ score ≥ 20 | **+20, cap at 100** | Still immediately usable, but one step removed — the contact is associated with the topic, not the author of the words |
+| Signal has a Quotable attributed **directly to this contact** AND HQ score ≥ 20 | **+35, ordinary scores capped at 95** | The contact's own words are the highest-value outreach material: proof of research, ready-to-use opener, zero paraphrase risk |
+| Signal has a Quotable attributed **to a third party** AND HQ score ≥ 20 | **+20, ordinary scores capped at 95** | Still immediately usable, but one step removed — the contact is associated with the topic, not the author of the words |
 | Signal has a Quotable AND HQ alignment score 0–19 | **No bonus** | A quote that connects to nothing is still noise — the gate protects signal quality |
 | Signal has no extracted Quotable | No bonus | |
 
 Self-attribution is detected by checking whether the stored `attribution` field contains the contact's full name (case-insensitive). When a contact is quoted under a variation of their name (initials, partial name), the engine checks whether all name parts appear in the attribution string.
+
+Scores above 95 are intentionally rare. A score in the **96–100 exceptional band** is retained only when the AI itself assigns 96 or higher to a self-attributed quote. A quotable bonus must never push an ordinary signal above 95, and third-party quotes cannot enter the exceptional band.
 
 > **El Principio de la Cita:** *A Quotable cannot rescue a signal from irrelevance — but it elevates every signal that has earned its entry. The contact's own words elevate it further still: a signal that would score 60 without a quote scores 95 with the contact's direct attribution.*
 
@@ -239,10 +241,14 @@ The AI's sole job on a ⭐ QUOTABLE signal is to assess HQ alignment using the v
 
 ### 4-Bis.4 Impacto en la Fórmula — Effect on the Composite Formula
 
-The Quotable Bonus is applied as a **flat additive post-step** after the AI has scored HQ alignment:
+The Quotable Bonus is applied as a **flat additive post-step** after the AI has scored HQ alignment. The ordinary score ceiling is 95; the exceptional band is reserved for qualifying direct quotes that the AI already scored at 96 or higher:
 
 ```
-finalScore = min(100, hqAlignmentScore + quotableBonus)
+ordinaryScore = min(95, round(hqAlignmentScore) + quotableBonus)
+finalScore = hqAlignmentScore >= 96
+  AND direct quote attributed to this contact
+  ? round(hqAlignmentScore)
+  : ordinaryScore
 
 where:
   quotableBonus = 35  if signal has extracted Quotable
@@ -254,7 +260,7 @@ where:
                  = 0   otherwise
 ```
 
-The cap of 100 is re-applied after the bonus. A self-attributed signal scoring 70 on HQ alignment caps at 100, not 105.
+The +20/+35 bonus cannot manufacture a 96–100 score. A self-attributed signal scoring 70 on HQ alignment becomes 95, not 100; only a direct quote independently scored 96–100 by the AI may remain in that band.
 
 ---
 
@@ -285,7 +291,8 @@ The result is capped at **100**. Scores below **0** are not possible by construc
 
 | Score Range | Grado | Interpretation |
 |---|---|---|
-| 80–100 | **Excelente** | Strong hook candidate; likely to produce a differentiated message |
+| 96–100 | **Excepcional** | Rare, directly attributable signal with an unmistakable multi-item HQ match |
+| 80–95 | **Excelente** | Strong hook candidate; likely to produce a differentiated message |
 | 60–79 | **Bueno** | Reliable signal; use freely |
 | 40–59 | **Adecuado** | Usable but not distinctive; prefer higher-scoring alternatives |
 | 20–39 | **Débil** | Use only if no better signal exists |
