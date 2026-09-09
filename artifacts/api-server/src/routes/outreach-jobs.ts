@@ -35,6 +35,30 @@ function fmtInsight(i: InsightRow, showUrl = false) {
   return showUrl && i.url ? `${base}\n    URL: ${i.url}` : base;
 }
 
+function limitToSentences(text: string, maxSentences: number): string {
+  const trimmed = text.trim();
+  if (!trimmed || maxSentences < 1) return "";
+
+  const sentences: string[] = [];
+  let start = 0;
+  for (let i = 0; i < trimmed.length; i++) {
+    if (!".!?".includes(trimmed[i])) continue;
+    const next = trimmed[i + 1] ?? "";
+    if (next && !/\s|["'”’)\]]/.test(next)) continue;
+
+    let end = i + 1;
+    while (end < trimmed.length && /["'”’)\]]/.test(trimmed[end])) end++;
+    sentences.push(trimmed.slice(start, end).trim());
+    start = end;
+    while (start < trimmed.length && /\s/.test(trimmed[start])) start++;
+    i = start - 1;
+    if (sentences.length === maxSentences) return sentences.join(" ");
+  }
+
+  if (start < trimmed.length) sentences.push(trimmed.slice(start).trim());
+  return sentences.slice(0, maxSentences).join(" ");
+}
+
 // ── DNA / seller-context types (mirrors HQ.tsx) ───────────────────────────
 
 interface EconomicBenefit { id: string; description: string; amount: string; unit: string; frequency: string }
@@ -135,7 +159,10 @@ function buildSellerContext(dna: SellerDNA | null): string {
     if (safeCustomerLabel) lines.push(`  Safe attribution: ${safeCustomerLabel}`);
     if (c.customerTransformation) lines.push(`  Transformation: ${c.customerTransformation}`);
     if (c.results) lines.push(`  Results: ${c.results}`);
-    if (c.customerQuote) lines.push(`  Quote: "${c.customerQuote}" — attribute only as ${safeCustomerLabel}`);
+    const customerQuote = limitToSentences(c.customerQuote, 3);
+    if (customerQuote) {
+      lines.push(`  Quote (maximum 3 sentences): "${customerQuote}" — attribute only as ${safeCustomerLabel}`);
+    }
   });
 
   return lines.length ? lines.join("\n") : "  No seller context configured — infer a credible value prop from the conversation context.";
@@ -635,7 +662,14 @@ LAYER 4 — PROOF  (EB sentence + optional customer reference)
     Correct  : "We are Canada's largest independent wealth manager…"
     Wrong    : "Richardson Wealth is Canada's largest independent wealth manager…"
 
-  Customer ref   : "A [similar firm type] [transformation] — [customer quote if available]."
+  Customer ref   : Write the customer reference as its own paragraph:
+                 "A [similar firm type] [transformation]."
+                 If a customer quote is available, start the testimonial snippet on the next line as its own paragraph:
+                 "[Safe attribution] described the change this way:
+
+                 \"[customer quote]\""
+                 Use no more than three sentences from any one customer quote. Never append the quote to the preceding
+                 proof sentence, and never let a single testimonial take over the message.
   Rules   : Only use EBs and proof points from the seller context above. Never fabricate numbers.
 
 LAYER 5 — CTA  (specific, low-friction ask)
