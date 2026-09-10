@@ -159,9 +159,9 @@ function buildSellerContext(dna: SellerDNA | null): string {
     if (safeCustomerLabel) lines.push(`  Safe attribution: ${safeCustomerLabel}`);
     if (c.customerTransformation) lines.push(`  Transformation: ${c.customerTransformation}`);
     if (c.results) lines.push(`  Results: ${c.results}`);
-    const customerQuote = limitToSentences(c.customerQuote, 3);
+    const customerQuote = limitToSentences(c.customerQuote, 2);
     if (customerQuote) {
-      lines.push(`  Quote (maximum 3 sentences): "${customerQuote}" — attribute only as ${safeCustomerLabel}`);
+      lines.push(`  Quote (maximum 2 sentences): "${customerQuote}" — attribute only as ${safeCustomerLabel}`);
     }
   });
 
@@ -668,7 +668,7 @@ LAYER 4 — PROOF  (EB sentence + optional customer reference)
                  "[Safe attribution] described the change this way:
 
                  \"[customer quote]\""
-                 Use no more than three sentences from any one customer quote. Never append the quote to the preceding
+                 Use no more than two sentences from any one customer quote. Never append the quote to the preceding
                  proof sentence, and never let a single testimonial take over the message.
   Rules   : Only use EBs and proof points from the seller context above. Never fabricate numbers.
 

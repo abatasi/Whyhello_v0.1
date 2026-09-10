@@ -870,7 +870,7 @@ From the `customers` array, select the proof point where `customerProfile` most 
 - `customerQuote` as optional close
 - Customer EBs as past-tense quantified validation of the product EB claim
 
-When a customer quote is used, begin the testimonial snippet on its own line and keep it to a maximum of three sentences from that customer. The quote must follow the preceding customer-reference sentence as a separate paragraph; it must never be appended inline in the same paragraph or allowed to take over the message.
+When a customer quote is used, begin the testimonial snippet on its own line and keep it to a maximum of two sentences from that customer. The quote must follow the preceding customer-reference sentence as a separate paragraph; it must never be appended inline in the same paragraph or allowed to take over the message.
 
 Before rendering the proof, enforce `testimonialAttribution`:
 - For `named`, the customer/company may be identified.
