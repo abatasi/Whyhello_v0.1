@@ -44,4 +44,5 @@ Any new types/hooks added to `src/relevance.ts` must also be manually added to `
 - Personal LinkedIn signals authored by someone other than the contact are scored as lower-confidence engagement signals.
 - Without a substantive contact comment or explicit direct quote, engagement signals are capped in the lower range; visible social comments such as congratulations are not actionable evidence.
 - A third-party post with substantive contact-authored evidence can recover some score, but remains below a comparable contact-authored post.
+- Contact-authored LinkedIn reshares are lower-confidence than original posts; the caption can be quotable, but the shared third-party content is not the contact's stated position.
 - Stored relevance scores are fresh for ten minutes; both client and API enforce this before starting another scoring run.

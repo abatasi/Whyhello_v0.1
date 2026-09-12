@@ -50,6 +50,24 @@ function isContactAuthoredLinkedInSignal(
     || title.startsWith(`${fullName} -`);
 }
 
+async function isLinkedInReshare(url: string | null): Promise<boolean> {
+  if (!url) return false;
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Whyhello-Bot/1.0)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+    });
+    if (!response.ok) return false;
+    const html = await response.text();
+    return /feed-reshare-content__commentary/i.test(html);
+  } catch {
+    return false;
+  }
+}
+
 const router: IRouter = Router({ mergeParams: true });
 
 // ── GET /api/contacts/:contactId/insights/relevance ──────────────────────────
@@ -243,6 +261,24 @@ router.post("/relevance/score", async (req, res) => {
       return;
     }
 
+    // Inspect the contact's personal LinkedIn pages to distinguish original
+    // posts from contact-authored reshares of someone else's content. A
+    // reshare must be downgraded even when quote extraction found nothing.
+    const linkedInReshareKeys = new Set<string>();
+    await Promise.all(
+      signals
+        .filter((signal) =>
+          signal.signalType === "personal"
+          && LINKEDIN_MEDIA_TYPES.has(signal.mediaType ?? "")
+          && isContactAuthoredLinkedInSignal(signal, contact)
+        )
+        .map(async (signal) => {
+          if (await isLinkedInReshare(signal.url)) {
+            linkedInReshareKeys.add(`${signal.signalType}-${signal.signalId}`);
+          }
+        }),
+    );
+
     // 5. Load HQ profile
     const [dnaRow] = await db
       .select()
@@ -259,7 +295,12 @@ router.post("/relevance/score", async (req, res) => {
       .map((s, i) => {
         let block = `[${i + 1}] type="${s.signalType}" id=${s.signalId}\n  Title: ${s.title}\n  Description: ${s.description ?? "(none)"}`;
         if (s.signalType === "personal" && LINKEDIN_MEDIA_TYPES.has(s.mediaType ?? "")) {
-          block += `\n  Relationship to contact: ${isContactAuthoredLinkedInSignal(s, contact) ? "contact-authored LinkedIn post" : "third-party LinkedIn post the contact may have engaged with; do not treat the post author's words as the contact's insight"}`;
+          const signalKey = `${s.signalType}-${s.signalId}`;
+          block += `\n  Relationship to contact: ${linkedInReshareKeys.has(signalKey)
+            ? "contact-authored LinkedIn reshare/share containing third-party content; the contact's short commentary may be evidence of interest, but do not treat the underlying content as the contact's stated position"
+            : isContactAuthoredLinkedInSignal(s, contact)
+              ? "contact-authored LinkedIn post"
+              : "third-party LinkedIn post the contact may have engaged with; do not treat the post author's words as the contact's insight"}`;
         }
         if (s.quotable) {
           block += `\n  ⭐ QUOTABLE: "${s.quotable.quote}"`;
@@ -339,6 +380,9 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
     const ENGAGEMENT_WITH_CONTACT_EVIDENCE_MULTIPLIER = 0.8;
     const ENGAGEMENT_SCORE_CEILING = 55;
     const ENGAGEMENT_WITH_CONTACT_EVIDENCE_CEILING = 75;
+    const RESHARE_MULTIPLIER = 0.75;
+    const RESHARE_SCORE_CEILING = 65;
+    const RESHARE_QUOTABLE_BOOST = 10;
 
     const contactFullName = `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.toLowerCase().trim();
     const isSelfAttributed = (q: QuotableInfo): boolean =>
@@ -356,23 +400,30 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
         && sig.signalType === "personal"
         && LINKEDIN_MEDIA_TYPES.has(sig.mediaType ?? "")
         && !isContactAuthoredLinkedInSignal(sig, contact);
+      const isLinkedInReshareSignal = linkedInReshareKeys.has(key);
       const selfAttributedQuote = !!quotable && isSelfAttributed(quotable);
-      const engagementCeiling = selfAttributedQuote
+      const engagementCeiling = isLinkedInReshareSignal
+        ? RESHARE_SCORE_CEILING
+        : selfAttributedQuote
         ? ENGAGEMENT_WITH_CONTACT_EVIDENCE_CEILING
         : ENGAGEMENT_SCORE_CEILING;
-      const engagementMultiplier = selfAttributedQuote
+      const engagementMultiplier = isLinkedInReshareSignal
+        ? RESHARE_MULTIPLIER
+        : selfAttributedQuote
         ? ENGAGEMENT_WITH_CONTACT_EVIDENCE_MULTIPLIER
         : ENGAGEMENT_SCORE_MULTIPLIER;
-      const proximityAdjustedScore = isLinkedInEngagement
+      const proximityAdjustedScore = (isLinkedInEngagement || isLinkedInReshareSignal)
         ? Math.min(engagementCeiling, Math.round(hqScore * engagementMultiplier))
         : hqScore;
 
       if (!quotable || hqScore < QUOTABLE_HQ_FLOOR) {
         return { ...s, score: Math.min(ORDINARY_SCORE_CEILING, proximityAdjustedScore) };
       }
-      const boost = selfAttributedQuote && !isLinkedInEngagement ? QUOTABLE_BOOST_SELF : QUOTABLE_BOOST_OTHER;
+      const boost = isLinkedInReshareSignal
+        ? RESHARE_QUOTABLE_BOOST
+        : selfAttributedQuote && !isLinkedInEngagement ? QUOTABLE_BOOST_SELF : QUOTABLE_BOOST_OTHER;
       const boostedScore = Math.min(
-        isLinkedInEngagement ? engagementCeiling : ORDINARY_SCORE_CEILING,
+        (isLinkedInEngagement || isLinkedInReshareSignal) ? engagementCeiling : ORDINARY_SCORE_CEILING,
         proximityAdjustedScore + boost,
       );
       // A 96–100 score is reserved for an unusually strong, self-attributed
@@ -381,6 +432,7 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const exceptionalDirectQuote =
         selfAttributedQuote &&
         !isLinkedInEngagement &&
+        !isLinkedInReshareSignal &&
         hqScore >= EXCEPTIONAL_SCORE_FLOOR &&
         (s.matchedHqSignals?.length ?? 0) >= 2;
       return {

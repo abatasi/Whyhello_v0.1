@@ -166,6 +166,22 @@ async function tryFetchContactComments(
   }
 }
 
+async function tryDetectLinkedInReshare(url: string): Promise<boolean> {
+  try {
+    const resp = await fetch(url, {
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Whyhello-Bot/1.0)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+    });
+    if (!resp.ok) return false;
+    return /feed-reshare-content__commentary/i.test(await resp.text());
+  } catch {
+    return false;
+  }
+}
+
 async function tryFetchPageText(url: string): Promise<string | null> {
   try {
     const controller = new AbortController();
@@ -214,9 +230,14 @@ router.post("/", async (req, res) => {
     const contact = contactId
       ? (await db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1))[0]
       : undefined;
+    const isLinkedInSource = mediaType === "linkedin" || mediaType === "linkedin_post";
+    const isContactAuthored = !!contact && isContactAuthoredLinkedInSignal(title, url, contact);
+    const isLinkedInReshare = isLinkedInSource && isContactAuthored
+      ? await tryDetectLinkedInReshare(url)
+      : false;
     const isLinkedInEngagement = !!contact
-      && (mediaType === "linkedin" || mediaType === "linkedin_post")
-      && !isContactAuthoredLinkedInSignal(title, url, contact);
+      && isLinkedInSource
+      && (!isContactAuthored || isLinkedInReshare);
     const contactComments = isLinkedInEngagement
       ? await tryFetchContactComments(url, contact!)
       : [];
@@ -238,7 +259,9 @@ router.post("/", async (req, res) => {
     }
 
     const engagementBlock = isLinkedInEngagement
-      ? `\nSIGNAL PROXIMITY:\nThis is a third-party LinkedIn post, not a post authored by ${contact?.firstName} ${contact?.lastName}. The contact may have engaged with it.\n${contactComments.length > 0
+      ? `\nSIGNAL PROXIMITY:\n${isLinkedInReshare
+        ? `This is a LinkedIn reshare/share by ${contact?.firstName} ${contact?.lastName} containing third-party content. The contact's commentary may show interest, but the underlying content is not their stated position.`
+        : `This is a third-party LinkedIn post, not a post authored by ${contact?.firstName} ${contact?.lastName}. The contact may have engaged with it.`}\n${contactComments.length > 0
         ? `The contact's own comments visible in the source are:\n${contactComments.map((comment) => `- ${comment}`).join("\n")}`
         : "No contact-authored comment was visible in the fetched source."}\nTreat the post author's content as background only. Assess the contact's own comment, if present, for substantive business meaning. A short social response such as congratulations, well done, happy anniversary, or welcome is not an actionable contact insight.`
       : "";
