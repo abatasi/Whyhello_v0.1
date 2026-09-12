@@ -1347,26 +1347,9 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                         )}
                       </div>
                     </div>
-                    {isRevealed && (
+                    {isRevealed && contact.phone && (
                       <div className="flex gap-2 flex-shrink-0 pb-1">
-                        {contact.email && (
-                          <Button size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setComposeOpen(true)}>
-                            <Send className="h-3.5 w-3.5" /> Email
-                          </Button>
-                        )}
-                        {contact.phone && (
-                          <CallButton contactPhone={contact.phone} onInitiate={openPreCall} />
-                        )}
-                        <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setSeqPickerOpen(true)}>
-                          <ListChecks className="h-3.5 w-3.5" /> Add to Playbook
-                        </Button>
-                        {contact.linkedinUrl && (
-                          <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs text-[#0A66C2] border-[#0A66C2]/30 hover:bg-[#0A66C2]/10">
-                              <Linkedin className="h-3.5 w-3.5" /> Connect
-                            </Button>
-                          </a>
-                        )}
+                        <CallButton contactPhone={contact.phone} onInitiate={openPreCall} />
                       </div>
                     )}
                   </div>
