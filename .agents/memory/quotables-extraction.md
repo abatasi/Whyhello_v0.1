@@ -10,6 +10,12 @@ Quotables are sourced by fetching LinkedIn post bodies live from the public URL 
 
 **How to apply:** `fetchLinkedInPostBody(url)` in `artifacts/api-server/src/routes/quotes.ts` fetches the URL and extracts the body. Prefer `articleBody` (untruncated) over `og:description` (sometimes cut off).
 
+Nested third-party quotations must not be attributed to the contact. Validate model output against the fetched body and reject any exact match inside a quoted passage; a fresh extraction with no valid results must also clear stale quote rows.
+
+**Why:** LinkedIn posts can contain testimonials or transcripts that are verbatim in the post body but were written by someone else. Exact substring matching alone cannot establish authorship.
+
+**How to apply:** Keep deterministic quote validation after model extraction; use the model only to select among eligible text, never as the sole authorship check.
+
 ## Current scope
 Only `linkedin` / `linkedin_post` media types are scanned. Other authored types (blog_post, newsletter, podcast) are intentionally excluded until LinkedIn quality is validated (Task #5 covers expansion).
 

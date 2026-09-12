@@ -104,6 +104,33 @@ async function buildHqSummary(userId: string | null): Promise<string> {
   }
 }
 
+/**
+ * A LinkedIn post can contain a testimonial, transcript, or statement from
+ * another person. Those words may be present in the post body verbatim, but
+ * they are not the contact's own perspective and must not be attributed to
+ * the contact.
+ */
+function isInsideQuotedPassage(text: string, start: number): boolean {
+  const before = text.slice(0, start);
+  const curlyOpens = (before.match(/[“„]/g) ?? []).length;
+  const curlyCloses = (before.match(/”/g) ?? []).length;
+  if (curlyOpens > curlyCloses) return true;
+
+  // Handle straight-quote passages as well. Apostrophes are excluded.
+  const straightQuotes = (before.match(/"/g) ?? []).length;
+  return straightQuotes % 2 === 1;
+}
+
+function isValidExtractedQuote(quote: string, signal: SignalRow | undefined): boolean {
+  const trimmedQuote = quote.trim();
+  if (!trimmedQuote || !signal?.postBody) return false;
+
+  const start = signal.postBody.indexOf(trimmedQuote);
+  if (start < 0) return false;
+
+  return !isInsideQuotedPassage(signal.postBody, start);
+}
+
 // ── GET /quotes ─────────────────────────────────────────────────────────────
 
 quotesRouter.get("/quotes", async (req, res) => {
@@ -248,13 +275,21 @@ OUTPUT: A JSON array only — no markdown fences, no preamble. Empty array [] if
     }> = [];
     try { parsed = JSON.parse(raw); } catch { parsed = []; }
 
-    if (!Array.isArray(parsed) || parsed.length === 0) return res.json([]);
+    const signalById = new Map(scannable.map(signal => [signal.signalId, signal]));
+    const validParsed = Array.isArray(parsed)
+      ? parsed.filter(q => {
+          if (!q || q.signalType !== "personal" || !Number.isInteger(q.signalId)) return false;
+          return isValidExtractedQuote(q.quote ?? "", signalById.get(q.signalId));
+        })
+      : [];
 
     // Upsert — delete existing then insert fresh
     await db.delete(insightQuotesTable).where(eq(insightQuotesTable.contactId, contactId));
 
+    if (validParsed.length === 0) return res.json([]);
+
     const inserted = await db.insert(insightQuotesTable).values(
-      parsed.map(q => ({
+      validParsed.map(q => ({
         contactId,
         signalType: q.signalType,
         signalId: q.signalId,
