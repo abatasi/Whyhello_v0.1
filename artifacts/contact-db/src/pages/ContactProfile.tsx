@@ -2353,7 +2353,8 @@ function InsightDetailView({
           </div>
         </div>
 
-        {/* Relevance card */}
+        {/* Relevance card — hidden while the browser expands into its space */}
+        {!browserExpanded && (
         <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -2414,6 +2415,7 @@ function InsightDetailView({
             )}
           </div>
         </div>
+        )}
 
       </div>
 
