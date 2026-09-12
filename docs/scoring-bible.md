@@ -170,7 +170,7 @@ Freshness multipliers are applied based on signal age at the time of message gen
 | >1,095–1,460 days | Ámbar | 0.40× |
 | >1,460 days | Rojo | 0.20× floor |
 
-Freshness is calculated from the insight's `publishedDate` at scoring time, not when the score was stored. The reduction is continuous at 20 percentage points per additional year after the first year and never removes a signal completely. Missing or unparseable dates receive no freshness penalty because the system cannot safely infer their age.
+Freshness is calculated from the source's actual publication date at scoring time, not when the insight was uploaded or when the score was stored. For LinkedIn signals, the scorer uses LinkedIn's live `datePublished` when the stored `publishedDate` is missing or `N/A`. The reduction is continuous at 20 percentage points per additional year after the first year and never removes a signal completely. Missing or unparseable dates receive no freshness penalty because the system cannot safely infer their age.
 
 ### 4.3 El Multiplicador de Alineación con el HQ — HQ Alignment Multiplier
 
