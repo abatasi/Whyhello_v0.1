@@ -412,6 +412,10 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const key = `${s.signalType}-${s.signalId}`;
       const sig = signals.find((x) => `${x.signalType}-${x.signalId}` === key);
       const quotable = sig?.quotable;
+      const sourcePublishedDate = sig?.signalType === "personal"
+        && LINKEDIN_MEDIA_TYPES.has(sig.mediaType ?? "")
+        ? linkedInSources.get(key)?.publishedDate ?? sig.publishedDate
+        : sig?.publishedDate;
       const isLinkedInEngagement = !!sig
         && sig.signalType === "personal"
         && LINKEDIN_MEDIA_TYPES.has(sig.mediaType ?? "")
@@ -432,7 +436,7 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
           ...s,
           score: Math.min(
             ORDINARY_SCORE_CEILING,
-            Math.round(proximityAdjustedScore * freshnessMultiplier(sig?.publishedDate)),
+            Math.round(proximityAdjustedScore * freshnessMultiplier(sourcePublishedDate)),
           ),
         };
       }
@@ -456,7 +460,7 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const scoredBeforeFreshness = exceptionalDirectQuote ? hqScore : boostedScore;
       return {
         ...s,
-        score: Math.round(scoredBeforeFreshness * freshnessMultiplier(sig?.publishedDate)),
+        score: Math.round(scoredBeforeFreshness * freshnessMultiplier(sourcePublishedDate)),
       };
     });
 

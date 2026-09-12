@@ -2,6 +2,7 @@ export interface LinkedInSourceData {
   postBody: string | null;
   sharedContent: string | null;
   isReshare: boolean;
+  publishedDate: string | null;
   comments: Array<{ author: string; text: string }>;
 }
 
@@ -9,6 +10,7 @@ const EMPTY_SOURCE: LinkedInSourceData = {
   postBody: null,
   sharedContent: null,
   isReshare: false,
+  publishedDate: null,
   comments: [],
 };
 
@@ -51,6 +53,7 @@ export async function inspectLinkedInSource(url: string): Promise<LinkedInSource
     const html = await response.text();
     const articleBodies: string[] = [];
     const comments: Array<{ author: string; text: string }> = [];
+    let publishedDate: string | null = null;
 
     for (const match of html.matchAll(
       /<script[^>]+type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/gis,
@@ -62,8 +65,16 @@ export async function inspectLinkedInSource(url: string): Promise<LinkedInSource
           if (!record || typeof record !== "object") continue;
           const value = record as {
             articleBody?: unknown;
+            datePublished?: unknown;
+            dateCreated?: unknown;
             comment?: unknown;
           };
+          if (!publishedDate) {
+            const sourceDate = typeof value.datePublished === "string"
+              ? value.datePublished
+              : typeof value.dateCreated === "string" ? value.dateCreated : null;
+            if (sourceDate) publishedDate = sourceDate;
+          }
           if (typeof value.articleBody === "string") {
             const body = value.articleBody.trim();
             if (body && !articleBodies.includes(body)) articleBodies.push(body);
@@ -109,6 +120,7 @@ export async function inspectLinkedInSource(url: string): Promise<LinkedInSource
         articleBodies.find((body) => body !== postBody) ? boundedText(articleBodies.find((body) => body !== postBody)) : null
       ),
       isReshare: Boolean(sharedContent),
+      publishedDate,
       comments,
     };
   } catch {
