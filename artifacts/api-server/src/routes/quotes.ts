@@ -30,6 +30,49 @@ interface SignalRow {
   publishedDate: string | null;
   /** Post body text fetched live from the LinkedIn URL */
   postBody: string | null;
+  /** Comments authored by the contact and exposed by the public LinkedIn page */
+  comments: Array<{ author: string; text: string }>;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function linkedinAuthorSlug(url: string | null): string | null {
+  const match = url?.match(/linkedin\.com\/posts\/([^_/?#]+)/i);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+function linkedinProfileSlug(url: string | null): string | null {
+  const match = url?.match(/linkedin\.com\/in\/([^/?#]+)/i);
+  return match?.[1]?.toLowerCase().replace(/\/$/, "") ?? null;
+}
+
+function normalizedName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function isCommentByContact(
+  author: string,
+  contact: { firstName: string; lastName: string },
+): boolean {
+  return normalizedName(author) === normalizedName(`${contact.firstName} ${contact.lastName}`);
+}
+
+function isContactAuthoredSignal(
+  signal: SignalRow,
+  contact: { firstName: string; lastName: string; linkedinUrl: string | null },
+): boolean {
+  const contactSlug = linkedinProfileSlug(contact.linkedinUrl)
+    ?? `${contact.firstName}-${contact.lastName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const authorSlug = linkedinAuthorSlug(signal.url);
+  if (authorSlug && (authorSlug === contactSlug || authorSlug.startsWith(`${contactSlug}-`))) return true;
+
+  const title = signal.title.toLowerCase();
+  const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
+  return title === fullName
+    || title.startsWith(`${fullName}'s post`)
+    || title.startsWith(`${fullName} -`);
 }
 
 function toStringArray(v: unknown): string[] {
@@ -46,7 +89,11 @@ function toStringArray(v: unknown): string[] {
  * the JSON-LD articleBody field — both accessible without authentication.
  * Returns null if the fetch fails or no content is found.
  */
-async function fetchLinkedInPostBody(url: string): Promise<string | null> {
+async function fetchLinkedInPostData(url: string): Promise<{
+  postBody: string | null;
+  comments: Array<{ author: string; text: string }>;
+}> {
+  const empty = { postBody: null, comments: [] };
   try {
     const res = await fetch(url, {
       headers: {
@@ -57,13 +104,55 @@ async function fetchLinkedInPostBody(url: string): Promise<string | null> {
       },
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) return empty;
     const html = await res.text();
 
-    // 1. Try JSON-LD articleBody (most complete — not truncated)
+    // LinkedIn's JSON-LD includes the full post body and, when available,
+    // public comments with their authors.
+    const jsonLdBlocks = [...html.matchAll(
+      /<script[^>]+type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/gis,
+    )];
+    for (const match of jsonLdBlocks) {
+      try {
+        const data = JSON.parse(match[1]);
+        const records = Array.isArray(data) ? data : [data];
+        const posting = records.find(
+          (record): record is { articleBody?: unknown; comment?: unknown } =>
+            record && typeof record === "object" && "articleBody" in record,
+        );
+        if (posting) {
+          const comments = Array.isArray(posting.comment)
+            ? posting.comment.flatMap((comment: unknown) => {
+                if (!comment || typeof comment !== "object") return [];
+                const value = comment as {
+                  text?: unknown;
+                  author?: { name?: unknown } | string;
+                };
+                const author = typeof value.author === "string"
+                  ? value.author
+                  : typeof value.author?.name === "string" ? value.author.name : "";
+                return typeof value.text === "string" && author
+                  ? [{ author, text: value.text.trim() }]
+                  : [];
+              })
+            : [];
+          return {
+            postBody: typeof posting.articleBody === "string" ? posting.articleBody.trim() : null,
+            comments,
+          };
+        }
+      } catch {
+        // Fall through to the metadata parser for malformed JSON-LD.
+      }
+    }
+
+    // 1. Try the JSON-LD articleBody with a tolerant fallback regex.
     const ldMatch = html.match(/"articleBody"\s*:\s*"((?:[^"\\]|\\.)*)"/);
     if (ldMatch?.[1]) {
-      return ldMatch[1].replace(/\\"/g, '"').replace(/\\n/g, " ").trim();
+      return {
+        postBody: ldMatch[1].replace(/\\"/g, '"').replace(/\\n/g, " ").trim(),
+        comments: [],
+      };
     }
 
     // 2. Fallback: og:description meta tag
@@ -71,12 +160,15 @@ async function fetchLinkedInPostBody(url: string): Promise<string | null> {
       html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i) ??
       html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:description"/i);
     if (ogMatch?.[1]) {
-      return ogMatch[1].replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/&quot;/g, '"').trim();
+      return {
+        postBody: ogMatch[1].replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/&quot;/g, '"').trim(),
+        comments: [],
+      };
     }
 
-    return null;
+    return empty;
   } catch {
-    return null;
+    return empty;
   }
 }
 
@@ -121,14 +213,67 @@ function isInsideQuotedPassage(text: string, start: number): boolean {
   return straightQuotes % 2 === 1;
 }
 
-function isValidExtractedQuote(quote: string, signal: SignalRow | undefined): boolean {
+function isExplicitlyAttributedToContact(
+  text: string,
+  start: number,
+  end: number,
+  contact: { firstName: string; lastName: string },
+): boolean {
+  const fullName = `${contact.firstName} ${contact.lastName}`.trim();
+  if (!fullName) return false;
+
+  const windowStart = Math.max(0, start - 240);
+  const windowEnd = Math.min(text.length, end + 240);
+  const context = text.slice(windowStart, windowEnd);
+  const name = escapeRegExp(fullName);
+  const attribution = "(?:said|says|told|wrote|writes|commented|comments|posted|shared|quoted|comment by|from)";
+
+  return new RegExp(`${name}.{0,100}${attribution}`, "i").test(context)
+    || new RegExp(`${attribution}.{0,100}${name}`, "i").test(context);
+}
+
+function isClearlyLabeledContactComment(
+  text: string,
+  start: number,
+  end: number,
+  contact: { firstName: string; lastName: string },
+): boolean {
+  const fullName = `${contact.firstName} ${contact.lastName}`.trim();
+  if (!fullName) return false;
+
+  const windowStart = Math.max(0, start - 160);
+  const windowEnd = Math.min(text.length, end + 160);
+  const context = text.slice(windowStart, windowEnd);
+  const name = escapeRegExp(fullName);
+  const commentLabel = "(?:comment|commented|reply|response|wrote|posted|shared)";
+
+  return new RegExp(`${commentLabel}.{0,80}${name}`, "i").test(context)
+    || new RegExp(`${name}.{0,80}${commentLabel}\\s*[:\\-]`, "i").test(context);
+}
+
+function isValidExtractedQuote(
+  quote: string,
+  signal: SignalRow | undefined,
+  contact: { firstName: string; lastName: string; linkedinUrl: string | null },
+): boolean {
   const trimmedQuote = quote.trim();
   if (!trimmedQuote || !signal?.postBody) return false;
 
   const start = signal.postBody.indexOf(trimmedQuote);
+  if (signal.comments.some(comment => comment.text.includes(trimmedQuote))) return true;
   if (start < 0) return false;
 
-  return !isInsideQuotedPassage(signal.postBody, start);
+  const end = start + trimmedQuote.length;
+  const sourceIsContactAuthored = isContactAuthoredSignal(signal, contact);
+  const insideQuotedPassage = isInsideQuotedPassage(signal.postBody, start);
+
+  // On the contact's own post, only the author's unquoted words qualify.
+  if (sourceIsContactAuthored) return !insideQuotedPassage;
+
+  // On an engaged-with third-party post, require explicit evidence that the
+  // passage belongs to the contact (a comment block or direct quotation).
+  return (insideQuotedPassage && isExplicitlyAttributedToContact(signal.postBody, start, end, contact))
+    || isClearlyLabeledContactComment(signal.postBody, start, end, contact);
 }
 
 // ── GET /quotes ─────────────────────────────────────────────────────────────
@@ -189,7 +334,7 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
     // Fetch post bodies from LinkedIn public pages in parallel
     const withBodies: SignalRow[] = await Promise.all(
       linkedInSignals.map(async s => {
-        const postBody = await fetchLinkedInPostBody(s.url!);
+        const source = await fetchLinkedInPostData(s.url!);
         return {
           signalType: "personal",
           signalId: s.id,
@@ -197,7 +342,8 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
           url: s.url ?? null,
           mediaType: s.mediaType ?? null,
           publishedDate: s.publishedDate ?? null,
-          postBody,
+          postBody: source.postBody,
+          comments: source.comments.filter(comment => isCommentByContact(comment.author, contact)),
         };
       })
     );
@@ -216,31 +362,41 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
 
     const signalBlocks = scannable.map((s, i) =>
       `[${i + 1}] signalId=${s.signalId}${s.publishedDate && s.publishedDate !== "N/A" ? ` published="${s.publishedDate}"` : ""}
-  Post body: ${s.postBody}`
+  Source title: ${s.title}
+  Source URL: ${s.url}
+  Source classification: ${isContactAuthoredSignal(s, contact) ? "contact-authored LinkedIn post" : s.comments.length > 0 ? "third-party LinkedIn post with a visible comment by the contact" : "third-party LinkedIn post the contact may have engaged with"}
+  Post body: ${s.postBody}
+  ${s.comments.length > 0 ? `Contact comments visible in source:\n${s.comments.map(comment => `  Comment by ${comment.author}: ${comment.text}`).join("\n")}` : "No contact-authored comment is visible in the fetched source."}`
     ).join("\n\n");
 
-    const systemPrompt = `You are a B2B sales intelligence analyst extracting verbatim quotes from a contact's LinkedIn posts.
+    const systemPrompt = `You are a B2B sales intelligence analyst extracting verbatim quotes attributable to a specific contact from LinkedIn activity.
 
 CONTACT: ${contactName}${contact.jobTitle ? `, ${contact.jobTitle}` : ""}
 
-Each signal below contains a "Post body" — the exact text ${contactName} published on LinkedIn. Your task is to find sentences in that body that are quotable: substantive statements of perspective, market observation, or insight that could be used in a sales conversation.
+Each signal below contains a post body, but not every post was authored by ${contactName}. The source classification is evidence about who authored the post:
+- For a "contact-authored LinkedIn post", only use ${contactName}'s own unquoted words. Do not extract a testimonial, transcript, or quotation from another person embedded in that post.
+- For a "third-party LinkedIn post with a visible comment by the contact", you may use only the exact text in the labeled "Contact comments visible in source" section, or a direct quotation explicitly attributed to ${contactName}.
+- For a "third-party LinkedIn post the contact may have engaged with", do not use the third party's prose, even if it discusses the contact or contains a testimonial. Only use a passage that is explicitly identified as ${contactName}'s own comment or as a direct quotation of ${contactName}. If that evidence is not present in the fetched source, omit the signal.
+
+The goal is attribution, not merely finding an interesting sentence. A sentence that appears verbatim in a post is not automatically a quote from ${contactName}.
 
 SELLER HQ PROFILE (for crafting HQ bridges):
 ${hqSummary}
 
 STRICT EXTRACTION RULES:
-1. The "quote" field MUST be copied character-for-character from the "Post body" text. Do not rephrase, summarize, condense, or alter a single word. If you cannot find a complete verbatim sentence worth quoting, omit that post entirely.
+1. The "quote" field MUST be copied character-for-character from either the "Post body" or the labeled contact comment text. Do not rephrase, summarize, condense, or alter a single word. If you cannot find a complete verbatim sentence worth quoting, omit that post entirely.
 2. Extract at most 1 quote per post. That quote may be one sentence or two consecutive sentences, following this decision rule:
    a. Identify the single most substantive sentence — the one with the most specific insight, observation, or named detail.
    b. Look at the sentence immediately before it. If that preceding sentence is a strong thematic lead-in that frames or contextualises the substantive sentence (e.g. a broad claim that the next sentence then unpacks with specifics), include both consecutive sentences as the quote, joined exactly as they appear in the post body.
    c. If the preceding sentence is a filler, a call-to-action, a generic opener with no thematic content ("Here's my latest post", "Excited to share"), or unrelated to the substantive sentence, include the substantive sentence only.
    d. Never include more than two sentences. Never skip sentences to join non-adjacent ones.
 3. Short filler phrases ("Here's the link", "Full video:", "Check this out") are not quotes — skip them.
-4. If the post body is entirely a description of someone else speaking (e.g. "John Smith joins MoneyTalk to discuss X"), the framing sentence written by ${contactName} — even if it describes the topic — is still a valid quote from ${contactName} as long as it expresses a market view or insight.
-5. Attribution is always "${contactName}" — they authored every post.
-6. For each quote, write a "hqBridge" sentence (max 25 words) connecting what they said to one specific aspect of the seller's HQ profile. Name specific products, pillars, or differentiators.
-7. List referenced HQ items in "matchedHqSignals".
-8. Maximum 8 quotes total. Omit rather than fabricate.
+4. Never attribute a third party's words to ${contactName}. This includes company posts, testimonials, podcast transcripts, quoted interviews, and posts the contact only liked or engaged with.
+5. In a third-party post, a quote is eligible only when the text explicitly names ${contactName} as the speaker/author, or a clearly labeled comment block identifies ${contactName}'s comment.
+6. Attribution is "${contactName}" only when the source classification and surrounding text support that attribution.
+7. For each quote, write a "hqBridge" sentence (max 25 words) connecting what they said to one specific aspect of the seller's HQ profile. Name specific products, pillars, or differentiators.
+8. List referenced HQ items in "matchedHqSignals".
+9. Maximum 8 quotes total. Omit rather than fabricate.
 
 ⚠️ VERBATIM CHECK: Before including a quote, confirm every word appears in that exact sequence in the Post body. If it does not, do not include it.
 
@@ -279,7 +435,7 @@ OUTPUT: A JSON array only — no markdown fences, no preamble. Empty array [] if
     const validParsed = Array.isArray(parsed)
       ? parsed.filter(q => {
           if (!q || q.signalType !== "personal" || !Number.isInteger(q.signalId)) return false;
-          return isValidExtractedQuote(q.quote ?? "", signalById.get(q.signalId));
+          return isValidExtractedQuote(q.quote ?? "", signalById.get(q.signalId), contact);
         })
       : [];
 
