@@ -24,6 +24,38 @@ function getUserId(req: Request): string | null {
 
 const LINKEDIN_MEDIA_TYPES = new Set(["linkedin", "linkedin_post"]);
 const RELEVANCE_REFRESH_WINDOW_MS = 10 * 60 * 1000;
+const FRESHNESS_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+const FRESHNESS_ANNUAL_DECAY = 0.2;
+const FRESHNESS_FLOOR = 0.2;
+
+function parseInsightDate(value: string | null | undefined): Date | null {
+  const normalized = value?.trim();
+  if (!normalized || /^(n\/?a|unknown|null|undefined)$/i.test(normalized)) return null;
+
+  const yearOnly = normalized.match(/^(\d{4})$/);
+  if (yearOnly) return new Date(Date.UTC(Number(yearOnly[1]), 0, 1));
+
+  const yearMonth = normalized.match(/^(\d{4})[-/](\d{1,2})$/);
+  if (yearMonth) return new Date(Date.UTC(Number(yearMonth[1]), Number(yearMonth[2]) - 1, 1));
+
+  const timestamp = Date.parse(normalized);
+  return Number.isFinite(timestamp) ? new Date(timestamp) : null;
+}
+
+/**
+ * Insights remain fully fresh for their first year. Each year after that
+ * reduces their score by 20 percentage points, with a small residual value
+ * retained for old but potentially useful context.
+ */
+function freshnessMultiplier(publishedDate: string | null | undefined, now = Date.now()): number {
+  const date = parseInsightDate(publishedDate);
+  if (!date) return 1;
+
+  const ageYears = Math.max(0, now - date.getTime()) / FRESHNESS_YEAR_MS;
+  if (ageYears <= 1) return 1;
+
+  return Math.max(FRESHNESS_FLOOR, 1 - ((ageYears - 1) * FRESHNESS_ANNUAL_DECAY));
+}
 
 function linkedinAuthorSlug(url: string | null): string | null {
   const match = url?.match(/linkedin\.com\/posts\/([^_/?#]+)/i);
