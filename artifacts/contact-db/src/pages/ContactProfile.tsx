@@ -814,6 +814,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
   const quotesMutation = useExtractInsightQuotes();
   const hasAutoExtractedQuotesRef = useRef<number | null>(null);
   const [reassignOpen, setReassignOpen] = useState(false);
+  const RELEVANCE_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 
   // Effect 1: show toast whenever scores are settled and max ≤ 50
   useEffect(() => {
@@ -822,7 +823,9 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
     if (maxScore <= 50) setShowLostFriendo(true);
   }, [relevanceData, relevanceMutation.isPending]);
 
-  // Effect 2: auto-trigger scoring when any insight doesn't yet have a score.
+  // Effect 2: auto-trigger scoring when scores are missing or older than ten
+  // minutes. The API enforces the same window so duplicate requests cannot
+  // trigger another AI scoring run.
   // Tracks the last contactId scored (not a boolean) so it resets automatically
   // when navigating to a different contact within the same component instance.
   useEffect(() => {
@@ -838,9 +841,16 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
     ];
     if (allInsightKeys.length === 0) return; // insights not loaded yet
 
-    const scoredKeys = new Set(relevanceData.map(s => `${s.signalType}-${s.signalId}`));
-    const allScored = allInsightKeys.every(k => scoredKeys.has(k));
-    if (allScored) return; // every insight already has a score — Effect 1 handles the toast
+    const latestComputedAt = relevanceData.reduce((latest, score) => {
+      const timestamp = new Date(score.computedAt).getTime();
+      return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
+    }, 0);
+    const scoresAreFresh = latestComputedAt > 0
+      && Date.now() - latestComputedAt < RELEVANCE_REFRESH_WINDOW_MS;
+    if (scoresAreFresh) {
+      hasAutoScoredRef.current = id;
+      return;
+    }
 
     hasAutoScoredRef.current = id;
     relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() });

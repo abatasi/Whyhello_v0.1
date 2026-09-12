@@ -122,6 +122,8 @@ They are the most specific, the most proximate, and the most personally resonant
 
 **Third-party LinkedIn engagement is a separate, lower-confidence personal subtype.** A post authored by someone else and merely liked, commented on, or otherwise engaged with by the contact is not equivalent to the contact's own thinking. A substantive comment or explicitly attributed direct quote can restore some value, but never the full proximity of an original post.
 
+**Refresh cadence:** Stored relevance scores for a contact are considered current for ten minutes. The client and API must both refuse to start another scoring run during that window; this prevents repeated navigation or duplicate requests from re-running the AI scorer unnecessarily.
+
 **Por qué las reestructuraciones y las bajas de liderazgo tienen peso bajo:**
 High sensitivity and high risk of tone error suppress the base value. These signals require exceptional judgment to use well; their default score reflects the probability of error, not the potential of the signal.
 

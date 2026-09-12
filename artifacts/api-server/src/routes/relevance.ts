@@ -22,6 +22,7 @@ function getUserId(req: Request): string | null {
 }
 
 const LINKEDIN_MEDIA_TYPES = new Set(["linkedin", "linkedin_post"]);
+const RELEVANCE_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 
 function linkedinAuthorSlug(url: string | null): string | null {
   const match = url?.match(/linkedin\.com\/posts\/([^_/?#]+)/i);
@@ -207,6 +208,32 @@ router.post("/relevance/score", async (req, res) => {
       ...colleague.map((s) => ({ signalType: "colleague", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, quotable: quoteMap.get(`colleague-${s.id}`) })),
       ...counterpart.map((s) => ({ signalType: "counterpart", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, quotable: quoteMap.get(`counterpart-${s.id}`) })),
     ];
+
+    // Keep relevance refreshes to one run per contact every ten minutes.
+    // This server-side guard protects against duplicate tabs and callers that
+    // bypass the client-side freshness check.
+    const existingScores = await db
+      .select()
+      .from(insightRelevanceScoresTable)
+      .where(eq(insightRelevanceScoresTable.contactId, contactId));
+    const latestComputedAt = existingScores.reduce((latest, score) => {
+      const timestamp = new Date(score.computedAt).getTime();
+      return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
+    }, 0);
+    if (
+      latestComputedAt > 0
+      && Date.now() - latestComputedAt < RELEVANCE_REFRESH_WINDOW_MS
+    ) {
+      res.json(existingScores.map((score) => ({
+        signalType: score.signalType,
+        signalId: score.signalId,
+        score: score.score,
+        description: score.description,
+        matchedHqSignals: score.matchedHqSignals ? (JSON.parse(score.matchedHqSignals) as string[]) : [],
+        computedAt: score.computedAt,
+      })));
+      return;
+    }
 
     // Set of signal keys that have an extracted quotable — used for post-processing boost
     const quotableKeys = new Set(signals.filter((s) => s.quotable).map((s) => `${s.signalType}-${s.signalId}`));
