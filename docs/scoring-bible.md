@@ -124,7 +124,7 @@ They are the most specific, the most proximate, and the most personally resonant
 
 **A LinkedIn reshare is not inherently lower-confidence.** The scorer must inspect the underlying shared content and judge its actual HQ relevance and actionability. The fact that the contact reshared it neither increases nor decreases the content score. A generic, celebratory, inspirational, or otherwise non-actionable source remains weak even when the contact adds a quotable caption.
 
-**Refresh cadence:** Stored relevance scores for a contact are considered current for ten minutes. The client and API must both refuse to start another scoring run during that window; this prevents repeated navigation or duplicate requests from re-running the AI scorer unnecessarily.
+**Refresh cadence:** Stored relevance scores for a contact are considered current for ten minutes. Automatic client and API requests refuse to start another scoring run during that window, preventing repeated navigation or duplicate requests from re-running the AI scorer unnecessarily. An explicit user-triggered refresh may bypass the window when the user wants an immediate update.
 
 **Por qué las reestructuraciones y las bajas de liderazgo tienen peso bajo:**
 High sensitivity and high risk of tone error suppress the base value. These signals require exceptional judgment to use well; their default score reflects the probability of error, not the potential of the signal.

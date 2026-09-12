@@ -1083,6 +1083,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                       <button
                         onClick={refreshRelevance}
                         disabled={relevanceMutation.isPending}
+                        aria-label="Refresh relevance now"
                         title="Refresh relevance now"
                         className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-secondary transition-colors disabled:opacity-50"
                       >
@@ -1186,6 +1187,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                           <button
                             onClick={refreshRelevance}
                             disabled={relevanceMutation.isPending}
+                            aria-label="Refresh relevance now"
                             title="Refresh relevance now"
                             className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-secondary transition-colors disabled:opacity-50"
                           >
