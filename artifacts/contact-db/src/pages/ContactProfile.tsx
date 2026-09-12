@@ -2325,6 +2325,31 @@ function InsightDetailView({
                 <p className="text-xs text-muted-foreground leading-relaxed">{aiData?.summary}</p>
               )}
             </div>
+            <div className="border-t border-border/40 pt-2.5">
+              <div className="flex items-center gap-2 mb-2.5">
+                <Zap className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Key Takeaways</span>
+              </div>
+              {aiLoading ? (
+                <div className="flex flex-col gap-3">
+                  {[80, 95, 70, 85].map((w, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-muted mt-1.5 flex-shrink-0" />
+                      <div className="h-3 bg-muted rounded-full animate-pulse" style={{ width: `${w}%` }} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {(aiData?.keyInsights ?? []).map((insight, i) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <div className={cn("h-1.5 w-1.5 rounded-full mt-[5px] flex-shrink-0", category.accentBg)} style={{ minWidth: "6px" }} />
+                      <span className="text-xs text-foreground leading-snug">{insight}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
 
@@ -2390,36 +2415,6 @@ function InsightDetailView({
           </div>
         </div>
 
-        {/* Key Insights — hidden when browser is expanded */}
-        {!browserExpanded && (
-          <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
-              <Zap className="h-3.5 w-3.5 text-amber-500" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Key Insights</span>
-            </div>
-            <div className="px-4 py-3.5">
-              {aiLoading ? (
-                <div className="flex flex-col gap-3">
-                  {[80, 95, 70, 85].map((w, i) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                      <div className="h-1.5 w-1.5 rounded-full bg-muted mt-1.5 flex-shrink-0" />
-                      <div className="h-3 bg-muted rounded-full animate-pulse" style={{ width: `${w}%` }} />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <ul className="flex flex-col gap-3">
-                  {(aiData?.keyInsights ?? []).map((insight, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <div className={cn("h-1.5 w-1.5 rounded-full mt-[5px] flex-shrink-0", category.accentBg)} style={{ minWidth: "6px" }} />
-                      <span className="text-xs text-foreground leading-snug">{insight}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Lite browser — grows to fill all remaining vertical space ── */}
