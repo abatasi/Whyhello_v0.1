@@ -2191,7 +2191,7 @@ function InsightDetailView({
     apiFetch("/api/insights/summarize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: item.url, title: item.title, source: item.source, description: item.description, mediaType: item.mediaType }),
+       body: JSON.stringify({ url: item.url, title: item.title, source: item.source, description: item.description, mediaType: item.mediaType, contactId }),
     })
       .then(r => r.json())
       .then((data: { summary: string; keyInsights: string[] }) => { setAiData(data); setAiLoading(false); })

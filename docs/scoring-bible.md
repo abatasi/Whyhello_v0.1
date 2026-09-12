@@ -91,6 +91,8 @@ Base scores establish the floor value of a signal before context and contact adj
 |---|---|---|
 | **Personal** | Attributable quote (LinkedIn post) | 90 |
 | **Personal** | Original LinkedIn post (no quote extracted) | 75 |
+| **Personal** | Third-party LinkedIn engagement with substantive contact comment or direct quote | 55 |
+| **Personal** | Third-party LinkedIn engagement with no substantive contact-authored evidence | 30 |
 | **Personal** | Published interview or article | 70 |
 | **Personal** | Podcast appearance | 65 |
 | **Personal** | Conference presentation | 60 |
@@ -118,6 +120,8 @@ Base scores establish the floor value of a signal before context and contact adj
 **Por qué las señales personales tienen el mayor peso:**
 They are the most specific, the most proximate, and the most personally resonant. A well-used personal signal proves genuine research. An unused personal signal, when one exists, represents a messaging failure.
 
+**Third-party LinkedIn engagement is a separate, lower-confidence personal subtype.** A post authored by someone else and merely liked, commented on, or otherwise engaged with by the contact is not equivalent to the contact's own thinking. A substantive comment or explicitly attributed direct quote can restore some value, but never the full proximity of an original post.
+
 **Por qué las reestructuraciones y las bajas de liderazgo tienen peso bajo:**
 High sensitivity and high risk of tone error suppress the base value. These signals require exceptional judgment to use well; their default score reflects the probability of error, not the potential of the signal.
 
@@ -142,6 +146,8 @@ Contact proximity measures how directly the signal relates to the specific perso
 | Proximity Condition | Multiplier |
 |---|---|
 | Signal is attributed directly to the contact (they authored or said it) | 1.30× |
+| Third-party LinkedIn post with no substantive contact-authored evidence | 0.70× |
+| Third-party LinkedIn post with a substantive contact comment or direct quote | 0.80× |
 | Signal is attributed to the contact's company (they work there) | 1.10× |
 | Signal is attributed to a named colleague within the contact's organization | 1.05× |
 | Signal is attributed to a named counterpart in the same role at another company | 1.00× (neutral) |
@@ -394,7 +400,7 @@ These are the unsolved mysteries — questions the platform has not yet answered
 | 1 | Should the HQ alignment score be computed by keyword matching or by embedding similarity? The current approach is keyword-based; embeddings would be more accurate but more expensive. | Score quality, cost |
 | 2 | Should the seniority fit multiplier apply to the hook signal only, or to all signals selected for the message? | EB and BRIDGE signal selection |
 | 3 | When a contact changes companies, should their previous company's signals be re-scored with a new proximity multiplier (now reduced) or retired? | Signal lifecycle |
-| 4 | Should scoring incorporate engagement signals (e.g. did the contact like or comment on the source post)? These signals exist but are not currently captured. | Engagement-informed scoring |
+| 4 | How should scoring evolve as more engagement types become available beyond visible LinkedIn comments and direct quotes? | Engagement-informed scoring |
 | 5 | Is a composite score of 20 the right suppression floor, or should variant suppression require a higher minimum (e.g. 35)? | Variant quality |
 | 6 | Should the platform surface score explanations to users ("This signal scored 82 because it's a direct quote from 3 weeks ago with strong pillar alignment")? | Transparency and trust |
 | 7 | How should the platform handle A/B evidence — if a message that used a low-scoring signal outperformed a message that used a high-scoring signal? | Score calibration feedback loop |

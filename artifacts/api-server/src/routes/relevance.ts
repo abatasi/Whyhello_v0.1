@@ -21,6 +21,34 @@ function getUserId(req: Request): string | null {
   return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
+const LINKEDIN_MEDIA_TYPES = new Set(["linkedin", "linkedin_post"]);
+
+function linkedinAuthorSlug(url: string | null): string | null {
+  const match = url?.match(/linkedin\.com\/posts\/([^_/?#]+)/i);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+function linkedinProfileSlug(url: string | null): string | null {
+  const match = url?.match(/linkedin\.com\/in\/([^/?#]+)/i);
+  return match?.[1]?.toLowerCase().replace(/\/$/, "") ?? null;
+}
+
+function isContactAuthoredLinkedInSignal(
+  signal: { title: string; url: string | null },
+  contact: { firstName: string; lastName: string; linkedinUrl: string | null },
+): boolean {
+  const contactSlug = linkedinProfileSlug(contact.linkedinUrl)
+    ?? `${contact.firstName}-${contact.lastName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const authorSlug = linkedinAuthorSlug(signal.url);
+  if (authorSlug && (authorSlug === contactSlug || authorSlug.startsWith(`${contactSlug}-`))) return true;
+
+  const title = signal.title.toLowerCase();
+  const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
+  return title === fullName
+    || title.startsWith(`${fullName}'s post`)
+    || title.startsWith(`${fullName} -`);
+}
+
 const router: IRouter = Router({ mergeParams: true });
 
 // ── GET /api/contacts/:contactId/insights/relevance ──────────────────────────
@@ -166,16 +194,18 @@ router.post("/relevance/score", async (req, res) => {
       signalType: string;
       signalId: number;
       title: string;
+      url: string | null;
+      mediaType: string | null;
       description: string | null;
       quotable: QuotableInfo | undefined;
     };
     const signals: SignalRow[] = [
-      ...personal.map((s) => ({ signalType: "personal", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`personal-${s.id}`) })),
-      ...company.map((s) => ({ signalType: "company", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`company-${s.id}`) })),
-      ...industry.map((s) => ({ signalType: "industry", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`industry-${s.id}`) })),
-      ...role.map((s) => ({ signalType: "role", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`role-${s.id}`) })),
-      ...colleague.map((s) => ({ signalType: "colleague", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`colleague-${s.id}`) })),
-      ...counterpart.map((s) => ({ signalType: "counterpart", signalId: s.id, title: s.title, description: s.description, quotable: quoteMap.get(`counterpart-${s.id}`) })),
+      ...personal.map((s) => ({ signalType: "personal", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, quotable: quoteMap.get(`personal-${s.id}`) })),
+      ...company.map((s) => ({ signalType: "company", signalId: s.id, title: s.title, url: null, mediaType: null, description: s.description, quotable: quoteMap.get(`company-${s.id}`) })),
+      ...industry.map((s) => ({ signalType: "industry", signalId: s.id, title: s.title, url: null, mediaType: null, description: s.description, quotable: quoteMap.get(`industry-${s.id}`) })),
+      ...role.map((s) => ({ signalType: "role", signalId: s.id, title: s.title, url: null, mediaType: null, description: s.description, quotable: quoteMap.get(`role-${s.id}`) })),
+      ...colleague.map((s) => ({ signalType: "colleague", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, quotable: quoteMap.get(`colleague-${s.id}`) })),
+      ...counterpart.map((s) => ({ signalType: "counterpart", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, quotable: quoteMap.get(`counterpart-${s.id}`) })),
     ];
 
     // Set of signal keys that have an extracted quotable — used for post-processing boost
@@ -201,6 +231,9 @@ router.post("/relevance/score", async (req, res) => {
     const signalsList = signals
       .map((s, i) => {
         let block = `[${i + 1}] type="${s.signalType}" id=${s.signalId}\n  Title: ${s.title}\n  Description: ${s.description ?? "(none)"}`;
+        if (s.signalType === "personal" && LINKEDIN_MEDIA_TYPES.has(s.mediaType ?? "")) {
+          block += `\n  Relationship to contact: ${isContactAuthoredLinkedInSignal(s, contact) ? "contact-authored LinkedIn post" : "third-party LinkedIn post the contact may have engaged with; do not treat the post author's words as the contact's insight"}`;
+        }
         if (s.quotable) {
           block += `\n  ⭐ QUOTABLE: "${s.quotable.quote}"`;
           block += `\n     — ${s.quotable.attribution}${s.quotable.attributionRole ? `, ${s.quotable.attributionRole}` : ""}`;
@@ -226,6 +259,11 @@ SCORING RUBRIC (0–100):
 - 40-59: Moderate connection — some overlap, but indirect or partial
 - 20-39: Weak connection — only tangential overlap
 - 0-19: No meaningful connection to the seller's offering
+
+PERSONAL LINKEDIN PROXIMITY:
+- A contact-authored LinkedIn post is direct personal evidence.
+- A LinkedIn post authored by someone else is an engagement signal, not the contact's insight. Without a substantive comment or an explicit direct quote of the contact, keep it in the 0-55 range even when the post topic overlaps with the HQ.
+- A third-party post with a substantive, attributable comment or direct quote from the contact may score higher, but must remain below an otherwise comparable contact-authored post.
 
 Scores above 95 must be rare. Do not use 96-100 for an ordinary strong match, a generic topic overlap, or a third-party quote. When in doubt, score 90-95.
 
@@ -270,6 +308,10 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
     const QUOTABLE_HQ_FLOOR = 20;
     const ORDINARY_SCORE_CEILING = 95;
     const EXCEPTIONAL_SCORE_FLOOR = 96;
+    const ENGAGEMENT_SCORE_MULTIPLIER = 0.65;
+    const ENGAGEMENT_WITH_CONTACT_EVIDENCE_MULTIPLIER = 0.8;
+    const ENGAGEMENT_SCORE_CEILING = 55;
+    const ENGAGEMENT_WITH_CONTACT_EVIDENCE_CEILING = 75;
 
     const contactFullName = `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.toLowerCase().trim();
     const isSelfAttributed = (q: QuotableInfo): boolean =>
@@ -283,16 +325,35 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const key = `${s.signalType}-${s.signalId}`;
       const sig = signals.find((x) => `${x.signalType}-${x.signalId}` === key);
       const quotable = sig?.quotable;
+      const isLinkedInEngagement = !!sig
+        && sig.signalType === "personal"
+        && LINKEDIN_MEDIA_TYPES.has(sig.mediaType ?? "")
+        && !isContactAuthoredLinkedInSignal(sig, contact);
+      const selfAttributedQuote = !!quotable && isSelfAttributed(quotable);
+      const engagementCeiling = selfAttributedQuote
+        ? ENGAGEMENT_WITH_CONTACT_EVIDENCE_CEILING
+        : ENGAGEMENT_SCORE_CEILING;
+      const engagementMultiplier = selfAttributedQuote
+        ? ENGAGEMENT_WITH_CONTACT_EVIDENCE_MULTIPLIER
+        : ENGAGEMENT_SCORE_MULTIPLIER;
+      const proximityAdjustedScore = isLinkedInEngagement
+        ? Math.min(engagementCeiling, Math.round(hqScore * engagementMultiplier))
+        : hqScore;
+
       if (!quotable || hqScore < QUOTABLE_HQ_FLOOR) {
-        return { ...s, score: Math.min(ORDINARY_SCORE_CEILING, hqScore) };
+        return { ...s, score: Math.min(ORDINARY_SCORE_CEILING, proximityAdjustedScore) };
       }
-      const boost = isSelfAttributed(quotable) ? QUOTABLE_BOOST_SELF : QUOTABLE_BOOST_OTHER;
-      const boostedScore = Math.min(ORDINARY_SCORE_CEILING, hqScore + boost);
+      const boost = selfAttributedQuote && !isLinkedInEngagement ? QUOTABLE_BOOST_SELF : QUOTABLE_BOOST_OTHER;
+      const boostedScore = Math.min(
+        isLinkedInEngagement ? engagementCeiling : ORDINARY_SCORE_CEILING,
+        proximityAdjustedScore + boost,
+      );
       // A 96–100 score is reserved for an unusually strong, self-attributed
       // quote that the AI itself judged exceptional. The bonus must not turn
       // an ordinary strong signal into a top-of-scale score.
       const exceptionalDirectQuote =
-        isSelfAttributed(quotable) &&
+        selfAttributedQuote &&
+        !isLinkedInEngagement &&
         hqScore >= EXCEPTIONAL_SCORE_FLOOR &&
         (s.matchedHqSignals?.length ?? 0) >= 2;
       return {

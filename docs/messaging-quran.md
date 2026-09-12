@@ -328,6 +328,23 @@ For attributable quotes — always cite the source platform. After invoking the 
 
 ---
 
+### 3.2.1 Engaged LinkedIn Posts — A Weaker Personal Signal
+
+Some personal LinkedIn records point to a post authored by someone else that the contact commented on, liked, or otherwise engaged with. These are not equivalent to the contact's own posts.
+
+**Required distinction:**
+- Treat the third-party post as background context, not as the contact's viewpoint.
+- Use the contact's own visible comment as the primary evidence when it is substantive.
+- A short social response such as “congratulations,” “well done,” “happy anniversary,” or “welcome” is not an actionable insight.
+- If the contact's comment is not visible or contains no business substance, say so plainly and lower confidence rather than inferring priorities from the post.
+- A third-party post may be useful when it directly quotes the contact, but it remains one step removed from a contact-authored post.
+
+**Seller posture:** Contextual observer. Acknowledge the contact's interaction only when it creates a credible bridge to the seller's HQ; do not imply that the contact endorsed the third-party post or shares its author's perspective.
+
+**Governing formula:** Contact interaction + evidence-strength assessment + conditional HQ bridge. If the interaction is merely social, the correct conclusion may be that there is no actionable personal signal.
+
+---
+
 ### 3.3 Company Insights
 
 **Definition:** News, announcements, earnings calls, investor materials, leadership changes, product releases, hiring activity, strategic initiatives, regulatory developments, or other signals associated with the contact's company.

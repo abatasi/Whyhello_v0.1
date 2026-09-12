@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { db } from "@workspace/db";
-import { dnaProfilesTable } from "@workspace/db/schema";
+import { contactsTable, dnaProfilesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 
@@ -90,6 +90,82 @@ function buildHqContext(profileData: unknown): string {
   return lines.join("\n") || "No HQ profile is configured.";
 }
 
+function linkedinAuthorSlug(url: string | null): string | null {
+  const match = url?.match(/linkedin\.com\/posts\/([^_/?#]+)/i);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+function linkedinProfileSlug(url: string | null): string | null {
+  const match = url?.match(/linkedin\.com\/in\/([^/?#]+)/i);
+  return match?.[1]?.toLowerCase().replace(/\/$/, "") ?? null;
+}
+
+function isContactAuthoredLinkedInSignal(
+  title: string,
+  url: string,
+  contact: { firstName: string; lastName: string; linkedinUrl: string | null },
+): boolean {
+  const contactSlug = linkedinProfileSlug(contact.linkedinUrl)
+    ?? `${contact.firstName}-${contact.lastName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const authorSlug = linkedinAuthorSlug(url);
+  if (authorSlug && (authorSlug === contactSlug || authorSlug.startsWith(`${contactSlug}-`))) return true;
+
+  const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
+  const normalizedTitle = title.toLowerCase();
+  return normalizedTitle === fullName
+    || normalizedTitle.startsWith(`${fullName}'s post`)
+    || normalizedTitle.startsWith(`${fullName} -`);
+}
+
+function normalizedName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+async function tryFetchContactComments(
+  url: string,
+  contact: { firstName: string; lastName: string },
+): Promise<string[]> {
+  try {
+    const resp = await fetch(url, {
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Whyhello-Bot/1.0)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+    });
+    if (!resp.ok) return [];
+    const html = await resp.text();
+    const fullName = normalizedName(`${contact.firstName} ${contact.lastName}`);
+    const comments: string[] = [];
+
+    for (const match of html.matchAll(
+      /<script[^>]+type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/gis,
+    )) {
+      try {
+        const data = JSON.parse(match[1]);
+        const records = Array.isArray(data) ? data : [data];
+        for (const record of records) {
+          if (!record || typeof record !== "object" || !Array.isArray(record.comment)) continue;
+          for (const comment of record.comment) {
+            if (!comment || typeof comment !== "object") continue;
+            const author = typeof comment.author === "string"
+              ? comment.author
+              : typeof comment.author?.name === "string" ? comment.author.name : "";
+            if (normalizedName(author) !== fullName || typeof comment.text !== "string") continue;
+            comments.push(comment.text.trim());
+          }
+        }
+      } catch {
+        // Ignore malformed JSON-LD blocks and continue with other blocks.
+      }
+    }
+
+    return [...new Set(comments)].slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
 async function tryFetchPageText(url: string): Promise<string | null> {
   try {
     const controller = new AbortController();
@@ -120,12 +196,13 @@ async function tryFetchPageText(url: string): Promise<string | null> {
 
 router.post("/", async (req, res) => {
   try {
-    const { url, title, source, description, mediaType } = req.body as {
+    const { url, title, source, description, mediaType, contactId } = req.body as {
       url?: string;
       title?: string;
       source?: string;
       description?: string;
       mediaType?: string;
+      contactId?: number;
     };
 
     if (!url || !title) {
@@ -134,6 +211,15 @@ router.post("/", async (req, res) => {
     }
 
     const pageText = await tryFetchPageText(url);
+    const contact = contactId
+      ? (await db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1))[0]
+      : undefined;
+    const isLinkedInEngagement = !!contact
+      && (mediaType === "linkedin" || mediaType === "linkedin_post")
+      && !isContactAuthoredLinkedInSignal(title, url, contact);
+    const contactComments = isLinkedInEngagement
+      ? await tryFetchContactComments(url, contact!)
+      : [];
     const userId = getUserId(req);
     let hqContext = "No HQ profile is configured.";
     if (userId) {
@@ -151,9 +237,15 @@ router.post("/", async (req, res) => {
       }
     }
 
+    const engagementBlock = isLinkedInEngagement
+      ? `\nSIGNAL PROXIMITY:\nThis is a third-party LinkedIn post, not a post authored by ${contact?.firstName} ${contact?.lastName}. The contact may have engaged with it.\n${contactComments.length > 0
+        ? `The contact's own comments visible in the source are:\n${contactComments.map((comment) => `- ${comment}`).join("\n")}`
+        : "No contact-authored comment was visible in the fetched source."}\nTreat the post author's content as background only. Assess the contact's own comment, if present, for substantive business meaning. A short social response such as congratulations, well done, happy anniversary, or welcome is not an actionable contact insight.`
+      : "";
+
     const contextBlock = pageText
-      ? `Full page content (excerpt):\n${pageText}`
-      : `Available metadata:\nTitle: ${title}\nSource: ${source ?? "Unknown"}\nType: ${mediaType ?? "article"}\nDescription: ${description ?? "Not available"}\nURL: ${url}`;
+      ? `Full page content (excerpt):\n${pageText}${engagementBlock}`
+      : `Available metadata:\nTitle: ${title}\nSource: ${source ?? "Unknown"}\nType: ${mediaType ?? "article"}\nDescription: ${description ?? "Not available"}\nURL: ${url}${engagementBlock}`;
 
     const prompt = `You are a B2B intelligence analyst embedded in a relationship intelligence platform called Whyhello. Analyze the following content for a seller preparing to engage with a contact associated with it.
 
@@ -164,7 +256,7 @@ Produce:
 1. A concise 2–3 sentence summary of what this piece covers and the most relevant implication for the seller's target market, value proposition, products, or messaging pillars.
 2. Exactly 4 contextualized takeaway bullets. Each bullet must connect a concrete point from the content to a specific HQ detail above and explain how the seller should use that connection in a conversation. Prioritize named products, the value wedge, differentiators, pillars, customer focus, and buying priorities.
 
-Do not give generic recommendations such as "follow up," "monitor this trend," or "tailor your message." If the content does not connect to an HQ detail, say that clearly and identify the closest credible angle without inventing a connection. Never invent products, claims, customer results, or market priorities.
+Do not give generic recommendations such as "follow up," "monitor this trend," or "tailor your message." If this is a third-party engagement with a short social comment, explicitly say that it is weak or non-actionable contact evidence and do not present the post as the contact's own viewpoint. If the content does not connect to an HQ detail, say that clearly and identify the closest credible angle without inventing a connection. Never invent products, claims, customer results, or market priorities.
 
 ${contextBlock}
 
