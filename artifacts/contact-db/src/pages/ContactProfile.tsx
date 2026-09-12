@@ -1577,49 +1577,54 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
 
             {/* ── EXPANDED right column ── */}
             {!outreachCollapsed && insightsMode !== "expanded" && (
-              <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
-                <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
-                  <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Outreach</h2>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setOutreachCollapsed(true)}
-                      title="Collapse outreach panel"
-                      className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                    >
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 3×2 output grid */}
-                <div className="grid grid-cols-3 gap-2">
-                  {OUTPUT_TYPES.map((output) => {
-                    const Icon = output.icon;
-                    return (
+              <aside className="relative overflow-y-scroll min-h-0 pr-1 scroll-thin">
+                <div className={cn(
+                  "flex flex-col gap-3",
+                  (quotesData.length > 0 || quotesMutation.isPending) && "pb-56"
+                )}>
+                  <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Outreach</h2>
+                    <div className="flex items-center gap-1.5">
                       <button
-                        key={output.id}
-                        onClick={() => setActiveOutput(output.id)}
-                        className={cn(
-                          "flex flex-col items-center gap-2 p-3 rounded-xl border bg-card hover:bg-secondary/30 transition-colors text-center cursor-pointer",
-                          output.border
-                        )}
+                        onClick={() => setOutreachCollapsed(true)}
+                        title="Collapse outreach panel"
+                        className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                       >
-                        <div className={cn(
-                          "h-9 w-9 rounded-lg flex items-center justify-center border",
-                          output.bg, output.border
-                        )}>
-                          <Icon className={cn("h-4 w-4", output.color)} />
-                        </div>
-                        <span className="text-[10px] font-semibold text-foreground leading-tight">{output.label}</span>
+                        <ChevronRight className="h-3.5 w-3.5" />
                       </button>
-                    );  /* end output button */
-                  })}
+                    </div>
+                  </div>
+
+                  {/* 3×2 output grid */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {OUTPUT_TYPES.map((output) => {
+                      const Icon = output.icon;
+                      return (
+                        <button
+                          key={output.id}
+                          onClick={() => setActiveOutput(output.id)}
+                          className={cn(
+                            "flex flex-col items-center gap-2 p-3 rounded-xl border bg-card hover:bg-secondary/30 transition-colors text-center cursor-pointer",
+                            output.border
+                          )}
+                        >
+                          <div className={cn(
+                            "h-9 w-9 rounded-lg flex items-center justify-center border",
+                            output.bg, output.border
+                          )}>
+                            <Icon className={cn("h-4 w-4", output.color)} />
+                          </div>
+                          <span className="text-[10px] font-semibold text-foreground leading-tight">{output.label}</span>
+                        </button>
+                      );  /* end output button */
+                    })}
+                  </div>
+
+                  {/* Jobs list */}
+                  <OutreachJobsList contactId={id} refetchTrigger={jobRefetchTrigger} />
                 </div>
 
-                {/* Jobs list */}
-                <OutreachJobsList contactId={id} refetchTrigger={jobRefetchTrigger} />
-
-                {/* Quotables carousel — sits at the bottom of the outreach panel */}
+                {/* Quotables carousel — anchored to the bottom of the outreach panel */}
                 <QuotablesCarousel
                   quotes={quotesData}
                   isPending={quotesMutation.isPending}
@@ -1869,7 +1874,7 @@ function QuotablesCarousel({
   if (!isPending && quotes.length === 0) return null;
 
   return (
-    <div className="flex-shrink-0 border-t border-violet-100 pt-3 mt-auto">
+    <div className="absolute bottom-0 left-0 right-1 z-20 bg-[#F8FAFC] border-t border-violet-100 pt-3 pb-1 shadow-[0_-6px_12px_rgba(248,250,252,0.9)]">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-2.5">
