@@ -386,7 +386,7 @@ function JobViewerModal({
               </DialogDescription>
             </div>
             {!isActiveGenerating && (
-              <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+              <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5 mr-8">
                 <Button
                   variant="outline" size="sm"
                   className="h-7 gap-1.5 text-xs"
