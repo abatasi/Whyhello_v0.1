@@ -350,17 +350,17 @@ async function runGeneration(jobId: number) {
     const lines: string[] = ["VOICE PROFILE — follow ALL constraints below with zero exceptions:"];
     if (v.toneTags.length > 0) lines.push(`  Tone descriptors: ${v.toneTags.join(", ")}`);
     if (v.communicationStyle) lines.push(`  Communication style: ${v.communicationStyle}`);
-    if (v.writingNotes) lines.push(`  Voice notes (may contain specific closing phrases or verbal habits that MUST appear verbatim): ${v.writingNotes}`);
+    if (v.writingNotes) lines.push(`  Voice notes (may contain specific verbal habits that MUST appear verbatim, but never add a personal signature or sender name): ${v.writingNotes}`);
     if (v.suppressions.length > 0) lines.push(`  NEVER use any of these words/phrases: ${v.suppressions.join(", ")}`);
     if (v.suppressionNotes) lines.push(`  Also avoid: ${v.suppressionNotes}`);
     if (v.trainingText) lines.push(`  Voice sample (match this register exactly):\n  """\n  ${v.trainingText.slice(0, 600).replace(/\n/g, "\n  ")}\n  """`);
-    lines.push(`  CRITICAL: If the voice notes mention a specific sign-off phrase, use it EXACTLY on its own line immediately before "[Your Name]".`);
+    lines.push(`  CRITICAL: Do not add a sign-off phrase, personal signature, sender name, or "[Your Name]" placeholder. End the email with the CTA (or the permitted P.S. link note).`);
     return lines.join("\n");
   }
 
   const voiceSection = tone === "my_voice_profile" && vp
     ? buildVoiceGuide(vp)
-    : `Tone: ${tone} — let this govern word choice, sentence rhythm, and sign-off style.`;
+    : `Tone: ${tone} — let this govern word choice and sentence rhythm. Do not add a sign-off phrase, personal signature, or sender name.`;
 
   // 50/50 coin-flip for link placement style, decided once per generation run
   const linkStyle: "inline" | "ps" = Math.random() < 0.5 ? "inline" : "ps";
@@ -389,7 +389,7 @@ PLACEMENT STYLE FOR THIS EMAIL: ${linkStyle === "inline"
     "...one [this study examines](URL) in the context of independent advisory growth."
     "...[worth reading in full](URL) if this is on your radar."
   Render as markdown: [anchor text](URL). Weave directly into the sentence — not added after a full stop as a standalone fragment.`
-    : `PS — add a postscript after "[Your Name]" at the very end of the email.
+     : `PS — add a postscript after the CTA at the very end of the email.
   The PS must connect back to the specific signal you used as your HOOK — make it clear the link belongs to the piece already mentioned above, not a new reference.
   The raw URL must never appear in the PS. Hide it behind active verb anchor text using markdown: [anchor text](URL).
   Anchor text must describe what the piece does — not a generic "click here" or "read more".
@@ -398,7 +398,7 @@ PLACEMENT STYLE FOR THIS EMAIL: ${linkStyle === "inline"
     "P.S. Full report — [digs into this in more detail](URL) if useful."
     "P.S. The article above [covers this in depth](URL) if you'd like more context."
     "P.S. [The full piece is here](URL) — goes deeper on the numbers if it's of interest."
-  Place it on a new line after the sign-off, preceded by a blank line.`
+   Place it on a new line after the CTA, preceded by a blank line.`
   }`;
 
   const quotesBlock = quotesSection ? `
@@ -689,7 +689,7 @@ BLOCK 1 — The email:
   Line 2:   (blank)
   Line 3+:  Email body (five layers in order, no section labels, no separators)
 
-BLOCK 2 — The structure (append on a new line immediately after the email sign-off):
+  BLOCK 2 — The structure (append on a new line immediately after the email body, after the CTA and any permitted P.S.):
   [STRUCTURE_JSON]{"hook":"<verbatim HOOK sentence(s) from the email>","bridge":"<verbatim BRIDGE text>","value":"<verbatim VALUE text>","proof":"<verbatim PROOF text>","cta":"<verbatim CTA sentence>"}[/STRUCTURE_JSON]
 
   The JSON values must be verbatim extracts from the email body — not summaries or paraphrases.
@@ -703,7 +703,7 @@ SUBJECT LINE RULES
 
 LENGTH: ${lengthDesc}
 
-SIGN-OFF: ${tone === "my_voice_profile" ? "Use the sender's preferred closing phrase from the voice profile below, followed by \"[Your Name]\" on the next line" : "Sign off with \"[Your Name]\" as a placeholder — no invented name"}
+SIGN-OFF: Do not include a sign-off, closing phrase, personal signature, sender name, or "[Your Name]" placeholder. End with the CTA (or the permitted P.S. link note).
 
 ${voiceSection}
 ${linkPlacementBlock}
@@ -733,7 +733,8 @@ ABSOLUTE PROHIBITIONS
     stream: false,
   });
 
-  const result = completion.choices[0]?.message?.content ?? "";
+  const rawResult = completion.choices[0]?.message?.content ?? "";
+  const result = stripPersonalSignoff(rawResult);
   // Store enriched source keys: "category-id|Title|mediaType|score"
   // The frontend parses the pipe-separated format for the Sources tab display.
   // Old jobs without pipes fall back to showing the raw key.
@@ -898,6 +899,20 @@ async function generateVariants(parentJobId: number) {
 /** Strip the [STRUCTURE_JSON]...[/STRUCTURE_JSON] block from the raw AI result */
 function stripStructureBlock(raw: string): string {
   return raw.replace(/\s*\[STRUCTURE_JSON\][\s\S]*?\[\/STRUCTURE_JSON\]/g, "").trimEnd();
+}
+
+/** Remove an accidental personal closing while preserving the optional P.S. and structure block. */
+function stripPersonalSignoff(raw: string): string {
+  const structureMatch = raw.match(/\[STRUCTURE_JSON\][\s\S]*?\[\/STRUCTURE_JSON\]/);
+  const email = structureMatch?.index === undefined ? raw : raw.slice(0, structureMatch.index);
+  const structure = structureMatch?.[0] ?? "";
+  const psMatch = email.match(/\n\s*(P\.S\.[\s\S]*)$/i);
+  const beforePs = psMatch ? email.slice(0, psMatch.index) : email;
+  const ps = psMatch?.[1]?.trim() ?? "";
+  const signaturePattern = /\n\s*(?:best|best regards|kind regards|warm regards|regards|sincerely|cheers|thanks|thank you|all the best|talk soon)[,!:\s]*(?:\n\s*(?:\[Your Name\]|[A-Z][a-z.'-]+(?:\s+[A-Z][a-z.'-]+){1,3}))?\s*$/i;
+  const cleanedBeforePs = beforePs.replace(signaturePattern, "").trimEnd();
+  const cleanedEmail = ps ? `${cleanedBeforePs}\n\n${ps}` : cleanedBeforePs;
+  return structure ? `${cleanedEmail}\n${structure}` : cleanedEmail;
 }
 
 /** Extract subject and body from AI output that starts with "Subject: ..." */

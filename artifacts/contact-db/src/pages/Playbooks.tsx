@@ -1223,7 +1223,7 @@ function ConfigDrawer({
     setGenerating(true);
     await new Promise(r => setTimeout(r, 1200));
     if (safeData.blockType === "send-email") {
-      upd({ subject: `Re: Your ${safeData.insightCategory?.toLowerCase() ?? "company"} news`, emailBody: `Hi {{first_name}},\n\nI noticed your recent activity and wanted to reach out with a perspective that might be relevant.\n\n[Generated content will appear here based on Whyhello insights]\n\n{{cta}}\n\n[Your Name]` });
+      upd({ subject: `Re: Your ${safeData.insightCategory?.toLowerCase() ?? "company"} news`, emailBody: `Hi {{first_name}},\n\nI noticed your recent activity and wanted to reach out with a perspective that might be relevant.\n\n[Generated content will appear here based on Whyhello insights]\n\n{{cta}}` });
     } else if (safeData.blockType === "send-linkedin") {
       upd({ linkedinBody: `Hi {{first_name}}, I came across your profile and [generated insight-driven connection note] would love to connect.` });
     } else if (safeData.blockType === "make-call") {

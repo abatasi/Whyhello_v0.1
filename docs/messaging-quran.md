@@ -666,9 +666,9 @@ The anchor text must be an active verb phrase, not a generic call-to-action. Sta
 
 Rendered as markdown: `[anchor text](URL)`. Placed mid-sentence or at the clause boundary — not after a full stop as a standalone fragment. Only appears in HOOK, not in BRIDGE or VALUE.
 
-**Style B — Postscript (after the sign-off)**
+**Style B — Postscript (after the CTA)**
 
-The link appears as a P.S. on a new line after `[Your Name]`, preceded by a blank line. The P.S. must connect back to the specific source referenced in the HOOK, and the raw URL must never appear — it must always be hidden behind active verb anchor text using markdown: `[anchor text](URL)`.
+The link appears as a P.S. on a new line after the CTA, preceded by a blank line. Whyhello messages do not include a personal sign-off, signature, or sender name. The P.S. must connect back to the specific source referenced in the HOOK, and the raw URL must never appear — it must always be hidden behind active verb anchor text using markdown: `[anchor text](URL)`.
 
 Anchor text must describe what the piece does. Generic prompts like *"click here"*, *"read more"*, or bare URLs are not permitted.
 
