@@ -75,6 +75,7 @@ function rewriteUrls(html: string, origin: string, basePath: string): string {
  * 3. Patches window.location so JS URL construction uses the real origin.
  */
 function buildInjection(targetUrl: string, origin: string): string {
+  const safeJson = (value: string) => JSON.stringify(value).replace(/</g, "\\u003c");
   return `<style data-proxy-inject="1">html{opacity:0!important}</style><script data-proxy-inject="1">
 (function(){
   /* ── 1. Reveal page only after DOM is parsed and initial styles applied ── */
@@ -127,6 +128,37 @@ function buildInjection(targetUrl: string, origin: string): string {
       }
       return _nativeOpen.apply(this, arguments);
     };
+  } catch(e) { /* non-critical, ignore */ }
+
+  /* ── 4. Keep the featured insight open when a preview link navigates away ── */
+  try {
+    var _featuredUrl = new URL(${safeJson(targetUrl)});
+    document.addEventListener('click', function(event) {
+      if (event.defaultPrevented) return;
+      var target = event.target;
+      var anchor = target && target.closest ? target.closest('a[href]') : null;
+      if (!anchor) return;
+
+      var rawHref = anchor.getAttribute('href') || '';
+      if (!rawHref || rawHref.charAt(0) === '#' || rawHref.toLowerCase().indexOf('javascript:') === 0) return;
+
+      var destination;
+      try { destination = new URL(anchor.href || rawHref, document.baseURI); } catch(e) { return; }
+      if (destination.protocol !== 'http:' && destination.protocol !== 'https:') return;
+
+      var staysOnInsight = destination.origin === _featuredUrl.origin
+        && destination.pathname === _featuredUrl.pathname
+        && destination.search === _featuredUrl.search;
+      if (staysOnInsight) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.parent.postMessage({
+        type: 'insight-navigation-attempt',
+        url: destination.href,
+        label: (anchor.textContent || '').trim().slice(0, 120)
+      }, '*');
+    }, true);
   } catch(e) { /* non-critical, ignore */ }
 })();
 </script>`;

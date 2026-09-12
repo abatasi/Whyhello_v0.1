@@ -2148,6 +2148,8 @@ function InsightDetailView({
   const [iframeError, setIframeError] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const [browserExpanded, setBrowserExpanded] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<{ url: string; label: string } | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   // ── Metadata enrichment ──────────────────────────────────────────────────
   const { data: meta } = useInsightMeta(item.url);
@@ -2192,6 +2194,34 @@ function InsightDetailView({
   const youtubeEmbedUrl = getYouTubeEmbedUrl(item.url);
   const applePodcastEmbedUrl = getApplePodcastEmbedUrl(item.url);
   const iframeSrc = youtubeEmbedUrl ?? applePodcastEmbedUrl ?? `/api/proxy?url=${encodeURIComponent(item.url)}`;
+
+  useEffect(() => {
+    const handleNavigationAttempt = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      const data = event.data;
+      if (!data || data.type !== "insight-navigation-attempt" || typeof data.url !== "string") return;
+
+      try {
+        const destination = new URL(data.url);
+        if (destination.protocol !== "http:" && destination.protocol !== "https:") return;
+        setPendingNavigation({
+          url: destination.href,
+          label: typeof data.label === "string" ? data.label : "",
+        });
+      } catch {
+        // Ignore malformed navigation messages from the preview.
+      }
+    };
+
+    window.addEventListener("message", handleNavigationAttempt);
+    return () => window.removeEventListener("message", handleNavigationAttempt);
+  }, []);
+
+  const openPendingNavigation = () => {
+    if (!pendingNavigation) return;
+    window.open(pendingNavigation.url, "_blank", "noopener,noreferrer");
+    setPendingNavigation(null);
+  };
 
   useEffect(() => {
     setAiLoading(true);
@@ -2499,6 +2529,7 @@ function InsightDetailView({
             </div>
           )}
           <iframe
+            ref={iframeRef}
             key={iframeKey}
             src={iframeSrc}
             title={item.title}
@@ -2511,6 +2542,39 @@ function InsightDetailView({
           />
         </div>
       </div>
+
+      <Dialog
+        open={pendingNavigation !== null}
+        onOpenChange={(open) => { if (!open) setPendingNavigation(null); }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Leave this insight?</DialogTitle>
+            <DialogDescription>
+              This link will take you away from the featured insight. The insight will stay open here, and the link will open in a new tab.
+            </DialogDescription>
+          </DialogHeader>
+          {pendingNavigation && (
+            <div className="rounded-lg border border-border/60 bg-secondary/30 px-3 py-2">
+              <p className="text-xs font-medium text-foreground truncate">
+                {pendingNavigation.label || "External link"}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                {pendingNavigation.url}
+              </p>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <DialogClose asChild>
+              <Button variant="outline">Stay here</Button>
+            </DialogClose>
+            <Button onClick={openPendingNavigation}>
+              Open in new tab
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
