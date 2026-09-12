@@ -231,15 +231,16 @@ router.post("/relevance/score", async (req, res) => {
       url: string | null;
       mediaType: string | null;
       description: string | null;
+      publishedDate: string | null;
       quotable: QuotableInfo | undefined;
     };
     const signals: SignalRow[] = [
-      ...personal.map((s) => ({ signalType: "personal", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, quotable: quoteMap.get(`personal-${s.id}`) })),
-      ...company.map((s) => ({ signalType: "company", signalId: s.id, title: s.title, url: null, mediaType: null, description: s.description, quotable: quoteMap.get(`company-${s.id}`) })),
-      ...industry.map((s) => ({ signalType: "industry", signalId: s.id, title: s.title, url: null, mediaType: null, description: s.description, quotable: quoteMap.get(`industry-${s.id}`) })),
-      ...role.map((s) => ({ signalType: "role", signalId: s.id, title: s.title, url: null, mediaType: null, description: s.description, quotable: quoteMap.get(`role-${s.id}`) })),
-      ...colleague.map((s) => ({ signalType: "colleague", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, quotable: quoteMap.get(`colleague-${s.id}`) })),
-      ...counterpart.map((s) => ({ signalType: "counterpart", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, quotable: quoteMap.get(`counterpart-${s.id}`) })),
+      ...personal.map((s) => ({ signalType: "personal", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, publishedDate: s.publishedDate, quotable: quoteMap.get(`personal-${s.id}`) })),
+      ...company.map((s) => ({ signalType: "company", signalId: s.id, title: s.title, url: null, mediaType: null, description: s.description, publishedDate: s.publishedDate, quotable: quoteMap.get(`company-${s.id}`) })),
+      ...industry.map((s) => ({ signalType: "industry", signalId: s.id, title: s.title, url: null, mediaType: null, description: s.description, publishedDate: s.publishedDate, quotable: quoteMap.get(`industry-${s.id}`) })),
+      ...role.map((s) => ({ signalType: "role", signalId: s.id, title: s.title, url: null, mediaType: null, description: s.description, publishedDate: s.publishedDate, quotable: quoteMap.get(`role-${s.id}`) })),
+      ...colleague.map((s) => ({ signalType: "colleague", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, publishedDate: s.publishedDate, quotable: quoteMap.get(`colleague-${s.id}`) })),
+      ...counterpart.map((s) => ({ signalType: "counterpart", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, publishedDate: s.publishedDate, quotable: quoteMap.get(`counterpart-${s.id}`) })),
     ];
 
     // Keep relevance refreshes to one run per contact every ten minutes.
@@ -427,7 +428,13 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
         : hqScore;
 
       if (!quotable || hqScore < QUOTABLE_HQ_FLOOR) {
-        return { ...s, score: Math.min(ORDINARY_SCORE_CEILING, proximityAdjustedScore) };
+        return {
+          ...s,
+          score: Math.min(
+            ORDINARY_SCORE_CEILING,
+            Math.round(proximityAdjustedScore * freshnessMultiplier(sig?.publishedDate)),
+          ),
+        };
       }
       const boost = selfAttributedQuote && !isLinkedInEngagement
         ? hqScore >= QUOTABLE_STRONG_CONTENT_FLOOR
@@ -446,9 +453,10 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
         !isLinkedInEngagement &&
         hqScore >= EXCEPTIONAL_SCORE_FLOOR &&
         (s.matchedHqSignals?.length ?? 0) >= 2;
+      const scoredBeforeFreshness = exceptionalDirectQuote ? hqScore : boostedScore;
       return {
         ...s,
-        score: exceptionalDirectQuote ? hqScore : boostedScore,
+        score: Math.round(scoredBeforeFreshness * freshnessMultiplier(sig?.publishedDate)),
       };
     });
 

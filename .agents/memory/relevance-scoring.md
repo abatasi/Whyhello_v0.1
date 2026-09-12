@@ -46,4 +46,5 @@ Any new types/hooks added to `src/relevance.ts` must also be manually added to `
 - A third-party post with substantive contact-authored evidence can recover some score, but remains below a comparable contact-authored post.
 - LinkedIn reshares are not inherently weaker; score the underlying shared content for HQ relevance and actionability, without treating the reshare itself as a penalty or relevance boost.
 - Direct quotable bonuses are content-quality gated: weak/partial HQ matches receive only a small lift, while the full bonus requires a strong underlying-content score.
+- Freshness is calculated from each insight's published date: full value through one year, then a 20-percentage-point annual decay with a 0.20 floor; missing dates are not guessed.
 - Stored relevance scores are fresh for ten minutes; both client and API enforce this before starting another scoring run.

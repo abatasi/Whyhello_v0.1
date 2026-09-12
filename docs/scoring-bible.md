@@ -58,17 +58,17 @@ A signal must pass through **all three gates** to enter the scoring pipeline:
 The signal must comply with all storage and quality laws of the Scraping Torah. Signals below quality score **40** (per Parasha Vav §6.2) are turned back at the door.
 
 **2:2 — La Puerta de la Frescura**
-The signal must not carry a `freshnessTier` of `red` (per Parasha Zayin §7.2). Stale signals do not join the procession.
+The signal may enter regardless of age, but its score is adjusted from its stored `publishedDate`. Insights up to one year old remain fully fresh; each additional year reduces the final relevance score.
 
 **2:3 — La Puerta de la Procedencia**
-The signal must have a stored source URL and a confirmed `publishedDate`. Signals without a verifiable origin are refused entry.
+The signal must have a stored source URL. A confirmed `publishedDate` enables freshness adjustment; if the date is unavailable or unparseable, the signal remains eligible without an invented age penalty.
 
 ### 2.2 Las Señales del Purgatorio — Soft Filters
 
 The following conditions do not disqualify a signal but reduce its composite score and raise a flag in the platform's internal record — like a penitent permitted to walk in the procession but not to carry the paso:
 
 - Source is Tier 4 or Tier 5 (Parasha He §5.1) — bias flag applied
-- Signal `freshnessTier` is `amber` — age penalty applied (see Libro Cuarto)
+- Signal is older than one year — age penalty applied (see Libro Cuarto)
 - Signal title similarity > 85% to an already-selected signal — de-duplication penalty applied
 
 ---
@@ -164,13 +164,13 @@ Freshness multipliers are applied based on signal age at the time of message gen
 
 | Signal Age | Freshness Tier | Multiplier |
 |---|---|---|
-| 0–30 days | Verde | 1.15× |
-| 31–60 days | Verde | 1.05× |
-| 61–90 days | Verde | 1.00× |
-| 91–120 days | Ámbar | 0.90× |
-| 121–180 days | Ámbar | 0.80× |
-| 181–365 days | Ámbar | 0.65× |
-| > 365 days | Rojo | Signal disqualified — turned back at La Puerta de la Frescura |
+| 0–365 days | Verde | 1.00× |
+| >365–730 days | Ámbar | 0.80× |
+| >730–1,095 days | Ámbar | 0.60× |
+| >1,095–1,460 days | Ámbar | 0.40× |
+| >1,460 days | Rojo | 0.20× floor |
+
+Freshness is calculated from the insight's `publishedDate` at scoring time, not when the score was stored. The reduction is continuous at 20 percentage points per additional year after the first year and never removes a signal completely. Missing or unparseable dates receive no freshness penalty because the system cannot safely infer their age.
 
 ### 4.3 El Multiplicador de Alineación con el HQ — HQ Alignment Multiplier
 
@@ -511,7 +511,7 @@ Agnes Krause's LinkedIn post: *"US Fed may reconsider rate cuts amid shutdown co
 
 **Panel III — Los Multiplicadores**
 - `proximityMultiplier`: 1.30× — attributed directly to the contact
-- `freshnessMultiplier`: 1.00× — within 90 days (Verde tier)
+- `freshnessMultiplier`: 1.00× — within one year (Verde tier)
 - `hqAlignmentBonus`: +0.10 — aligns with market-conditions pillar
 - `seniorityFitMultiplier`: 1.10× — VP-level contact, personal signal
 
