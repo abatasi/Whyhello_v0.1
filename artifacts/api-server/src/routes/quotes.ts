@@ -9,6 +9,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { getAuth } from "@clerk/express";
+import { inspectLinkedInSource } from "../lib/linkedin-source";
 
 export const quotesRouter: IRouter = Router({ mergeParams: true });
 
@@ -93,83 +94,11 @@ async function fetchLinkedInPostData(url: string): Promise<{
   postBody: string | null;
   comments: Array<{ author: string; text: string }>;
 }> {
-  const empty = { postBody: null, comments: [] };
-  try {
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-      },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return empty;
-    const html = await res.text();
-
-    // LinkedIn's JSON-LD includes the full post body and, when available,
-    // public comments with their authors.
-    const jsonLdBlocks = [...html.matchAll(
-      /<script[^>]+type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/gis,
-    )];
-    for (const match of jsonLdBlocks) {
-      try {
-        const data = JSON.parse(match[1]);
-        const records = Array.isArray(data) ? data : [data];
-        const posting = records.find(
-          (record): record is { articleBody?: unknown; comment?: unknown } =>
-            record && typeof record === "object" && "articleBody" in record,
-        );
-        if (posting) {
-          const comments = Array.isArray(posting.comment)
-            ? posting.comment.flatMap((comment: unknown) => {
-                if (!comment || typeof comment !== "object") return [];
-                const value = comment as {
-                  text?: unknown;
-                  author?: { name?: unknown } | string;
-                };
-                const author = typeof value.author === "string"
-                  ? value.author
-                  : typeof value.author?.name === "string" ? value.author.name : "";
-                return typeof value.text === "string" && author
-                  ? [{ author, text: value.text.trim() }]
-                  : [];
-              })
-            : [];
-          return {
-            postBody: typeof posting.articleBody === "string" ? posting.articleBody.trim() : null,
-            comments,
-          };
-        }
-      } catch {
-        // Fall through to the metadata parser for malformed JSON-LD.
-      }
-    }
-
-    // 1. Try the JSON-LD articleBody with a tolerant fallback regex.
-    const ldMatch = html.match(/"articleBody"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (ldMatch?.[1]) {
-      return {
-        postBody: ldMatch[1].replace(/\\"/g, '"').replace(/\\n/g, " ").trim(),
-        comments: [],
-      };
-    }
-
-    // 2. Fallback: og:description meta tag
-    const ogMatch =
-      html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i) ??
-      html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:description"/i);
-    if (ogMatch?.[1]) {
-      return {
-        postBody: ogMatch[1].replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/&quot;/g, '"').trim(),
-        comments: [],
-      };
-    }
-
-    return empty;
-  } catch {
-    return empty;
-  }
+  const source = await inspectLinkedInSource(url);
+  return {
+    postBody: source.postBody,
+    comments: source.comments,
+  };
 }
 
 async function buildHqSummary(userId: string | null): Promise<string> {

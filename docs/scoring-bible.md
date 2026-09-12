@@ -91,7 +91,6 @@ Base scores establish the floor value of a signal before context and contact adj
 |---|---|---|
 | **Personal** | Attributable quote (LinkedIn post) | 90 |
 | **Personal** | Original LinkedIn post (no quote extracted) | 75 |
-| **Personal** | Contact-authored LinkedIn reshare with short or weak commentary | 35 |
 | **Personal** | Third-party LinkedIn engagement with substantive contact comment or direct quote | 55 |
 | **Personal** | Third-party LinkedIn engagement with no substantive contact-authored evidence | 30 |
 | **Personal** | Published interview or article | 70 |
@@ -123,7 +122,7 @@ They are the most specific, the most proximate, and the most personally resonant
 
 **Third-party LinkedIn engagement is a separate, lower-confidence personal subtype.** A post authored by someone else and merely liked, commented on, or otherwise engaged with by the contact is not equivalent to the contact's own thinking. A substantive comment or explicitly attributed direct quote can restore some value, but never the full proximity of an original post.
 
-**A contact-authored LinkedIn reshare is also lower-confidence.** The contact's caption may be quotable evidence of interest, but the underlying shared content is third-party material and must not be treated as the contact's stated position. Short praise or social commentary should receive only a limited score and quotable lift.
+**A LinkedIn reshare is not inherently lower-confidence.** The scorer must inspect the underlying shared content and judge its actual HQ relevance and actionability. The fact that the contact reshared it neither increases nor decreases the content score. A generic, celebratory, inspirational, or otherwise non-actionable source remains weak even when the contact adds a quotable caption.
 
 **Refresh cadence:** Stored relevance scores for a contact are considered current for ten minutes. The client and API must both refuse to start another scoring run during that window; this prevents repeated navigation or duplicate requests from re-running the AI scorer unnecessarily.
 
@@ -222,8 +221,8 @@ The Quotable Bonus is applied **deterministically** after the AI has scored each
 
 | Condition | Bonus | Rationale |
 |---|---|---|
-| Signal has a Quotable attributed **directly to this contact** AND HQ score ≥ 20 | **+35, ordinary scores capped at 95** | The contact's own words are the highest-value outreach material: proof of research, ready-to-use opener, zero paraphrase risk |
-| Signal is a contact-authored LinkedIn reshare with short or weak commentary AND HQ score ≥ 20 | **+10, capped at 65** | The caption shows some interest, but the useful substance belongs to the third-party content being shared |
+| Signal has a Quotable attributed **directly to this contact** AND HQ score ≥ 60 | **+35, ordinary scores capped at 95** | The contact's own words are the highest-value outreach material when the underlying content is strongly actionable |
+| Signal has a Quotable attributed **directly to this contact** AND HQ score 20–59 | **+10** | The quote may still open a conversation, but the underlying content is only a weak or partial HQ connection and must not be rescued by the full bonus |
 | Signal has a Quotable attributed **to a third party** AND HQ score ≥ 20 | **+20, ordinary scores capped at 95** | Still immediately usable, but one step removed — the contact is associated with the topic, not the author of the words |
 | Signal has a Quotable AND HQ alignment score 0–19 | **No bonus** | A quote that connects to nothing is still noise — the gate protects signal quality |
 | Signal has no extracted Quotable | No bonus | |
@@ -232,7 +231,7 @@ Self-attribution is detected by checking whether the stored `attribution` field 
 
 Scores above 95 are intentionally rare. A score in the **96–100 exceptional band** is retained only when the AI itself assigns 96 or higher to a self-attributed quote. A quotable bonus must never push an ordinary signal above 95, and third-party quotes cannot enter the exceptional band.
 
-> **El Principio de la Cita:** *A Quotable cannot rescue a signal from irrelevance — but it elevates every signal that has earned its entry. The contact's own words elevate it further still: a signal that would score 60 without a quote scores 95 with the contact's direct attribution.*
+> **El Principio de la Cita:** *A Quotable cannot rescue a signal from irrelevance — but it elevates every signal that has earned its entry. The contact's own words elevate a relevant signal further still; generic or non-actionable content earns no artificial relevance from a quote.*
 
 The HQ alignment score is the gate. The attribution proximity is the tier. The Quotable Bonus is the reward beyond the gate.
 

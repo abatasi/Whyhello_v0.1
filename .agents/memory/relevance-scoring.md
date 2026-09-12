@@ -44,5 +44,6 @@ Any new types/hooks added to `src/relevance.ts` must also be manually added to `
 - Personal LinkedIn signals authored by someone other than the contact are scored as lower-confidence engagement signals.
 - Without a substantive contact comment or explicit direct quote, engagement signals are capped in the lower range; visible social comments such as congratulations are not actionable evidence.
 - A third-party post with substantive contact-authored evidence can recover some score, but remains below a comparable contact-authored post.
-- Contact-authored LinkedIn reshares are lower-confidence than original posts; the caption can be quotable, but the shared third-party content is not the contact's stated position.
+- LinkedIn reshares are not inherently weaker; score the underlying shared content for HQ relevance and actionability, without treating the reshare itself as a penalty or relevance boost.
+- Direct quotable bonuses are content-quality gated: weak/partial HQ matches receive only a small lift, while the full bonus requires a strong underlying-content score.
 - Stored relevance scores are fresh for ten minutes; both client and API enforce this before starting another scoring run.

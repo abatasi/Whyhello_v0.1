@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import { contactsTable, dnaProfilesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
+import { inspectLinkedInSource } from "../lib/linkedin-source";
 
 const router: IRouter = Router();
 
@@ -166,22 +167,6 @@ async function tryFetchContactComments(
   }
 }
 
-async function tryDetectLinkedInReshare(url: string): Promise<boolean> {
-  try {
-    const resp = await fetch(url, {
-      signal: AbortSignal.timeout(8000),
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; Whyhello-Bot/1.0)",
-        Accept: "text/html,application/xhtml+xml",
-      },
-    });
-    if (!resp.ok) return false;
-    return /feed-reshare-content__commentary/i.test(await resp.text());
-  } catch {
-    return false;
-  }
-}
-
 async function tryFetchPageText(url: string): Promise<string | null> {
   try {
     const controller = new AbortController();
@@ -232,13 +217,14 @@ router.post("/", async (req, res) => {
       : undefined;
     const isLinkedInSource = mediaType === "linkedin" || mediaType === "linkedin_post";
     const isContactAuthored = !!contact && isContactAuthoredLinkedInSignal(title, url, contact);
-    const isLinkedInReshare = isLinkedInSource && isContactAuthored
-      ? await tryDetectLinkedInReshare(url)
-      : false;
-    const isLinkedInEngagement = !!contact
+    const sourceInspection = isLinkedInSource
+      ? await inspectLinkedInSource(url)
+      : null;
+    const isLinkedInReshare = Boolean(sourceInspection?.isReshare);
+    const isThirdPartyEngagement = !!contact
       && isLinkedInSource
-      && (!isContactAuthored || isLinkedInReshare);
-    const contactComments = isLinkedInEngagement
+      && !isContactAuthored;
+    const contactComments = isThirdPartyEngagement
       ? await tryFetchContactComments(url, contact!)
       : [];
     const userId = getUserId(req);
@@ -258,16 +244,19 @@ router.post("/", async (req, res) => {
       }
     }
 
-    const engagementBlock = isLinkedInEngagement
+    const sourceContentBlock = sourceInspection?.sharedContent
+      ? `\nUNDERLYING SHARED CONTENT:\n${sourceInspection.sharedContent}\nEvaluate this content for its own relevance and actionability. Do not treat the fact that it was reshared as a relevance penalty.`
+      : "";
+    const engagementBlock = contact && isLinkedInSource && (isThirdPartyEngagement || isLinkedInReshare)
       ? `\nSIGNAL PROXIMITY:\n${isLinkedInReshare
-        ? `This is a LinkedIn reshare/share by ${contact?.firstName} ${contact?.lastName} containing third-party content. The contact's commentary may show interest, but the underlying content is not their stated position.`
+        ? `This is a LinkedIn reshare/share by ${contact?.firstName} ${contact?.lastName}. The shared author's viewpoint is not automatically the contact's viewpoint, but the shared content itself must be evaluated for relevance and actionability.`
         : `This is a third-party LinkedIn post, not a post authored by ${contact?.firstName} ${contact?.lastName}. The contact may have engaged with it.`}\n${contactComments.length > 0
         ? `The contact's own comments visible in the source are:\n${contactComments.map((comment) => `- ${comment}`).join("\n")}`
-        : "No contact-authored comment was visible in the fetched source."}\nTreat the post author's content as background only. Assess the contact's own comment, if present, for substantive business meaning. A short social response such as congratulations, well done, happy anniversary, or welcome is not an actionable contact insight.`
+        : "No contact-authored comment was visible in the fetched source."}\nFor third-party engagement, do not attribute the post author's viewpoint to the contact. A short social response such as congratulations, well done, happy anniversary, or welcome is not an actionable contact insight.`
       : "";
 
     const contextBlock = pageText
-      ? `Full page content (excerpt):\n${pageText}${engagementBlock}`
+      ? `Full page content (excerpt):\n${pageText}${sourceContentBlock}${engagementBlock}`
       : `Available metadata:\nTitle: ${title}\nSource: ${source ?? "Unknown"}\nType: ${mediaType ?? "article"}\nDescription: ${description ?? "Not available"}\nURL: ${url}${engagementBlock}`;
 
     const prompt = `You are a B2B intelligence analyst embedded in a relationship intelligence platform called Whyhello. Analyze the following content for a seller preparing to engage with a contact associated with it.
