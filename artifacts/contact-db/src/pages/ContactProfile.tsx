@@ -815,6 +815,11 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
   const hasAutoExtractedQuotesRef = useRef<number | null>(null);
   const [reassignOpen, setReassignOpen] = useState(false);
   const RELEVANCE_REFRESH_WINDOW_MS = 10 * 60 * 1000;
+  const refreshRelevance = useCallback(() => {
+    if (!id || relevanceMutation.isPending) return;
+    hasAutoScoredRef.current = id;
+    relevanceMutation.mutate({ contactId: id, force: true }, { onSuccess: () => refetchRelevance() });
+  }, [id, relevanceMutation, refetchRelevance]);
 
   // Effect 1: show toast whenever scores are settled and max ≤ 50
   useEffect(() => {
@@ -1076,6 +1081,14 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                         {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
                       </span>
                       <button
+                        onClick={refreshRelevance}
+                        disabled={relevanceMutation.isPending}
+                        title="Refresh relevance now"
+                        className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-secondary transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className={cn("h-3 w-3", relevanceMutation.isPending && "animate-spin")} />
+                      </button>
+                      <button
                         onClick={() => setInsightsMode("expanded")}
                         title="Expand insights panel"
                         className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
@@ -1170,6 +1183,14 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                           <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
                             {personalInsights.length + industryInsights.length + roleInsights.length + colleagueInsights.length + counterpartInsights.length + companyInsights.length} sources
                           </span>
+                          <button
+                            onClick={refreshRelevance}
+                            disabled={relevanceMutation.isPending}
+                            title="Refresh relevance now"
+                            className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-secondary transition-colors disabled:opacity-50"
+                          >
+                            <RefreshCw className={cn("h-3 w-3", relevanceMutation.isPending && "animate-spin")} />
+                          </button>
                           <button
                             onClick={() => setInsightsMode("normal")}
                             title="Restore insights panel"

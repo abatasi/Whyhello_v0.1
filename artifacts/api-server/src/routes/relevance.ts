@@ -125,6 +125,7 @@ router.post("/relevance/score", async (req, res) => {
   try {
     const contactId = parseInt(req.params.contactId);
     if (isNaN(contactId)) { res.status(400).json({ error: "Invalid contact ID" }); return; }
+    const forceRefresh = req.body?.force === true;
 
     // 1. Load contact (to get companyId / industryId / roleId)
     const [contact] = await db
@@ -255,6 +256,8 @@ router.post("/relevance/score", async (req, res) => {
       return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
     }, 0);
     if (
+      !forceRefresh
+      &&
       latestComputedAt > 0
       && Date.now() - latestComputedAt < RELEVANCE_REFRESH_WINDOW_MS
     ) {

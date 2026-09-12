@@ -30,6 +30,10 @@ export interface TopRelevantContact {
   maxScore: number;
 }
 
+export type TriggerInsightRelevanceInput =
+  | number
+  | { contactId: number; force?: boolean };
+
 export function useGetInsightRelevance(
   contactId: number,
   options?: { query?: { enabled?: boolean } }
@@ -72,13 +76,21 @@ export function useGetContactMetaScore(
 
 export function useTriggerInsightRelevance() {
   const queryClient = useQueryClient();
-  return useMutation<InsightRelevanceScore[], Error, number>({
-    mutationFn: (contactId: number) =>
-      customFetch<InsightRelevanceScore[]>(
+  return useMutation<InsightRelevanceScore[], Error, TriggerInsightRelevanceInput>({
+    mutationFn: (input) => {
+      const contactId = typeof input === "number" ? input : input.contactId;
+      const force = typeof input === "number" ? false : input.force === true;
+      return customFetch<InsightRelevanceScore[]>(
         `/api/contacts/${contactId}/insights/relevance/score`,
-        { method: "POST" }
-      ),
-    onSuccess: (_, contactId) => {
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ force }),
+        },
+      );
+    },
+    onSuccess: (_, input) => {
+      const contactId = typeof input === "number" ? input : input.contactId;
       queryClient.invalidateQueries({
         queryKey: ["contacts", contactId, "insights", "relevance"],
       });
