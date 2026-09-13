@@ -1186,17 +1186,17 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
 
   return (
     <>
-      <div className="flex flex-col overflow-hidden bg-[#F8FAFC] h-full">
+      <div className="flex flex-col overflow-y-auto overflow-x-hidden md:overflow-hidden bg-[#F8FAFC] h-full">
 
-        {/* ── Three-column grid ─────────────────────────────────────────── */}
-        <div className="flex-1 min-h-0 px-6 pt-4 pb-4 grid gap-5 overflow-hidden transition-[grid-template-columns] duration-200" style={{ gridTemplateColumns: `${insightsMode === "collapsed" ? "3rem" : insightsMode === "expanded" ? "50%" : "20%"} 1fr ${insightsMode === "expanded" ? "3rem" : outreachCollapsed ? "3rem" : "20%"}`, gridTemplateRows: "minmax(0, 1fr)" }}>
+        {/* ── Three-column desktop / long-scroll mobile layout ───────────── */}
+        <div className="contact-profile-grid flex-none md:flex-1 min-h-0 px-3 sm:px-6 pt-3 md:pt-4 pb-6 md:pb-4 grid gap-4 md:gap-5 overflow-visible md:overflow-hidden transition-[grid-template-columns] duration-200" style={{ gridTemplateColumns: `${insightsMode === "collapsed" ? "3rem" : insightsMode === "expanded" ? "50%" : "20%"} 1fr ${insightsMode === "expanded" ? "3rem" : outreachCollapsed ? "3rem" : "20%"}`, gridTemplateRows: "minmax(0, 1fr)" }}>
 
             {/* ══════════════════════════════════════════════════════════════
                 LEFT COLUMN — Insights
             ═══════════════════════════════════════════════════════════════ */}
             {/* ── NORMAL left column ── */}
             {insightsMode === "normal" && (
-              <aside className="flex flex-col gap-3 overflow-y-scroll min-h-0 pr-1 scroll-thin">
+              <aside className="order-2 md:order-none flex flex-col gap-3 overflow-visible md:overflow-y-scroll min-h-0 pr-0 md:pr-1 scroll-thin">
                 <div className="sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0 space-y-1">
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
@@ -1282,7 +1282,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
 
             {/* ── EXPANDED left column (50% wide) ── */}
             {insightsMode === "expanded" && (
-              <aside className="flex flex-col min-h-0 overflow-hidden">
+              <aside className="order-2 md:order-none flex flex-col min-h-0 overflow-visible md:overflow-hidden">
                 {selectedInsight ? (
                   /* ── Detail / lite-browser view ── */
                   <InsightDetailView
@@ -1354,7 +1354,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                         </button>
                       )}
                     </div>
-                    <div className="flex-1 overflow-y-scroll scroll-thin pr-1 pt-1 flex flex-col gap-4">
+                    <div className="flex-1 overflow-visible md:overflow-y-scroll scroll-thin pr-0 md:pr-1 pt-1 flex flex-col gap-4">
                       {INSIGHT_CATEGORIES.map((cat) => {
                         const items = sortedCategoryData[cat.id] ?? [];
                         const isLocked = cat.id === "personal" && !isRevealed;
@@ -1388,7 +1388,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
 
             {/* ── COLLAPSED left column ── */}
             {insightsMode === "collapsed" && (
-              <aside className="flex flex-col items-center min-h-0 gap-1 pt-1">
+              <aside className="order-2 md:order-none flex flex-col items-center min-h-0 gap-1 pt-1">
                 {/* Restore button */}
                 <button
                   onClick={() => setInsightsMode("normal")}
@@ -1471,12 +1471,17 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
             {/* ══════════════════════════════════════════════════════════════
                 CENTER COLUMN — Contact Hub
             ═══════════════════════════════════════════════════════════════ */}
-            <main className="flex flex-col min-h-0 gap-5">
+            <main className="order-1 md:order-none flex flex-col min-h-0 gap-4 md:gap-5">
+
+              <div className="md:hidden flex items-center gap-2 px-1 pt-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact profile</span>
+                <div className="h-px flex-1 bg-border/60" />
+              </div>
 
               {/* ── Merged Identity + Contact Details card ── */}
               <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden flex-shrink-0">
                 <div className="h-20 bg-gradient-to-r from-primary/15 via-indigo-100/60 to-violet-100/40" />
-                <div className="px-6 pb-5">
+                <div className="px-4 sm:px-6 pb-5">
                   <div className="flex items-end gap-4 -mt-10 mb-3">
                     <div className="h-18 w-18 rounded-full border-4 border-card bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-xl font-bold text-primary shadow-md flex-shrink-0" style={{ height: "4.5rem", width: "4.5rem" }}>
                       {getInitials(`${contact.firstName} ${contact.lastName}`)}
@@ -1623,7 +1628,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                   <div className="border-t border-border/40 mt-4 pt-4">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Contact Details</p>
                     {isRevealed ? (
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
                         {contact.email && (
                           <ContactDetailField icon={Mail} label="Email">
                             <a href={`mailto:${contact.email}`} className="text-primary hover:underline break-all text-xs">
@@ -1701,10 +1706,10 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
 
             {/* ── EXPANDED right column ── */}
             {!outreachCollapsed && insightsMode !== "expanded" && (
-              <aside className="relative overflow-y-scroll min-h-0 pr-1 scroll-thin">
+              <aside className="order-3 md:order-none relative overflow-visible md:overflow-y-scroll min-h-0 pr-0 md:pr-1 scroll-thin">
                 <div className={cn(
                   "flex flex-col gap-3",
-                  (quotesData.length > 0 || quotesMutation.isPending) && "pb-56"
+                    (quotesData.length > 0 || quotesMutation.isPending) && "md:pb-56"
                 )}>
                   <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Outreach</h2>
@@ -1771,7 +1776,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
 
             {/* ── COLLAPSED right column ── */}
             {(outreachCollapsed || insightsMode === "expanded") && (
-              <aside className="flex flex-col items-center min-h-0 gap-1 pt-1">
+              <aside className="order-3 md:order-none flex flex-col items-center min-h-0 gap-1 pt-1">
                 {/* Expand button — always shown; when Insights is maxed, also restores it to normal */}
                 <button
                   onClick={() => {
@@ -1953,15 +1958,15 @@ export default function ContactProfile() {
   const id = parseInt(params?.id || "0");
   return (
     <Shell>
-      <div className="flex flex-col overflow-hidden bg-[#F8FAFC]" style={{ height: "calc(100vh - 4rem)" }}>
+      <div className="flex flex-col overflow-hidden bg-[#F8FAFC] h-[calc(100vh-4rem)]">
         {/* Back nav */}
-        <div className="px-6 pt-3 pb-2 flex-shrink-0">
+        <div className="px-3 sm:px-6 pt-3 pb-2 flex-shrink-0">
           <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1.5">
             <ArrowLeft className="h-4 w-4" />
             Back to Directory
           </Link>
         </div>
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
           <ContactProfileView contactId={id} />
         </div>
       </div>
@@ -1998,7 +2003,7 @@ function QuotablesCarousel({
   if (!isPending && quotes.length === 0) return null;
 
   return (
-    <div className="absolute bottom-0 left-0 right-1 z-20 bg-[#F8FAFC] border-t border-violet-100 pt-3 pb-1 shadow-[0_-6px_12px_rgba(248,250,252,0.9)]">
+    <div className="contact-quotables absolute bottom-0 left-0 right-1 z-20 bg-[#F8FAFC] border-t border-violet-100 pt-3 pb-1 shadow-[0_-6px_12px_rgba(248,250,252,0.9)]">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-2.5">
@@ -2374,7 +2379,7 @@ function InsightDetailView({
   }, [item.url, item.title]);
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-y-auto overflow-x-hidden scroll-thin">
+    <div className="contact-profile-detail flex flex-col h-full min-h-0 overflow-y-auto overflow-x-hidden scroll-thin">
 
       {/* ── Breadcrumb header ── */}
       <div className="sticky top-0 z-10 flex items-center gap-2 py-1 flex-shrink-0 pr-1 bg-[#F8FAFC]">
@@ -3043,7 +3048,7 @@ function InsightCategoryPanel({
             </p>
           ) : expanded ? (
             /* ── Rich 2-column card grid for expanded mode ── */
-            <div className="grid grid-cols-2 gap-3 p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 sm:p-4">
               {items.map((item) => {
                 const key = `${category.id}-${item.id}`;
                 return (
@@ -3531,7 +3536,7 @@ function ContactCenterHub({
   const [activeTab, setActiveTab] = useState<"assistant" | "activity">("assistant");
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden">
+    <div className="flex flex-col flex-none md:flex-1 min-h-[520px] md:min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden">
       {/* Tab toggle header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 flex-shrink-0">
         <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary border border-border/50">
