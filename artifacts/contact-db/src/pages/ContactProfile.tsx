@@ -323,6 +323,8 @@ const EMAIL_LENGTHS = [
 const EMAIL_TONES = ["Professional", "Friendly", "Direct", "Warm", "Authoritative"];
 
 const EMPTY_RELEVANCE_MAP = new Map<string, InsightRelevanceScore>();
+const PERSONAL_VIDEO_RELEVANCE_FLOOR = 85;
+const VIDEO_MEDIA_TYPES = new Set(["video", "youtube", "youtube_video"]);
 
 function IntroEmailModal({
   open, onClose, onGenerate, checkedIds, categoryData, relevanceMap = EMPTY_RELEVANCE_MAP, quoteMap = new Map(),
@@ -996,9 +998,25 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
 
   const relevanceMap = useMemo(() => {
     const m = new Map<string, InsightRelevanceScore>();
-    for (const s of relevanceData) m.set(`${s.signalType}-${s.signalId}`, s);
+    const personalVideoIds = new Set(
+      personalInsights
+        .filter((insight) => VIDEO_MEDIA_TYPES.has(insight.mediaType ?? ""))
+        .map((insight) => insight.id),
+    );
+    for (const s of relevanceData) {
+      // Keep the visible score consistent with the server's Personal + Video
+      // attribution rule even if this tab is holding an older cached response.
+      const isPersonalVideo = s.signalType === "personal" && personalVideoIds.has(s.signalId);
+      const normalizedScore = isPersonalVideo
+        ? Math.max(s.score, PERSONAL_VIDEO_RELEVANCE_FLOOR)
+        : s.score;
+      m.set(
+        `${s.signalType}-${s.signalId}`,
+        normalizedScore === s.score ? s : { ...s, score: normalizedScore },
+      );
+    }
     return m;
-  }, [relevanceData]);
+  }, [relevanceData, personalInsights]);
 
   const quoteMap = useMemo(() => {
     const m = new Map<string, InsightQuote>();
