@@ -565,6 +565,14 @@ Some personal LinkedIn records point to a post authored by someone else that the
 
 ---
 
+### 3.7.1 Single Message Variant Coverage
+
+When a user runs a Single Message job, Whyhello may generate one additional message for each insight category that was not used by the primary message. Variant coverage includes Personal, Company, Industry, Role, Colleague, and Counterpart signals whenever that category has an available insight.
+
+Colleague and Counterpart are not optional or lower-priority variants. If relevant relationship signals exist, each receives its own entry-point message using the highest-scoring available insight for that category and the relationship-specific framing rules above. A fixed total-variant cap must not silently remove either relationship category.
+
+---
+
 ### 3.8 Signal-to-Message Architecture
 
 Every outside-in lead follows a four-stage arc before connecting to inside-out content:

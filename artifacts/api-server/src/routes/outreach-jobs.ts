@@ -843,9 +843,10 @@ ABSOLUTE PROHIBITIONS
 
 // ── Variant generation ─────────────────────────────────────────────────────
 // After a main intro_email job completes, automatically generate one email per
-// unused insight category (up to 5), each using the highest-scoring insight
-// from that category. Variant jobs are created immediately so the frontend
-// shows them as "generating" without waiting.
+// unused insight category, each using the highest-scoring insight from that
+// category. This includes Colleague and Counterpart when those signals exist.
+// Variant jobs are created immediately so the frontend shows them as
+// "generating" without waiting.
 
 const VARIANT_CATEGORIES = ["personal", "company", "industry", "role", "colleague", "counterpart"] as const;
 type VariantCategory = (typeof VARIANT_CATEGORIES)[number];
@@ -930,7 +931,9 @@ async function generateVariants(parentJobId: number) {
     });
 
     variantSpecs.push({ category: cat, insightKey: `${cat}-${sorted[0].id}` });
-    if (variantSpecs.length === 5) break;
+    // Keep one variant for every available category. In particular, do not
+    // let the relationship categories be dropped by a fixed five-variant cap.
+    if (variantSpecs.length === VARIANT_CATEGORIES.length) break;
   }
 
   if (variantSpecs.length === 0) return;
