@@ -91,6 +91,19 @@ function buildHqContext(profileData: unknown): string {
   return lines.join("\n") || "No HQ profile is configured.";
 }
 
+function compactTakeaway(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+
+  // Keep each takeaway to one actionable thought before applying the hard word cap.
+  const firstSentence = normalized.match(/^(.+?[.!?])(?:\s|$)/)?.[1] ?? normalized;
+  const words = firstSentence.split(" ");
+  return words.length > 24
+    ? `${words.slice(0, 24).join(" ")}…`
+    : firstSentence;
+}
+
 function linkedinAuthorSlug(url: string | null): string | null {
   const match = url?.match(/linkedin\.com\/posts\/([^_/?#]+)/i);
   return match?.[1]?.toLowerCase() ?? null;
@@ -266,7 +279,7 @@ ${hqContext}
 
 Produce:
 1. A concise 2–3 sentence summary of what this piece covers and the most relevant implication for the seller's target market, value proposition, products, or messaging pillars.
-2. Exactly 4 contextualized takeaway bullets. Each bullet must connect a concrete point from the content to a specific HQ detail above and explain how the seller should use that connection in a conversation. Prioritize named products, the value wedge, differentiators, pillars, customer focus, and buying priorities.
+2. Exactly 4 contextualized takeaway bullets. Each bullet must be one sentence of no more than 24 words: connect one concrete point from the content to one specific HQ detail and state how to use it in conversation. Prioritize named products, the value wedge, differentiators, pillars, customer focus, and buying priorities.
 
 Do not give generic recommendations such as "follow up," "monitor this trend," or "tailor your message." If this is a third-party engagement with a short social comment, explicitly say that it is weak or non-actionable contact evidence and do not present the post as the contact's own viewpoint. If the content does not connect to an HQ detail, say that clearly and identify the closest credible angle without inventing a connection. Never invent products, claims, customer results, or market priorities.
 
@@ -295,6 +308,10 @@ Respond in this exact JSON format (no markdown, no preamble):
       result = JSON.parse(raw);
       if (!result.summary) result.summary = "Summary unavailable.";
       if (!Array.isArray(result.keyInsights)) result.keyInsights = [];
+      result.keyInsights = result.keyInsights
+        .map(compactTakeaway)
+        .filter(Boolean)
+        .slice(0, 4);
     } catch {
       result = { summary: "Could not generate summary.", keyInsights: [] };
     }

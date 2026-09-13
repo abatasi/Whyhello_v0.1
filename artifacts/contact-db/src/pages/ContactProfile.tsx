@@ -2250,10 +2250,10 @@ function InsightDetailView({
   }, [item.url, item.title]);
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 overflow-y-auto overflow-x-hidden scroll-thin">
 
       {/* ── Breadcrumb header ── */}
-      <div className="flex items-center gap-2 py-1 flex-shrink-0 pr-1">
+      <div className="sticky top-0 z-10 flex items-center gap-2 py-1 flex-shrink-0 pr-1 bg-[#F8FAFC]">
         <button
           onClick={onBack}
           className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -2471,7 +2471,7 @@ function InsightDetailView({
       </div>
 
       {/* ── Lite browser — grows to fill all remaining vertical space ── */}
-      <div className="flex-1 min-h-0 flex flex-col mt-3 pr-1 rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+      <div className="flex-shrink-0 h-[min(42vh,560px)] min-h-[320px] flex flex-col mt-3 pr-1 rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
         {/* Browser chrome */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40 bg-secondary/30 flex-shrink-0">
           <div className="flex items-center gap-1 flex-shrink-0">
