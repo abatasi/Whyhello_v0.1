@@ -604,6 +604,8 @@ components:
         publishedDate:
           type: string
           nullable: true
+        sourceContact:
+          $ref: "#/components/schemas/InsightSourceContact"
         quotable:
           $ref: "#/components/schemas/InsightQuotable"
           nullable: true
@@ -632,6 +634,23 @@ components:
         - quote
         - attribution
 
+    InsightSourceContact:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        jobTitle:
+          type: string
+          nullable: true
+        companyName:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+
     CounterpartInsight:
       type: object
       properties:
@@ -653,6 +672,8 @@ components:
         publishedDate:
           type: string
           nullable: true
+        sourceContact:
+          $ref: "#/components/schemas/InsightSourceContact"
         quotable:
           $ref: "#/components/schemas/InsightQuotable"
           nullable: true

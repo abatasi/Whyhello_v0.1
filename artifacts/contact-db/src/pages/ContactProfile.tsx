@@ -46,6 +46,7 @@ import {
   Activity, Clock, Eye, MousePointerClick, CheckCheck, ListChecks, Volume2, Check,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
@@ -227,7 +228,7 @@ function meaningful(v: string | null | undefined): string | null {
 
 // ── Insight category definitions ───────────────────────────────────────────
 
-type InsightSourceContact = { name: string; jobTitle?: string | null; companyName?: string | null };
+type InsightSourceContact = { id: number; name: string; jobTitle?: string | null; companyName?: string | null };
 type InsightQuotable = { quote: string; attribution: string; attributionRole?: string | null; hqBridge?: string | null };
 type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null; sourceContact?: InsightSourceContact | null; counterpartGroup?: 1 | 2 | null; quotable?: InsightQuotable | null };
 

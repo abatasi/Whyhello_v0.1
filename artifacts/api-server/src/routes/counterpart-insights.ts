@@ -205,6 +205,7 @@ router.get("/", async (req, res) => {
       allCounterparts.map(c => [
         c.id,
         {
+          id:          c.id,
           name:        [c.firstName, c.lastName].filter(Boolean).join(" "),
           jobTitle:    c.jobTitle ?? null,
           companyName: c.companyId ? (companyNameMap.get(c.companyId) ?? null) : null,
