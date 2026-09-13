@@ -27,6 +27,8 @@ const RELEVANCE_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const FRESHNESS_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
 const FRESHNESS_ANNUAL_DECAY = 0.2;
 const FRESHNESS_FLOOR = 0.2;
+const ORDINARY_SCORE_FLOOR = 10;
+const EXTRAORDINARY_SCORE_THRESHOLD = 10;
 
 function parseInsightDate(value: string | null | undefined): Date | null {
   const normalized = value?.trim();
@@ -412,6 +414,12 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
 
     const scored: ScoredSignal[] = rawScored.map((s) => {
       const hqScore = Math.round(Math.max(0, Math.min(100, s.score)));
+      // Scores below 10 are reserved for the model's explicit extraordinary
+      // negative-evidence judgment. Ordinary weak, stale, or indirect signals
+      // remain visible but are never allowed below the 10-point floor.
+      const extraordinaryLowScore = hqScore < EXTRAORDINARY_SCORE_THRESHOLD;
+      const applyScoreFloor = (score: number): number =>
+        extraordinaryLowScore ? score : Math.max(ORDINARY_SCORE_FLOOR, score);
       const key = `${s.signalType}-${s.signalId}`;
       const sig = signals.find((x) => `${x.signalType}-${x.signalId}` === key);
       const quotable = sig?.quotable;
@@ -435,12 +443,13 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
         : hqScore;
 
       if (!quotable || hqScore < QUOTABLE_HQ_FLOOR) {
+        const scoredBeforeFloor = Math.min(
+          ORDINARY_SCORE_CEILING,
+          Math.round(proximityAdjustedScore * freshnessMultiplier(sourcePublishedDate)),
+        );
         return {
           ...s,
-          score: Math.min(
-            ORDINARY_SCORE_CEILING,
-            Math.round(proximityAdjustedScore * freshnessMultiplier(sourcePublishedDate)),
-          ),
+          score: applyScoreFloor(scoredBeforeFloor),
         };
       }
       const boost = selfAttributedQuote && !isLinkedInEngagement
@@ -463,7 +472,9 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const scoredBeforeFreshness = exceptionalDirectQuote ? hqScore : boostedScore;
       return {
         ...s,
-        score: Math.round(scoredBeforeFreshness * freshnessMultiplier(sourcePublishedDate)),
+        score: applyScoreFloor(
+          Math.round(scoredBeforeFreshness * freshnessMultiplier(sourcePublishedDate)),
+        ),
       };
     });
 
