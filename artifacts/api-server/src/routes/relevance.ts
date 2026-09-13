@@ -87,19 +87,6 @@ function isContactAuthoredLinkedInSignal(
     || title.startsWith(`${fullName} -`);
 }
 
-function textIncludesContactName(
-  text: string | null | undefined,
-  contact: { firstName: string; lastName: string },
-): boolean {
-  if (!text) return false;
-  const normalizedText = text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const normalizedName = `${contact.firstName} ${contact.lastName}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-  return normalizedName.length > 0 && normalizedText.includes(normalizedName);
-}
-
 const router: IRouter = Router({ mergeParams: true });
 
 // ── GET /api/contacts/:contactId/insights/relevance ──────────────────────────
@@ -369,9 +356,9 @@ SCORING RUBRIC (0–100):
 - 0-19: No meaningful connection to the seller's offering
 
 VIDEO FORMAT:
-- A personal video interview, talk, profile, or feature where the contact is the speaker, interviewee, or featured subject is high-proximity personal evidence. Treat it as memorable first-hand context and score the contact's own perspective, claims, and priorities—not merely the video's topic.
-- When a Personal video title or description explicitly names the contact, treat that as confirmed featured participation and apply an 85-point minimum before freshness adjustments.
-- Do not boost a video solely because it is a video. A generic video, a video about someone else, or a video where the contact is only mentioned remains subject to normal source proximity and HQ-alignment rules.
+- Any Personal Insight with a video format is safely attributable to the contact. Treat it as memorable first-hand personal evidence and score the contact's perspective, claims, and priorities—not merely the video's topic.
+- Apply an 85-point minimum to Personal video signals before freshness adjustments, even when the title or description does not repeat the contact's name.
+- Videos in Company, Industry, Role, Colleague, or Counterpart Insights are not assumed to feature the contact directly. Score them under their normal category and HQ-alignment rules without a direct-attribution boost.
 
 PERSONAL LINKEDIN PROXIMITY:
 - A contact-authored LinkedIn post is direct personal evidence.
@@ -446,13 +433,9 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const key = `${s.signalType}-${s.signalId}`;
       const sig = signals.find((x) => `${x.signalType}-${x.signalId}` === key);
       const quotable = sig?.quotable;
-      const isContactFeaturedVideo = !!sig
+      const isPersonalVideo = !!sig
         && sig.signalType === "personal"
-        && VIDEO_MEDIA_TYPES.has(sig.mediaType ?? "")
-        && (
-          textIncludesContactName(sig.title, contact)
-          || textIncludesContactName(sig.description, contact)
-        );
+        && VIDEO_MEDIA_TYPES.has(sig.mediaType ?? "");
       const sourcePublishedDate = sig?.signalType === "personal"
         && LINKEDIN_MEDIA_TYPES.has(sig.mediaType ?? "")
         ? linkedInSources.get(key)?.publishedDate ?? sig.publishedDate
@@ -471,7 +454,7 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const proximityAdjustedScore = isLinkedInEngagement
         ? Math.min(engagementCeiling, Math.round(hqScore * engagementMultiplier))
         : hqScore;
-      const formatAdjustedScore = isContactFeaturedVideo
+      const formatAdjustedScore = isPersonalVideo
         ? Math.max(proximityAdjustedScore, FEATURED_VIDEO_SCORE_FLOOR)
         : proximityAdjustedScore;
 
