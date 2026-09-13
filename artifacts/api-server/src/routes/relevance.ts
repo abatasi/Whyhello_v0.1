@@ -30,6 +30,7 @@ const FRESHNESS_ANNUAL_DECAY = 0.2;
 const FRESHNESS_FLOOR = 0.2;
 const ORDINARY_SCORE_FLOOR = 10;
 const EXTRAORDINARY_SCORE_THRESHOLD = 10;
+const FEATURED_VIDEO_SCORE_FLOOR = 85;
 
 function parseInsightDate(value: string | null | undefined): Date | null {
   const normalized = value?.trim();
@@ -84,6 +85,19 @@ function isContactAuthoredLinkedInSignal(
   return title === fullName
     || title.startsWith(`${fullName}'s post`)
     || title.startsWith(`${fullName} -`);
+}
+
+function textIncludesContactName(
+  text: string | null | undefined,
+  contact: { firstName: string; lastName: string },
+): boolean {
+  if (!text) return false;
+  const normalizedText = text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const normalizedName = `${contact.firstName} ${contact.lastName}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  return normalizedName.length > 0 && normalizedText.includes(normalizedName);
 }
 
 const router: IRouter = Router({ mergeParams: true });
@@ -356,6 +370,7 @@ SCORING RUBRIC (0–100):
 
 VIDEO FORMAT:
 - A personal video interview, talk, profile, or feature where the contact is the speaker, interviewee, or featured subject is high-proximity personal evidence. Treat it as memorable first-hand context and score the contact's own perspective, claims, and priorities—not merely the video's topic.
+- When a Personal video title or description explicitly names the contact, treat that as confirmed featured participation and apply an 85-point minimum before freshness adjustments.
 - Do not boost a video solely because it is a video. A generic video, a video about someone else, or a video where the contact is only mentioned remains subject to normal source proximity and HQ-alignment rules.
 
 PERSONAL LINKEDIN PROXIMITY:
@@ -431,6 +446,13 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const key = `${s.signalType}-${s.signalId}`;
       const sig = signals.find((x) => `${x.signalType}-${x.signalId}` === key);
       const quotable = sig?.quotable;
+      const isContactFeaturedVideo = !!sig
+        && sig.signalType === "personal"
+        && VIDEO_MEDIA_TYPES.has(sig.mediaType ?? "")
+        && (
+          textIncludesContactName(sig.title, contact)
+          || textIncludesContactName(sig.description, contact)
+        );
       const sourcePublishedDate = sig?.signalType === "personal"
         && LINKEDIN_MEDIA_TYPES.has(sig.mediaType ?? "")
         ? linkedInSources.get(key)?.publishedDate ?? sig.publishedDate
@@ -449,11 +471,14 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const proximityAdjustedScore = isLinkedInEngagement
         ? Math.min(engagementCeiling, Math.round(hqScore * engagementMultiplier))
         : hqScore;
+      const formatAdjustedScore = isContactFeaturedVideo
+        ? Math.max(proximityAdjustedScore, FEATURED_VIDEO_SCORE_FLOOR)
+        : proximityAdjustedScore;
 
       if (!quotable || hqScore < QUOTABLE_HQ_FLOOR) {
         const scoredBeforeFloor = Math.min(
           ORDINARY_SCORE_CEILING,
-          Math.round(proximityAdjustedScore * freshnessMultiplier(sourcePublishedDate)),
+          Math.round(formatAdjustedScore * freshnessMultiplier(sourcePublishedDate)),
         );
         return {
           ...s,
@@ -467,7 +492,7 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
         : QUOTABLE_BOOST_OTHER;
       const boostedScore = Math.min(
         isLinkedInEngagement ? engagementCeiling : ORDINARY_SCORE_CEILING,
-        proximityAdjustedScore + boost,
+        formatAdjustedScore + boost,
       );
       // A 96–100 score is reserved for an unusually strong, self-attributed
       // quote that the AI itself judged exceptional. The bonus must not turn

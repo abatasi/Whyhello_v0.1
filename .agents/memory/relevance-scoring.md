@@ -45,7 +45,7 @@ Any new types/hooks added to `src/relevance.ts` must also be manually added to `
 - Without a substantive contact comment or explicit direct quote, engagement signals are capped in the lower range; visible social comments such as congratulations are not actionable evidence.
 - A third-party post with substantive contact-authored evidence can recover some score, but remains below a comparable contact-authored post.
 - LinkedIn reshares are not inherently weaker; score the underlying shared content for HQ relevance and actionability, without treating the reshare itself as a penalty or relevance boost.
-- Personal video interviews, talks, and features with contact participation are high-proximity evidence; video format alone is not a boost.
+- Personal video interviews, talks, and features with contact participation are high-proximity evidence; an explicitly named contact in the title/description gets an 85-point floor before freshness, while video format alone is not a boost.
 - Direct quotable bonuses are content-quality gated: weak/partial HQ matches receive only a small lift, while the full bonus requires a strong underlying-content score.
 - Freshness uses the source publication date, not platform ingestion time: LinkedIn live `datePublished` fills missing stored dates, with full value through one year, then a 20-percentage-point annual decay and a 0.20 floor.
 - Ordinary final signal scores have a 10-point floor after proximity and freshness; only explicit extraordinary negative evidence may produce 0–9.
