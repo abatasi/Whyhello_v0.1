@@ -22,6 +22,8 @@ The scoring system exists to produce a single output for each signal in a given 
 
 This number drives signal selection, hook priority, and variant generation. It is never shown to the contact. It is operational truth.
 
+**Score bounds:** The ordinary final-score floor is **10**. Proximity and freshness adjustments may reduce a weak signal, but they must not push it below 10. Scores from **0–9** are reserved for extraordinary negative evidence only—such as an explicitly contradictory, invalid, or clearly disqualifying signal—and must not be used for ordinary weak relevance, age, or indirectness.
+
 ### 1.1 Las Bienaventuranzas del Marcador
 
 *Estos son los primeros principios. De ellos derivan todas las reglas de puntuación.*
@@ -296,7 +298,7 @@ compositeScore = min(100, round(
 ))
 ```
 
-The result is capped at **100**. Scores below **0** are not possible by construction of this formula; no negative multipliers exist. The Tribunal does not condemn — it only ranks.
+The result is capped at **100** and ordinarily floored at **10** after all adjustments. Scores from **0–9** are permitted only when the model explicitly identifies extraordinary negative evidence; ordinary weak, stale, or indirect signals remain at 10 or above. The Tribunal does not condemn — it only ranks, except in those rare disqualifying cases.
 
 ### 5.2 Los Grados de Sentencia — Score Tiers
 
@@ -307,7 +309,8 @@ The result is capped at **100**. Scores below **0** are not possible by construc
 | 60–79 | **Bueno** | Reliable signal; use freely |
 | 40–59 | **Adecuado** | Usable but not distinctive; prefer higher-scoring alternatives |
 | 20–39 | **Débil** | Use only if no better signal exists |
-| 0–19 | **Insuficiente** | Do not use in message generation |
+| 10–19 | **Insuficiente** | Minimal connection; keep only when useful context is otherwise scarce |
+| 0–9 | **Extraordinario negativo** | Explicitly contradictory, invalid, or clearly disqualifying evidence only |
 
 ### 5.3 Las Reglas de Selección — Selection Rules
 
