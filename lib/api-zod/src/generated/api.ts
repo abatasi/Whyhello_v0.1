@@ -178,6 +178,14 @@ export const GetContactColleagueInsightsResponseItem = zod.object({
   mediaType: zod.string(),
   description: zod.string().nullish(),
   publishedDate: zod.string().nullish(),
+  quotable: zod
+    .object({
+      quote: zod.string(),
+      attribution: zod.string(),
+      attributionRole: zod.string().nullish(),
+      hqBridge: zod.string().nullish(),
+    })
+    .nullish(),
 });
 export const GetContactColleagueInsightsResponse = zod.array(
   GetContactColleagueInsightsResponseItem,
@@ -199,6 +207,14 @@ export const GetContactCounterpartInsightsResponseItem = zod.object({
   mediaType: zod.string(),
   description: zod.string().nullish(),
   publishedDate: zod.string().nullish(),
+  quotable: zod
+    .object({
+      quote: zod.string(),
+      attribution: zod.string(),
+      attributionRole: zod.string().nullish(),
+      hqBridge: zod.string().nullish(),
+    })
+    .nullish(),
 });
 export const GetContactCounterpartInsightsResponse = zod.array(
   GetContactCounterpartInsightsResponseItem,

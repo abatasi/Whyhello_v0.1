@@ -4,6 +4,7 @@ import {
   contactInsightsTable,
   contactsTable,
   companiesTable,
+  insightQuotesTable,
   insightRelevanceScoresTable,
 } from "@workspace/db/schema";
 import { and, eq, inArray, ne } from "drizzle-orm";
@@ -16,7 +17,8 @@ const router: IRouter = Router({ mergeParams: true });
  * Returns up to 10 personal insights drawn from contacts who work at the same
  * company as the given contact.
  *
- * Sorting: ranked by relevance score (signalType='colleague') descending.
+ * Selection priority: insights with a quotable from the source colleague first,
+ * then non-quotable insights if more slots are available.
  * Diversity bias: uses round-robin selection across colleague buckets so that
  * no single colleague monopolises the list, even if they hold the majority of
  * high-scoring insights.
@@ -86,6 +88,25 @@ router.get("/", async (req, res) => {
     // signalType='colleague'. The UI looks up `colleague-${id}` from the map,
     // so we must query by the target contactId + signalType='colleague'.
     const insightIds = insights.map((i) => i.id);
+    const quotables = await db
+      .select({
+        signalId: insightQuotesTable.signalId,
+        quote: insightQuotesTable.quote,
+        attribution: insightQuotesTable.attribution,
+        attributionRole: insightQuotesTable.attributionRole,
+        hqBridge: insightQuotesTable.hqBridge,
+      })
+      .from(insightQuotesTable)
+      .where(
+        and(
+          inArray(insightQuotesTable.contactId, colleagueIds),
+          eq(insightQuotesTable.signalType, "personal"),
+          inArray(insightQuotesTable.signalId, insightIds),
+        )
+      );
+    const quotableBySignal = new Map(quotables.map((q) => [q.signalId, q]));
+    const hasQuotable = (insight: typeof insights[number]) => quotableBySignal.has(insight.id);
+
     const scores = await db
       .select({
         signalId: insightRelevanceScoresTable.signalId,
@@ -102,42 +123,44 @@ router.get("/", async (req, res) => {
 
     const scoreMap = new Map<number, number>(scores.map((s) => [s.signalId, s.score]));
 
-    // ── 5. Group insights by colleague, sort each group by score desc ─────
-    const buckets = new Map<number, typeof insights>();
-    for (const insight of insights) {
-      if (!buckets.has(insight.contactId)) buckets.set(insight.contactId, []);
-      buckets.get(insight.contactId)!.push(insight);
-    }
-    for (const items of buckets.values()) {
-      items.sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
-    }
-
-    // Sort colleague buckets by their best insight's score so the most-relevant
-    // colleagues get their first pick before less-relevant ones do.
-    const orderedBuckets = Array.from(buckets.values()).sort(
-      (a, b) => (scoreMap.get(b[0]?.id ?? -1) ?? 0) - (scoreMap.get(a[0]?.id ?? -1) ?? 0)
-    );
-
-    // ── 6. Diversity-biased round-robin selection (up to 10) ──────────────
-    // Each round picks one insight per colleague in score order, ensuring no
-    // single colleague dominates even when they have many high-scoring items.
-    const selected: typeof insights = [];
-    let round = 0;
-    while (selected.length < 10) {
-      let anyAdded = false;
-      for (const bucket of orderedBuckets) {
-        if (selected.length >= 10) break;
-        if (round < bucket.length) {
-          selected.push(bucket[round]);
-          anyAdded = true;
-        }
+    const selectDiverse = (candidates: typeof insights, limit: number): typeof insights => {
+      const buckets = new Map<number, typeof insights>();
+      for (const insight of candidates) {
+        if (!buckets.has(insight.contactId)) buckets.set(insight.contactId, []);
+        buckets.get(insight.contactId)!.push(insight);
       }
-      if (!anyAdded) break;
-      round++;
-    }
+      for (const items of buckets.values()) {
+        items.sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
+      }
 
-    // ── 7. Final sort by relevance score desc ─────────────────────────────
-    selected.sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
+      const orderedBuckets = Array.from(buckets.values()).sort(
+        (a, b) => (scoreMap.get(b[0]?.id ?? -1) ?? 0) - (scoreMap.get(a[0]?.id ?? -1) ?? 0)
+      );
+      const selected: typeof insights = [];
+      let round = 0;
+      while (selected.length < limit) {
+        let anyAdded = false;
+        for (const bucket of orderedBuckets) {
+          if (selected.length >= limit) break;
+          if (round < bucket.length) {
+            selected.push(bucket[round]);
+            anyAdded = true;
+          }
+        }
+        if (!anyAdded) break;
+        round++;
+      }
+      return selected;
+    };
+
+    // Always exhaust the quotable tier first; use non-quotables only to fill
+    // remaining slots when there are fewer than ten usable quotes.
+    const quotableInsights = insights.filter(hasQuotable);
+    const nonQuotableInsights = insights.filter((insight) => !hasQuotable(insight));
+    const selected = [
+      ...selectDiverse(quotableInsights, 10),
+      ...selectDiverse(nonQuotableInsights, Math.max(0, 10 - quotableInsights.length)),
+    ];
 
     // ── 8. Build colleague metadata lookup (name, title, company) ─────────
     const uniqueCompanyIds = [...new Set(colleagues.map((c) => c.companyId).filter(Boolean))] as number[];
@@ -170,6 +193,7 @@ router.get("/", async (req, res) => {
       description: i.description,
       publishedDate: i.publishedDate,
       sourceContact: colleagueMetaMap.get(i.contactId) ?? null,
+      quotable: quotableBySignal.get(i.id) ?? null,
     }));
 
     res.json(result);

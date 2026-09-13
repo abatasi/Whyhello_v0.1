@@ -228,7 +228,8 @@ function meaningful(v: string | null | undefined): string | null {
 // ── Insight category definitions ───────────────────────────────────────────
 
 type InsightSourceContact = { name: string; jobTitle?: string | null; companyName?: string | null };
-type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null; sourceContact?: InsightSourceContact | null; counterpartGroup?: 1 | 2 | null };
+type InsightQuotable = { quote: string; attribution: string; attributionRole?: string | null; hqBridge?: string | null };
+type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null; sourceContact?: InsightSourceContact | null; counterpartGroup?: 1 | 2 | null; quotable?: InsightQuotable | null };
 
 interface InsightCategory {
   id: string;
@@ -518,7 +519,7 @@ function IntroEmailModal({
                 </div>
               ) : (
                 <div className="overflow-y-auto scroll-thin border border-border/60 rounded-xl divide-y divide-border/40" style={{ maxHeight: "320px" }}>
-                  {availableInsights.map(({ key, title, source, mediaType, category }) => {
+                  {availableInsights.map(({ key, title, source, mediaType, category, quotable }) => {
                     const cfg = getMediaConfig(mediaType);
                     const MIcon = cfg.icon;
                     const isSelected = selectedInsights.has(key);
@@ -551,7 +552,7 @@ function IntroEmailModal({
                           {rel && (
                             <RelevanceBadge score={rel.score} description={rel.description} size="xs" />
                           )}
-                          {quoteMap.has(key) && (
+                          {(quoteMap.has(key) || !!quotable) && (
                             <span
                               title="This insight has an attached quotable"
                               className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"
@@ -1182,8 +1183,8 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                   <InsightDetailView
                     item={selectedInsight.item}
                     category={selectedInsight.category}
-                    relevance={relevanceMap.get(`${selectedInsight.category.id}-${selectedInsight.item.id}`)}
-                    quote={quoteMap.get(`${selectedInsight.category.id}-${selectedInsight.item.id}`)}
+                            relevance={relevanceMap.get(`${selectedInsight.category.id}-${selectedInsight.item.id}`)}
+                            quote={quoteMap.get(`${selectedInsight.category.id}-${selectedInsight.item.id}`) ?? selectedInsight.item.quotable ?? undefined}
                     onBack={() => setSelectedInsight(null)}
                     checkedIds={checkedIds}
                     onToggle={toggleInsight}
@@ -2162,7 +2163,7 @@ function InsightDetailView({
   item: InsightItem;
   category: InsightCategory;
   relevance?: InsightRelevanceScore;
-  quote?: InsightQuote;
+  quote?: InsightQuote | InsightQuotable;
   onBack: () => void;
   checkedIds: Set<string>;
   onToggle: (key: string) => void;
@@ -2627,7 +2628,7 @@ function InsightCardExpanded({
   checked: boolean;
   onToggle: () => void;
   relevance?: InsightRelevanceScore;
-  quote?: InsightQuote;
+  quote?: InsightQuote | InsightQuotable;
   onCardClick?: () => void;
   contactId?: number;
   companyId?: number;
@@ -2646,6 +2647,7 @@ function InsightCardExpanded({
   // ── Metadata enrichment: prefer DB values, fall back to live page meta ──
   const displaySource = meaningful(item.source) ?? meaningful(meta?.source ?? null);
   const displayDate   = meaningful(item.publishedDate) ?? meaningful(meta?.publishedDate ?? null);
+  const displayQuote = quote ?? item.quotable ?? undefined;
 
   const enrichedCardRef = useRef(false);
   useEffect(() => {
@@ -2792,13 +2794,13 @@ function InsightCardExpanded({
                 <RelevanceBadge score={relevance.score} description={relevance.description} />
                 <p className="text-[10px] text-muted-foreground leading-snug flex-1 line-clamp-2">{relevance.description}</p>
               </div>
-              {quote && (
+              {displayQuote && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
                   <div className="flex items-center gap-1 mb-1">
                     <Zap className="h-2.5 w-2.5 text-amber-500 fill-amber-400 flex-shrink-0" />
                     <span className="text-[9px] font-bold uppercase tracking-widest text-amber-600">Quotable</span>
                   </div>
-                  <p className="text-[10px] text-amber-950 leading-snug italic line-clamp-3">"{quote.quote}"</p>
+                  <p className="text-[10px] text-amber-950 leading-snug italic line-clamp-3">"{displayQuote.quote}"</p>
                 </div>
               )}
             </div>
@@ -3033,6 +3035,15 @@ function InsightCategoryPanel({
                       <TooltipProvider delayDuration={200}>
                         <RelevanceBadge score={rel.score} description={rel.description} size="xs" />
                       </TooltipProvider>
+                    )}
+                    {item.quotable && (
+                      <span
+                        title="This insight has an attached quotable"
+                        className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex-shrink-0"
+                      >
+                        <Quote className="h-2.5 w-2.5" />
+                        Quotable
+                      </span>
                     )}
                     <a
                       href={item.url}

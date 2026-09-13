@@ -179,6 +179,13 @@ router.post("/relevance/score", async (req, res) => {
 
     const colleagueIds = colleagueContacts.map((c) => c.id);
     const counterpartIds = counterpartContacts.map((c) => c.id);
+    const sourceContactIds = [...new Set([...colleagueIds, ...counterpartIds])];
+    const sourceQuotes = sourceContactIds.length > 0
+      ? await db
+          .select()
+          .from(insightQuotesTable)
+          .where(inArray(insightQuotesTable.contactId, sourceContactIds))
+      : [];
 
     // Cap colleague/counterpart signals so the AI prompt stays manageable.
     // Round-robin across contacts so no single contact dominates the sample.
@@ -195,6 +202,13 @@ router.post("/relevance/score", async (req, res) => {
       for (const row of all) {
         if (!buckets.has(row.contactId)) buckets.set(row.contactId, []);
         buckets.get(row.contactId)!.push(row);
+      }
+      for (const bucket of buckets.values()) {
+        bucket.sort((a, b) => {
+          const bHasQuote = sourceQuotes.some((q) => q.contactId === b.contactId && q.signalType === "personal" && q.signalId === b.id);
+          const aHasQuote = sourceQuotes.some((q) => q.contactId === a.contactId && q.signalType === "personal" && q.signalId === a.id);
+          return Number(bHasQuote) - Number(aHasQuote);
+        });
       }
       const result: typeof all = [];
       let round = 0;
@@ -227,6 +241,20 @@ router.post("/relevance/score", async (req, res) => {
         hqBridge: q.hqBridge ?? null,
       });
     }
+     for (const q of sourceQuotes) {
+       const signalType = colleagueIds.includes(q.contactId)
+         ? "colleague"
+         : counterpartIds.includes(q.contactId)
+           ? "counterpart"
+           : null;
+       if (!signalType) continue;
+       quoteMap.set(`${signalType}-${q.signalId}`, {
+         quote: q.quote,
+         attribution: q.attribution,
+         attributionRole: q.attributionRole ?? null,
+         hqBridge: q.hqBridge ?? null,
+       });
+     }
 
     // 4. Build flat signal list for the prompt
     type SignalRow = {

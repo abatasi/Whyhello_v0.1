@@ -604,6 +604,9 @@ components:
         publishedDate:
           type: string
           nullable: true
+        quotable:
+          $ref: "#/components/schemas/InsightQuotable"
+          nullable: true
       required:
         - id
         - contactId
@@ -611,6 +614,23 @@ components:
         - url
         - source
         - mediaType
+
+    InsightQuotable:
+      type: object
+      properties:
+        quote:
+          type: string
+        attribution:
+          type: string
+        attributionRole:
+          type: string
+          nullable: true
+        hqBridge:
+          type: string
+          nullable: true
+      required:
+        - quote
+        - attribution
 
     CounterpartInsight:
       type: object
@@ -632,6 +652,9 @@ components:
           nullable: true
         publishedDate:
           type: string
+          nullable: true
+        quotable:
+          $ref: "#/components/schemas/InsightQuotable"
           nullable: true
       required:
         - id

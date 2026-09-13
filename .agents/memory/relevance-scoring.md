@@ -50,3 +50,12 @@ Any new types/hooks added to `src/relevance.ts` must also be manually added to `
 - Freshness uses the source publication date, not platform ingestion time: LinkedIn live `datePublished` fills missing stored dates, with full value through one year, then a 20-percentage-point annual decay and a 0.20 floor.
 - Ordinary final signal scores have a 10-point floor after proximity and freshness; only explicit extraordinary negative evidence may produce 0–9.
 - Stored relevance scores are fresh for ten minutes; automatic client and API requests enforce this, while an explicit user-triggered refresh can bypass the window.
+
+## Colleague and counterpart selection
+- Colleague insights prioritize source-contact personal insights with extracted quotables, preserving source-contact diversity and filling remaining slots with non-quotables.
+- Counterpart insights preserve Group 1 (same industry) ahead of Group 2; within each group, quotables come before non-quotables while preserving source-contact diversity.
+- The selection routes return the quote text, attribution, role, and HQ bridge so the UI can show the actual words behind the priority.
+
+**Why:** Colleague and counterpart outreach needs attributable language from peers, but relevance and source diversity still matter when quote-bearing signals are sparse.
+
+**How to apply:** Keep the selection order and returned quotable metadata aligned if the messaging composer or playbook framework consumes these categories.

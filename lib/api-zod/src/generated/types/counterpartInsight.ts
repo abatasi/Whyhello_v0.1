@@ -5,6 +5,7 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+import type { InsightQuotable } from "./insightQuotable";
 
 export interface CounterpartInsight {
   id: number;
@@ -15,4 +16,5 @@ export interface CounterpartInsight {
   mediaType: string;
   description?: string | null;
   publishedDate?: string | null;
+  quotable?: InsightQuotable | null;
 }

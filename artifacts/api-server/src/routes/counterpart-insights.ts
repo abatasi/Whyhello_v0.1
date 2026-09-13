@@ -4,6 +4,7 @@ import {
   contactInsightsTable,
   contactsTable,
   companiesTable,
+  insightQuotesTable,
   insightRelevanceScoresTable,
 } from "@workspace/db/schema";
 import { and, eq, inArray, ne } from "drizzle-orm";
@@ -20,8 +21,9 @@ const router: IRouter = Router({ mergeParams: true });
  *   Group 1 — same role + same industry + different company  (closest peers)
  *   Group 2 — same role + different industry + different company  (cross-sector peers)
  *
- * Selection: diversity-biased round-robin across contact buckets, Group 1
- * buckets listed first so they get priority pick. Each insight is tagged with
+ * Selection: quotable insights first, then non-quotable fill-ins, each using
+ * diversity-biased round-robin across contact buckets. Group 1 buckets are
+ * listed first so they get priority pick. Each insight is tagged with
  * counterpartGroup (1 or 2) and sourceContact metadata.
  */
 router.get("/", async (req, res) => {
@@ -103,6 +105,24 @@ router.get("/", async (req, res) => {
 
     // ── 5. Load relevance scores ───────────────────────────────────────────
     const insightIds = insights.map(i => i.id);
+    const quotables = await db
+      .select({
+        signalId: insightQuotesTable.signalId,
+        quote: insightQuotesTable.quote,
+        attribution: insightQuotesTable.attribution,
+        attributionRole: insightQuotesTable.attributionRole,
+        hqBridge: insightQuotesTable.hqBridge,
+      })
+      .from(insightQuotesTable)
+      .where(
+        and(
+          inArray(insightQuotesTable.contactId, allCounterpartIds),
+          eq(insightQuotesTable.signalType, "personal"),
+          inArray(insightQuotesTable.signalId, insightIds),
+        )
+      );
+    const quotableBySignal = new Map(quotables.map((q) => [q.signalId, q]));
+    const hasQuotable = (insight: typeof insights[number]) => quotableBySignal.has(insight.id);
     const scores = await db
       .select({
         signalId: insightRelevanceScoresTable.signalId,
@@ -119,44 +139,56 @@ router.get("/", async (req, res) => {
 
     const scoreMap = new Map<number, number>(scores.map(s => [s.signalId, s.score]));
 
-    // ── 6. Group insights by contact, sort each bucket by score desc ──────
-    const buckets = new Map<number, typeof insights>();
-    for (const insight of insights) {
-      if (!buckets.has(insight.contactId)) buckets.set(insight.contactId, []);
-      buckets.get(insight.contactId)!.push(insight);
-    }
-    for (const items of buckets.values()) {
-      items.sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
-    }
-
-    // ── 7. Order buckets: Group 1 first (same industry), then Group 2 ─────
-    // Within each group, sort buckets by their best insight's score desc.
-    const sortBucketsByScore = (ids: Set<number>) =>
-      Array.from(buckets.entries())
-        .filter(([cid]) => ids.has(cid))
-        .sort(([, a], [, b]) => (scoreMap.get(b[0]?.id ?? -1) ?? 0) - (scoreMap.get(a[0]?.id ?? -1) ?? 0))
-        .map(([, items]) => items);
-
-    const orderedBuckets = [
-      ...sortBucketsByScore(group1Ids),
-      ...sortBucketsByScore(group2Ids),
-    ];
-
-    // ── 8. Diversity-biased round-robin selection (up to 10) ──────────────
-    const selected: typeof insights = [];
-    let round = 0;
-    while (selected.length < 10) {
-      let anyAdded = false;
-      for (const bucket of orderedBuckets) {
-        if (selected.length >= 10) break;
-        if (round < bucket.length) { selected.push(bucket[round]); anyAdded = true; }
+    const selectDiverse = (candidates: typeof insights, limit: number): typeof insights => {
+      const buckets = new Map<number, typeof insights>();
+      for (const insight of candidates) {
+        if (!buckets.has(insight.contactId)) buckets.set(insight.contactId, []);
+        buckets.get(insight.contactId)!.push(insight);
       }
-      if (!anyAdded) break;
-      round++;
-    }
+      for (const items of buckets.values()) {
+        items.sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
+      }
 
-    // ── 9. Final sort by relevance score desc ─────────────────────────────
-    selected.sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
+      const sortBucketsByScore = (ids: Set<number>) =>
+        Array.from(buckets.entries())
+          .filter(([cid]) => ids.has(cid))
+          .sort(([, a], [, b]) => (scoreMap.get(b[0]?.id ?? -1) ?? 0) - (scoreMap.get(a[0]?.id ?? -1) ?? 0))
+          .map(([, items]) => items);
+      const orderedBuckets = [
+        ...sortBucketsByScore(group1Ids),
+        ...sortBucketsByScore(group2Ids),
+      ];
+
+      const selected: typeof insights = [];
+      let round = 0;
+      while (selected.length < limit) {
+        let anyAdded = false;
+        for (const bucket of orderedBuckets) {
+          if (selected.length >= limit) break;
+          if (round < bucket.length) {
+            selected.push(bucket[round]);
+            anyAdded = true;
+          }
+        }
+        if (!anyAdded) break;
+        round++;
+      }
+      return selected;
+    };
+
+    const selected: typeof insights = [];
+    const take = (candidates: typeof insights) => {
+      if (selected.length >= 10) return;
+      selected.push(...selectDiverse(candidates, 10 - selected.length));
+    };
+    const group1Insights = insights.filter((insight) => group1Ids.has(insight.contactId));
+    const group2Insights = insights.filter((insight) => group2Ids.has(insight.contactId));
+    // Preserve Group 1 priority, then apply Quotable-first selection within
+    // each group before allowing the next group to fill remaining slots.
+    take(group1Insights.filter(hasQuotable));
+    take(group1Insights.filter((insight) => !hasQuotable(insight)));
+    take(group2Insights.filter(hasQuotable));
+    take(group2Insights.filter((insight) => !hasQuotable(insight)));
 
     // ── 10. Build counterpart metadata lookup ─────────────────────────────
     const uniqueCompanyIds = [
@@ -191,7 +223,8 @@ router.get("/", async (req, res) => {
       description:    i.description,
       publishedDate:  i.publishedDate,
       counterpartGroup: group1Ids.has(i.contactId) ? 1 : 2,
-      sourceContact:  counterpartMetaMap.get(i.contactId) ?? null,
+       sourceContact:  counterpartMetaMap.get(i.contactId) ?? null,
+       quotable:       quotableBySignal.get(i.id) ?? null,
     }));
 
     res.json(result);
