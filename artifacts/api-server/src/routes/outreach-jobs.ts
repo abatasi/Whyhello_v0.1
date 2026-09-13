@@ -9,16 +9,15 @@ import {
   companyInsightsTable,
   industryInsightsTable,
   roleInsightsTable,
-  colleagueInsightsTable,
-  counterpartInsightsTable,
   outreachJobsTable,
   messagesTable,
   dnaProfilesTable,
   insightQuotesTable,
   insightRelevanceScoresTable,
 } from "@workspace/db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { loadRelationshipInsights, type RelationshipKind, type RelationshipSourceContact } from "../lib/relationship-insights.js";
 
 export const contactJobsRouter: IRouter = Router({ mergeParams: true });
 export const jobsRouter: IRouter = Router({ mergeParams: true });
@@ -28,7 +27,16 @@ function getUserId(req: Request): string | null {
   return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
-type InsightRow = { id: number; title: string; source: string; url?: string | null; description?: string | null; publishedDate?: string | null; mediaType?: string | null };
+type InsightRow = {
+  id: number;
+  title: string;
+  source: string | null;
+  url?: string | null;
+  description?: string | null;
+  publishedDate?: string | null;
+  mediaType?: string | null;
+  contactId?: number;
+};
 
 function fmtInsight(i: InsightRow, showUrl = false) {
   const base = `  • ${i.title} (${i.source}${i.publishedDate ? ", " + i.publishedDate : ""})${i.description ? "\n    " + i.description : ""}`;
@@ -194,16 +202,46 @@ async function runGeneration(jobId: number) {
   const params = job.params as { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData };
   const selectedSet = new Set(params.selectedInsightKeys ?? []);
 
-  const [[contact], personal, colleague, counterpart, dna, quotes] = await Promise.all([
+  const [[contact], personal, dna] = await Promise.all([
     db.select().from(contactsTable).where(eq(contactsTable.id, job.contactId)).limit(1),
     db.select().from(contactInsightsTable).where(and(eq(contactInsightsTable.contactId, job.contactId), eq(contactInsightsTable.category, "personal"))),
-    db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, job.contactId)),
-    db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, job.contactId)),
     fetchSellerDNA(job.userId),
-    db.select().from(insightQuotesTable).where(eq(insightQuotesTable.contactId, job.contactId)),
   ]);
 
   if (!contact) throw new Error("Contact not found");
+
+  const [colleagueContext, counterpartContext] = await Promise.all([
+    loadRelationshipInsights(job.contactId, "colleague"),
+    loadRelationshipInsights(job.contactId, "counterpart"),
+  ]);
+  const colleague = colleagueContext.items;
+  const counterpart = counterpartContext.items;
+  const relationshipBySignal = new Map<number, {
+    kind: RelationshipKind;
+    sourceContact: RelationshipSourceContact | undefined;
+    group?: 1 | 2;
+  }>();
+  for (const insight of colleague) {
+    relationshipBySignal.set(insight.id, {
+      kind: "colleague",
+      sourceContact: colleagueContext.sourceContacts.get(insight.contactId),
+    });
+  }
+  for (const insight of counterpart) {
+    relationshipBySignal.set(insight.id, {
+      kind: "counterpart",
+      sourceContact: counterpartContext.sourceContacts.get(insight.contactId),
+      group: counterpartContext.groups.get(insight.contactId),
+    });
+  }
+  const quoteContactIds = [
+    job.contactId,
+    ...colleagueContext.sourceContactIds,
+    ...counterpartContext.sourceContactIds,
+  ];
+  const quotes = quoteContactIds.length > 0
+    ? await db.select().from(insightQuotesTable).where(inArray(insightQuotesTable.contactId, quoteContactIds))
+    : [];
 
   // industry_insights and role_insights are keyed by industryId/roleId, not contactId
   const [industry, role] = await Promise.all([
@@ -240,6 +278,21 @@ async function runGeneration(jobId: number) {
 
   // Signal IDs that have verbatim quotes extracted — used to tag personal insights below
   const quoteSignalIdSet = new Set(quotes.map(q => q.signalId));
+
+  function formatRelationshipInsight(i: InsightRow, kind: RelationshipKind): string {
+    const relationship = relationshipBySignal.get(i.id);
+    const sourceContact = relationship?.sourceContact;
+    const sourceDetails = sourceContact
+      ? `\n    Source person: ${sourceContact.name}${sourceContact.jobTitle ? ` — ${sourceContact.jobTitle}` : ""}${sourceContact.companyName ? ` at ${sourceContact.companyName}` : ""}`
+      : "";
+    const groupDetails = kind === "counterpart" && relationship?.group
+      ? `\n    Peer group: ${relationship.group === 1 ? "same industry" : "same role, adjacent industry"}`
+      : "";
+    const quoteTag = quoteSignalIdSet.has(i.id)
+      ? `\n    ⚠ VERBATIM QUOTE AVAILABLE — use the exact text from the matching entry in the ATTRIBUTABLE QUOTES block. The title above is a filing label, not the quote.`
+      : "";
+    return fmtInsight(i) + sourceDetails + groupDetails + quoteTag;
+  }
 
   // Group insights by type, each annotated with awareness posture + seller posture
   // so the AI knows its relationship to the buyer before framing each signal.
@@ -279,13 +332,13 @@ async function runGeneration(jobId: number) {
     if (fc.length > 0) {
       groups.push(
         `COLLEAGUE INSIGHTS  [Awareness: Low for specific content, high recognition of the person/function | Posture: Connected organizational observer]\n` +
-        fc.map(i => fmtInsight(i)).join("\n")
+        fc.map(i => formatRelationshipInsight(i, "colleague")).join("\n")
       );
     }
     if (fct.length > 0) {
       groups.push(
         `COUNTERPART INSIGHTS  [Awareness: Low for specific activity, high relevance of the peer's position | Posture: Cross-market pattern spotter]\n` +
-        fct.map(i => fmtInsight(i)).join("\n")
+        fct.map(i => formatRelationshipInsight(i, "counterpart")).join("\n")
       );
     }
 
@@ -340,7 +393,12 @@ async function runGeneration(jobId: number) {
         const sourceLine = source ? `\n    Source: ${source}` : "";
         const bridgeLine = q.hqBridge ? `\n    HQ Bridge: ${q.hqBridge}` : "";
         const roleLine = q.attributionRole ? `, ${q.attributionRole}` : "";
-        return `[${i + 1}] "${q.quote}"\n    — ${q.attribution}${roleLine}${sourceLine}${bridgeLine}`;
+        const relationship = relationshipBySignal.get(q.signalId);
+        const sourceContact = relationship?.sourceContact;
+        const relationshipLine = sourceContact
+          ? `\n    Relationship: ${relationship.kind === "colleague" ? "colleague inside the contact's company" : "counterpart in a similar role at another company"}\n    Source person: ${sourceContact.name}${sourceContact.jobTitle ? ` — ${sourceContact.jobTitle}` : ""}${sourceContact.companyName ? ` at ${sourceContact.companyName}` : ""}`
+          : "";
+        return `[${i + 1}] "${q.quote}"\n    — ${q.attribution}${roleLine}${sourceLine}${relationshipLine}${bridgeLine}`;
       }).join("\n\n")
     : null;
 
@@ -419,6 +477,11 @@ The [topic] must be a concise 2–5 word summary derived from the insight title 
 
 The HQ Bridge note below each quote shows how to transition into VALUE.
 Only use a quote when it genuinely elevates the message; never force one.
+
+  RELATIONSHIP-SPECIFIC QUOTE FRAMING:
+    • Colleague quote: attribute it to the named colleague and present it as an idea coming from inside the contact's company. After a short interpretation, add a natural segue question such as "Is this something you're seeing as well?" Do not imply internal agreement or a private referral.
+    • Counterpart quote: attribute it to the named peer and present it as one comparable example from another company. After a short interpretation, add a natural comparison question such as "Is this resonating with you and your company as well?" or "Is this also on your radar?" Do not use competitor pressure, urgency, or unsupported market consensus.
+    • These questions are part of the bridge, not the CTA. They should lead into the seller's relevance without asking for confidential information.
 
 ${quotesSection}
 ` : "";
@@ -532,6 +595,13 @@ PER-TYPE FRAMING RULES  (apply the rule set that matches your chosen signal)
     Frame: "I came across an interesting perspective from another [role] in your space…" / "[Name] at [Company] recently described…" / "It is only one example, but their approach to X was interesting…"
     Avoid: "Your competitors are all doing this", "You're falling behind", invented peer pressure, treating a stated initiative as a proven success.
     Bridge logic: A comparable leader is approaching X through Y → this suggests an emerging option or question → we can help the buyer evaluate or pursue it.
+
+   RELATIONSHIP INSIGHT MESSAGE RULES — apply these when the chosen HOOK is Colleague or Counterpart:
+     Assume the contact has not encountered the specific insight. Inform them about a relevant public observation rather than testing whether they already know it.
+     If an attributable quote is available, include the exact quote and identify the source person before interpreting it. Never present the quote as the buyer's own view.
+     COLLEAGUE: Make the source feel like a useful signal from inside the contact's own company. Name the colleague and their role/company when available, then segue with a natural, non-leading question such as "Is this something you're seeing as well?" or "Does that theme show up in your area too?" Do not turn one colleague's view into company-wide consensus.
+     COUNTERPART: Make the source feel like a relevant signal from someone in a similar role at another company, including a competitor when that is the available context. Name the counterpart and role/company when available, then invite comparison with a question such as "Is this resonating with you and your company as well?" or "Is this also on your radar?" Treat it as one peer example, not proof that the contact is behind or that every competitor agrees.
+     For both types, the segue question belongs immediately after the source/quote interpretation and before the seller's value claim. It should sound curious and useful, not like a challenge or a request for confidential information.
 
 ═══════════════════════════════════════════
 THE WHYHELLO COLD OUTREACH FRAMEWORK
@@ -799,15 +869,20 @@ async function generateVariants(parentJobId: number) {
 
   // Load all available insights for this contact (same logic as runGeneration)
   const contactId = parentJob.contactId;
-  const [[contact], personal, colleague, counterpart] = await Promise.all([
+  const [[contact], personal] = await Promise.all([
     db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1),
     db.select().from(contactInsightsTable).where(
       and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.category, "personal"))
     ),
-    db.select().from(colleagueInsightsTable).where(eq(colleagueInsightsTable.contactId, contactId)),
-    db.select().from(counterpartInsightsTable).where(eq(counterpartInsightsTable.contactId, contactId)),
   ]);
   if (!contact) return;
+
+  const [colleagueContext, counterpartContext] = await Promise.all([
+    loadRelationshipInsights(contactId, "colleague"),
+    loadRelationshipInsights(contactId, "counterpart"),
+  ]);
+  const colleague = colleagueContext.items;
+  const counterpart = counterpartContext.items;
 
   const [industry, role] = await Promise.all([
     contact.industryId

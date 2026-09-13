@@ -10,8 +10,9 @@ import {
   insightRelevanceScoresTable,
   insightQuotesTable,
 } from "@workspace/db/schema";
-import { and, eq, inArray, ne } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { loadRelationshipInsights, type RelationshipKind, type RelationshipSourceContact } from "../lib/relationship-insights.js";
 
 const router: IRouter = Router({ mergeParams: true });
 
@@ -20,6 +21,11 @@ type SourceRef = { signalType: string; id: number; title: string; source: string
 
 type RelevanceInfo = { score: number; description: string };
 type QuoteInfo     = { quote: string; hqBridge: string | null };
+type RelationshipInfo = {
+  kind: RelationshipKind;
+  sourceContact?: RelationshipSourceContact;
+  group?: 1 | 2;
+};
 
 function parseMessages(body: unknown): { role: "user" | "assistant"; content: string }[] | null {
   if (!body || typeof body !== "object") return null;
@@ -65,6 +71,7 @@ function buildRefSection(
   index: SourceRef[],
   scoreMap: Map<string, RelevanceInfo>,
   quoteMap: Map<string, QuoteInfo>,
+  relationshipMap: Map<string, RelationshipInfo>,
 ): string {
   if (!items.length) return "  None available.";
 
@@ -81,7 +88,12 @@ function buildRefSection(
     const n = index.length; // 1-based ref number
 
     const rel = scoreMap.get(key);
-    const qt  = quoteMap.get(key);
+    const qt  = quoteMap.get(key) ?? (
+      (signalType === "colleague" || signalType === "counterpart")
+        ? quoteMap.get(`personal-${i.id}`)
+        : undefined
+    );
+    const relationship = relationshipMap.get(key);
 
     const relTag    = rel ? `[${relevanceLabel(rel.score)}] ` : "";
     const sourceStr = `${i.source ?? "Unknown"}${i.publishedDate ? ", " + i.publishedDate : ""}`;
@@ -92,6 +104,15 @@ function buildRefSection(
     if (qt) {
       entry += `\n      ★ QUOTABLE (verbatim — use exact wording): "${qt.quote}"`;
       if (qt.hqBridge) entry += `\n      ↳ Bridge to your pitch: ${qt.hqBridge}`;
+    }
+    if (relationship?.sourceContact) {
+      const source = relationship.sourceContact;
+      entry += `\n      ↳ Source person: ${source.name}${source.jobTitle ? ` — ${source.jobTitle}` : ""}${source.companyName ? ` at ${source.companyName}` : ""}`;
+      if (relationship.kind === "colleague") {
+        entry += "\n      ↳ Relationship: colleague inside the contact's company";
+      } else {
+        entry += `\n      ↳ Relationship: counterpart in a similar role at another company${relationship.group === 1 ? " in the same industry" : ""}`;
+      }
     }
 
     return entry;
@@ -129,24 +150,7 @@ router.post("/", async (req, res) => {
       return;
     }
 
-    // ── Resolve colleague + counterpart contacts dynamically ──────────────
-    const colleagueContactsPromise = contact.companyId
-      ? db.select({ id: contactsTable.id })
-          .from(contactsTable)
-          .where(and(eq(contactsTable.companyId, contact.companyId), ne(contactsTable.id, contactId)))
-      : Promise.resolve([]);
-
-    const counterpartContactsPromise = contact.roleId
-      ? db.select({ id: contactsTable.id })
-          .from(contactsTable)
-          .where(and(
-            eq(contactsTable.roleId, contact.roleId),
-            ne(contactsTable.id, contactId),
-            ...(contact.companyId ? [ne(contactsTable.companyId, contact.companyId)] : [])
-          ))
-      : Promise.resolve([]);
-
-    const [personal, industry, role, colleagueContacts, counterpartContacts, relevanceRows, quoteRows] = await Promise.all([
+    const [personal, industry, role, relevanceRows] = await Promise.all([
       db.select().from(contactInsightsTable).where(and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.category, "personal"))),
       contact.industryId
         ? db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, contact.industryId))
@@ -154,27 +158,24 @@ router.post("/", async (req, res) => {
       contact.roleId
         ? db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId))
         : Promise.resolve([]),
-      colleagueContactsPromise,
-      counterpartContactsPromise,
       // Relevance scores for this contact (all signal types)
       db.select().from(insightRelevanceScoresTable).where(eq(insightRelevanceScoresTable.contactId, contactId)),
-      // Quotables for this contact
-      db.select().from(insightQuotesTable).where(eq(insightQuotesTable.contactId, contactId)),
     ]);
 
-    const colleagueIds    = colleagueContacts.map(c => c.id);
-    const counterpartIds  = counterpartContacts.map(c => c.id);
-
-    const [colleague, counterpart] = await Promise.all([
-      colleagueIds.length > 0
-        ? db.select().from(contactInsightsTable)
-            .where(and(inArray(contactInsightsTable.contactId, colleagueIds), eq(contactInsightsTable.category, "personal")))
-        : Promise.resolve([]),
-      counterpartIds.length > 0
-        ? db.select().from(contactInsightsTable)
-            .where(and(inArray(contactInsightsTable.contactId, counterpartIds), eq(contactInsightsTable.category, "personal")))
-        : Promise.resolve([]),
+    const [colleagueContext, counterpartContext] = await Promise.all([
+      loadRelationshipInsights(contactId, "colleague"),
+      loadRelationshipInsights(contactId, "counterpart"),
     ]);
+    const colleague = colleagueContext.items;
+    const counterpart = counterpartContext.items;
+    const quoteContactIds = [
+      contactId,
+      ...colleagueContext.sourceContactIds,
+      ...counterpartContext.sourceContactIds,
+    ];
+    const quoteRows = quoteContactIds.length > 0
+      ? await db.select().from(insightQuotesTable).where(inArray(insightQuotesTable.contactId, quoteContactIds))
+      : [];
 
     let company: typeof companiesTable.$inferSelect | null = null;
     let companyIns: typeof companyInsightsTable.$inferSelect[] = [];
@@ -204,18 +205,32 @@ router.post("/", async (req, res) => {
     for (const q of quoteRows) {
       quoteMap.set(`${q.signalType}-${q.signalId}`, { quote: q.quote, hqBridge: q.hqBridge ?? null });
     }
+    const relationshipMap = new Map<string, RelationshipInfo>();
+    for (const insight of colleague) {
+      relationshipMap.set(`colleague-${insight.id}`, {
+        kind: "colleague",
+        sourceContact: colleagueContext.sourceContacts.get(insight.contactId),
+      });
+    }
+    for (const insight of counterpart) {
+      relationshipMap.set(`counterpart-${insight.id}`, {
+        kind: "counterpart",
+        sourceContact: counterpartContext.sourceContacts.get(insight.contactId),
+        group: counterpartContext.groups.get(insight.contactId),
+      });
+    }
 
     const hasRelevanceScores = scoreMap.size > 0;
     const hasQuotables       = quoteMap.size > 0;
 
     // ── Build numbered source index (1-based) for citation tracking ───────
     const sourceIndex: SourceRef[] = [];
-    const personalSection    = buildRefSection(fp,  "personal",    sourceIndex, scoreMap, quoteMap);
-    const industrySection    = buildRefSection(fi,  "industry",    sourceIndex, scoreMap, quoteMap);
-    const roleSection        = buildRefSection(fr,  "role",        sourceIndex, scoreMap, quoteMap);
-    const colleagueSection   = buildRefSection(fc,  "colleague",   sourceIndex, scoreMap, quoteMap);
-    const counterpartSection = buildRefSection(fct, "counterpart", sourceIndex, scoreMap, quoteMap);
-    const companySection     = buildRefSection(fci, "company",     sourceIndex, scoreMap, quoteMap);
+    const personalSection    = buildRefSection(fp,  "personal",    sourceIndex, scoreMap, quoteMap, relationshipMap);
+    const industrySection    = buildRefSection(fi,  "industry",    sourceIndex, scoreMap, quoteMap, relationshipMap);
+    const roleSection        = buildRefSection(fr,  "role",        sourceIndex, scoreMap, quoteMap, relationshipMap);
+    const colleagueSection   = buildRefSection(fc,  "colleague",   sourceIndex, scoreMap, quoteMap, relationshipMap);
+    const counterpartSection = buildRefSection(fct, "counterpart", sourceIndex, scoreMap, quoteMap, relationshipMap);
+    const companySection     = buildRefSection(fci, "company",     sourceIndex, scoreMap, quoteMap, relationshipMap);
 
     const relevanceInstructions = hasRelevanceScores ? `
 RELEVANCE SCORING
@@ -233,6 +248,12 @@ Sources marked ★ QUOTABLE contain a verbatim sentence the contact actually pub
   • When drafting a cold email, LinkedIn note, or conversation opener, weave in the exact quoted wording — do not paraphrase.
   • The ↳ Bridge line tells you how that quote connects to the seller's pitch; use it to frame your angle.
   • A well-placed quotable shows the contact you have genuinely read their work — it is the single strongest personalisation signal available.` : "";
+
+    const relationshipInstructions = `
+RELATIONSHIP INSIGHT FRAMING
+When using a COLLEAGUE insight, assume the contact has not encountered that specific public activity. Introduce the named source as someone inside the contact's company, use the exact source quote when one is marked ★ QUOTABLE, and then segue with a natural question such as "Is this something you're seeing as well?" Do not imply company-wide agreement, a private referral, or confidential knowledge.
+When using a COUNTERPART insight, assume the contact has not encountered that specific activity. Introduce the named source as someone in a comparable role at another company, including a competitor when that is the available context, use the exact source quote when one is marked ★ QUOTABLE, and then invite comparison with a question such as "Is this resonating with you and your company as well?" or "Is this also on your radar?" Treat it as one peer example, never as proof that the contact is behind or that everyone else agrees.
+For both types, the question is a bridge into the seller's relevance, not the CTA. Keep it curious and do not ask for confidential information.`;
 
     const systemPrompt = `You are an AI contact intelligence assistant embedded in Whyhello, a B2B relationship intelligence platform. Help the user deeply understand and engage with their contact.
 
@@ -261,7 +282,7 @@ ${counterpartSection}
 
 COMPANY INSIGHTS (${company?.name ?? "their company"} news and press):
 ${companySection}
-${relevanceInstructions}${quotableInstructions}
+    ${relevanceInstructions}${quotableInstructions}${relationshipInstructions}
 
 Your role:
 - Answer any question about this contact's priorities, background, and professional context

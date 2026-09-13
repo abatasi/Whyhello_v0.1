@@ -507,6 +507,12 @@ Some personal LinkedIn records point to a post authored by someone else that the
 **Internal bridge logic:**
 > Your colleague raised X → X may also touch your area through Y → we have a relevant perspective on Y.
 
+**Direct-quote and segue rule:**
+- Assume the contact has not encountered the specific colleague insight, even if they may recognize the colleague or the broader topic.
+- When a verified direct quote is available, name the colleague and use the exact quote before adding a short interpretation.
+- Follow the interpretation with a natural, non-leading question such as *"Is this something you're seeing as well?"* or *"Does that theme show up in your area too?"*
+- The question is a bridge into relevance, not a CTA. It must not imply company-wide agreement, a private referral, or a request for confidential internal information.
+
 *Example: "I came across Sarah Chen's interview on preserving advisor identity during a firm transition. Her point about continuity extending beyond account transfer seemed particularly relevant to the teams responsible for recruiting and onboarding new practices."*
 
 ---
@@ -548,6 +554,12 @@ Some personal LinkedIn records point to a post authored by someone else that the
 
 **Internal bridge logic:**
 > A comparable leader is approaching X through Y → this suggests an emerging option or question → we can help the buyer evaluate or pursue it.
+
+**Direct-quote and segue rule:**
+- Assume the contact has not encountered the specific counterpart insight. Present it as one public example from a comparable role, including a competitor when that is the available context.
+- When a verified direct quote is available, name the counterpart and use the exact quote before interpreting what is relevant about it.
+- Follow the interpretation with a natural comparison question such as *"Is this resonating with you and your company as well?"* or *"Is this also on your radar?"*
+- Treat the counterpart as one peer signal, never as proof that the contact is behind or that all competitors agree. The question should invite reflection without manufacturing pressure or asking for confidential information.
 
 *Example: "I came across an interview with another head of advisor recruitment who is treating transition support as part of the recruiting proposition rather than a post-signature process. It is only one example, but it raises an interesting question about where firms can create differentiation before an advisor makes a decision."*
 
