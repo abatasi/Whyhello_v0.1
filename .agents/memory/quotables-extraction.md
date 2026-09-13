@@ -22,6 +22,13 @@ Personal LinkedIn signals can be contact-authored posts or posts the contact mer
 
 **How to apply:** Pass only comments authored by the contact into the extraction prompt and validate comment quotes against the comment text; omit third-party prose when no authorship evidence is present.
 
+## Context window selection
+The extractor should prefer a contiguous 2–4 sentence excerpt around the strongest substantive sentence, continuing through an immediate implication, practical invitation, or CTA when it completes the same thought. One-sentence quotes are a fallback only when adjacent text is unrelated or filler; the excerpt must remain verbatim and under 320 characters.
+
+**Why:** An isolated sentence can be factually attributable but unusable as a premise in composed outreach. The surrounding question, implication, or invitation often supplies the conversational flow.
+
+**How to apply:** Keep the model's context-window instruction aligned with the deterministic verbatim/authorship validator; re-run extraction to update existing stored quotes.
+
 ## Current scope
 Only `linkedin` / `linkedin_post` media types are scanned. Other authored types (blog_post, newsletter, podcast) are intentionally excluded until LinkedIn quality is validated (Task #5 covers expansion).
 

@@ -314,11 +314,12 @@ ${hqSummary}
 
 STRICT EXTRACTION RULES:
 1. The "quote" field MUST be copied character-for-character from either the "Post body" or the labeled contact comment text. Do not rephrase, summarize, condense, or alter a single word. If you cannot find a complete verbatim sentence worth quoting, omit that post entirely.
-2. Extract at most 1 quote per post. That quote may be one sentence or two consecutive sentences, following this decision rule:
-   a. Identify the single most substantive sentence — the one with the most specific insight, observation, or named detail.
-   b. Look at the sentence immediately before it. If that preceding sentence is a strong thematic lead-in that frames or contextualises the substantive sentence (e.g. a broad claim that the next sentence then unpacks with specifics), include both consecutive sentences as the quote, joined exactly as they appear in the post body.
-   c. If the preceding sentence is a filler, a call-to-action, a generic opener with no thematic content ("Here's my latest post", "Excited to share"), or unrelated to the substantive sentence, include the substantive sentence only.
-   d. Never include more than two sentences. Never skip sentences to join non-adjacent ones.
+2. Extract at most 1 quote per post. Prefer a coherent contiguous context window of 2–4 consecutive sentences, not an isolated sentence:
+   a. Start with the strongest substantive sentence — the one with the most specific insight, observation, or named detail.
+   b. Expand backward to include a meaningful lead-in when it frames or contextualises that sentence.
+   c. Expand forward through the immediate implication, question, practical invitation, or call-to-action when it is part of the same thought. Do not stop after the first sentence if the next sentences make the premise usable in a composed message.
+   d. A short CTA such as "We can help" or "Visit us at ..." may be included when it immediately follows the insight and remains part of the same contiguous passage. Do not include unrelated later sections, hashtags-only lines, or boilerplate sign-offs.
+   e. Use one sentence only when surrounding sentences are genuinely unrelated or filler. Never skip sentences to join non-adjacent ones, and never exceed four consecutive sentences or 320 characters.
 3. Short filler phrases ("Here's the link", "Full video:", "Check this out") are not quotes — skip them.
 4. Never attribute a third party's words to ${contactName}. This includes company posts, testimonials, podcast transcripts, quoted interviews, and posts the contact only liked or engaged with.
 5. In a third-party post, a quote is eligible only when the text explicitly names ${contactName} as the speaker/author, or a clearly labeled comment block identifies ${contactName}'s comment.
@@ -335,7 +336,7 @@ OUTPUT: A JSON array only — no markdown fences, no preamble. Empty array [] if
   {
     "signalType": "personal",
     "signalId": <integer from the block header>,
-    "quote": "<exact verbatim sentence copied from Post body>",
+    "quote": "<exact verbatim contiguous excerpt of 2–4 sentences copied from Post body>",
     "attribution": "${contactName}",
     "attributionRole": ${contact.jobTitle ? `"${contact.jobTitle}"` : "null"},
     "hqBridge": "<one sentence connecting this to the seller's HQ messaging>",
