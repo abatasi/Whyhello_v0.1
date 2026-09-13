@@ -232,6 +232,110 @@ type InsightSourceContact = { id: number; name: string; jobTitle?: string | null
 type InsightQuotable = { quote: string; attribution: string; attributionRole?: string | null; hqBridge?: string | null };
 type InsightItem = { id: number; title: string; url: string; source: string; publishedDate?: string | null; mediaType: string; description?: string | null; sourceContact?: InsightSourceContact | null; counterpartGroup?: 1 | 2 | null; quotable?: InsightQuotable | null };
 
+function SourceContactHoverCard({
+  contact,
+  category,
+  counterpartGroup,
+}: {
+  contact: InsightSourceContact;
+  category: "colleague" | "counterpart";
+  counterpartGroup?: 1 | 2 | null;
+}) {
+  const isColleague = category === "colleague";
+  const palette = isColleague
+    ? {
+        bg: "bg-sky-50",
+        border: "border-sky-200",
+        avatar: "bg-sky-200 border-sky-300",
+        text: "text-sky-800",
+        muted: "text-sky-600/80",
+        accent: "text-sky-700",
+      }
+    : {
+        bg: "bg-rose-50",
+        border: "border-rose-200",
+        avatar: "bg-rose-200 border-rose-300",
+        text: "text-rose-800",
+        muted: "text-rose-600/80",
+        accent: "text-rose-700",
+      };
+  const initials = contact.name.split(" ").map(w => w[0]).slice(0, 2).join("");
+  const contextLabel = isColleague
+    ? "Colleague at the same company"
+    : counterpartGroup === 1
+      ? "Counterpart in the same industry"
+      : "Counterpart in another industry";
+
+  return (
+    <HoverCard openDelay={120} closeDelay={150}>
+      <HoverCardTrigger asChild>
+        <button
+          type="button"
+          aria-label={`View ${contact.name}'s profile`}
+          className={cn(
+            "flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-colors hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+            palette.bg,
+            palette.border,
+          )}
+        >
+          <div className={cn("h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0", palette.avatar)}>
+            <span className={cn("text-[8px] font-bold uppercase leading-none select-none", palette.accent)}>
+              {initials}
+            </span>
+          </div>
+          <span className={cn("text-[10px] font-semibold leading-none", palette.text)}>{contact.name}</span>
+          {(contact.jobTitle || contact.companyName) && (
+            <span className={cn("text-[9px] leading-none", palette.muted)}>
+              {[contact.jobTitle, contact.companyName].filter(Boolean).join(" · ")}
+            </span>
+          )}
+          {!isColleague && counterpartGroup != null && (
+            <span className={cn("text-[8px] font-bold uppercase tracking-wide leading-none border-l pl-1.5 ml-0.5", palette.muted, palette.border)}>
+              G{counterpartGroup}
+            </span>
+          )}
+        </button>
+      </HoverCardTrigger>
+      <HoverCardContent
+        side="bottom"
+        align="start"
+        className="w-72 p-0 overflow-hidden"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className={cn("h-1 w-full", isColleague ? "bg-sky-400" : "bg-rose-400")} />
+        <div className="p-3.5">
+          <div className="flex items-start gap-2.5">
+            <div className={cn("h-9 w-9 rounded-full border flex items-center justify-center flex-shrink-0", palette.avatar)}>
+              <span className={cn("text-xs font-bold uppercase", palette.accent)}>{initials}</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-foreground truncate">{contact.name}</p>
+              <p className="text-[10px] text-muted-foreground leading-snug mt-0.5">{contextLabel}</p>
+              {(contact.jobTitle || contact.companyName) && (
+                <p className="text-[10px] text-muted-foreground leading-snug mt-1">
+                  {[contact.jobTitle, contact.companyName].filter(Boolean).join(" · ")}
+                </p>
+              )}
+            </div>
+          </div>
+          <Link
+            href={`/contacts/${contact.id}`}
+            className={cn(
+              "mt-3 flex items-center justify-center gap-1.5 w-full rounded-md border px-2.5 py-1.5 text-[10px] font-semibold transition-colors",
+              palette.border,
+              palette.text,
+              "hover:bg-background",
+            )}
+          >
+            Visit profile
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
 interface InsightCategory {
   id: string;
   label: string;
@@ -2312,43 +2416,15 @@ function InsightDetailView({
                 {category.label}
               </span>
 
-              {/* ── Colleague source contact chip ── */}
               {category.id === "colleague" && item.sourceContact && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border bg-sky-50 border-sky-200">
-                  <div className="h-4 w-4 rounded-full bg-sky-200 border border-sky-300 flex items-center justify-center flex-shrink-0">
-                    <span className="text-[8px] font-bold text-sky-700 uppercase leading-none select-none">
-                      {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-semibold text-sky-800 leading-none">{item.sourceContact.name}</span>
-                  {(item.sourceContact.jobTitle || item.sourceContact.companyName) && (
-                    <span className="text-[9px] text-sky-600/80 leading-none">
-                      {[item.sourceContact.jobTitle, item.sourceContact.companyName].filter(Boolean).join(" · ")}
-                    </span>
-                  )}
-                </div>
+                <SourceContactHoverCard contact={item.sourceContact} category="colleague" />
               )}
-
-              {/* ── Counterpart source contact chip ── */}
               {category.id === "counterpart" && item.sourceContact && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border bg-rose-50 border-rose-200">
-                  <div className="h-4 w-4 rounded-full bg-rose-200 border border-rose-300 flex items-center justify-center flex-shrink-0">
-                    <span className="text-[8px] font-bold text-rose-700 uppercase leading-none select-none">
-                      {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-semibold text-rose-800 leading-none">{item.sourceContact.name}</span>
-                  {(item.sourceContact.jobTitle || item.sourceContact.companyName) && (
-                    <span className="text-[9px] text-rose-600/80 leading-none">
-                      {[item.sourceContact.jobTitle, item.sourceContact.companyName].filter(Boolean).join(" · ")}
-                    </span>
-                  )}
-                  {item.counterpartGroup != null && (
-                    <span className="text-[8px] font-bold text-rose-500 uppercase tracking-wide leading-none border-l border-rose-200 pl-1.5 ml-0.5">
-                      G{item.counterpartGroup}
-                    </span>
-                  )}
-                </div>
+                <SourceContactHoverCard
+                  contact={item.sourceContact}
+                  category="counterpart"
+                  counterpartGroup={item.counterpartGroup}
+                />
               )}
 
               <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-semibold", cfg.bg)}>

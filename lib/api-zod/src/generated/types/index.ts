@@ -25,6 +25,7 @@ export * from "./filterOptions";
 export * from "./healthStatus";
 export * from "./industryInsight";
 export * from "./insightQuotable";
+export * from "./insightSourceContact";
 export * from "./listCompaniesParams";
 export * from "./listContactsParams";
 export * from "./outreachJob";

@@ -46,6 +46,13 @@ export interface RoleInsight {
   publishedDate?: string | null;
 }
 
+export interface InsightSourceContact {
+  id: number;
+  name: string;
+  jobTitle?: string | null;
+  companyName?: string | null;
+}
+
 export interface InsightQuotable {
   quote: string;
   attribution: string;
@@ -62,6 +69,7 @@ export interface ColleagueInsight {
   mediaType: string;
   description?: string | null;
   publishedDate?: string | null;
+  sourceContact?: InsightSourceContact;
   quotable?: InsightQuotable | null;
 }
 
@@ -74,6 +82,7 @@ export interface CounterpartInsight {
   mediaType: string;
   description?: string | null;
   publishedDate?: string | null;
+  sourceContact?: InsightSourceContact;
   quotable?: InsightQuotable | null;
 }
 

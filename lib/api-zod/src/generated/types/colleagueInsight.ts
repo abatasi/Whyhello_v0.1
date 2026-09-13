@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { InsightQuotable } from "./insightQuotable";
+import type { InsightSourceContact } from "./insightSourceContact";
 
 export interface ColleagueInsight {
   id: number;
@@ -16,5 +17,6 @@ export interface ColleagueInsight {
   mediaType: string;
   description?: string | null;
   publishedDate?: string | null;
+  sourceContact?: InsightSourceContact;
   quotable?: InsightQuotable | null;
 }
