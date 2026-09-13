@@ -268,9 +268,9 @@ router.post("/", async (req, res) => {
         : "No contact-authored comment was visible in the fetched source."}\nFor third-party engagement, do not attribute the post author's viewpoint to the contact. A short social response such as congratulations, well done, happy anniversary, or welcome is not an actionable contact insight.`
       : "";
 
-    const contextBlock = pageText
-      ? `Full page content (excerpt):\n${pageText}${sourceContentBlock}${engagementBlock}`
-      : `Available metadata:\nTitle: ${title}\nSource: ${source ?? "Unknown"}\nType: ${mediaType ?? "article"}\nDescription: ${description ?? "Not available"}\nURL: ${url}${engagementBlock}`;
+     const contextBlock = pageText
+       ? `Media format: ${mediaType ?? "unknown"}\nFull page content (excerpt):\n${pageText}${sourceContentBlock}${engagementBlock}`
+       : `Media format: ${mediaType ?? "article"}\nAvailable metadata:\nTitle: ${title}\nSource: ${source ?? "Unknown"}\nDescription: ${description ?? "Not available"}\nURL: ${url}${engagementBlock}`;
 
     const prompt = `You are a B2B intelligence analyst embedded in a relationship intelligence platform called Whyhello. Analyze the following content for a seller preparing to engage with a contact associated with it.
 
@@ -282,6 +282,7 @@ Produce:
 2. Exactly 4 contextualized takeaway bullets. Each bullet must be one sentence of no more than 24 words: connect one concrete point from the content to one specific HQ detail and state how to use it in conversation. Prioritize named products, the value wedge, differentiators, pillars, customer focus, and buying priorities.
 
 Do not give generic recommendations such as "follow up," "monitor this trend," or "tailor your message." If this is a third-party engagement with a short social comment, explicitly say that it is weak or non-actionable contact evidence and do not present the post as the contact's own viewpoint. If the content does not connect to an HQ detail, say that clearly and identify the closest credible angle without inventing a connection. Never invent products, claims, customer results, or market priorities.
+If the media format is video and the contact is interviewed, speaking, or featured, treat the contact's perspective as memorable first-hand personal evidence. Do not infer that the contact participated merely because the video concerns them.
 
 ${contextBlock}
 

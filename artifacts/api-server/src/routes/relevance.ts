@@ -23,6 +23,7 @@ function getUserId(req: Request): string | null {
 }
 
 const LINKEDIN_MEDIA_TYPES = new Set(["linkedin", "linkedin_post"]);
+const VIDEO_MEDIA_TYPES = new Set(["video", "youtube", "youtube_video"]);
 const RELEVANCE_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const FRESHNESS_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
 const FRESHNESS_ANNUAL_DECAY = 0.2;
@@ -312,7 +313,10 @@ router.post("/relevance/score", async (req, res) => {
     // assess HQ alignment using the actual spoken/written content, not just the title.
     const signalsList = signals
       .map((s, i) => {
-        let block = `[${i + 1}] type="${s.signalType}" id=${s.signalId}\n  Title: ${s.title}\n  Description: ${s.description ?? "(none)"}`;
+        let block = `[${i + 1}] type="${s.signalType}" id=${s.signalId}\n  Media format: ${s.mediaType ?? "unknown"}\n  Title: ${s.title}\n  Description: ${s.description ?? "(none)"}`;
+        if (VIDEO_MEDIA_TYPES.has(s.mediaType ?? "")) {
+          block += `\n  Video source: ${s.url ?? "(no URL)"}`;
+        }
         if (s.signalType === "personal" && LINKEDIN_MEDIA_TYPES.has(s.mediaType ?? "")) {
           const signalKey = `${s.signalType}-${s.signalId}`;
           const source = linkedInSources.get(signalKey);
@@ -349,6 +353,10 @@ SCORING RUBRIC (0–100):
 - 40-59: Moderate connection — some overlap, but indirect or partial
 - 20-39: Weak connection — only tangential overlap
 - 0-19: No meaningful connection to the seller's offering
+
+VIDEO FORMAT:
+- A personal video interview, talk, profile, or feature where the contact is the speaker, interviewee, or featured subject is high-proximity personal evidence. Treat it as memorable first-hand context and score the contact's own perspective, claims, and priorities—not merely the video's topic.
+- Do not boost a video solely because it is a video. A generic video, a video about someone else, or a video where the contact is only mentioned remains subject to normal source proximity and HQ-alignment rules.
 
 PERSONAL LINKEDIN PROXIMITY:
 - A contact-authored LinkedIn post is direct personal evidence.

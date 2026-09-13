@@ -92,6 +92,7 @@ Base scores establish the floor value of a signal before context and contact adj
 | Signal Category | Sub-type | Base Score |
 |---|---|---|
 | **Personal** | Attributable quote (LinkedIn post) | 90 |
+| **Personal** | Video interview / feature with contact participation | 85 |
 | **Personal** | Original LinkedIn post (no quote extracted) | 75 |
 | **Personal** | Third-party LinkedIn engagement with substantive contact comment or direct quote | 55 |
 | **Personal** | Third-party LinkedIn engagement with no substantive contact-authored evidence | 30 |
@@ -125,6 +126,8 @@ They are the most specific, the most proximate, and the most personally resonant
 **Third-party LinkedIn engagement is a separate, lower-confidence personal subtype.** A post authored by someone else and merely liked, commented on, or otherwise engaged with by the contact is not equivalent to the contact's own thinking. A substantive comment or explicitly attributed direct quote can restore some value, but never the full proximity of an original post.
 
 **A LinkedIn reshare is not inherently lower-confidence.** The scorer must inspect the underlying shared content and judge its actual HQ relevance and actionability. The fact that the contact reshared it neither increases nor decreases the content score. A generic, celebratory, inspirational, or otherwise non-actionable source remains weak even when the contact adds a quotable caption.
+
+**Video is a high-value personal format when the contact participates.** An interview, talk, profile, or feature where the contact is the speaker or featured subject often provides memorable first-hand language and should be evaluated as strong personal evidence. Video format alone is not a relevance boost: generic videos or videos about someone else follow the normal proximity and HQ-alignment rules.
 
 **Refresh cadence:** Stored relevance scores for a contact are considered current for ten minutes. Automatic client and API requests refuse to start another scoring run during that window, preventing repeated navigation or duplicate requests from re-running the AI scorer unnecessarily. An explicit user-triggered refresh may bypass the window when the user wants an immediate update.
 
