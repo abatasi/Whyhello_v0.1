@@ -17,7 +17,7 @@ import { loadRelationshipInsights, type RelationshipKind, type RelationshipSourc
 const router: IRouter = Router({ mergeParams: true });
 
 type RawMessage = { role: string; content: string };
-type SourceRef = { signalType: string; id: number; title: string; source: string; publishedDate?: string | null };
+type SourceRef = { signalType: string; id: number; title: string; source: string; url?: string | null; publishedDate?: string | null };
 
 type RelevanceInfo = { score: number; description: string };
 type QuoteInfo     = { quote: string; hqBridge: string | null };
@@ -66,7 +66,7 @@ function relevanceLabel(score: number): string {
  * Each entry is annotated with its relevance label + score, relevance note, and any quotable.
  */
 function buildRefSection(
-  items: Array<{ id: number; title: string; source: string | null; publishedDate?: string | null; description?: string | null }>,
+  items: Array<{ id: number; title: string; source: string | null; url?: string | null; publishedDate?: string | null; description?: string | null }>,
   signalType: string,
   index: SourceRef[],
   scoreMap: Map<string, RelevanceInfo>,
@@ -84,7 +84,7 @@ function buildRefSection(
 
   return sorted.map((i) => {
     const key = `${signalType}-${i.id}`;
-    index.push({ signalType, id: i.id, title: i.title, source: i.source ?? "", publishedDate: i.publishedDate ?? null });
+    index.push({ signalType, id: i.id, title: i.title, source: i.source ?? "", url: i.url ?? null, publishedDate: i.publishedDate ?? null });
     const n = index.length; // 1-based ref number
 
     const rel = scoreMap.get(key);
@@ -109,10 +109,11 @@ function buildRefSection(
       const source = relationship.sourceContact;
       entry += `\n      ↳ Source person: ${source.name}${source.jobTitle ? ` — ${source.jobTitle}` : ""}${source.companyName ? ` at ${source.companyName}` : ""}`;
       if (relationship.kind === "colleague") {
-        entry += "\n      ↳ Relationship: colleague inside the contact's company";
+        entry += `\n      ↳ Relationship to contact: ${source.name} is the contact's colleague inside the contact's company${source.companyName ? ` (${source.companyName})` : ""}`;
       } else {
-        entry += `\n      ↳ Relationship: counterpart in a similar role at another company${relationship.group === 1 ? " in the same industry" : ""}`;
+        entry += `\n      ↳ Relationship to contact: ${source.name} is a counterpart in a similar role at another company${source.companyName ? ` (${source.companyName})` : ""}${relationship.group === 1 ? " in the same industry" : ""}`;
       }
+      if (i.url) entry += `\n      ↳ Insight URL: ${i.url}`;
     }
 
     return entry;
@@ -251,8 +252,8 @@ Sources marked ★ QUOTABLE contain a verbatim sentence the contact actually pub
 
     const relationshipInstructions = `
 RELATIONSHIP INSIGHT FRAMING
-When using a COLLEAGUE insight, assume the contact has not encountered that specific public activity. Introduce the named source as someone inside the contact's company, use the exact source quote when one is marked ★ QUOTABLE, and then segue with a natural question such as "Is this something you're seeing as well?" Do not imply company-wide agreement, a private referral, or confidential knowledge.
-When using a COUNTERPART insight, assume the contact has not encountered that specific activity. Introduce the named source as someone in a comparable role at another company, including a competitor when that is the available context, use the exact source quote when one is marked ★ QUOTABLE, and then invite comparison with a question such as "Is this resonating with you and your company as well?" or "Is this also on your radar?" Treat it as one peer example, never as proof that the contact is behind or that everyone else agrees.
+When using a COLLEAGUE insight, assume the contact has not encountered that specific public activity. Explicitly say that the named source is the contact's colleague inside the contact's company; never assume the contact will infer that from the name or title. Use the exact source quote when one is marked ★ QUOTABLE, include the exact Insight URL once behind natural markdown anchor text as optional further reading, and then segue with a natural question such as "Is this something you're seeing as well?" Do not imply company-wide agreement, a private referral, or confidential knowledge.
+When using a COUNTERPART insight, assume the contact has not encountered that specific activity. Explicitly say that the named source is a counterpart or peer in a similar role at another company, including a competitor when that is the available context; never assume the contact will infer that from the name or title. Use the exact source quote when one is marked ★ QUOTABLE, include the exact Insight URL once behind natural markdown anchor text as optional further reading, and then invite comparison with a question such as "Is this resonating with you and your company as well?" or "Is this also on your radar?" Treat it as one peer example, never as proof that the contact is behind or that everyone else agrees.
 For both types, the question is a bridge into the seller's relevance, not the CTA. Keep it curious and do not ask for confidential information.`;
 
     const systemPrompt = `You are an AI contact intelligence assistant embedded in Whyhello, a B2B relationship intelligence platform. Help the user deeply understand and engage with their contact.

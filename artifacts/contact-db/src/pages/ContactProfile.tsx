@@ -3282,7 +3282,7 @@ function ContactDetailField({
 
 // ── ChatSourcesPanel ───────────────────────────────────────────────────────
 
-type ChatSourceRef = { signalType: string; id: number; title: string; source: string; publishedDate?: string | null };
+type ChatSourceRef = { signalType: string; id: number; title: string; source: string; url?: string | null; publishedDate?: string | null };
 
 const SIGNAL_TYPE_META: Record<string, { label: string; className: string }> = {
   personal:    { label: "Personal",    className: "bg-violet-50 border-violet-200 text-violet-700" },
@@ -3319,6 +3319,16 @@ function ChatSourcesPanel({ sources }: { sources: ChatSourceRef[] }) {
                   <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
                     {s.source}{s.publishedDate ? ` · ${s.publishedDate}` : ""}
                   </p>
+                  {s.url && (
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[10px] text-primary hover:underline leading-tight mt-1 inline-block"
+                    >
+                      Open insight
+                    </a>
+                  )}
                 </div>
               </div>
             );

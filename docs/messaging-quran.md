@@ -509,7 +509,9 @@ Some personal LinkedIn records point to a post authored by someone else that the
 
 **Direct-quote and segue rule:**
 - Assume the contact has not encountered the specific colleague insight, even if they may recognize the colleague or the broader topic.
+- Explicitly identify the source as the contact's colleague inside the contact's company; do not assume the contact will infer that relationship from the person's name or title.
 - When a verified direct quote is available, name the colleague and use the exact quote before adding a short interpretation.
+- Include the colleague insight's exact public URL once behind natural anchor text, framed as optional further reading so the contact can look into the source if they want more context. Do not use a bare URL or make the link the CTA.
 - Follow the interpretation with a natural, non-leading question such as *"Is this something you're seeing as well?"* or *"Does that theme show up in your area too?"*
 - The question is a bridge into relevance, not a CTA. It must not imply company-wide agreement, a private referral, or a request for confidential internal information.
 
@@ -557,7 +559,9 @@ Some personal LinkedIn records point to a post authored by someone else that the
 
 **Direct-quote and segue rule:**
 - Assume the contact has not encountered the specific counterpart insight. Present it as one public example from a comparable role, including a competitor when that is the available context.
+- Explicitly identify the source as a counterpart or peer in a similar role at another company, naming the company and same-industry or adjacent-industry context when available; do not assume the contact will infer that relationship from the person's name or title.
 - When a verified direct quote is available, name the counterpart and use the exact quote before interpreting what is relevant about it.
+- Include the counterpart insight's exact public URL once behind natural anchor text, framed as optional further reading so the contact can look into the source if they want more context. Do not use a bare URL or make the link the CTA.
 - Follow the interpretation with a natural comparison question such as *"Is this resonating with you and your company as well?"* or *"Is this also on your radar?"*
 - Treat the counterpart as one peer signal, never as proof that the contact is behind or that all competitors agree. The question should invite reflection without manufacturing pressure or asking for confidential information.
 

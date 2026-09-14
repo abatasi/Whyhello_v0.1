@@ -283,15 +283,15 @@ async function runGeneration(jobId: number) {
     const relationship = relationshipBySignal.get(i.id);
     const sourceContact = relationship?.sourceContact;
     const sourceDetails = sourceContact
-      ? `\n    Source person: ${sourceContact.name}${sourceContact.jobTitle ? ` — ${sourceContact.jobTitle}` : ""}${sourceContact.companyName ? ` at ${sourceContact.companyName}` : ""}`
-      : "";
+      ? `\n    Source person: ${sourceContact.name}${sourceContact.jobTitle ? ` — ${sourceContact.jobTitle}` : ""}${sourceContact.companyName ? ` at ${sourceContact.companyName}` : ""}\n    Relationship to target contact: ${sourceContact.name} is ${kind === "colleague" ? `a colleague inside the target contact's company${sourceContact.companyName ? ` (${sourceContact.companyName})` : ""}` : `a counterpart in a similar role at another company${sourceContact.companyName ? ` (${sourceContact.companyName})` : ""}`}.`
+      : `\n    Relationship to target contact: this is a ${kind === "colleague" ? "colleague insight from inside the target contact's company" : "counterpart insight from someone in a similar role at another company"}.`;
     const groupDetails = kind === "counterpart" && relationship?.group
       ? `\n    Peer group: ${relationship.group === 1 ? "same industry" : "same role, adjacent industry"}`
       : "";
     const quoteTag = quoteSignalIdSet.has(i.id)
       ? `\n    ⚠ VERBATIM QUOTE AVAILABLE — use the exact text from the matching entry in the ATTRIBUTABLE QUOTES block. The title above is a filing label, not the quote.`
       : "";
-    return fmtInsight(i) + sourceDetails + groupDetails + quoteTag;
+    return fmtInsight(i, true) + sourceDetails + groupDetails + quoteTag;
   }
 
   // Group insights by type, each annotated with awareness posture + seller posture
@@ -423,20 +423,21 @@ async function runGeneration(jobId: number) {
   // 50/50 coin-flip for link placement style, decided once per generation run
   const linkStyle: "inline" | "ps" = Math.random() < 0.5 ? "inline" : "ps";
 
-  // Only relevant when the HOOK draws from a Company, Industry, or Role signal
+  // Only relevant when the HOOK draws from a Company, Industry, Role,
+  // Colleague, or Counterpart signal.
   // (those are the signal types whose URL appears in the insights section above).
   const linkPlacementBlock = `
 ═══════════════════════════════════════════
-LINK PLACEMENT RULE  (Company / Industry / Role signals only)
+LINK PLACEMENT RULE  (Company / Industry / Role / Colleague / Counterpart signals)
 ═══════════════════════════════════════════
-If your chosen HOOK signal is a Company, Industry, or Role insight, that signal's URL is listed
+If your chosen HOOK signal is a Company, Industry, Role, Colleague, or Counterpart insight, that signal's URL is listed
 in the SELECTED SIGNALS section above as "URL: <url>". You MUST include that URL exactly once
 in the message body, using the placement style below. Do not alter the URL.
 
-Do NOT include a link if your HOOK is a Personal, Colleague, or Counterpart insight.
+Do NOT include a link if your HOOK is a Personal insight.
 
 PLACEMENT STYLE FOR THIS EMAIL: ${linkStyle === "inline"
-    ? `INLINE — embed the URL inside the HOOK sentence itself using active verb anchor text. The link should feel like a natural part of the sentence, not a call-to-action appended at the end.
+    ? `INLINE — embed the URL inside the HOOK or bridge sentence using active verb anchor text. For Colleague and Counterpart insights, make the link feel like an optional way to inspect the public source, not a CTA.
   Anchor text must be an active verb phrase that describes what the piece does — not a generic prompt like "More here" or "Full piece here".
   The URL must be hidden behind the anchor text. The raw URL must never appear in the email body.
   Examples of well-embedded inline links (vary the phrasing — do not copy verbatim):
@@ -452,7 +453,7 @@ PLACEMENT STYLE FOR THIS EMAIL: ${linkStyle === "inline"
   The raw URL must never appear in the PS. Hide it behind active verb anchor text using markdown: [anchor text](URL).
   Anchor text must describe what the piece does — not a generic "click here" or "read more".
   Examples of PS patterns (vary the phrasing — do not copy verbatim):
-    "P.S. The piece I mentioned above is [worth reading in full](URL) if this is on your radar."
+     "P.S. The piece I mentioned above is [worth looking at in full](URL) if you'd like more context."
     "P.S. Full report — [digs into this in more detail](URL) if useful."
     "P.S. The article above [covers this in depth](URL) if you'd like more context."
     "P.S. [The full piece is here](URL) — goes deeper on the numbers if it's of interest."
@@ -479,8 +480,9 @@ The HQ Bridge note below each quote shows how to transition into VALUE.
 Only use a quote when it genuinely elevates the message; never force one.
 
   RELATIONSHIP-SPECIFIC QUOTE FRAMING:
-    • Colleague quote: attribute it to the named colleague and present it as an idea coming from inside the contact's company. After a short interpretation, add a natural segue question such as "Is this something you're seeing as well?" Do not imply internal agreement or a private referral.
-    • Counterpart quote: attribute it to the named peer and present it as one comparable example from another company. After a short interpretation, add a natural comparison question such as "Is this resonating with you and your company as well?" or "Is this also on your radar?" Do not use competitor pressure, urgency, or unsupported market consensus.
+     • Colleague quote: explicitly say that [Name] is the contact's colleague inside the contact's company (and name the company when available). Attribute the quote to that colleague and present it as an idea coming from inside the organization. After a short interpretation, add a natural segue question such as "Is this something you're seeing as well?" Do not imply internal agreement or a private referral.
+     • Counterpart quote: explicitly say that [Name] is a counterpart or peer in a similar role at [Company] (and identify the same-industry or adjacent-industry context when available). Present it as one comparable example from another company. After a short interpretation, add a natural comparison question such as "Is this resonating with you and your company as well?" or "Is this also on your radar?" Do not use competitor pressure, urgency, or unsupported market consensus.
+     • For either type, include the insight's exact URL once behind natural markdown anchor text so the contact can inspect the public source if they want more context. Frame it as optional further reading, never as the CTA and never as a bare URL.
     • These questions are part of the bridge, not the CTA. They should lead into the seller's relevance without asking for confidential information.
 
 ${quotesSection}
@@ -599,8 +601,8 @@ PER-TYPE FRAMING RULES  (apply the rule set that matches your chosen signal)
    RELATIONSHIP INSIGHT MESSAGE RULES — apply these when the chosen HOOK is Colleague or Counterpart:
      Assume the contact has not encountered the specific insight. Inform them about a relevant public observation rather than testing whether they already know it.
      If an attributable quote is available, include the exact quote and identify the source person before interpreting it. Never present the quote as the buyer's own view.
-     COLLEAGUE: Make the source feel like a useful signal from inside the contact's own company. Name the colleague and their role/company when available, then segue with a natural, non-leading question such as "Is this something you're seeing as well?" or "Does that theme show up in your area too?" Do not turn one colleague's view into company-wide consensus.
-     COUNTERPART: Make the source feel like a relevant signal from someone in a similar role at another company, including a competitor when that is the available context. Name the counterpart and role/company when available, then invite comparison with a question such as "Is this resonating with you and your company as well?" or "Is this also on your radar?" Treat it as one peer example, not proof that the contact is behind or that every competitor agrees.
+     COLLEAGUE: Explicitly identify the source as the contact's colleague inside the contact's company; do not assume the contact will infer that from a name or title. Name the colleague and role/company when available, include the insight URL as optional further reading, then segue with a natural, non-leading question such as "Is this something you're seeing as well?" or "Does that theme show up in your area too?" Do not turn one colleague's view into company-wide consensus.
+     COUNTERPART: Explicitly identify the source as a counterpart or peer in a similar role at another company; do not assume the contact will infer that from a name or title. Name the counterpart and role/company when available, include the insight URL as optional further reading, then invite comparison with a question such as "Is this resonating with you and your company as well?" or "Is this also on your radar?" Treat it as one peer example, not proof that the contact is behind or that every competitor agrees.
      For both types, the segue question belongs immediately after the source/quote interpretation and before the seller's value claim. It should sound curious and useful, not like a challenge or a request for confidential information.
 
 ═══════════════════════════════════════════
