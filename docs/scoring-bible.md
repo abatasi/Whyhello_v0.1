@@ -127,6 +127,10 @@ They are the most specific, the most proximate, and the most personally resonant
 
 **A LinkedIn reshare is not inherently lower-confidence.** The scorer must inspect the underlying shared content and judge its actual HQ relevance and actionability. The fact that the contact reshared it neither increases nor decreases the content score. A generic, celebratory, inspirational, or otherwise non-actionable source remains weak even when the contact adds a quotable caption.
 
+**Public-handle attribution is part of proximity detection.** LinkedIn post URLs identify authors by public handles, which may differ from the contact's profile slug and may include a brand suffix (for example, `agneskrausewealth` for Agnes Krause). A post whose author handle matches the contact's normalized full-name prefix is contact-authored Personal evidence, not third-party engagement.
+
+**Direct-post floors are deterministic.** A contact-authored LinkedIn post receives at least the 75-point Original LinkedIn post baseline before freshness. When it also carries a verified, signal-bearing Quotable attributed to that contact, it receives at least the 85-point direct-quote floor before the normal Quotable treatment. The AI may still distinguish ordinary from exceptional direct signals, but an author-matching handle must not leave the signal in the low engagement range.
+
 **Video is a high-value Personal format by attribution convention.** Any video stored under Personal Insights is safely treated as directly attributable to the contact and receives an **85-point minimum** before freshness adjustments. Videos under Company, Industry, Role, Colleague, or Counterpart Insights are not assumed to feature the contact and receive no direct-attribution boost.
 
 **Refresh cadence:** Stored relevance scores for a contact are considered current for ten minutes. Automatic client and API requests refuse to start another scoring run during that window, preventing repeated navigation or duplicate requests from re-running the AI scorer unnecessarily. An explicit user-triggered refresh may bypass the window when the user wants an immediate update.

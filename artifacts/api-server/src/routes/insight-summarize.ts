@@ -5,6 +5,7 @@ import { contactsTable, dnaProfilesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { inspectLinkedInSource } from "../lib/linkedin-source";
+import { isContactAuthoredLinkedInSignal } from "../lib/linkedin-authorship";
 
 const router: IRouter = Router();
 
@@ -102,33 +103,6 @@ function compactTakeaway(value: unknown): string {
   return words.length > 24
     ? `${words.slice(0, 24).join(" ")}…`
     : firstSentence;
-}
-
-function linkedinAuthorSlug(url: string | null): string | null {
-  const match = url?.match(/linkedin\.com\/posts\/([^_/?#]+)/i);
-  return match?.[1]?.toLowerCase() ?? null;
-}
-
-function linkedinProfileSlug(url: string | null): string | null {
-  const match = url?.match(/linkedin\.com\/in\/([^/?#]+)/i);
-  return match?.[1]?.toLowerCase().replace(/\/$/, "") ?? null;
-}
-
-function isContactAuthoredLinkedInSignal(
-  title: string,
-  url: string,
-  contact: { firstName: string; lastName: string; linkedinUrl: string | null },
-): boolean {
-  const contactSlug = linkedinProfileSlug(contact.linkedinUrl)
-    ?? `${contact.firstName}-${contact.lastName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  const authorSlug = linkedinAuthorSlug(url);
-  if (authorSlug && (authorSlug === contactSlug || authorSlug.startsWith(`${contactSlug}-`))) return true;
-
-  const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
-  const normalizedTitle = title.toLowerCase();
-  return normalizedTitle === fullName
-    || normalizedTitle.startsWith(`${fullName}'s post`)
-    || normalizedTitle.startsWith(`${fullName} -`);
 }
 
 function normalizedName(value: string): string {
@@ -229,7 +203,7 @@ router.post("/", async (req, res) => {
       ? (await db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1))[0]
       : undefined;
     const isLinkedInSource = mediaType === "linkedin" || mediaType === "linkedin_post";
-    const isContactAuthored = !!contact && isContactAuthoredLinkedInSignal(title, url, contact);
+    const isContactAuthored = !!contact && isContactAuthoredLinkedInSignal({ title, url }, contact);
     const sourceInspection = isLinkedInSource
       ? await inspectLinkedInSource(url)
       : null;

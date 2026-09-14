@@ -981,10 +981,22 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
     if (totalInsights === 0) return;
 
     hasAutoExtractedQuotesRef.current = id;
-    quotesMutation.mutate(id, { onSuccess: () => refetchQuotes() });
+    quotesMutation.mutate(id, {
+      onSuccess: () => {
+        refetchQuotes();
+        // Quote extraction can change a Personal signal from a low-confidence
+        // engagement into a direct, quotable contact-authored signal. Re-score
+        // immediately so the new attribution and quote bonus are reflected
+        // without requiring a second manual refresh.
+        relevanceMutation.mutate(
+          { contactId: id, force: true },
+          { onSuccess: () => refetchRelevance() },
+        );
+      },
+    });
   }, [id, quotesData.length, personalInsights.length, companyInsights.length,
     industryInsights.length, roleInsights.length, colleagueInsights.length,
-    counterpartInsights.length, quotesMutation.isPending]);
+    counterpartInsights.length, quotesMutation.isPending, relevanceMutation, refetchRelevance]);
 
   const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => {
     const lengthLabel = params.length.charAt(0).toUpperCase() + params.length.slice(1);

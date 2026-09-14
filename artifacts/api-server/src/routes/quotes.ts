@@ -10,6 +10,7 @@ import { eq, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { getAuth } from "@clerk/express";
 import { inspectLinkedInSource } from "../lib/linkedin-source";
+import { isContactAuthoredLinkedInSignal } from "../lib/linkedin-authorship";
 
 export const quotesRouter: IRouter = Router({ mergeParams: true });
 
@@ -39,16 +40,6 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function linkedinAuthorSlug(url: string | null): string | null {
-  const match = url?.match(/linkedin\.com\/posts\/([^_/?#]+)/i);
-  return match?.[1]?.toLowerCase() ?? null;
-}
-
-function linkedinProfileSlug(url: string | null): string | null {
-  const match = url?.match(/linkedin\.com\/in\/([^/?#]+)/i);
-  return match?.[1]?.toLowerCase().replace(/\/$/, "") ?? null;
-}
-
 function normalizedName(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
@@ -58,22 +49,6 @@ function isCommentByContact(
   contact: { firstName: string; lastName: string },
 ): boolean {
   return normalizedName(author) === normalizedName(`${contact.firstName} ${contact.lastName}`);
-}
-
-function isContactAuthoredSignal(
-  signal: SignalRow,
-  contact: { firstName: string; lastName: string; linkedinUrl: string | null },
-): boolean {
-  const contactSlug = linkedinProfileSlug(contact.linkedinUrl)
-    ?? `${contact.firstName}-${contact.lastName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  const authorSlug = linkedinAuthorSlug(signal.url);
-  if (authorSlug && (authorSlug === contactSlug || authorSlug.startsWith(`${contactSlug}-`))) return true;
-
-  const title = signal.title.toLowerCase();
-  const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
-  return title === fullName
-    || title.startsWith(`${fullName}'s post`)
-    || title.startsWith(`${fullName} -`);
 }
 
 function toStringArray(v: unknown): string[] {
@@ -193,7 +168,7 @@ function isValidExtractedQuote(
   if (start < 0) return false;
 
   const end = start + trimmedQuote.length;
-  const sourceIsContactAuthored = isContactAuthoredSignal(signal, contact);
+   const sourceIsContactAuthored = isContactAuthoredLinkedInSignal(signal, contact);
   const insideQuotedPassage = isInsideQuotedPassage(signal.postBody, start);
 
   // On the contact's own post, only the author's unquoted words qualify.
@@ -293,7 +268,7 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
       `[${i + 1}] signalId=${s.signalId}${s.publishedDate && s.publishedDate !== "N/A" ? ` published="${s.publishedDate}"` : ""}
   Source title: ${s.title}
   Source URL: ${s.url}
-  Source classification: ${isContactAuthoredSignal(s, contact) ? "contact-authored LinkedIn post" : s.comments.length > 0 ? "third-party LinkedIn post with a visible comment by the contact" : "third-party LinkedIn post the contact may have engaged with"}
+  Source classification: ${isContactAuthoredLinkedInSignal(s, contact) ? "contact-authored LinkedIn post" : s.comments.length > 0 ? "third-party LinkedIn post with a visible comment by the contact" : "third-party LinkedIn post the contact may have engaged with"}
   Post body: ${s.postBody}
   ${s.comments.length > 0 ? `Contact comments visible in source:\n${s.comments.map(comment => `  Comment by ${comment.author}: ${comment.text}`).join("\n")}` : "No contact-authored comment is visible in the fetched source."}`
     ).join("\n\n");

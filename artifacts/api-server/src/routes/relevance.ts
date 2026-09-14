@@ -16,6 +16,7 @@ import { eq, and, inArray, ne, gt, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { getAuth } from "@clerk/express";
 import { inspectLinkedInSource, type LinkedInSourceData } from "../lib/linkedin-source";
+import { isContactAuthoredLinkedInSignal } from "../lib/linkedin-authorship";
 
 function getUserId(req: Request): string | null {
   const auth = getAuth(req);
@@ -59,32 +60,6 @@ function freshnessMultiplier(publishedDate: string | null | undefined, now = Dat
   if (ageYears <= 1) return 1;
 
   return Math.max(FRESHNESS_FLOOR, 1 - ((ageYears - 1) * FRESHNESS_ANNUAL_DECAY));
-}
-
-function linkedinAuthorSlug(url: string | null): string | null {
-  const match = url?.match(/linkedin\.com\/posts\/([^_/?#]+)/i);
-  return match?.[1]?.toLowerCase() ?? null;
-}
-
-function linkedinProfileSlug(url: string | null): string | null {
-  const match = url?.match(/linkedin\.com\/in\/([^/?#]+)/i);
-  return match?.[1]?.toLowerCase().replace(/\/$/, "") ?? null;
-}
-
-function isContactAuthoredLinkedInSignal(
-  signal: { title: string; url: string | null },
-  contact: { firstName: string; lastName: string; linkedinUrl: string | null },
-): boolean {
-  const contactSlug = linkedinProfileSlug(contact.linkedinUrl)
-    ?? `${contact.firstName}-${contact.lastName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  const authorSlug = linkedinAuthorSlug(signal.url);
-  if (authorSlug && (authorSlug === contactSlug || authorSlug.startsWith(`${contactSlug}-`))) return true;
-
-  const title = signal.title.toLowerCase();
-  const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
-  return title === fullName
-    || title.startsWith(`${fullName}'s post`)
-    || title.startsWith(`${fullName} -`);
 }
 
 const router: IRouter = Router({ mergeParams: true });
@@ -436,6 +411,8 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
     const QUOTABLE_BOOST_OTHER = 20;  // third-party quote
     const QUOTABLE_HQ_FLOOR = 20;
     const QUOTABLE_STRONG_CONTENT_FLOOR = 60;
+    const DIRECT_LINKEDIN_POST_FLOOR = 75;
+    const DIRECT_LINKEDIN_QUOTE_FLOOR = 85;
     const ORDINARY_SCORE_CEILING = 95;
     const EXCEPTIONAL_SCORE_FLOOR = 96;
     const ENGAGEMENT_SCORE_MULTIPLIER = 0.65;
@@ -484,7 +461,14 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
         : hqScore;
       const formatAdjustedScore = isPersonalVideo
         ? Math.max(proximityAdjustedScore, FEATURED_VIDEO_SCORE_FLOOR)
-        : proximityAdjustedScore;
+        : sig?.signalType === "personal"
+          && LINKEDIN_MEDIA_TYPES.has(sig.mediaType ?? "")
+          && !isLinkedInEngagement
+          ? Math.max(
+              proximityAdjustedScore,
+              selfAttributedQuote ? DIRECT_LINKEDIN_QUOTE_FLOOR : DIRECT_LINKEDIN_POST_FLOOR,
+            )
+          : proximityAdjustedScore;
 
       if (!quotable || hqScore < QUOTABLE_HQ_FLOOR) {
         const scoredBeforeFloor = Math.min(
