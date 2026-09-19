@@ -44,6 +44,8 @@ export function useRevealContact() {
       queryClient.invalidateQueries({ queryKey: ["credits", "reveal-status", contactId] });
       queryClient.invalidateQueries({ queryKey: ["credits", "status"] });
       queryClient.invalidateQueries({ queryKey: ["credits", "reveal-statuses-batch"] });
+      queryClient.invalidateQueries({ queryKey: ["home", "top-leads"] });
+      queryClient.invalidateQueries({ queryKey: ["home", "activity"] });
     },
   });
 }

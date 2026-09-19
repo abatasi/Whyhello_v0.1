@@ -135,22 +135,24 @@ function HomePage() {
         </div>
         <div className="wh-home-separator" />
         <section className="wh-activity-section">
-          <div className="wh-section-heading">
-            <div>
-              <h2>Your latest moves 👋</h2>
-            </div>
-          </div>
-          <div className="wh-activity-list">
-            {activity.map(({ icon: Icon, tone, title, detail, time }) => (
-              <div className="wh-activity-row" key={`${title}-${detail}`}>
-                <span className={`wh-activity-icon is-${tone}`}><Icon size={15} /></span>
-                <div className="wh-activity-copy">
-                  <strong>{title}</strong>
-                  <span>{detail}</span>
-                </div>
-                <time>{time}</time>
+          <div className="wh-activity-card">
+            <div className="wh-list-head">
+              <div>
+                <h2>Your latest moves 🌊</h2>
               </div>
-            ))}
+            </div>
+            <div className="wh-activity-list">
+              {activity.map(({ icon: Icon, tone, title, detail, time }) => (
+                <div className="wh-activity-row" key={`${title}-${detail}`}>
+                  <span className={`wh-activity-icon is-${tone}`}><Icon size={15} /></span>
+                  <div className="wh-activity-copy">
+                    <strong>{title}</strong>
+                    <span>{detail}</span>
+                  </div>
+                  <time>{time}</time>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
         <div className="wh-list-card">

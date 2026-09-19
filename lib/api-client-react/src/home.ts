@@ -13,11 +13,31 @@ export interface TopLead {
   scoreCategory: "Excellent" | "Strong" | "Potential" | "Low Fit";
 }
 
+export type HomeActivityType = "message" | "contact-activated" | "playbook" | "hq";
+
+export interface HomeActivity {
+  id: string;
+  type: HomeActivityType;
+  title: string;
+  detail: string;
+  occurredAt: string;
+  href?: string;
+}
+
 export function useTopLeads(limit = 10) {
   const safeLimit = Math.min(10, Math.max(1, Math.floor(limit)));
   return useQuery<TopLead[]>({
     queryKey: ["home", "top-leads", safeLimit],
     queryFn: () => customFetch<TopLead[]>(`/api/home/top-leads?limit=${safeLimit}`),
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useHomeActivity() {
+  return useQuery<HomeActivity[]>({
+    queryKey: ["home", "activity"],
+    queryFn: () => customFetch<HomeActivity[]>("/api/home/activity"),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 }

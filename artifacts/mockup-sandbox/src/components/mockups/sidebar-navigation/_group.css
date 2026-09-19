@@ -79,10 +79,8 @@
 .wh-heading-row h1 { margin:0; font-size:18px; letter-spacing:-.025em; line-height:1.25; }
 .wh-home-separator { height:1px; background:var(--wh-line); margin-bottom:24px; }
 .wh-activity-section { margin-bottom:24px; }
-.wh-section-heading { display:flex; align-items:end; justify-content:space-between; margin-bottom:12px; }
-.wh-section-heading h2 { margin:0; font-size:14px; letter-spacing:-.01em; }
-.wh-section-heading p { margin:3px 0 0; color:#919ba1; font-size:10px; }
-.wh-activity-list { display:grid; grid-template-columns:1fr 1fr; background:#fff; border:1px solid var(--wh-line); border-radius:10px; overflow:hidden; }
+.wh-activity-card { background:#fff; border:1px solid var(--wh-line); border-radius:10px; overflow:hidden; }
+.wh-activity-list { display:grid; grid-template-columns:1fr 1fr; background:#fff; }
 .wh-activity-row { min-height:58px; display:grid; grid-template-columns:30px minmax(0,1fr) auto; align-items:center; gap:10px; padding:10px 15px; border-bottom:1px solid #edf0f2; }
 .wh-activity-row:nth-child(odd) { border-right:1px solid #edf0f2; }
 .wh-activity-row:nth-last-child(-n+2) { border-bottom:0; }
