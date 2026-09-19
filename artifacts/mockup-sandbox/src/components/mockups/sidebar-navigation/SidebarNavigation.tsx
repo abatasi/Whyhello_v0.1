@@ -13,9 +13,14 @@ import {
   ListFilter,
   Map,
   MessageSquare,
+  Network,
   Search,
+  Send,
   ShieldCheck,
+  SlidersHorizontal,
+  Target,
   Upload,
+  UserCheck,
   Users,
   Zap,
 } from "lucide-react";
@@ -62,6 +67,51 @@ function HomePage() {
     return { label: "Low Fit", className: "low-fit" };
   };
 
+  const activity = [
+    {
+      icon: Send,
+      tone: "purple",
+      title: "Single message created",
+      detail: "For Maya Chen · VP Growth at Vanta",
+      time: "3h ago",
+    },
+    {
+      icon: UserCheck,
+      tone: "green",
+      title: "Contact activated",
+      detail: "Jon Bell · Head of RevOps at Linear",
+      time: "Yesterday",
+    },
+    {
+      icon: SlidersHorizontal,
+      tone: "blue",
+      title: "HQ elements updated",
+      detail: "Buying triggers and positioning",
+      time: "Yesterday",
+    },
+    {
+      icon: ClipboardList,
+      tone: "amber",
+      title: "Playbook built",
+      detail: "Enterprise expansion · 6 steps",
+      time: "3 days ago",
+    },
+    {
+      icon: Network,
+      tone: "rose",
+      title: "Buying center built",
+      detail: "Ramp · 8 contacts across 4 roles",
+      time: "Last week",
+    },
+    {
+      icon: Target,
+      tone: "slate",
+      title: "Ideal Customer Profile built",
+      detail: "Series B fintech leaders",
+      time: "Last week",
+    },
+  ];
+
   return (
     <main className="wh-page">
       <div className="wh-topbar">
@@ -80,14 +130,30 @@ function HomePage() {
         </div>
       </div>
       <section className="wh-content">
-        <div className="wh-breadcrumb"><span>Workspace</span><b>/</b><strong>Home</strong></div>
         <div className="wh-heading-row">
-          <div>
-            <p className="wh-eyebrow">Relationship intelligence</p>
-            <h1>Why hello, Leandro 👋</h1>
-            <p className="wh-subtitle">A focused view of the people and companies worth knowing next.</p>
-          </div>
+          <h1>Why hello, Leandro 👋</h1>
         </div>
+        <div className="wh-home-separator" />
+        <section className="wh-activity-section">
+          <div className="wh-section-heading">
+            <div>
+              <h2>Your latest moves</h2>
+              <p>The work you’ve put into motion.</p>
+            </div>
+          </div>
+          <div className="wh-activity-list">
+            {activity.map(({ icon: Icon, tone, title, detail, time }) => (
+              <div className="wh-activity-row" key={`${title}-${detail}`}>
+                <span className={`wh-activity-icon is-${tone}`}><Icon size={15} /></span>
+                <div className="wh-activity-copy">
+                  <strong>{title}</strong>
+                  <span>{detail}</span>
+                </div>
+                <time>{time}</time>
+              </div>
+            ))}
+          </div>
+        </section>
         <div className="wh-list-card">
           <div className="wh-list-head">
             <div><h2>Top Leads for Leandro</h2></div>
