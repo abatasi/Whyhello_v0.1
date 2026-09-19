@@ -156,7 +156,7 @@ function HomePage() {
         </section>
         <div className="wh-list-card">
           <div className="wh-list-head">
-            <div><h2>Top Leads for Leandro</h2></div>
+            <div><h2>Your Next Leads</h2></div>
           </div>
           <div className="wh-table-head"><span>Name</span><span>Score</span><span>Email</span><span>Title</span><span>Company</span><span>Location</span></div>
           {leads.map(({ name, score, email, title, company, location }) => {
