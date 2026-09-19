@@ -134,15 +134,15 @@ function MetaScoreBadge({ metaScore }: { metaScore: ContactMetaScore }) {
   const { metaScore: score, personalBest, companyBest, industryBest, roleBest, signalCount } = metaScore;
 
   const colorClass =
-    score >= 90 ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-    score >= 75 ? "bg-violet-50 text-violet-700 border-violet-200" :
-    score >= 50 ? "bg-blue-50 text-blue-700 border-blue-200" :
-                  "bg-slate-50 text-slate-400 border-slate-200";
+    score >= 90 ? "bg-green-500 text-white border-green-500" :
+    score >= 75 ? "bg-blue-500 text-white border-blue-500" :
+    score >= 50 ? "bg-amber-500 text-white border-amber-500" :
+                   "bg-red-500 text-white border-red-500";
 
   const tier =
     score >= 90 ? "Excellent" :
     score >= 75 ? "Strong" :
-    score >= 50 ? "Moderate" : "Weak";
+    score >= 50 ? "Potential" : "Low Fit";
 
   return (
     <Tooltip>

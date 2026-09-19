@@ -484,10 +484,10 @@ In future automation contexts (e.g. batch outreach, sequence enrollment), the Me
 
 | Meta Score | Grado | Interpretation |
 |---|---|---|
-| 90–100 | **Excellent** | Exceptional fit; strong signals across the scoring dimensions; prioritize immediately |
-| 75–89 | **Strong** | Good fit with several positive indicators; worth active outreach |
-| 50–74 | **Moderate** | Some alignment, but important signals are missing or weaker; engage selectively |
-| 0–49 | **Weak** | Limited evidence of fit or relevance; low priority unless new signals emerge |
+| 90–100 | **Excellent** | Exceptional fit; strong signals across the scoring dimensions; prioritize immediately; Green `#22C55E` |
+| 75–89 | **Strong** | Good fit with several positive indicators; worth active outreach; Blue `#3B82F6` |
+| 50–74 | **Potential** | Some alignment, but important signals are missing or weaker; engage selectively; Amber `#F59E0B` |
+| 0–49 | **Low Fit** | Limited evidence of fit or relevance; low priority unless new signals emerge; Red `#EF4444` |
 | NULL | **No puntuado** | Scoring has not yet been run for this contact |
 
 ### 8.5 La Parábola del Retablo Incompleto
