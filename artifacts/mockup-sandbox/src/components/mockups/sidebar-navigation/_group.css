@@ -37,6 +37,8 @@
 .wh-route { position:relative; width:100%; min-width:32px; height:38px; border-radius:8px; padding:0 9px; gap:13px; white-space:nowrap; transition:background 140ms ease, color 140ms ease; }
 .wh-route:hover { background:#f4f6f7; color:var(--wh-ink); }
 .wh-route.is-active { background:var(--wh-lilac); color:#5146c6; }
+.wh-route > svg { display:block; flex:0 0 18px; width:18px; min-width:18px; height:18px; color:#5f6c75; opacity:1; stroke:currentColor; }
+.wh-route.is-active > svg { color:#5146c6; opacity:1; }
 .wh-route span { opacity:0; transform:translateX(-4px); transition:opacity 100ms ease, transform 180ms ease; font-size:13px; font-weight:600; letter-spacing:-.01em; }
 .is-expanded .wh-route span { opacity:1; transform:none; }
 .wh-route:focus-visible, .wh-brand-button:focus-visible { outline:2px solid #938bee; outline-offset:2px; }
