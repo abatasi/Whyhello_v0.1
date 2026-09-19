@@ -45,6 +45,7 @@
 .wh-subroute { height:35px; padding-left:9px; }
 .wh-subroute svg { opacity:.82; }
 .wh-sidebar-bottom { display:flex; flex-direction:column; gap:3px; margin-top:auto; padding-top:12px; border-top:1px solid var(--wh-line); }
+.wh-user-avatar { display:grid; place-items:center; width:22px; min-width:22px; height:22px; border-radius:50%; background:#dbe5ee; color:#425467; font-style:normal; font-size:9px; font-weight:700; }
 .wh-route kbd { opacity:0; margin-left:auto; color:#9ca5aa; font:10px "Space Mono", monospace; }
 .is-expanded .wh-route kbd { opacity:1; }
 
@@ -52,14 +53,12 @@
 .wh-topbar { height:60px; display:flex; align-items:center; justify-content:space-between; padding:0 24px 0 68px; background:rgba(255,255,255,.92); border-bottom:1px solid var(--wh-line); }
 .wh-topbar-spacer { flex:1; }
 .wh-topbar-tools { display:flex; align-items:center; gap:14px; }
-.wh-hq-pill, .wh-icon-button, .wh-profile { border:1px solid var(--wh-line); background:#fff; color:#59656d; cursor:pointer; }
+.wh-hq-pill, .wh-icon-button { border:1px solid var(--wh-line); background:#fff; color:#59656d; cursor:pointer; }
 .wh-hq-pill { height:31px; padding:0 10px; display:flex; align-items:center; gap:6px; border-radius:7px; font-size:11px; font-weight:600; }
 .wh-hq-pill i { width:1px; height:14px; background:var(--wh-line); margin:0 2px; }
 .wh-credit { display:flex; align-items:center; gap:5px; color:#6f5baf; font-size:11px; font-weight:700; }
 .wh-credit em { color:#99a1a6; font-style:normal; font-weight:500; }
 .wh-icon-button { width:31px; height:31px; display:grid; place-items:center; border-radius:7px; }
-.wh-profile { height:31px; display:flex; align-items:center; gap:6px; padding:0 7px 0 4px; border-radius:18px; }
-.wh-profile span { display:grid; place-items:center; width:23px; height:23px; border-radius:50%; background:#dbe5ee; color:#425467; font-size:10px; font-weight:700; }
 .wh-content { max-width:1120px; margin:0 auto; padding:32px 48px 70px; }
 .wh-breadcrumb { display:flex; gap:9px; color:#9aa4aa; font-size:11px; margin-bottom:26px; }
 .wh-breadcrumb b { font-weight:400; color:#c6cdd1; }.wh-breadcrumb strong { color:#5c6972; font-weight:600; }

@@ -220,6 +220,36 @@
   border-top: 1px solid #e3e8eb;
 }
 
+.master-user-avatar {
+  display: block;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  object-fit: cover;
+  border: 1px solid #d8e0e6;
+  border-radius: 999px;
+}
+
+.master-user-initials {
+  display: grid;
+  place-items: center;
+  color: #425467;
+  background: #dbe5ee;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.master-sidebar.is-wartime .master-user-avatar {
+  border-color: #ddb99e;
+}
+
+.master-sidebar.is-wartime .master-user-initials {
+  color: #7c3e2a;
+  background: #edd4c6;
+}
+
 .master-sidebar.is-wartime .master-sidebar-bottom {
   border-color: #e8c9b8;
 }

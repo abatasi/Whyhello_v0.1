@@ -5,7 +5,7 @@ import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
   Settings, ShieldCheck, Flame, ChevronDown, Clock,
   Factory, Briefcase, Upload, Gauge, List, Milestone, Menu,
-  MessageSquare, ClipboardList, Layers3, UserRound,
+  MessageSquare, ClipboardList, Layers3,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUser, useClerk } from "@clerk/react";
@@ -737,6 +737,9 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [location] = useLocation();
   const { user } = useUser();
+  const displayName = user?.firstName
+    ? `${user.firstName} ${user.lastName ?? ""}`.trim()
+    : user?.primaryEmailAddress?.emailAddress ?? "Account";
   const isMaster = user?.primaryEmailAddress?.emailAddress === MASTER_EMAIL;
   const moreItems = isMaster ? [...baseMoreItems, ...masterMoreItems] : baseMoreItems;
   const isRouteActive = (href: string) =>
@@ -811,9 +814,13 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
             <Settings size={18} />
             <span>Settings</span>
           </Link>
-          <Link href="/profile" className="master-route" aria-label="Profile" title={!expanded ? "Profile" : undefined}>
-            <UserRound size={18} />
-            <span>Profile</span>
+          <Link href="/profile" className="master-route master-user-route" aria-label={`${displayName} profile`} title={!expanded ? displayName : undefined}>
+            {user?.imageUrl ? (
+              <img src={user.imageUrl} alt="" className="master-user-avatar" />
+            ) : (
+              <i className="master-user-avatar master-user-initials">{getInitials(displayName)}</i>
+            )}
+            <span>{displayName}</span>
           </Link>
         </div>
       </div>
@@ -866,17 +873,6 @@ export function Navbar() {
           <HQPill wartime={wartime} />
           <CreditTracker wartime={wartime} />
           <GlobalSearch wartime={wartime} />
-          <div className={cn("h-8 w-px mx-1", wartime ? "bg-[#E0BBA8]" : "bg-border")} />
-          <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            {user?.imageUrl ? (
-              <img src={user.imageUrl} alt="Profile" className={cn("h-7 w-7 rounded-full object-cover border", wartime ? "border-[#DDB99E]" : "border-border")} />
-            ) : (
-              <div className={cn("h-7 w-7 rounded-full flex items-center justify-center font-semibold text-xs border", wartime ? "bg-[#EDD4C6] text-[#7C3E2A] border-[#DDB99E]" : "bg-primary/10 text-primary border-primary/20")}>
-                {getInitials(displayName)}
-              </div>
-            )}
-            <span className={cn("hidden xl:block text-sm font-medium", wartime ? "text-[#7C3E2A]" : "")}>{displayName}</span>
-          </Link>
         </div>
       </div>
 

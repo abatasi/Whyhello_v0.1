@@ -21,7 +21,6 @@ import {
   Sparkles,
   Upload,
   Users,
-  UserRound,
   Zap,
 } from "lucide-react";
 
@@ -73,7 +72,6 @@ function DirectoryPage() {
           </button>
           <span className="wh-credit"><Zap size={13} /> 2,840 <em>credits</em></span>
           <button className="wh-icon-button" aria-label="Global search"><Search size={18} /></button>
-          <button className="wh-profile" aria-label="Open profile"><span>AC</span><ChevronDown size={13} /></button>
         </div>
       </div>
       <section className="wh-content">
@@ -149,7 +147,10 @@ function MasterSidebar() {
         </nav>
         <div className="wh-sidebar-bottom">
           <button className="wh-route" title={!expanded ? "Command menu" : undefined} aria-label="Command menu"><Command size={18} /><span>Command menu</span><kbd>⌘K</kbd></button>
-          <button className="wh-route" title={!expanded ? "Profile" : undefined} aria-label="Profile"><UserRound size={18} /><span>Profile</span></button>
+          <button className="wh-route wh-user-route" title={!expanded ? "Abu Batasi" : undefined} aria-label="Open Abu Batasi's profile">
+            <i className="wh-user-avatar">AB</i>
+            <span>Abu Batasi</span>
+          </button>
         </div>
       </div>
     </aside>
