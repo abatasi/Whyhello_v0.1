@@ -85,15 +85,15 @@ function LeadRow({ lead, revealed }: { lead: TopLead; revealed: boolean }) {
         </Link>
       </td>
       <td className="px-5 py-4">
-        <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold whitespace-nowrap", scoreBadgeClass(lead.score))}>
+        <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold whitespace-nowrap", scoreBadgeClass(lead.score))}>
           {lead.score} · {lead.scoreCategory}
         </span>
       </td>
       <td className="px-5 py-4 whitespace-nowrap">
         {revealed && lead.email ? (
-          <a href={`mailto:${lead.email}`} className="text-sm text-primary hover:underline">{lead.email}</a>
+          <a href={`mailto:${lead.email}`} className="text-[11px] text-primary hover:underline">{lead.email}</a>
         ) : (
-          <span className="inline-flex rounded-md border border-border bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          <span className="inline-flex rounded-md border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
             Access Email
           </span>
         )}
@@ -189,7 +189,7 @@ export default function Home() {
           <section className="mb-6">
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your latest moves 🌊</h2>
+                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your latest moves 🏄</h2>
               </div>
               {activityLoading ? <ActivitySkeleton /> : activityError ? (
                 <div className="px-5 py-6 text-sm text-muted-foreground">Recent activity is unavailable right now.</div>
@@ -228,7 +228,7 @@ export default function Home() {
           <section>
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your Next Leads</h2>
+                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your next leads</h2>
               </div>
               {isError ? (
                 <div className="px-6 py-12 text-center">
