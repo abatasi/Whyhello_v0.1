@@ -5,6 +5,7 @@ import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
   Settings, ShieldCheck, Flame, ChevronDown, Clock,
   Factory, Briefcase, Upload, Gauge, List, Milestone, Menu,
+  MessageSquare, ClipboardList, Layers3, UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUser, useClerk } from "@clerk/react";
@@ -18,6 +19,7 @@ import {
   getRecentContactVisits,
   getRecentCompanyVisits,
 } from "@/lib/recentVisits";
+import "./sidebar-navigation.css";
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -501,7 +503,7 @@ type RecentItem =
   | { type: "contact"; id: number; name: string; title: string | null; companyName: string | null; visitedAt: number }
   | { type: "company"; id: number; name: string; industry: string | null; visitedAt: number };
 
-function LogoMenu({ wartime }: { wartime: boolean }) {
+function LogoMenu({ wartime, sidebar = false, expanded = false }: { wartime: boolean; sidebar?: boolean; expanded?: boolean }) {
   const [open, setOpen] = useState(false);
   const [notifExpanded, setNotifExpanded] = useState(false);
   const [recents, setRecents] = useState<RecentItem[]>([]);
@@ -564,20 +566,25 @@ function LogoMenu({ wartime }: { wartime: boolean }) {
   return (
     <div
       ref={ref}
-      className="relative self-stretch flex items-center -ml-6 xl:-ml-8 flex-shrink-0"
+      className={cn(
+        "relative flex items-center flex-shrink-0",
+        sidebar ? "sidebar-logo-menu" : "self-stretch -ml-6 xl:-ml-8",
+      )}
     >
       {/* Logo trigger */}
       <button
         onClick={() => { setOpen((o) => !o); setNotifExpanded(false); }}
         className={cn(
-          "h-full pl-6 xl:pl-8 pr-4 flex items-center cursor-pointer",
+          sidebar
+            ? "sidebar-logo-trigger"
+            : "h-full pl-6 xl:pl-8 pr-4 flex items-center cursor-pointer",
           wartime ? "bg-transparent" : "bg-background",
         )}
         aria-label="Open app menu"
       >
         {/* Crop the combined logo PNG to just the W mark (clip right side to hide wordmark) */}
-        <div className="overflow-hidden flex-shrink-0" style={{ width: 36, height: 24 }}>
-          <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto max-w-none" />
+        <div className={cn("sidebar-logo-crop", expanded && "sidebar-logo-crop-expanded")}>
+          <img src={whyhelloLogo} alt="Whyhello" />
         </div>
       </button>
 
@@ -726,6 +733,94 @@ function LogoMenu({ wartime }: { wartime: boolean }) {
   );
 }
 
+function MasterSidebar({ wartime }: { wartime: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const [location] = useLocation();
+  const { user } = useUser();
+  const isMaster = user?.primaryEmailAddress?.emailAddress === MASTER_EMAIL;
+  const moreItems = isMaster ? [...baseMoreItems, ...masterMoreItems] : baseMoreItems;
+  const isRouteActive = (href: string) =>
+    href === "/" ? location === "/" || location === "" : location.startsWith(href);
+
+  const navItems = [
+    { label: "Directory", href: "/", icon: Users },
+    { label: "Message Center", href: "/messages", icon: MessageSquare },
+    { label: "Playbooks", href: "/playbooks", icon: ClipboardList },
+    { label: "Multi-threading", href: "/multithreading", icon: Layers3 },
+  ];
+
+  const handleBlur = () => {
+    window.setTimeout(() => {
+      if (!document.querySelector(".master-sidebar:focus-within")) setExpanded(false);
+    }, 0);
+  };
+
+  return (
+    <aside
+      className={cn("master-sidebar hidden md:flex", expanded && "is-expanded", wartime && "is-wartime")}
+      aria-label="Whyhello primary navigation"
+      onMouseEnter={() => setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+      onFocusCapture={() => setExpanded(true)}
+      onBlurCapture={handleBlur}
+    >
+      <div className="master-sidebar-inner">
+        <div className="master-brand-row">
+          <LogoMenu wartime={wartime} sidebar expanded={expanded} />
+        </div>
+
+        <nav className="master-route-nav" aria-label="Primary">
+          {navItems.map(({ label, href, icon: Icon }) => {
+            const active = isRouteActive(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn("master-route", active && "is-active")}
+                aria-label={label}
+                title={!expanded ? label : undefined}
+              >
+                <Icon size={18} strokeWidth={active ? 2.3 : 1.85} />
+                <span>{label}</span>
+                {active && expanded && <i className="master-active-dot" />}
+              </Link>
+            );
+          })}
+
+          {moreItems.length > 0 && (
+            <>
+              <div className="master-more-header" aria-hidden={!expanded}>More</div>
+              {moreItems.map(({ label, href, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn("master-route master-subroute", isRouteActive(href) && "is-active")}
+                  aria-label={label}
+                  title={!expanded ? label : undefined}
+                >
+                  <Icon size={18} strokeWidth={1.85} />
+                  <span>{label}</span>
+                </Link>
+              ))}
+            </>
+          )}
+        </nav>
+
+        <div className="master-sidebar-bottom">
+          <Link href="/settings" className="master-route" aria-label="Settings" title={!expanded ? "Settings" : undefined}>
+            <Settings size={18} />
+            <span>Settings</span>
+          </Link>
+          <Link href="/profile" className="master-route" aria-label="Profile" title={!expanded ? "Profile" : undefined}>
+            <UserRound size={18} />
+            <span>Profile</span>
+          </Link>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 // ── Main Navbar ──────────────────────────────────────────────────────────────
 
 export function Navbar() {
@@ -755,45 +850,18 @@ export function Navbar() {
   function closeMobile() { setMobileOpen(false); }
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full border-b transition-colors duration-300",
+    <>
+      <MasterSidebar wartime={wartime} />
+      <header
+        className={cn(
+        "sticky top-0 z-40 w-full md:ml-11 md:w-[calc(100%-44px)] border-b transition-colors duration-300",
         wartime
           ? "border-[#e8c9b8] bg-[#F4E2D8]"
           : "border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-      )}
-    >
+        )}
+      >
       {/* ── Desktop bar (md+) — navigation left, utilities right ── */}
       <div className="hidden md:flex w-full px-4 lg:px-6 xl:px-8 h-16 items-center gap-3">
-
-        {/* Left: logo menu + nav */}
-        <div className="flex items-center gap-1 min-w-0">
-          <LogoMenu wartime={wartime} />
-          <nav className="flex items-center gap-0.5 xl:gap-1 text-sm font-medium">
-            {navItems.map((item) => {
-              const isActive = item.href === "/"
-                ? location === "/" || location === ""
-                : location.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "px-2 lg:px-3 xl:px-4 py-2 rounded-lg transition-colors whitespace-nowrap",
-                    wartime
-                      ? isActive ? "bg-[#E0BBA8] text-[#5C2E22]" : "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
-                      : isActive ? "bg-secondary/50 text-foreground" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-            <MoreDropdown wartime={wartime} />
-          </nav>
-        </div>
-
-        {/* Right: utilities */}
         <div className="ml-auto flex items-center gap-1.5 lg:gap-2 justify-end flex-shrink-0">
           <HQPill wartime={wartime} />
           <CreditTracker wartime={wartime} />
@@ -913,6 +981,7 @@ export function Navbar() {
           </div>
         </div>
       )}
-    </header>
+      </header>
+    </>
   );
 }

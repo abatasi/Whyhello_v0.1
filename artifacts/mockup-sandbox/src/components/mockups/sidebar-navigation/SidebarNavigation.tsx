@@ -130,7 +130,6 @@ function MasterSidebar() {
       <div className="wh-sidebar-inner">
         <div className="wh-brand-row">
           <button className="wh-brand-button" aria-label="Whyhello home"><LogoMark /></button>
-          {expanded && <span className="wh-collapse-hint">hover away to collapse</span>}
         </div>
         <nav className="wh-route-nav">
           {routes.map(({ label, icon: Icon, active }) => (
