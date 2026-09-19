@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 export const GREETING_LIBRARY = [
   "Why hello, Leandro 👋",
+  "Hell yeah, Leandro",
   "Why hello, stranger 👋",
   "Leandro returns!",
   "And we’re back.",
@@ -183,7 +184,7 @@ export default function Home() {
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-[1480px] px-6 py-8 md:px-10 md:py-9">
           <section className="mb-4 border-b border-border pb-4">
-            <h1 className="text-[18px] font-display font-bold leading-tight tracking-tight text-foreground">{greeting}</h1>
+            <h1 className="text-[24px] font-display font-bold leading-tight tracking-[-0.035em] text-foreground">{greeting}</h1>
           </section>
 
           <section className="mb-6">
