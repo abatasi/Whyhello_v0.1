@@ -45,9 +45,7 @@ const moreRoutes: { label: string; icon: IconType }[] = [
 function LogoMark() {
   return (
     <span className="wh-logo-mark" aria-label="Whyhello">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M3.5 5.5 7.3 18l4.7-8.7 4.7 8.7 3.8-12.5" />
-      </svg>
+      <img src="/__mockup/images/sidebar-navigation-whyhello-logo.png" alt="" />
     </span>
   );
 }
@@ -131,7 +129,7 @@ function MasterSidebar() {
     >
       <div className="wh-sidebar-inner">
         <div className="wh-brand-row">
-          <button className="wh-brand-button" aria-label="Whyhello home"><LogoMark /><span>whyhello</span></button>
+          <button className="wh-brand-button" aria-label="Whyhello home"><LogoMark /></button>
           {expanded && <span className="wh-collapse-hint">hover away to collapse</span>}
         </div>
         <nav className="wh-route-nav">
