@@ -34,6 +34,7 @@ import trackRouter from "./track";
 import { contactMessagesRouter } from "./messages";
 import { playbooksRouter } from "./playbooks";
 import { callsRouter, contactCallsRouter } from "./calls";
+import homeRouter from "./home";
 
 const router: IRouter = Router();
 
@@ -75,6 +76,7 @@ router.use("/hq", requireAuth, dnaRouter);
 router.use("/email-accounts", requireAuth, emailAccountsRouter);
 router.use("/bulk-upload", requireAuth, bulkUploadRouter);
 router.use("/meta", requireAuth, metaRouter);
+router.use("/home", requireAuth, homeRouter);
 // Reference data mutations require auth; reads are also behind auth (reference data for authenticated UI only)
 router.use("/industries", requireAuth, industriesRouter);
 router.use("/roles", requireAuth, rolesRouter);

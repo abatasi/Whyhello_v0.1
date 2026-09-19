@@ -5,7 +5,7 @@ import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
   Settings, ShieldCheck, Flame, ChevronDown, Clock,
   Factory, Briefcase, Upload, Gauge, List, Milestone, Menu,
-  MessageSquare, ClipboardList, Layers3,
+  MessageSquare, ClipboardList, Layers3, House,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUser, useClerk } from "@clerk/react";
@@ -746,7 +746,8 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
     href === "/" ? location === "/" || location === "" : location.startsWith(href);
 
   const navItems = [
-    { label: "Directory", href: "/", icon: Users },
+    { label: "Home", href: "/", icon: House },
+    { label: "Directory", href: "/directory", icon: Users },
     { label: "Message Center", href: "/messages", icon: MessageSquare },
     { label: "Playbooks", href: "/playbooks", icon: ClipboardList },
     { label: "Multi-threading", href: "/multithreading", icon: Layers3 },
@@ -840,7 +841,8 @@ export function Navbar() {
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const navItems = [
-    { label: "Directory",       href: "/",               icon: Users    },
+    { label: "Home",            href: "/",               icon: House    },
+    { label: "Directory",       href: "/directory",      icon: Users    },
     { label: "Message Center",  href: "/messages",       icon: Bell     },
     { label: "Playbooks",       href: "/playbooks",      icon: List     },
     { label: "Multi-threading", href: "/multithreading", icon: Zap      },

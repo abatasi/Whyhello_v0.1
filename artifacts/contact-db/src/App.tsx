@@ -16,6 +16,7 @@ import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 
 import Search from "@/pages/Search";
+import Home from "@/pages/Home";
 import Landing from "@/pages/Landing";
 import ContactProfile from "@/pages/ContactProfile";
 import CompanyProfile from "@/pages/CompanyProfile";
@@ -134,7 +135,7 @@ function HomeRoute() {
   if (!isLoaded) return <LoadingSpinner />;
   // Signed-out users see the public landing page — never redirect to /sign-in from home.
   if (!isSignedIn) return <Landing />;
-  return <Search />;
+  return <Home />;
 }
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -204,6 +205,7 @@ function Router() {
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/" component={HomeRoute} />
+      <Route path="/directory" component={() => <ProtectedRoute component={Search} />} />
       <Route path="/contacts/:id" component={ContactProfileRoute} />
       <Route path="/companies/:id" component={CompanyProfileRoute} />
       <Route path="/lists" component={() => <ProtectedRoute component={Lists} />} />

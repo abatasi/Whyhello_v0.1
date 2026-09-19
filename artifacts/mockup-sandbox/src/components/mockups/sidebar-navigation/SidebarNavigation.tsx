@@ -2,23 +2,19 @@ import "./_group.css";
 
 import { useState } from "react";
 import {
-  ArrowUpRight,
   BriefcaseBusiness,
   Building2,
   ChevronDown,
-  CircleHelp,
   ClipboardList,
   Command,
-  FileUp,
   Gauge,
-  Globe2,
+  Home,
   Layers3,
   ListFilter,
   Map,
   MessageSquare,
   Search,
   ShieldCheck,
-  Sparkles,
   Upload,
   Users,
   Zap,
@@ -27,7 +23,8 @@ import {
 type IconType = typeof Users;
 
 const routes: { label: string; icon: IconType; active?: boolean }[] = [
-  { label: "Directory", icon: Users, active: true },
+  { label: "Home", icon: Home, active: true },
+  { label: "Directory", icon: Users },
   { label: "Message Center", icon: MessageSquare },
   { label: "Playbooks", icon: ClipboardList },
   { label: "Multi-threading", icon: Layers3 },
@@ -49,13 +46,21 @@ function LogoMark() {
   );
 }
 
-function DirectoryPage() {
-  const people = [
-    ["Maya Chen", "VP Growth", "Vanta", "Warm"],
-    ["Jon Bell", "Head of RevOps", "Linear", "Active"],
-    ["Priya Nair", "Chief of Staff", "Ramp", "Warm"],
-    ["Owen Wright", "VP Sales", "Retool", "New"],
+function HomePage() {
+  const leads = [
+    { name: "Maya Chen", score: 96, email: "maya.chen@vanta.com", title: "VP Growth", company: "Vanta", location: "San Francisco, CA" },
+    { name: "Jon Bell", score: 88, email: "Access Email", title: "Head of RevOps", company: "Linear", location: "San Francisco, CA" },
+    { name: "Priya Nair", score: 73, email: "priya.nair@ramp.com", title: "Chief of Staff", company: "Ramp", location: "New York, NY" },
+    { name: "Owen Wright", score: 61, email: "Access Email", title: "VP Sales", company: "Retool", location: "New York, NY" },
+    { name: "Sofia Alvarez", score: 47, email: "sofia.alvarez@figma.com", title: "Director, Partnerships", company: "Figma", location: "London, UK" },
   ];
+
+  const scoreMeta = (score: number) => {
+    if (score >= 90) return { label: "Excellent", className: "excellent" };
+    if (score >= 75) return { label: "Strong", className: "strong" };
+    if (score >= 50) return { label: "Potential", className: "potential" };
+    return { label: "Low Fit", className: "low-fit" };
+  };
 
   return (
     <main className="wh-page">
@@ -75,37 +80,34 @@ function DirectoryPage() {
         </div>
       </div>
       <section className="wh-content">
-        <div className="wh-breadcrumb"><span>Workspace</span><b>/</b><strong>Directory</strong></div>
+        <div className="wh-breadcrumb"><span>Workspace</span><b>/</b><strong>Home</strong></div>
         <div className="wh-heading-row">
           <div>
             <p className="wh-eyebrow">Relationship intelligence</p>
-            <h1>Directory</h1>
-            <p className="wh-subtitle">Your team&apos;s living map of people and companies.</p>
+            <h1>Why hello, Leandro 👋</h1>
+            <p className="wh-subtitle">A focused view of the people and companies worth knowing next.</p>
           </div>
-          <button className="wh-primary"><Sparkles size={15} /> Enrich contacts</button>
-        </div>
-        <div className="wh-metrics">
-          <div><span>Total people</span><strong>18,492</strong><small>↑ 4.8% this month</small></div>
-          <div><span>Companies</span><strong>3,218</strong><small>↑ 126 added recently</small></div>
-          <div><span>Signals this week</span><strong>247</strong><small>↑ 18.2% vs last week</small></div>
         </div>
         <div className="wh-list-card">
           <div className="wh-list-head">
-            <div><h2>People</h2><span className="wh-count">18,492</span></div>
-            <div className="wh-list-actions"><button><ListFilter size={14} /> Filter</button><button><ArrowUpRight size={14} /> Export</button></div>
+            <div><h2>Top Leads for Leandro</h2></div>
           </div>
-          <div className="wh-table-head"><span>Person</span><span>Company</span><span>Relationship</span><span>Last signal</span></div>
-          {people.map(([name, role, company, signal]) => (
+          <div className="wh-table-head"><span>Name</span><span>Score</span><span>Email</span><span>Title</span><span>Company</span><span>Location</span></div>
+          {leads.map(({ name, score, email, title, company, location }) => {
+            const tier = scoreMeta(score);
+            return (
             <div className="wh-person-row" key={name}>
-              <div className="wh-person"><span className="wh-avatar">{name.split(" ").map((n) => n[0]).join("")}</span><div><strong>{name}</strong><small>{role}</small></div></div>
+              <div className="wh-person"><span className="wh-avatar">{name.split(" ").map((n) => n[0]).join("")}</span><strong>{name}</strong></div>
+              <span className={`wh-score wh-score-${tier.className}`}><b>{score}</b><small>{tier.label}</small></span>
+              <span className={`wh-email ${email === "Access Email" ? "is-access" : ""}`}>{email}</span>
+              <span className="wh-title">{title}</span>
               <span className="wh-company"><Building2 size={14} /> {company}</span>
-              <span className={`wh-status wh-status-${signal.toLowerCase()}`}><i /> {signal}</span>
-              <span className="wh-last">Today, 9:42 AM</span>
+              <span className="wh-location">{location}</span>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
-      <aside className="wh-help"><CircleHelp size={15} /> Need a hand?</aside>
     </main>
   );
 }
@@ -161,7 +163,7 @@ export function SidebarNavigation() {
   return (
     <div className="whyhello-nav-demo min-h-screen">
       <MasterSidebar />
-      <DirectoryPage />
+      <HomePage />
     </div>
   );
 }
