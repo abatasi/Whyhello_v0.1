@@ -137,8 +137,7 @@ function HomePage() {
         <section className="wh-activity-section">
           <div className="wh-section-heading">
             <div>
-              <h2>Your latest moves</h2>
-              <p>The work you’ve put into motion.</p>
+              <h2>Your latest moves 👋</h2>
             </div>
           </div>
           <div className="wh-activity-list">
