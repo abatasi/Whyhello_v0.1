@@ -134,15 +134,15 @@ function MetaScoreBadge({ metaScore }: { metaScore: ContactMetaScore }) {
   const { metaScore: score, personalBest, companyBest, industryBest, roleBest, signalCount } = metaScore;
 
   const colorClass =
+    score >= 90 ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
     score >= 75 ? "bg-violet-50 text-violet-700 border-violet-200" :
     score >= 50 ? "bg-blue-50 text-blue-700 border-blue-200" :
-    score >= 25 ? "bg-slate-50 text-slate-600 border-slate-200" :
                   "bg-slate-50 text-slate-400 border-slate-200";
 
   const tier =
+    score >= 90 ? "Excellent" :
     score >= 75 ? "Strong" :
-    score >= 50 ? "Good" :
-    score >= 25 ? "Fair" : "Weak";
+    score >= 50 ? "Moderate" : "Weak";
 
   return (
     <Tooltip>
@@ -152,7 +152,7 @@ function MetaScoreBadge({ metaScore }: { metaScore: ContactMetaScore }) {
           colorClass
         )}>
           <Activity className="h-2.5 w-2.5" />
-          {score}
+          {score} · {tier}
         </span>
       </TooltipTrigger>
       <TooltipContent

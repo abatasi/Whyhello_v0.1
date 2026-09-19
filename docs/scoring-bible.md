@@ -484,11 +484,10 @@ In future automation contexts (e.g. batch outreach, sequence enrollment), the Me
 
 | Meta Score | Grado | Interpretation |
 |---|---|---|
-| 75–100 | **Fuerte** | Rich, multi-category signal picture; high outreach readiness |
-| 50–74 | **Bueno** | Solid signal coverage in most categories; ready for outreach |
-| 25–49 | **Adecuado** | Partial coverage; some categories are weak or absent |
-| 1–24 | **Débil** | Thin signal picture; consider enrichment before outreach |
-| 0 | **Sin señales** | No qualifying signals in any core category |
+| 90–100 | **Excellent** | Exceptional fit; strong signals across the scoring dimensions; prioritize immediately |
+| 75–89 | **Strong** | Good fit with several positive indicators; worth active outreach |
+| 50–74 | **Moderate** | Some alignment, but important signals are missing or weaker; engage selectively |
+| 0–49 | **Weak** | Limited evidence of fit or relevance; low priority unless new signals emerge |
 | NULL | **No puntuado** | Scoring has not yet been run for this contact |
 
 ### 8.5 La Parábola del Retablo Incompleto
