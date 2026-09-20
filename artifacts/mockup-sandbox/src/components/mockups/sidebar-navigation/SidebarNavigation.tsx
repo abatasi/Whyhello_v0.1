@@ -122,7 +122,12 @@ function HomePage() {
     <main className="wh-page">
       <div className="wh-topbar">
         <div className="wh-topbar-spacer" />
+        <label className="wh-global-search">
+          <Search size={14} />
+          <input type="search" placeholder="Search contacts & companies" aria-label="Search contacts and companies" />
+        </label>
         <div className="wh-topbar-tools">
+          <span className="wh-credit"><Zap size={13} /> 2,840 <em>credits</em></span>
           <button className="wh-hq-pill" aria-label="HQ mode">
             <Gauge size={14} />
             <span>HQ</span>
@@ -131,8 +136,6 @@ function HomePage() {
             <span>Peacetime</span>
             <ChevronDown size={13} />
           </button>
-          <span className="wh-credit"><Zap size={13} /> 2,840 <em>credits</em></span>
-          <button className="wh-icon-button" aria-label="Global search"><Search size={18} /></button>
         </div>
       </div>
       <section className="wh-content">

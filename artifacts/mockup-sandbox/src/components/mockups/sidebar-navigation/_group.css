@@ -50,11 +50,15 @@
 .is-expanded .wh-route kbd { opacity:1; }
 
 .wh-page { min-height:100vh; background:var(--wh-canvas); }
-.wh-topbar { height:60px; display:flex; align-items:center; justify-content:space-between; padding:0 24px 0 68px; background:rgba(255,255,255,.92); border-bottom:1px solid var(--wh-line); }
-.wh-topbar-spacer { flex:1; }
-.wh-topbar-tools { display:flex; align-items:center; gap:14px; }
+.wh-topbar { height:44px; display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,420px) minmax(0,1fr); align-items:center; gap:18px; padding:0 18px 0 62px; background:rgba(255,255,255,.94); border-bottom:1px solid var(--wh-line); }
+.wh-topbar-spacer { min-width:0; }
+.wh-topbar-tools { justify-self:end; display:flex; align-items:center; gap:12px; }
+.wh-global-search { height:28px; display:flex; align-items:center; gap:8px; padding:0 10px; color:#8a959c; background:#f7f9fa; border:1px solid #e4e8eb; border-radius:7px; }
+.wh-global-search:focus-within { color:#6155d9; background:#fff; border-color:#aaa4ef; box-shadow:0 0 0 2px rgba(97,85,217,.08); }
+.wh-global-search input { width:100%; min-width:0; border:0; outline:0; color:#35414a; background:transparent; font:500 11px "DM Sans", sans-serif; }
+.wh-global-search input::placeholder { color:#96a0a6; opacity:1; }
 .wh-hq-pill, .wh-icon-button { border:1px solid var(--wh-line); background:#fff; color:#59656d; cursor:pointer; }
-.wh-hq-pill { height:31px; padding:0 10px; display:flex; align-items:center; gap:6px; border-radius:7px; font-size:11px; font-weight:600; }
+.wh-hq-pill { height:28px; padding:0 9px; display:flex; align-items:center; gap:6px; border-radius:7px; font-size:10px; font-weight:600; }
 .wh-hq-pill i { width:1px; height:14px; background:var(--wh-line); margin:0 2px; }
 .wh-credit { display:flex; align-items:center; gap:5px; color:#6f5baf; font-size:11px; font-weight:700; }
 .wh-credit em { color:#99a1a6; font-style:normal; font-weight:500; }
