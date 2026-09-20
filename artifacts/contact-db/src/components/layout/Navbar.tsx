@@ -7,7 +7,6 @@ import {
   Factory, Briefcase, Upload, Gauge, List, Milestone, Menu,
   MessageSquare, ClipboardList, Layers3, House,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { useUser, useClerk } from "@clerk/react";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
 import { cn, getInitials } from "@/lib/utils";
@@ -165,44 +164,28 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
     closeSearch();
   }
 
-  if (!open) {
-    return (
-      <Button
-        variant="ghost"
-        size="icon"
-        className={cn(
-          "h-8 w-8 rounded-[7px] border border-border bg-white text-[#59656D] hover:bg-[#F4F6F7]",
-          wartime && "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]",
-        )}
-        onClick={() => setOpen(true)}
-        aria-label="Search"
-      >
-        <Search className="h-5 w-5" />
-      </Button>
-    );
-  }
-
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative w-full">
       <div className={cn(
-        "flex items-center gap-2 border rounded-full px-3 py-1.5 w-72 transition-all",
+        "flex h-7 w-full items-center gap-2 rounded-[7px] border px-2.5 transition-colors",
         wartime
-          ? "bg-[#EDD4C6] border-[#DDB99E] text-[#5C2E22]"
-          : "bg-secondary/50 border-border",
+          ? "border-[#DDB99E] bg-[#EDD4C6] text-[#5C2E22]"
+          : "border-[#E4E8EB] bg-[#F7F9FA] focus-within:border-[#AAA4EF] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#6155D9]/[0.08]",
       )}>
-        <Search className={cn("h-4 w-4 flex-shrink-0", wartime ? "text-[#A0624A]" : "text-muted-foreground")} />
+        <Search className={cn("h-3.5 w-3.5 flex-shrink-0", wartime ? "text-[#A0624A]" : "text-[#8A959C]")} />
         <input
           ref={inputRef}
           type="text"
-          placeholder="Search contacts & companies…"
+          placeholder="Search contacts & companies"
           value={query}
+          onFocus={() => setOpen(true)}
           onChange={(e) => setQuery(e.target.value)}
           className={cn(
-            "flex-1 bg-transparent text-sm outline-none min-w-0",
-            wartime ? "placeholder:text-[#A0624A]/70 text-[#5C2E22]" : "placeholder:text-muted-foreground",
+            "min-w-0 flex-1 bg-transparent text-[11px] font-medium outline-none",
+            wartime ? "placeholder:text-[#A0624A]/70 text-[#5C2E22]" : "text-[#35414A] placeholder:text-[#96A0A6]",
           )}
         />
-        {query ? (
+        {query && (
           <button
             onClick={() => setQuery("")}
             className={cn(
@@ -210,17 +193,6 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
               wartime ? "text-[#A0624A] hover:text-[#5C2E22]" : "text-muted-foreground hover:text-foreground",
             )}
             aria-label="Clear"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        ) : (
-          <button
-            onClick={closeSearch}
-            className={cn(
-              "transition-colors flex-shrink-0",
-              wartime ? "text-[#A0624A] hover:text-[#5C2E22]" : "text-muted-foreground hover:text-foreground",
-            )}
-            aria-label="Close search"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -472,7 +444,7 @@ function HQPill({ wartime }: { wartime: boolean }) {
       <span
         title="HQ — messaging, scoring & calibration"
         className={cn(
-          "flex h-[31px] items-center gap-1.5 rounded-[7px] border px-2.5 text-[11px] font-semibold transition-all select-none cursor-pointer",
+          "flex h-7 items-center gap-1.5 rounded-[7px] border px-2.5 text-[10px] font-semibold transition-all select-none cursor-pointer",
           wartime
             ? isActive
               ? "bg-[#7C3E2A] text-[#F4E2D8] border-[#7C3E2A]"
@@ -870,11 +842,12 @@ export function Navbar() {
         )}
       >
       {/* ── Desktop bar (md+) — navigation left, utilities right ── */}
-      <div className="hidden h-[60px] w-full items-center gap-3 px-4 md:flex lg:px-6">
-        <div className="ml-auto flex flex-shrink-0 items-center justify-end gap-3.5">
-          <HQPill wartime={wartime} />
+      <div className="hidden h-11 w-full grid-cols-[minmax(0,1fr)_minmax(280px,420px)_minmax(0,1fr)] items-center gap-[18px] px-[18px] pl-[18px] md:grid">
+        <div />
+        <GlobalSearch wartime={wartime} />
+        <div className="flex min-w-0 items-center justify-end gap-3">
           <CreditTracker wartime={wartime} />
-          <GlobalSearch wartime={wartime} />
+          <HQPill wartime={wartime} />
         </div>
       </div>
 
