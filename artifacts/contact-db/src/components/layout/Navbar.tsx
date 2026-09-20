@@ -43,14 +43,14 @@ function CreditTracker({ wartime }: { wartime: boolean }) {
     tier === "enterprise" ? "Enterprise" : tier === "professional" ? "Pro" : "Free";
 
   const colorClass = wartime
-    ? "text-[#7C3E2A] bg-[#EDD4C6] border-[#DDB99E]"
+    ? "text-[#7C3E2A]"
     : isUnlimited
-    ? "text-primary bg-primary/10 border-primary/20"
+    ? "text-[#6F5BAF]"
     : pct >= 0.9
-    ? "text-destructive bg-destructive/10 border-destructive/20"
+    ? "text-destructive"
     : pct >= 0.7
-    ? "text-amber-600 bg-amber-50 border-amber-200"
-    : "text-emerald-700 bg-emerald-50 border-emerald-200";
+    ? "text-amber-600"
+    : "text-[#6F5BAF]";
 
   const usageText = isUnlimited
     ? "∞"
@@ -64,13 +64,13 @@ function CreditTracker({ wartime }: { wartime: boolean }) {
     <div
       title={title}
       className={cn(
-        "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold select-none",
+        "flex items-center gap-1 px-1.5 py-1 text-[11px] font-bold select-none",
         colorClass,
       )}
     >
       <Zap className="h-3 w-3 flex-shrink-0" />
       <span>{usageText}</span>
-      <span className="hidden sm:inline opacity-60 font-normal">· {tierLabel}</span>
+      <span className="hidden sm:inline text-[#99A1A6] font-normal">{tierLabel === "Free" ? "credits" : `· ${tierLabel}`}</span>
     </div>
   );
 }
@@ -171,7 +171,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
         variant="ghost"
         size="icon"
         className={cn(
-          "rounded-full",
+          "h-8 w-8 rounded-[7px] border border-border bg-white text-[#59656D] hover:bg-[#F4F6F7]",
           wartime && "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]",
         )}
         onClick={() => setOpen(true)}
@@ -472,7 +472,7 @@ function HQPill({ wartime }: { wartime: boolean }) {
       <span
         title="HQ — messaging, scoring & calibration"
         className={cn(
-          "flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all select-none border cursor-pointer",
+          "flex h-[31px] items-center gap-1.5 rounded-[7px] border px-2.5 text-[11px] font-semibold transition-all select-none cursor-pointer",
           wartime
             ? isActive
               ? "bg-[#7C3E2A] text-[#F4E2D8] border-[#7C3E2A]"
@@ -870,8 +870,8 @@ export function Navbar() {
         )}
       >
       {/* ── Desktop bar (md+) — navigation left, utilities right ── */}
-      <div className="hidden md:flex w-full px-4 lg:px-6 xl:px-8 h-16 items-center gap-3">
-        <div className="ml-auto flex items-center gap-1.5 lg:gap-2 justify-end flex-shrink-0">
+      <div className="hidden h-[60px] w-full items-center gap-3 px-4 md:flex lg:px-6">
+        <div className="ml-auto flex flex-shrink-0 items-center justify-end gap-3.5">
           <HQPill wartime={wartime} />
           <CreditTracker wartime={wartime} />
           <GlobalSearch wartime={wartime} />

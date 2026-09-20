@@ -213,16 +213,16 @@ export default function Home() {
 
   return (
     <Shell>
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-[1480px] px-6 py-8 md:px-10 md:py-9">
-          <section className="mb-4 border-b border-border pb-4">
-            <h1 className="text-[24px] font-display font-bold leading-tight tracking-[-0.035em] text-foreground">{greeting}</h1>
+      <div className="home-approved-design flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-[1240px] px-6 pb-[70px] pt-8 md:px-[42px]">
+          <section className="mb-6 border-b border-border pb-[18px]">
+            <h1 className="text-[24px] font-bold leading-[1.2] tracking-[-0.035em] text-[#17212B]">{greeting}</h1>
           </section>
 
           <section className="mb-6">
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your latest moves 🏄</h2>
+                <h2 className="text-[14px] font-bold tracking-tight text-[#17212B]">Your latest moves 🏄</h2>
               </div>
               {activityLoading ? <ActivitySkeleton /> : activityError ? (
                 <div className="px-5 py-6 text-sm text-muted-foreground">Recent activity is unavailable right now.</div>
@@ -261,7 +261,7 @@ export default function Home() {
           <section className="mb-6">
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your next conversation</h2>
+                <h2 className="text-[14px] font-bold tracking-tight text-[#17212B]">Your next conversation</h2>
               </div>
               {isError ? (
                 <div className="px-6 py-12 text-center">
@@ -297,7 +297,7 @@ export default function Home() {
           <section>
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your next buyer</h2>
+                <h2 className="text-[14px] font-bold tracking-tight text-[#17212B]">Your next buyer</h2>
               </div>
               {buyersError ? (
                 <div className="px-6 py-12 text-center">
