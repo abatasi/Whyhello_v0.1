@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   useListOutreachJobs,
+  getListOutreachJobsQueryKey,
   useDeleteOutreachJob,
   useUpdateOutreachJob,
 } from "@workspace/api-client-react";
@@ -43,6 +44,101 @@ type Job = {
   createdAt: string;
   updatedAt: string;
 };
+
+function battlecardBuffer(result: string): ArrayBuffer {
+  const binary = atob(result);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+function BattlecardPreviewDialog({
+  job,
+  onClose,
+  onDownload,
+}: {
+  job: Job;
+  onClose: () => void;
+  onDownload: () => void;
+}) {
+  const [slides, setSlides] = useState<string[]>([]);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function renderPreview() {
+      try {
+        const { pptxToHtml } = await import("@jvmr/pptx-to-html");
+        const html = await pptxToHtml(battlecardBuffer(job.result ?? ""), {
+          width: 960,
+          height: 720,
+          scaleToFit: true,
+          letterbox: true,
+        });
+        if (!cancelled) setSlides(html);
+      } catch (error) {
+        console.error("Battlecard preview error:", error);
+        if (!cancelled) setPreviewError("This battlecard could not be previewed. You can still download the PPTX.");
+      }
+    }
+
+    void renderPreview();
+    return () => { cancelled = true; };
+  }, [job.result]);
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-h-[92vh] max-w-6xl flex-col overflow-hidden p-0">
+        <DialogHeader className="flex-shrink-0 border-b border-border px-6 py-4">
+          <div className="flex items-center justify-between gap-4 pr-8">
+            <div className="min-w-0">
+              <DialogTitle className="truncate text-base" data-testid={`text-battlecard-title-${job.id}`}>
+                {job.title}
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-xs">Battlecard preview</DialogDescription>
+            </div>
+            <Button
+              size="sm"
+              className="flex-shrink-0 gap-2"
+              onClick={onDownload}
+              data-testid={`button-download-battlecard-${job.id}`}
+            >
+              <Download className="h-4 w-4" />
+              Download PPTX
+            </Button>
+          </div>
+        </DialogHeader>
+
+        <div className="min-h-0 flex-1 overflow-auto bg-slate-100 p-5">
+          {previewError ? (
+            <div className="mx-auto max-w-lg rounded-lg border border-amber-200 bg-amber-50 p-5 text-center text-sm text-amber-900" data-testid={`status-battlecard-preview-error-${job.id}`}>
+              {previewError}
+            </div>
+          ) : slides.length === 0 ? (
+            <div className="flex min-h-[420px] items-center justify-center gap-2 text-sm text-muted-foreground" data-testid={`status-battlecard-preview-loading-${job.id}`}>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Preparing preview…
+            </div>
+          ) : (
+            <div className="mx-auto flex max-w-[960px] flex-col gap-5" data-testid={`preview-battlecard-${job.id}`}>
+              {slides.map((slide, index) => (
+                <iframe
+                  key={index}
+                  title={`${job.title} — slide ${index + 1}`}
+                  srcDoc={`<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}body>div{transform-origin:top left}</style></head><body>${slide}</body></html>`}
+                  sandbox=""
+                  className="aspect-[4/3] w-full rounded-md border border-slate-300 bg-white shadow-lg"
+                  data-testid={`preview-battlecard-slide-${job.id}-${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // ── Message structure types ────────────────────────────────────────────────
 
@@ -567,6 +663,7 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
   const [viewTab, setViewTab] = useState<ViewTab>("result");
   const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [previewingBattlecard, setPreviewingBattlecard] = useState(false);
 
   const deleteMutation = useDeleteOutreachJob();
   const renameMutation = useUpdateOutreachJob();
@@ -596,11 +693,10 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
   }
 
   function downloadBattlecard() {
-    const b64 = job.result ?? "";
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+    const blob = new Blob(
+      [battlecardBuffer(job.result ?? "")],
+      { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" },
+    );
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -620,12 +716,17 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
   const isBattlecard = job.type === "battlecard";
   const hasStructure = isCompleted && !isBattlecard && !!parseStructure(job.result ?? "");
 
-  const primaryLabel = isBattlecard ? "Download PPTX" : job.type === "intro_email" ? "View Email" : "View";
+  const primaryLabel = isBattlecard ? "Preview" : job.type === "intro_email" ? "View Email" : "View";
 
   return (
     <>
       <div
-        onClick={() => isCompleted && !isBattlecard && openViewer("result")}
+        onClick={() => {
+          if (!isCompleted) return;
+          if (isBattlecard) setPreviewingBattlecard(true);
+          else openViewer("result");
+        }}
+        data-testid={`card-outreach-job-${job.id}`}
         className={cn(
           "rounded-xl border px-3.5 py-3 transition-all",
           isGenerating && "border-blue-200/70 bg-gradient-to-r from-blue-50/40 to-indigo-50/20",
@@ -678,9 +779,10 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
                     size="sm"
                     variant="outline"
                     className="h-7 gap-1.5 text-xs font-semibold px-2.5"
-                    onClick={() => isBattlecard ? downloadBattlecard() : openViewer("result")}
+                    onClick={() => isBattlecard ? setPreviewingBattlecard(true) : openViewer("result")}
+                    data-testid={`button-preview-outreach-job-${job.id}`}
                   >
-                    {isBattlecard ? <Download className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    <Eye className="h-3 w-3" />
                     {primaryLabel}
                   </Button>
 
@@ -706,26 +808,32 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48 text-xs">
-                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={shareJob}>
-                        <Share2 className="h-3.5 w-3.5" />
-                        Share
-                      </DropdownMenuItem>
+                      {!isBattlecard && (
+                        <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={shareJob}>
+                          <Share2 className="h-3.5 w-3.5" />
+                          Share
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => setRenaming(true)}>
                         <PenLine className="h-3.5 w-3.5" />
                         Rename
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={downloadFile}>
+                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={isBattlecard ? downloadBattlecard : downloadFile}>
                         <Download className="h-3.5 w-3.5" />
-                        Download
+                        {isBattlecard ? "Download PPTX" : "Download"}
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("structure")}>
-                        <Layers className="h-3.5 w-3.5" />
-                        Message Structure
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("prompt")}>
-                        <BookOpen className="h-3.5 w-3.5" />
-                        View prompt &amp; sources
-                      </DropdownMenuItem>
+                      {!isBattlecard && (
+                        <>
+                          <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("structure")}>
+                            <Layers className="h-3.5 w-3.5" />
+                            Message Structure
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2 text-xs cursor-pointer" onClick={() => openViewer("prompt")}>
+                            <BookOpen className="h-3.5 w-3.5" />
+                            View prompt &amp; sources
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="gap-2 text-xs cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50"
@@ -754,6 +862,13 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
       </div>
 
       {viewing && <JobViewerModal job={job} variants={variants} initialTab={viewTab} onClose={() => setViewing(false)} />}
+      {previewingBattlecard && (
+        <BattlecardPreviewDialog
+          job={job}
+          onClose={() => setPreviewingBattlecard(false)}
+          onDownload={downloadBattlecard}
+        />
+      )}
       {renaming && <RenameDialog job={job} onClose={() => setRenaming(false)} onSave={handleRename} />}
 
       {confirmDelete && (
@@ -788,6 +903,7 @@ export function OutreachJobsList({ contactId, refetchTrigger }: { contactId: num
 
   const { data: jobs = [], refetch } = useListOutreachJobs(contactId, {
     query: {
+      queryKey: getListOutreachJobsQueryKey(contactId),
       refetchInterval: (query) => {
         const data = query.state.data as Job[] | undefined;
         const hasGenerating = data?.some(j => j.status === "generating");
