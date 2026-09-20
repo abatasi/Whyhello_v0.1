@@ -59,6 +59,12 @@ function HomePage() {
     { name: "Owen Wright", score: 61, email: "Access Email", title: "VP Sales", company: "Retool", location: "New York, NY" },
     { name: "Sofia Alvarez", score: 47, email: "sofia.alvarez@figma.com", title: "Director, Partnerships", company: "Figma", location: "London, UK" },
   ];
+  const buyers = [
+    { name: "Vanta", score: 100, industry: "Cybersecurity", market: "Enterprise SaaS", contacts: 8, location: "San Francisco, CA" },
+    { name: "Linear", score: 100, industry: "Software", market: "Growth-stage tech", contacts: 5, location: "San Francisco, CA" },
+    { name: "Ramp", score: 67, industry: "Financial Services", market: "Fintech leaders", contacts: 12, location: "New York, NY" },
+    { name: "Retool", score: 67, industry: "Software", market: "Growth-stage tech", contacts: 6, location: "San Francisco, CA" },
+  ];
 
   const scoreMeta = (score: number) => {
     if (score >= 90) return { label: "Excellent", className: "excellent" };
@@ -157,7 +163,7 @@ function HomePage() {
         </section>
         <div className="wh-list-card">
           <div className="wh-list-head">
-            <div><h2>Your next leads</h2></div>
+            <div><h2>Your next conversation</h2></div>
           </div>
           <div className="wh-table-head"><span>Name</span><span>Score</span><span>Email</span><span>Title</span><span>Company</span><span>Location</span></div>
           {leads.map(({ name, score, email, title, company, location }) => {
@@ -171,6 +177,25 @@ function HomePage() {
               <span className="wh-company"><Building2 size={14} /> {company}</span>
               <span className="wh-location">{location}</span>
             </div>
+            );
+          })}
+        </div>
+        <div className="wh-list-card wh-buyer-card">
+          <div className="wh-list-head">
+            <div><h2>Your next buyer</h2></div>
+          </div>
+          <div className="wh-table-head wh-buyer-grid"><span>Company</span><span>HQ fit</span><span>Industry</span><span>Target market</span><span>Known contacts</span><span>Location</span></div>
+          {buyers.map(({ name, score, industry, market, contacts, location }) => {
+            const tier = scoreMeta(score);
+            return (
+              <div className="wh-person-row wh-buyer-grid" key={name}>
+                <div className="wh-person"><span className="wh-avatar wh-company-avatar"><Building2 size={14} /></span><strong>{name}</strong></div>
+                <span className={`wh-score wh-score-${tier.className}`}><b>{score}</b><small>{tier.label}</small></span>
+                <span className="wh-title">{industry}</span>
+                <span className="wh-title">{market} · {score === 100 ? "3/3" : "2/3"} criteria</span>
+                <span className="wh-title">{contacts}</span>
+                <span className="wh-location">{location}</span>
+              </div>
             );
           })}
         </div>

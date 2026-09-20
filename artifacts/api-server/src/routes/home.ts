@@ -10,7 +10,7 @@ import {
   sequencesTable,
 } from "@workspace/db/schema";
 import { getAuth } from "@clerk/express";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -40,6 +40,90 @@ function scoreCategory(score: number): string {
   if (score >= 75) return "Strong";
   if (score >= 50) return "Potential";
   return "Low Fit";
+}
+
+type TargetMarket = {
+  name: string;
+  industries: string[];
+  companySizes: string[];
+  locations: string[];
+};
+
+function cleanList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+}
+
+function targetMarketsFromProfile(data: string): TargetMarket[] {
+  try {
+    const profile = JSON.parse(data) as Record<string, unknown>;
+    const configured = Array.isArray(profile.targetMarkets)
+      ? profile.targetMarkets.flatMap((item, index) => {
+          if (!item || typeof item !== "object") return [];
+          const market = item as Record<string, unknown>;
+          return [{
+            name: typeof market.name === "string" && market.name.trim() ? market.name.trim() : `Target market ${index + 1}`,
+            industries: cleanList(market.industries),
+            companySizes: cleanList(market.companySizes),
+            locations: cleanList(market.locations),
+          }];
+        })
+      : [];
+    const active = configured.filter((market) =>
+      market.industries.length > 0 || market.companySizes.length > 0 || market.locations.length > 0,
+    );
+    if (active.length > 0) return active;
+
+    const legacy = profile.targetMarket;
+    if (!legacy || typeof legacy !== "object") return [];
+    const market = legacy as Record<string, unknown>;
+    const fallback = {
+      name: "Default target market",
+      industries: cleanList(market.industries),
+      companySizes: cleanList(market.companySizes),
+      locations: cleanList(market.locations),
+    };
+    return fallback.industries.length > 0 || fallback.companySizes.length > 0 || fallback.locations.length > 0
+      ? [fallback]
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalized(value: string | null): string {
+  return (value ?? "").trim().toLocaleLowerCase();
+}
+
+function matchesAny(value: string | null, options: string[]): boolean {
+  const candidate = normalized(value);
+  return candidate.length > 0 && options.some((option) => normalized(option) === candidate);
+}
+
+function targetMarketScoreSql(market: TargetMarket): SQL<number> {
+  const dimensions: SQL<number>[] = [];
+  if (market.industries.length > 0) {
+    dimensions.push(sql<number>`case when ${inArray(
+      sql<string>`lower(trim(coalesce(${companiesTable.industry}, '')))`,
+      market.industries.map((value) => normalized(value)),
+    )} then 1 else 0 end`);
+  }
+  if (market.companySizes.length > 0) {
+    dimensions.push(sql<number>`case when ${inArray(
+      sql<string>`lower(trim(coalesce(${companiesTable.size}, '')))`,
+      market.companySizes.map((value) => normalized(value)),
+    )} then 1 else 0 end`);
+  }
+  if (market.locations.length > 0) {
+    const normalizedLocations = market.locations.map((value) => normalized(value));
+    dimensions.push(sql<number>`case when ${
+      inArray(sql<string>`lower(trim(coalesce(${companiesTable.location}, '')))`, normalizedLocations)
+    } or ${
+      inArray(sql<string>`lower(trim(coalesce(${companiesTable.country}, '')))`, normalizedLocations)
+    } then 1 else 0 end`);
+  }
+  return sql<number>`round(((${sql.join(dimensions, sql` + `)})::numeric / ${dimensions.length}) * 100)`;
 }
 
 router.get("/top-leads", async (req, res) => {
@@ -78,6 +162,90 @@ router.get("/top-leads", async (req, res) => {
   } catch (error) {
     console.error("Top leads GET error:", error);
     res.status(500).json({ error: "Failed to load top leads" });
+  }
+});
+
+router.get("/top-buyers", async (req, res) => {
+  const userId = currentUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  try {
+    const requestedLimit = Number.parseInt(String(req.query.limit ?? "10"), 10);
+    const limit = Number.isFinite(requestedLimit) ? Math.min(10, Math.max(1, requestedLimit)) : 10;
+    const [dnaProfile] = await db
+      .select({ data: dnaProfilesTable.data })
+      .from(dnaProfilesTable)
+      .where(eq(dnaProfilesTable.userId, userId))
+      .limit(1);
+    const targetMarkets = dnaProfile ? targetMarketsFromProfile(dnaProfile.data) : [];
+    if (targetMarkets.length === 0) {
+      res.json([]);
+      return;
+    }
+
+    const marketScores = targetMarkets.map(targetMarketScoreSql);
+    const fitScore = marketScores.length === 1
+      ? marketScores[0]
+      : sql<number>`greatest(${sql.join(marketScores, sql`, `)})`;
+    const matchedContacts = sql<number>`count(${contactsTable.id})`.mapWith(Number);
+    const rows = await db
+      .select({
+        id: companiesTable.id,
+        name: companiesTable.name,
+        industry: companiesTable.industry,
+        size: companiesTable.size,
+        location: companiesTable.location,
+        country: companiesTable.country,
+        score: fitScore.mapWith(Number),
+        matchedContacts,
+      })
+      .from(companiesTable)
+      .leftJoin(contactsTable, eq(contactsTable.companyId, companiesTable.id))
+      .groupBy(
+        companiesTable.id,
+        companiesTable.name,
+        companiesTable.industry,
+        companiesTable.size,
+        companiesTable.location,
+        companiesTable.country,
+      )
+      .having(sql`${fitScore} > 0`)
+      .orderBy(desc(fitScore), desc(matchedContacts), desc(companiesTable.id))
+      .limit(limit);
+
+    const ranked = rows.map((row) => {
+      const best = targetMarkets.reduce(
+        (current, market) => {
+          const checks = [
+            market.industries.length > 0 ? matchesAny(row.industry, market.industries) : null,
+            market.companySizes.length > 0 ? matchesAny(row.size, market.companySizes) : null,
+            market.locations.length > 0
+              ? matchesAny(row.location, market.locations) || matchesAny(row.country, market.locations)
+              : null,
+          ].filter((match): match is boolean => match !== null);
+          const matchedDimensions = checks.filter(Boolean).length;
+          const configuredDimensions = checks.length;
+          const score = configuredDimensions > 0
+            ? Math.round((matchedDimensions / configuredDimensions) * 100)
+            : 0;
+          return score > current.score
+            ? { score, market: market.name, matchedDimensions, configuredDimensions }
+            : current;
+        },
+        { score: 0, market: "", matchedDimensions: 0, configuredDimensions: 0 },
+      );
+      return {
+        ...row,
+        scoreCategory: scoreCategory(row.score),
+        matchedTargetMarket: best.market,
+        matchedDimensions: best.matchedDimensions,
+        configuredDimensions: best.configuredDimensions,
+      };
+    });
+
+    res.json(ranked);
+  } catch (error) {
+    console.error("Top buyers GET error:", error);
+    res.status(500).json({ error: "Failed to load top buyers" });
   }
 });
 

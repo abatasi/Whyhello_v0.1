@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useUser } from "@clerk/react";
 import { Building2, ClipboardList, Send, SlidersHorizontal, Target, UserCheck } from "lucide-react";
-import { useBatchRevealStatuses, useHomeActivity, useTopLeads } from "@workspace/api-client-react";
-import type { HomeActivity, TopLead } from "@workspace/api-client-react";
+import { useBatchRevealStatuses, useHomeActivity, useTopBuyers, useTopLeads } from "@workspace/api-client-react";
+import type { HomeActivity, TopBuyer, TopLead } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
 
@@ -110,11 +110,42 @@ function LeadRow({ lead, revealed }: { lead: TopLead; revealed: boolean }) {
   );
 }
 
-function SkeletonRows() {
+function BuyerRow({ buyer }: { buyer: TopBuyer }) {
+  const buyerLocation = [buyer.location, buyer.country].filter(Boolean).join(", ") || "—";
+  return (
+    <tr className="border-b border-border/70 last:border-0 hover:bg-secondary/20 transition-colors">
+      <td className="px-5 py-4">
+        <Link href={`/companies/${buyer.id}`} className="group flex min-w-[180px] items-center gap-3">
+          <span className="grid h-[29px] w-[29px] shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600">
+            <Building2 className="h-3.5 w-3.5" />
+          </span>
+          <span className="min-w-0 truncate text-[11px] font-semibold text-foreground transition-colors group-hover:text-primary">
+            {buyer.name}
+          </span>
+        </Link>
+      </td>
+      <td className="px-5 py-4">
+        <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold whitespace-nowrap", scoreBadgeClass(buyer.score))}>
+          {buyer.score} · {buyer.scoreCategory}
+        </span>
+      </td>
+      <td className="px-5 py-4 text-[11px] text-muted-foreground">{buyer.industry || "—"}</td>
+      <td className="px-5 py-4 text-[11px] text-muted-foreground">
+        {buyer.matchedTargetMarket
+          ? `${buyer.matchedTargetMarket} · ${buyer.matchedDimensions}/${buyer.configuredDimensions} criteria`
+          : "—"}
+      </td>
+      <td className="px-5 py-4 text-[11px] text-muted-foreground">{buyer.matchedContacts}</td>
+      <td className="px-5 py-4 text-[11px] text-muted-foreground whitespace-nowrap">{buyerLocation}</td>
+    </tr>
+  );
+}
+
+function SkeletonRows({ columns = 6 }: { columns?: number }) {
   return (
     <>{Array.from({ length: 6 }).map((_, index) => (
       <tr key={index} className="border-b border-border/70">
-        {Array.from({ length: 6 }).map((__, cell) => (
+        {Array.from({ length: columns }).map((__, cell) => (
           <td key={cell} className="px-5 py-5"><div className={cn("h-4 animate-pulse rounded bg-muted", cell === 0 ? "w-36" : "w-24")} /></td>
         ))}
       </tr>
@@ -174,6 +205,7 @@ export default function Home() {
   const choices = greetingForHour(new Date().getHours());
   const greeting = choices[greetingIndex % choices.length].replaceAll("Leandro", firstName);
   const { data: leads, isLoading, isError, error } = useTopLeads();
+  const { data: buyers, isLoading: buyersLoading, isError: buyersError, error: buyersErrorDetail } = useTopBuyers();
   const { data: activity, isLoading: activityLoading, isError: activityError } = useHomeActivity();
   const leadIds = (leads ?? []).map((lead) => lead.id);
   const { data: revealStatuses } = useBatchRevealStatuses(leadIds);
@@ -226,10 +258,10 @@ export default function Home() {
             </div>
           </section>
 
-          <section>
+          <section className="mb-6">
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your next leads</h2>
+                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your next conversation</h2>
               </div>
               {isError ? (
                 <div className="px-6 py-12 text-center">
@@ -251,8 +283,44 @@ export default function Home() {
                         ? leads.map((lead) => <LeadRow key={lead.id} lead={lead} revealed={revealedIds.has(lead.id)} />)
                         : (
                           <tr><td colSpan={6} className="px-6 py-14 text-center">
-                            <p className="font-semibold text-foreground">No scored leads yet.</p>
-                            <p className="mt-1 text-sm text-muted-foreground">Score contacts in HQ to start building your top leads.</p>
+                             <p className="font-semibold text-foreground">No scored conversations yet.</p>
+                             <p className="mt-1 text-sm text-muted-foreground">Score contacts in HQ to start building your next conversations.</p>
+                          </td></tr>
+                        )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section>
+            <div className="overflow-hidden rounded-[10px] border border-border bg-card">
+              <div className="flex min-h-[56px] items-center border-b border-border px-5">
+                <h2 className="text-[14px] font-display font-bold tracking-tight text-foreground">Your next buyer</h2>
+              </div>
+              {buyersError ? (
+                <div className="px-6 py-12 text-center">
+                  <p className="font-semibold text-foreground">Top buyers are unavailable right now.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{buyersErrorDetail instanceof Error ? buyersErrorDetail.message : "Please try again shortly."}</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[900px] text-left">
+                    <thead className="border-b border-border bg-muted/50">
+                      <tr>
+                        {["Company", "HQ fit", "Industry", "Target market", "Known contacts", "Location"].map((heading) => (
+                          <th key={heading} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{heading}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {buyersLoading ? <SkeletonRows /> : buyers?.length
+                        ? buyers.map((buyer) => <BuyerRow key={buyer.id} buyer={buyer} />)
+                        : (
+                          <tr><td colSpan={6} className="px-6 py-14 text-center">
+                            <p className="font-semibold text-foreground">No scored buyers yet.</p>
+                            <p className="mt-1 text-sm text-muted-foreground">Score contacts in HQ to identify your best-fit companies.</p>
                           </td></tr>
                         )}
                     </tbody>
