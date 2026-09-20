@@ -1718,11 +1718,8 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
 
             {/* ── EXPANDED right column ── */}
             {!outreachCollapsed && insightsMode !== "expanded" && (
-              <aside className="order-3 md:order-none relative overflow-visible md:overflow-y-scroll min-h-0 pr-0 md:pr-1 scroll-thin">
-                <div className={cn(
-                  "flex flex-col gap-3",
-                    (quotesData.length > 0 || quotesMutation.isPending) && "md:pb-56"
-                )}>
+              <aside className="order-3 flex min-h-0 flex-col overflow-visible md:order-none md:h-full md:overflow-hidden">
+                <div className="scroll-thin flex min-h-0 flex-1 flex-col gap-3 overflow-visible pr-0 md:overflow-y-auto md:pr-1">
                   <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Outreach</h2>
                     <div className="flex items-center gap-1.5">
@@ -1765,7 +1762,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                   <OutreachJobsList contactId={id} refetchTrigger={jobRefetchTrigger} />
                 </div>
 
-                {/* Quotables carousel — anchored to the bottom of the outreach panel */}
+                {/* Quotables carousel — persistent bottom region below scrollable jobs */}
                 <QuotablesCarousel
                   quotes={quotesData}
                   isPending={quotesMutation.isPending}
@@ -2015,7 +2012,7 @@ function QuotablesCarousel({
   if (!isPending && quotes.length === 0) return null;
 
   return (
-    <div className="contact-quotables absolute bottom-0 left-0 right-1 z-20 bg-[#F8FAFC] border-t border-violet-100 pt-3 pb-1 shadow-[0_-6px_12px_rgba(248,250,252,0.9)]">
+    <div className="contact-quotables z-20 mt-3 flex-shrink-0 border-t border-violet-100 bg-[#F8FAFC] pb-1 pt-3 shadow-[0_-6px_12px_rgba(248,250,252,0.9)]">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-2.5">
@@ -2051,6 +2048,8 @@ function QuotablesCarousel({
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setExpanded(v => !v)}
+                  aria-expanded={expanded}
+                  aria-label={expanded ? "Use compact Quotables view" : "Expand Quotables"}
                   className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
                 >
                   {expanded
@@ -2067,6 +2066,8 @@ function QuotablesCarousel({
           {/* Minimize / restore toggle */}
           <button
             onClick={() => setMinimized(v => !v)}
+            aria-expanded={!minimized}
+            aria-label={minimized ? "Expand Quotables panel" : "Collapse Quotables panel"}
             className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
           >
             {minimized

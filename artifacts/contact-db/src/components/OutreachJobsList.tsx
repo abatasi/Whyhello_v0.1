@@ -915,7 +915,6 @@ export function OutreachJobsList({ contactId, refetchTrigger }: { contactId: num
   useEffect(() => {
     if (!refetchTrigger) return;
     refetch();
-    setExpanded(true);
   }, [refetchTrigger, refetch]);
 
   if (jobs.length === 0) return null;
@@ -936,6 +935,8 @@ export function OutreachJobsList({ contactId, refetchTrigger }: { contactId: num
     <div className="mt-1">
       <button
         onClick={() => setExpanded(e => !e)}
+        aria-expanded={expanded}
+        aria-label={expanded ? "Collapse generated jobs" : "Expand generated jobs"}
         className="flex items-center gap-1.5 w-full text-left mb-2"
       >
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Generated</span>
