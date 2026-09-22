@@ -76,7 +76,7 @@ function joinParam(arr: string[]): string | undefined {
 function getInsightLevel(count: number): { label: string; className: string } | null {
   if (count >= 7) return { label: "High", className: "bg-emerald-100 text-emerald-700 border-emerald-200" };
   if (count >= 4) return { label: "Medium", className: "bg-amber-100 text-amber-700 border-amber-200" };
-  if (count >= 1) return { label: "Low", className: "bg-slate-100 text-slate-600 border-slate-200" };
+  if (count >= 1) return { label: "Low", className: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20" };
   return null;
 }
 

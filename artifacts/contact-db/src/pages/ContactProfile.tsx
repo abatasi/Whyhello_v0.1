@@ -66,13 +66,13 @@ import {
 // ── Buying Center seat context (used when embedded in Multi-threading) ────────
 
 const SEAT_COLOR_MAP: Record<string, { iconBg: string; iconColor: string; chipBg: string; chipText: string; border: string; bg: string }> = {
-  violet:  { bg: "bg-violet-50/60",  iconBg: "bg-violet-100",  iconColor: "text-violet-600",  chipBg: "bg-violet-100",  chipText: "text-violet-700",  border: "border-violet-200"  },
-  emerald: { bg: "bg-emerald-50/60", iconBg: "bg-emerald-100", iconColor: "text-emerald-600", chipBg: "bg-emerald-100", chipText: "text-emerald-700", border: "border-emerald-200" },
-  blue:    { bg: "bg-blue-50/60",    iconBg: "bg-blue-100",    iconColor: "text-blue-600",    chipBg: "bg-blue-100",    chipText: "text-blue-700",    border: "border-blue-200"    },
-  amber:   { bg: "bg-amber-50/60",   iconBg: "bg-amber-100",   iconColor: "text-amber-600",   chipBg: "bg-amber-100",   chipText: "text-amber-700",   border: "border-amber-200"   },
-  slate:   { bg: "bg-slate-50/60",   iconBg: "bg-slate-100",   iconColor: "text-slate-500",   chipBg: "bg-slate-100",   chipText: "text-slate-600",   border: "border-slate-200"   },
-  sky:     { bg: "bg-sky-50/60",     iconBg: "bg-sky-100",     iconColor: "text-sky-600",     chipBg: "bg-sky-100",     chipText: "text-sky-700",     border: "border-sky-200"     },
-  rose:    { bg: "bg-rose-50/60",    iconBg: "bg-rose-100",    iconColor: "text-rose-600",    chipBg: "bg-rose-100",    chipText: "text-rose-600",    border: "border-rose-200"    },
+  violet:  { bg: "bg-violet-50/60 dark:bg-violet-500/10",  iconBg: "bg-violet-100 dark:bg-violet-500/20",  iconColor: "text-violet-600 dark:text-violet-400",  chipBg: "bg-violet-100 dark:bg-violet-500/20",  chipText: "text-violet-700 dark:text-violet-300",  border: "border-violet-200 dark:border-violet-500/20"  },
+  emerald: { bg: "bg-emerald-50/60 dark:bg-emerald-500/10", iconBg: "bg-emerald-100 dark:bg-emerald-500/20", iconColor: "text-emerald-600 dark:text-emerald-400", chipBg: "bg-emerald-100 dark:bg-emerald-500/20", chipText: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-500/20" },
+  blue:    { bg: "bg-blue-50/60 dark:bg-blue-500/10",    iconBg: "bg-blue-100 dark:bg-blue-500/20",    iconColor: "text-blue-600 dark:text-blue-400",    chipBg: "bg-blue-100 dark:bg-blue-500/20",    chipText: "text-blue-700 dark:text-blue-300",    border: "border-blue-200 dark:border-blue-500/20"    },
+  amber:   { bg: "bg-amber-50/60 dark:bg-amber-500/10",   iconBg: "bg-amber-100 dark:bg-amber-500/20",   iconColor: "text-amber-600 dark:text-amber-400",   chipBg: "bg-amber-100 dark:bg-amber-500/20",   chipText: "text-amber-700 dark:text-amber-300",   border: "border-amber-200 dark:border-amber-500/20"   },
+  slate:   { bg: "bg-slate-50/60 dark:bg-slate-500/10",   iconBg: "bg-slate-100 dark:bg-slate-500/20",   iconColor: "text-slate-500 dark:text-slate-400",   chipBg: "bg-slate-100 dark:bg-slate-500/20",   chipText: "text-slate-600 dark:text-slate-300",   border: "border-slate-200 dark:border-slate-500/20"   },
+  sky:     { bg: "bg-sky-50/60 dark:bg-sky-500/10",     iconBg: "bg-sky-100 dark:bg-sky-500/20",     iconColor: "text-sky-600 dark:text-sky-400",     chipBg: "bg-sky-100 dark:bg-sky-500/20",     chipText: "text-sky-700 dark:text-sky-300",     border: "border-sky-200 dark:border-sky-500/20"     },
+  rose:    { bg: "bg-rose-50/60 dark:bg-rose-500/10",    iconBg: "bg-rose-100 dark:bg-rose-500/20",    iconColor: "text-rose-600 dark:text-rose-400",    chipBg: "bg-rose-100 dark:bg-rose-500/20",    chipText: "text-rose-600 dark:text-rose-400",    border: "border-rose-200 dark:border-rose-500/20"    },
 };
 
 const SEAT_DESCRIPTIONS: Record<string, (firstName: string) => string> = {
@@ -116,12 +116,12 @@ export type SeatContext = {
 // ── Media type config ──────────────────────────────────────────────────────
 
 const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
-  article:        { label: "Article",        icon: Newspaper,  color: "text-blue-600",   bg: "bg-blue-50 border-blue-100" },
-  blog_post:      { label: "Blog Post",      icon: FileText,   color: "text-violet-600", bg: "bg-violet-50 border-violet-100" },
-  video:          { label: "Video",          icon: Tv2,        color: "text-red-600",    bg: "bg-red-50 border-red-100" },
-  podcast:        { label: "Podcast",        icon: Mic2,       color: "text-green-600",  bg: "bg-green-50 border-green-100" },
-  linkedin_post:  { label: "LinkedIn Post",  icon: Share2,     color: "text-sky-600",    bg: "bg-sky-50 border-sky-100" },
-  press_release:  { label: "Press Release",  icon: Megaphone,  color: "text-amber-600",  bg: "bg-amber-50 border-amber-100" },
+  article:        { label: "Article",        icon: Newspaper,  color: "text-blue-600 dark:text-blue-400",   bg: "bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20" },
+  blog_post:      { label: "Blog Post",      icon: FileText,   color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10 border-violet-100 dark:border-violet-500/20" },
+  video:          { label: "Video",          icon: Tv2,        color: "text-red-600 dark:text-red-400",    bg: "bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20" },
+  podcast:        { label: "Podcast",        icon: Mic2,       color: "text-green-600 dark:text-green-400",  bg: "bg-green-50 dark:bg-green-500/10 border-green-100 dark:border-green-500/20" },
+  linkedin_post:  { label: "LinkedIn Post",  icon: Share2,     color: "text-sky-600 dark:text-sky-400",    bg: "bg-sky-50 dark:bg-sky-500/10 border-sky-100 dark:border-sky-500/20" },
+  press_release:  { label: "Press Release",  icon: Megaphone,  color: "text-amber-600 dark:text-amber-400",  bg: "bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20" },
 };
 
 function getMediaConfig(type: string) {
@@ -134,10 +134,10 @@ function MetaScoreBadge({ metaScore }: { metaScore: ContactMetaScore }) {
   const { metaScore: score, personalBest, companyBest, industryBest, roleBest, signalCount } = metaScore;
 
   const colorClass =
-    score >= 90 ? "bg-green-500 text-white border-green-500" :
-    score >= 75 ? "bg-blue-500 text-white border-blue-500" :
-    score >= 50 ? "bg-amber-500 text-white border-amber-500" :
-                   "bg-red-500 text-white border-red-500";
+    score >= 90 ? "bg-green-500 text-white border-green-500 dark:bg-green-600 dark:border-green-600" :
+    score >= 75 ? "bg-blue-500 text-white border-blue-500 dark:bg-blue-600 dark:border-blue-600" :
+    score >= 50 ? "bg-amber-500 text-white border-amber-500 dark:bg-amber-600 dark:border-amber-600" :
+                   "bg-red-500 text-white border-red-500 dark:bg-red-600 dark:border-red-600";
 
   const tier =
     score >= 90 ? "Excellent" :
@@ -193,10 +193,10 @@ function MetaScoreBadge({ metaScore }: { metaScore: ContactMetaScore }) {
 
 function RelevanceBadge({ score, description, size = "sm" }: { score: number; description: string; size?: "xs" | "sm" }) {
   const colorClass =
-    score >= 75 ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-    score >= 50 ? "bg-amber-50 text-amber-700 border-amber-200" :
-    score >= 25 ? "bg-orange-50 text-orange-700 border-orange-200" :
-                  "bg-slate-50 text-slate-500 border-slate-200";
+    score >= 75 ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
+    score >= 50 ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" :
+    score >= 25 ? "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" :
+                  "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20";
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -244,20 +244,20 @@ function SourceContactHoverCard({
   const isColleague = category === "colleague";
   const palette = isColleague
     ? {
-        bg: "bg-sky-50",
-        border: "border-sky-200",
-        avatar: "bg-sky-200 border-sky-300",
-        text: "text-sky-800",
-        muted: "text-sky-600/80",
-        accent: "text-sky-700",
+        bg: "bg-sky-50 dark:bg-sky-500/10",
+        border: "border-sky-200 dark:border-sky-500/20",
+        avatar: "bg-sky-200 dark:bg-sky-500/20 border-sky-300 dark:border-sky-500/30",
+        text: "text-sky-800 dark:text-sky-300",
+        muted: "text-sky-600/80 dark:text-sky-400/80",
+        accent: "text-sky-700 dark:text-sky-400",
       }
     : {
-        bg: "bg-rose-50",
-        border: "border-rose-200",
-        avatar: "bg-rose-200 border-rose-300",
-        text: "text-rose-800",
-        muted: "text-rose-600/80",
-        accent: "text-rose-700",
+        bg: "bg-rose-50 dark:bg-rose-500/10",
+        border: "border-rose-200 dark:border-rose-500/20",
+        avatar: "bg-rose-200 dark:bg-rose-500/20 border-rose-300 dark:border-rose-500/30",
+        text: "text-rose-800 dark:text-rose-300",
+        muted: "text-rose-600/80 dark:text-rose-400/80",
+        accent: "text-rose-700 dark:text-rose-400",
       };
   const initials = contact.name.split(" ").map(w => w[0]).slice(0, 2).join("");
   const contextLabel = isColleague
@@ -347,12 +347,12 @@ interface InsightCategory {
 }
 
 const INSIGHT_CATEGORIES: InsightCategory[] = [
-  { id: "personal",     label: "Personal",     description: "Posts, videos & features about this contact",  icon: User,        color: "text-indigo-600",  accentBg: "bg-indigo-50",  accentBorder: "border-indigo-200" },
-  { id: "company",      label: "Company",      description: "News, press releases & content from the company", icon: Building,    color: "text-amber-600",   accentBg: "bg-amber-50",   accentBorder: "border-amber-200"  },
-  { id: "industry",     label: "Industry",     description: "Trends & publications across the industry",     icon: TrendingUp,  color: "text-emerald-600", accentBg: "bg-emerald-50", accentBorder: "border-emerald-200"},
-  { id: "role",         label: "Role",         description: "Content relevant to this contact's function",   icon: Briefcase,   color: "text-violet-600",  accentBg: "bg-violet-50",  accentBorder: "border-violet-200" },
-  { id: "colleague",    label: "Colleague",    description: "Content featuring teammates & peers",           icon: Users,       color: "text-sky-600",     accentBg: "bg-sky-50",     accentBorder: "border-sky-200"    },
-  { id: "counterpart",  label: "Counterpart",  description: "Competitor & partner-side perspectives",        icon: Handshake,   color: "text-rose-600",    accentBg: "bg-rose-50",    accentBorder: "border-rose-200"   },
+  { id: "personal",     label: "Personal",     description: "Posts, videos & features about this contact",  icon: User,        color: "text-indigo-600 dark:text-indigo-400",  accentBg: "bg-indigo-50 dark:bg-indigo-500/10",  accentBorder: "border-indigo-200 dark:border-indigo-500/20" },
+  { id: "company",      label: "Company",      description: "News, press releases & content from the company", icon: Building,    color: "text-amber-600 dark:text-amber-400",   accentBg: "bg-amber-50 dark:bg-amber-500/10",   accentBorder: "border-amber-200 dark:border-amber-500/20"  },
+  { id: "industry",     label: "Industry",     description: "Trends & publications across the industry",     icon: TrendingUp,  color: "text-emerald-600 dark:text-emerald-400", accentBg: "bg-emerald-50 dark:bg-emerald-500/10", accentBorder: "border-emerald-200 dark:border-emerald-500/20"},
+  { id: "role",         label: "Role",         description: "Content relevant to this contact's function",   icon: Briefcase,   color: "text-violet-600 dark:text-violet-400",  accentBg: "bg-violet-50 dark:bg-violet-500/10",  accentBorder: "border-violet-200 dark:border-violet-500/20" },
+  { id: "colleague",    label: "Colleague",    description: "Content featuring teammates & peers",           icon: Users,       color: "text-sky-600 dark:text-sky-400",     accentBg: "bg-sky-50 dark:bg-sky-500/10",     accentBorder: "border-sky-200 dark:border-sky-500/20"    },
+  { id: "counterpart",  label: "Counterpart",  description: "Competitor & partner-side perspectives",        icon: Handshake,   color: "text-rose-600 dark:text-rose-400",    accentBg: "bg-rose-50 dark:bg-rose-500/10",    accentBorder: "border-rose-200 dark:border-rose-500/20"   },
 ];
 
 // ── Outreach output types ───────────────────────────────────────────────────
@@ -368,12 +368,12 @@ interface OutputType {
 }
 
 const OUTPUT_TYPES: OutputType[] = [
-  { id: "intro_email",      label: "Single Message",    icon: Mail,        color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-200",   description: "A personalized first-touch message tailored to this contact's background and current context." },
-  { id: "email_sequence",   label: "Playbook",          icon: Layers,      color: "text-violet-600",  bg: "bg-violet-50",  border: "border-violet-200", description: "A multi-step outreach cadence built around this contact's role, interests, and timing." },
-  { id: "battlecard",       label: "Battlecard",        icon: Shield,      color: "text-rose-600",    bg: "bg-rose-50",    border: "border-rose-200",   description: "A competitive one-pager to prep your team for this deal — objections, differentiators, and positioning." },
-  { id: "sales_simulation", label: "Sales Simulation",  icon: Theater,     color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200",  description: "Simulate a sales call with this contact as the prospect so you can practice before the real thing." },
-  { id: "talk_track",       label: "Talk Track",        icon: Mic2,        color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", description: "A structured verbal guide to keep your next conversation focused, confident, and on point." },
-  { id: "quiz",             label: "Quiz",              icon: HelpCircle,  color: "text-indigo-600",  bg: "bg-indigo-50",  border: "border-indigo-200",  description: "Test how well you know this contact — their priorities, company context, and hot-button topics." },
+  { id: "intro_email",      label: "Single Message",    icon: Mail,        color: "text-blue-600 dark:text-blue-400",    bg: "bg-blue-50 dark:bg-blue-500/10",    border: "border-blue-200 dark:border-blue-500/20",   description: "A personalized first-touch message tailored to this contact's background and current context." },
+  { id: "email_sequence",   label: "Playbook",          icon: Layers,      color: "text-violet-600 dark:text-violet-400",  bg: "bg-violet-50 dark:bg-violet-500/10",  border: "border-violet-200 dark:border-violet-500/20", description: "A multi-step outreach cadence built around this contact's role, interests, and timing." },
+  { id: "battlecard",       label: "Battlecard",        icon: Shield,      color: "text-rose-600 dark:text-rose-400",    bg: "bg-rose-50 dark:bg-rose-500/10",    border: "border-rose-200 dark:border-rose-500/20",   description: "A competitive one-pager to prep your team for this deal — objections, differentiators, and positioning." },
+  { id: "sales_simulation", label: "Sales Simulation",  icon: Theater,     color: "text-amber-600 dark:text-amber-400",   bg: "bg-amber-50 dark:bg-amber-500/10",   border: "border-amber-200 dark:border-amber-500/20",  description: "Simulate a sales call with this contact as the prospect so you can practice before the real thing." },
+  { id: "talk_track",       label: "Talk Track",        icon: Mic2,        color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-200 dark:border-emerald-500/20", description: "A structured verbal guide to keep your next conversation focused, confident, and on point." },
+  { id: "quiz",             label: "Quiz",              icon: HelpCircle,  color: "text-indigo-600 dark:text-indigo-400",  bg: "bg-indigo-50 dark:bg-indigo-500/10",  border: "border-indigo-200 dark:border-indigo-500/20",  description: "Test how well you know this contact — their priorities, company context, and hot-button topics." },
 ];
 
 // ── DNA voice profile loader ────────────────────────────────────────────────
@@ -493,9 +493,9 @@ function IntroEmailModal({
       <DialogContent className="p-0 gap-0 overflow-hidden" style={{ width: "75vw", maxWidth: "75vw", maxHeight: "85vh", display: "flex", flexDirection: "column" }}>
 
         {/* ── Header ── */}
-        <div className="flex items-center gap-4 px-7 py-5 border-b border-border/60 bg-gradient-to-r from-blue-50/60 to-background">
-          <div className="h-11 w-11 rounded-xl flex items-center justify-center border flex-shrink-0 bg-blue-100 border-blue-200 shadow-sm">
-            <Mail className="h-5 w-5 text-blue-600" />
+        <div className="flex items-center gap-4 px-7 py-5 border-b border-border/60 bg-gradient-to-r from-blue-50/60 to-background dark:from-blue-500/10">
+          <div className="h-11 w-11 rounded-xl flex items-center justify-center border flex-shrink-0 bg-blue-100 border-blue-200 shadow-sm dark:bg-blue-500/20 dark:border-blue-500/30">
+            <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div className="flex-1 min-w-0">
             <DialogTitle className="text-base font-semibold">Single Message</DialogTitle>
@@ -525,7 +525,7 @@ function IntroEmailModal({
                     className={cn(
                       "flex flex-col items-center gap-1 py-3.5 px-3 rounded-xl border text-center transition-all",
                       length === opt.id
-                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm ring-1 ring-blue-200"
+                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm ring-1 ring-blue-200 dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-400 dark:ring-blue-500/20"
                         : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
                     )}
                   >
@@ -548,7 +548,7 @@ function IntroEmailModal({
                     className={cn(
                       "px-4 py-2 rounded-full text-xs font-semibold border transition-all",
                       tone === t.toLowerCase()
-                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm ring-1 ring-blue-200"
+                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm ring-1 ring-blue-200 dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-400 dark:ring-blue-500/20"
                         : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
                     )}
                   >
@@ -565,18 +565,18 @@ function IntroEmailModal({
                     className={cn(
                       "w-full flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all",
                       tone === "my_voice_profile"
-                        ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200"
-                        : "bg-card border-border/60 hover:bg-secondary/40 hover:border-indigo-200"
+                        ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:ring-indigo-500/20"
+                        : "bg-card border-border/60 hover:bg-secondary/40 hover:border-indigo-200 dark:hover:border-indigo-500/30"
                     )}
                   >
                     <div className={cn(
                       "h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border mt-0.5",
-                      tone === "my_voice_profile" ? "bg-indigo-100 border-indigo-200" : "bg-secondary border-border/60"
+                      tone === "my_voice_profile" ? "bg-indigo-100 border-indigo-200 dark:bg-indigo-500/20 dark:border-indigo-500/30" : "bg-secondary border-border/60"
                     )}>
-                      <Sparkles className={cn("h-3.5 w-3.5", tone === "my_voice_profile" ? "text-indigo-600" : "text-muted-foreground")} />
+                      <Sparkles className={cn("h-3.5 w-3.5", tone === "my_voice_profile" ? "text-indigo-600 dark:text-indigo-400" : "text-muted-foreground")} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={cn("text-xs font-semibold", tone === "my_voice_profile" ? "text-indigo-700" : "text-foreground")}>
+                      <p className={cn("text-xs font-semibold", tone === "my_voice_profile" ? "text-indigo-700 dark:text-indigo-300" : "text-foreground")}>
                         My Voice Profile
                       </p>
                       <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
@@ -635,15 +635,15 @@ function IntroEmailModal({
                         onClick={() => toggleInsight(key)}
                         className={cn(
                           "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
-                          isSelected ? "bg-blue-50/60" : "hover:bg-secondary/30"
+                          isSelected ? "bg-blue-50/60 dark:bg-blue-500/10" : "hover:bg-secondary/30"
                         )}
                       >
                         <div className={cn(
                           "h-4 w-4 rounded border-[1.5px] flex items-center justify-center flex-shrink-0 transition-colors",
-                          isSelected ? "bg-blue-100 border-blue-400" : "border-border/60 bg-background"
+                          isSelected ? "bg-blue-100 border-blue-400 dark:bg-blue-500/20 dark:border-blue-500/50" : "border-border/60 bg-background"
                         )}>
                           {isSelected && (
-                            <svg viewBox="0 0 10 10" className="h-2.5 w-2.5 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <svg viewBox="0 0 10 10" className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" strokeWidth="2.5">
                               <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                           )}
@@ -1198,7 +1198,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
 
   return (
     <>
-      <div className="flex flex-col overflow-y-auto overflow-x-hidden md:overflow-hidden bg-[#F8FAFC] h-full">
+      <div className="flex flex-col overflow-y-auto overflow-x-hidden md:overflow-hidden bg-background h-full">
 
         {/* ── Three-column desktop / long-scroll mobile layout ───────────── */}
         <div className="contact-profile-grid flex-none md:flex-1 min-h-0 px-3 sm:px-6 pt-3 md:pt-4 pb-6 md:pb-4 grid gap-4 md:gap-5 overflow-visible md:overflow-hidden transition-[grid-template-columns] duration-200" style={{ gridTemplateColumns: `${insightsMode === "collapsed" ? "3rem" : insightsMode === "expanded" ? "50%" : "20%"} 1fr ${insightsMode === "expanded" ? "3rem" : outreachCollapsed ? "3rem" : "20%"}`, gridTemplateRows: "minmax(0, 1fr)" }}>
@@ -1209,7 +1209,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
             {/* ── NORMAL left column ── */}
             {insightsMode === "normal" && (
               <aside className="order-2 md:order-none flex flex-col gap-3 overflow-visible md:overflow-y-scroll min-h-0 pr-0 md:pr-1 scroll-thin">
-                <div className="sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0 space-y-1">
+                <div className="sticky top-0 bg-background py-1 z-10 flex-shrink-0 space-y-1">
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
                     <div className="flex items-center gap-1.5">
@@ -1313,7 +1313,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                 ) : (
                   /* ── Card grid view ── */
                   <>
-                    <div className="sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0 pr-1 space-y-1">
+                    <div className="sticky top-0 bg-background py-1 z-10 flex-shrink-0 pr-1 space-y-1">
                       <div className="flex items-center justify-between">
                         <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Insights</h2>
                         <div className="flex items-center gap-1.5">
@@ -1663,7 +1663,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                         {contact.linkedinUrl && (
                           <ContactDetailField icon={Linkedin} label="LinkedIn">
                             <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer"
-                              className="text-[#0A66C2] hover:underline flex items-center gap-1 text-xs">
+                              className="text-[#0A66C2] dark:text-blue-400 hover:underline flex items-center gap-1 text-xs">
                               View Profile <ExternalLink className="h-3 w-3" />
                             </a>
                           </ContactDetailField>
@@ -1720,7 +1720,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
             {!outreachCollapsed && insightsMode !== "expanded" && (
               <aside className="order-3 flex min-h-0 flex-col overflow-visible md:order-none md:h-full md:overflow-hidden">
                 <div className="scroll-thin flex min-h-0 flex-1 flex-col gap-3 overflow-visible pr-0 md:overflow-y-auto md:pr-1">
-                  <div className="flex items-center justify-between sticky top-0 bg-[#F8FAFC] py-1 z-10 flex-shrink-0">
+                  <div className="flex items-center justify-between sticky top-0 bg-background py-1 z-10 flex-shrink-0">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Outreach</h2>
                     <div className="flex items-center gap-1.5">
                       <button
@@ -1967,7 +1967,7 @@ export default function ContactProfile() {
   const id = parseInt(params?.id || "0");
   return (
     <Shell>
-      <div className="flex flex-col overflow-hidden bg-[#F8FAFC] h-[calc(100vh-4rem)]">
+      <div className="flex flex-col overflow-hidden bg-background h-[calc(100vh-4rem)]">
         {/* Back nav */}
         <div className="px-3 sm:px-6 pt-3 pb-2 flex-shrink-0">
           <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1.5">
@@ -2012,7 +2012,7 @@ function QuotablesCarousel({
   if (!isPending && quotes.length === 0) return null;
 
   return (
-    <div className="contact-quotables z-20 mt-3 flex-shrink-0 border-t border-violet-100 bg-[#F8FAFC] pb-1 pt-3 shadow-[0_-6px_12px_rgba(248,250,252,0.9)]">
+    <div className="contact-quotables z-20 mt-3 flex-shrink-0 border-t border-violet-100 dark:border-violet-500/20 bg-background pb-1 pt-3 shadow-[0_-6px_12px_rgba(248,250,252,0.9)] dark:shadow-none">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-2.5">
@@ -2395,7 +2395,7 @@ function InsightDetailView({
     <div className="contact-profile-detail flex flex-col h-full min-h-0 overflow-y-auto overflow-x-hidden scroll-thin">
 
       {/* ── Breadcrumb header ── */}
-      <div className="sticky top-0 z-10 flex items-center gap-2 py-1 flex-shrink-0 pr-1 bg-[#F8FAFC]">
+      <div className="sticky top-0 z-10 flex items-center gap-2 py-1 flex-shrink-0 pr-1 bg-background">
         <button
           onClick={onBack}
           className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -2531,7 +2531,7 @@ function InsightDetailView({
             {relevance ? (() => {
               const s = relevance.score;
               const scoreColor = s >= 75 ? "text-emerald-600" : s >= 50 ? "text-amber-500" : s >= 25 ? "text-orange-500" : "text-slate-400";
-              const scoreBg   = s >= 75 ? "bg-emerald-50 border-emerald-200" : s >= 50 ? "bg-amber-50 border-amber-200" : s >= 25 ? "bg-orange-50 border-orange-200" : "bg-slate-50 border-slate-200";
+              const scoreBg   = s >= 75 ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20" : s >= 50 ? "bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20" : s >= 25 ? "bg-orange-50 border-orange-200 dark:bg-orange-500/10 dark:border-orange-500/20" : "bg-slate-50 border-slate-200 dark:bg-slate-500/10 dark:border-slate-500/20";
               return (
                 <div className="flex gap-4">
                   {/* Score column */}
@@ -2565,15 +2565,15 @@ function InsightDetailView({
             )}
             {/* ── Quotable power-up box ── */}
             {quote && (
-              <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-3.5">
+              <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-500/10 dark:to-yellow-500/5 p-3.5">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-300 flex-shrink-0" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Quotable</span>
                 </div>
-                <p className="text-xs text-amber-950 leading-relaxed font-bold">
+                <p className="text-xs text-amber-950 dark:text-amber-100 leading-relaxed font-bold">
                   "{quote.quote}"
                 </p>
-                <p className="text-[11px] text-amber-600 font-medium mt-2 not-italic">
+                <p className="text-[11px] text-amber-600 dark:text-amber-300 font-medium mt-2 not-italic">
                   — {quote.attribution}{quote.attributionRole ? `, ${quote.attributionRole}` : ""}
                 </p>
               </div>
@@ -2623,7 +2623,7 @@ function InsightDetailView({
         </div>
 
         {/* iframe — fills the remaining space of the browser card */}
-        <div className="relative flex-1 min-h-0 bg-white">
+        <div className="relative flex-1 min-h-0 bg-card">
           {!iframeLoaded && !iframeError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
@@ -2632,7 +2632,7 @@ function InsightDetailView({
           )}
           {iframeError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-center px-6 z-10">
-              <p className="text-sm font-semibold text-foreground">Trouble connecting with this page 🫠</p>
+              <p className="text-sm font-semibold text-foreground">Trouble connecting with this page</p>
               <p className="text-[11px] text-muted-foreground leading-snug">
                 Try{" "}
                 <button
@@ -2843,15 +2843,15 @@ function InsightCardExpanded({
 
       {/* ── Colleague attribution ── */}
       {category.id === "colleague" && item.sourceContact && (
-        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-sky-50 border border-sky-200">
-          <div className="h-5 w-5 rounded-full bg-sky-200 border border-sky-300 flex items-center justify-center flex-shrink-0">
-            <span className="text-[9px] font-bold text-sky-700 uppercase leading-none select-none">
+        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-sky-50 border border-sky-200 dark:bg-sky-500/10 dark:border-sky-500/20">
+          <div className="h-5 w-5 rounded-full bg-sky-200 border border-sky-300 dark:bg-sky-500/20 dark:border-sky-500/30 flex items-center justify-center flex-shrink-0">
+            <span className="text-[9px] font-bold text-sky-700 dark:text-sky-300 uppercase leading-none select-none">
               {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold text-sky-800 truncate leading-tight">{item.sourceContact.name}</p>
-            <p className="text-[10px] text-sky-600/80 truncate leading-tight">
+            <p className="text-[11px] font-semibold text-sky-800 dark:text-sky-200 truncate leading-tight">{item.sourceContact.name}</p>
+            <p className="text-[10px] text-sky-600/80 dark:text-sky-300/80 truncate leading-tight">
               {[item.sourceContact.jobTitle, item.sourceContact.companyName].filter(Boolean).join(" · ")}
             </p>
           </div>
@@ -2860,20 +2860,20 @@ function InsightCardExpanded({
 
       {/* ── Counterpart attribution ── */}
       {category.id === "counterpart" && item.sourceContact && (
-        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200">
-          <div className="h-5 w-5 rounded-full bg-rose-200 border border-rose-300 flex items-center justify-center flex-shrink-0">
-            <span className="text-[9px] font-bold text-rose-700 uppercase leading-none select-none">
+        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20">
+          <div className="h-5 w-5 rounded-full bg-rose-200 border border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/30 flex items-center justify-center flex-shrink-0">
+            <span className="text-[9px] font-bold text-rose-700 dark:text-rose-300 uppercase leading-none select-none">
               {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold text-rose-800 truncate leading-tight">{item.sourceContact.name}</p>
-            <p className="text-[10px] text-rose-600/80 truncate leading-tight">
+            <p className="text-[11px] font-semibold text-rose-800 dark:text-rose-200 truncate leading-tight">{item.sourceContact.name}</p>
+            <p className="text-[10px] text-rose-600/80 dark:text-rose-300/80 truncate leading-tight">
               {[item.sourceContact.jobTitle, item.sourceContact.companyName].filter(Boolean).join(" · ")}
             </p>
           </div>
           {item.counterpartGroup != null && (
-            <span className="flex-shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-rose-600 uppercase tracking-wide">
+            <span className="flex-shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-rose-600 dark:bg-rose-500/20 dark:border-rose-500/30 dark:text-rose-300 uppercase tracking-wide">
               G{item.counterpartGroup}
             </span>
           )}
@@ -2890,12 +2890,12 @@ function InsightCardExpanded({
                 <p className="text-[10px] text-muted-foreground leading-snug flex-1 line-clamp-2">{relevance.description}</p>
               </div>
               {displayQuote && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10 px-2.5 py-2">
                   <div className="flex items-center gap-1 mb-1">
                     <Zap className="h-2.5 w-2.5 text-amber-500 fill-amber-400 flex-shrink-0" />
                     <span className="text-[9px] font-bold uppercase tracking-widest text-amber-600">Quotable</span>
                   </div>
-                  <p className="text-[10px] text-amber-950 leading-snug italic line-clamp-3">"{displayQuote.quote}"</p>
+                  <p className="text-[10px] text-amber-950 dark:text-amber-100 leading-snug italic line-clamp-3">"{displayQuote.quote}"</p>
                 </div>
               )}
             </div>
@@ -3286,12 +3286,12 @@ function ContactDetailField({
 type ChatSourceRef = { signalType: string; id: number; title: string; source: string; url?: string | null; publishedDate?: string | null };
 
 const SIGNAL_TYPE_META: Record<string, { label: string; className: string }> = {
-  personal:    { label: "Personal",    className: "bg-violet-50 border-violet-200 text-violet-700" },
-  company:     { label: "Company",     className: "bg-blue-50 border-blue-200 text-blue-700" },
-  industry:    { label: "Industry",    className: "bg-amber-50 border-amber-200 text-amber-700" },
-  role:        { label: "Role",        className: "bg-emerald-50 border-emerald-200 text-emerald-700" },
-  colleague:   { label: "Colleague",   className: "bg-sky-50 border-sky-200 text-sky-700" },
-  counterpart: { label: "Counterpart", className: "bg-rose-50 border-rose-200 text-rose-700" },
+  personal:    { label: "Personal",    className: "bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-500/10 dark:border-violet-500/20 dark:text-violet-300" },
+  company:     { label: "Company",     className: "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-300" },
+  industry:    { label: "Industry",    className: "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-300" },
+  role:        { label: "Role",        className: "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-300" },
+  colleague:   { label: "Colleague",   className: "bg-sky-50 border-sky-200 text-sky-700 dark:bg-sky-500/10 dark:border-sky-500/20 dark:text-sky-300" },
+  counterpart: { label: "Counterpart", className: "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-500/10 dark:border-rose-500/20 dark:text-rose-300" },
 };
 
 function ChatSourcesPanel({ sources }: { sources: ChatSourceRef[] }) {
@@ -3595,7 +3595,7 @@ function ContactCenterHub({
           </span>
         )}
         {activeTab === "assistant" && (
-          <span className="ml-auto text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+          <span className="ml-auto text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 dark:text-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/20 px-1.5 py-0.5 rounded-full">
             AI
           </span>
         )}

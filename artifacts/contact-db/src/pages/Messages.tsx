@@ -26,16 +26,16 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; headerBg: string }> = {
-  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600",   bg: "bg-blue-50/70 border-blue-100",     headerBg: "hover:bg-blue-100/60" },
-  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600", bg: "bg-violet-50/70 border-violet-100", headerBg: "hover:bg-violet-100/60" },
-  video:         { label: "Video",         icon: Tv2,       color: "text-red-600",    bg: "bg-red-50/70 border-red-100",       headerBg: "hover:bg-red-100/60" },
-  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600",  bg: "bg-green-50/70 border-green-100",   headerBg: "hover:bg-green-100/60" },
-  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600",    bg: "bg-sky-50/70 border-sky-100",       headerBg: "hover:bg-sky-100/60" },
-  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600",  bg: "bg-amber-50/70 border-amber-100",   headerBg: "hover:bg-amber-100/60" },
+  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600 dark:text-blue-400",   bg: "bg-blue-50/70 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20",     headerBg: "hover:bg-blue-100/60 dark:hover:bg-blue-500/20" },
+  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50/70 dark:bg-violet-500/10 border-violet-100 dark:border-violet-500/20", headerBg: "hover:bg-violet-100/60 dark:hover:bg-violet-500/20" },
+  video:         { label: "Video",         icon: Tv2,       color: "text-red-600 dark:text-red-400",    bg: "bg-red-50/70 dark:bg-red-500/10 border-red-100 dark:border-red-500/20",       headerBg: "hover:bg-red-100/60 dark:hover:bg-red-500/20" },
+  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600 dark:text-green-400",  bg: "bg-green-50/70 dark:bg-green-500/10 border-green-100 dark:border-green-500/20",   headerBg: "hover:bg-green-100/60 dark:hover:bg-green-500/20" },
+  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600 dark:text-sky-400",    bg: "bg-sky-50/70 dark:bg-sky-500/10 border-sky-100 dark:border-sky-500/20",       headerBg: "hover:bg-sky-100/60 dark:hover:bg-sky-500/20" },
+  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600 dark:text-amber-400",  bg: "bg-amber-50/70 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20",   headerBg: "hover:bg-amber-100/60 dark:hover:bg-amber-500/20" },
 };
 
 function getMediaConfig(type: string) {
-  return MEDIA_CONFIG[type] ?? { label: type, icon: ExternalLink, color: "text-muted-foreground", bg: "bg-secondary border-border", headerBg: "hover:bg-secondary/60" };
+  return MEDIA_CONFIG[type] ?? { label: type, icon: ExternalLink, color: "text-muted-foreground", bg: "bg-secondary border-border", headerBg: "hover:bg-secondary/60 dark:hover:bg-secondary/40" };
 }
 
 const SUB_INSIGHTS_POOL: Record<string, string[]> = {
@@ -191,12 +191,12 @@ function InsightCard({ ins }: { ins: InsightItem }) {
                 "cursor-grab active:cursor-grabbing select-none",
                 "group/sub transition-all duration-100",
                 draggingIdx === idx
-                  ? "opacity-40 scale-[0.97] bg-black/5"
-                  : "hover:bg-white/60 hover:shadow-sm",
+                  ? "opacity-40 scale-[0.97] bg-black/5 dark:bg-white/5"
+                  : "hover:bg-black/5 dark:hover:bg-white/5 hover:shadow-sm",
               )}
             >
               <GripVertical className="h-3 w-3 flex-shrink-0 mt-[1px] text-muted-foreground/20 group-hover/sub:text-muted-foreground/50 transition-colors" />
-              <Lightbulb className="h-3 w-3 flex-shrink-0 mt-[1px] text-amber-500 group-hover/sub:text-amber-600 transition-colors" />
+              <Lightbulb className="h-3 w-3 flex-shrink-0 mt-[1px] text-amber-500 group-hover/sub:text-amber-600 dark:text-amber-400 dark:group-hover/sub:text-amber-500 transition-colors" />
               <span className="text-[11px] text-foreground/80 leading-snug group-hover/sub:text-foreground transition-colors">
                 {text}
               </span>
@@ -229,10 +229,10 @@ function ContactInsightsPanel({ contactId, contactName }: { contactId: number; c
   if (insights.length === 0) return null;
 
   return (
-    <div className="border border-border/60 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-50/40 to-primary/5">
+    <div className="border border-border/60 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-50/40 to-primary/5 dark:from-indigo-500/10 dark:to-primary/5">
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/50 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
       >
         <div className="flex items-center gap-2.5">
           <div className="h-6 w-6 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -241,7 +241,7 @@ function ContactInsightsPanel({ contactId, contactName }: { contactId: number; c
           <span className="text-sm font-semibold text-foreground">
             Personal Insights — {contactName}
           </span>
-          <span className="text-xs text-muted-foreground bg-white border border-border/60 rounded-full px-2 py-0.5">
+          <span className="text-xs text-muted-foreground bg-background border border-border/60 rounded-full px-2 py-0.5">
             {insights.length} {insights.length === 1 ? "result" : "results"}
           </span>
         </div>
@@ -266,19 +266,19 @@ function CompanyInsightsPanel({ companyId, companyName }: { companyId: number; c
   if (insights.length === 0) return null;
 
   return (
-    <div className="border border-amber-100 rounded-xl overflow-hidden bg-gradient-to-br from-amber-50/50 to-orange-50/30">
+    <div className="border border-amber-100 dark:border-amber-500/20 rounded-xl overflow-hidden bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-500/10 dark:to-orange-500/10">
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/50 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
       >
         <div className="flex items-center gap-2.5">
-          <div className="h-6 w-6 rounded-lg bg-amber-100 flex items-center justify-center">
-            <Building className="h-3.5 w-3.5 text-amber-600" />
+          <div className="h-6 w-6 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
+            <Building className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
           </div>
           <span className="text-sm font-semibold text-foreground">
             Company Insights — {companyName}
           </span>
-          <span className="text-xs text-muted-foreground bg-white border border-border/60 rounded-full px-2 py-0.5">
+          <span className="text-xs text-muted-foreground bg-background border border-border/60 rounded-full px-2 py-0.5">
             {insights.length} {insights.length === 1 ? "result" : "results"}
           </span>
         </div>

@@ -195,7 +195,7 @@ export default function CompanyProfile() {
            <div className="px-8 pb-8">
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <div className="-mt-12 relative z-10">
-                  <div className="h-24 w-24 rounded-2xl bg-white border border-border shadow-sm flex items-center justify-center">
+                  <div className="h-24 w-24 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center">
                     <Building2 className="h-10 w-10 text-muted-foreground/50" />
                   </div>
                 </div>
@@ -218,7 +218,7 @@ export default function CompanyProfile() {
                     </div>
                   </div>
                   {company.linkedinUrl && (
-                    <Button variant="outline" size="sm" className="gap-2 text-[#0A66C2] border-[#0A66C2]/20 hover:bg-[#0A66C2]/10">
+                    <Button variant="outline" size="sm" className="gap-2 text-[#0A66C2] border-[#0A66C2]/20 hover:bg-[#0A66C2]/10 dark:text-blue-400 dark:border-blue-500/20 dark:hover:bg-blue-500/10">
                       <Linkedin className="h-4 w-4" /> Follow
                     </Button>
                   )}

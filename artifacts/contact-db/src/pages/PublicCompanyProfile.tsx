@@ -54,7 +54,7 @@ export default function PublicCompanyProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-background">
         <PublicHeader onLogin={login} />
         <div className="max-w-5xl mx-auto px-4 py-8 animate-pulse space-y-8">
           <div className="h-10 w-24 bg-muted rounded" />
@@ -66,7 +66,7 @@ export default function PublicCompanyProfile() {
 
   if (isError || !company) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-background">
         <PublicHeader onLogin={login} />
         <div className="p-8 text-center mt-20">
           <h2 className="text-2xl font-bold mb-4">Company not found</h2>
@@ -77,7 +77,7 @@ export default function PublicCompanyProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-background">
       <PublicHeader onLogin={login} />
 
       {/* Dark overlay below header — dims all content */}
@@ -98,7 +98,7 @@ export default function PublicCompanyProfile() {
           <div className="flex flex-col gap-3">
             <button
               onClick={login}
-              className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-white border border-border rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors shadow-sm"
+              className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-card border border-border rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors shadow-sm"
             >
               <GoogleIcon />
               Continue with Google
@@ -132,7 +132,7 @@ export default function PublicCompanyProfile() {
           <div className="px-8 pb-8">
             <div className="flex flex-col md:flex-row gap-6 items-start">
               <div className="-mt-12">
-                <div className="h-24 w-24 rounded-2xl bg-white border border-border shadow-sm flex items-center justify-center">
+                <div className="h-24 w-24 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center">
                   <Building2 className="h-10 w-10 text-muted-foreground/50" />
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default function PublicCompanyProfile() {
                     rel="noreferrer"
                     className="flex-shrink-0"
                   >
-                    <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#0A66C2]/20 text-[#0A66C2] text-sm font-medium hover:bg-[#0A66C2]/10 transition-colors">
+                    <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#0A66C2]/20 text-[#0A66C2] dark:border-blue-500/20 dark:text-blue-400 text-sm font-medium hover:bg-[#0A66C2]/10 dark:hover:bg-blue-500/10 transition-colors">
                       <Linkedin className="h-4 w-4" /> Follow
                     </span>
                   </a>

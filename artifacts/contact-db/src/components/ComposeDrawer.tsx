@@ -188,7 +188,7 @@ function InsightCard({ ins }: { ins: ComposeInsight }) {
               "group/sub transition-all duration-100",
               draggingIdx === idx
                 ? "opacity-40 scale-[0.97] bg-black/5"
-                : "hover:bg-white/60 hover:shadow-sm",
+                : "hover:bg-black/5 dark:hover:bg-white/5 hover:shadow-sm",
             )}
           >
             <GripVertical className="h-3 w-3 flex-shrink-0 mt-[1px] text-muted-foreground/20 group-hover/sub:text-muted-foreground/50 transition-colors" />
@@ -228,14 +228,14 @@ function InsightsPanel({
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/60 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
       >
         <div className="flex items-center gap-2">
           <div className={cn("h-5 w-5 rounded-md flex items-center justify-center flex-shrink-0", iconBgClass)}>
             <HeaderIcon className={cn("h-3 w-3", iconColorClass)} />
           </div>
           <span className="text-xs font-semibold text-foreground truncate">{label}</span>
-          <span className="text-[10px] text-muted-foreground bg-white/80 border border-border/50 rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">
+          <span className="text-[10px] text-muted-foreground bg-background border border-border/50 rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">
             {insights.length}
           </span>
         </div>

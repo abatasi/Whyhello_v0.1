@@ -603,7 +603,7 @@ const COLOR_MAP: Record<string, {
   emerald: { bg: "bg-emerald-50", border: "border-emerald-200", iconBg: "bg-emerald-100", iconColor: "text-emerald-600", chipBg: "bg-emerald-100", chipBorder: "border-emerald-200", chipText: "text-emerald-700" },
   blue:    { bg: "bg-blue-50",    border: "border-blue-200",    iconBg: "bg-blue-100",    iconColor: "text-blue-600",    chipBg: "bg-blue-100",    chipBorder: "border-blue-200",    chipText: "text-blue-700"    },
   amber:   { bg: "bg-amber-50",   border: "border-amber-200",   iconBg: "bg-amber-100",   iconColor: "text-amber-600",   chipBg: "bg-amber-100",   chipBorder: "border-amber-200",   chipText: "text-amber-700"   },
-  slate:   { bg: "bg-slate-50",   border: "border-slate-200",   iconBg: "bg-slate-100",   iconColor: "text-slate-500",   chipBg: "bg-slate-100",   chipBorder: "border-slate-200",   chipText: "text-slate-600"   },
+  slate:   { bg: "bg-slate-50 dark:bg-slate-500/10",   border: "border-slate-200 dark:border-slate-500/20",   iconBg: "bg-slate-100 dark:bg-slate-500/20",   iconColor: "text-slate-500 dark:text-slate-400",   chipBg: "bg-slate-100 dark:bg-slate-500/20",   chipBorder: "border-slate-200 dark:border-slate-500/20",   chipText: "text-slate-600 dark:text-slate-300"   },
   sky:     { bg: "bg-sky-50",     border: "border-sky-200",     iconBg: "bg-sky-100",     iconColor: "text-sky-600",     chipBg: "bg-sky-100",     chipBorder: "border-sky-200",     chipText: "text-sky-700"     },
   rose:    { bg: "bg-rose-50",    border: "border-rose-200",    iconBg: "bg-rose-100",    iconColor: "text-rose-600",    chipBg: "bg-rose-100",    chipBorder: "border-rose-200",    chipText: "text-rose-600"    },
 };
@@ -875,7 +875,7 @@ function VoiceProfileCard({
               value={draft}
               onChange={e => setDraft(e.target.value)}
               rows={4}
-              className="w-full resize-none rounded-lg border border-violet-300 bg-white px-3 py-2 text-sm text-violet-900 placeholder:text-violet-300 focus:outline-none focus:ring-1 focus:ring-violet-400 leading-relaxed"
+              className="w-full resize-none rounded-lg border border-violet-300 bg-background px-3 py-2 text-sm text-violet-900 dark:text-violet-100 placeholder:text-violet-300 dark:placeholder:text-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-400 leading-relaxed"
             />
             <div className="flex items-center justify-end gap-2">
               <button
@@ -1070,7 +1070,7 @@ function CustomerCard({
                 ["Company size", customer.companySize],
                 ["Headquarters", customer.companyHeadquarters],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-lg border border-sky-100 bg-white/70 px-3 py-2">
+                <div key={label} className="rounded-lg border border-sky-100 bg-background/70 px-3 py-2">
                   <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
                   <p className="text-xs font-medium text-foreground mt-0.5">{value || "Not available"}</p>
                 </div>
@@ -1117,8 +1117,8 @@ function CustomerCard({
               className={cn(
                 "rounded-xl border px-3 py-3 text-left transition-all",
                 customer.testimonialAttribution === "named"
-                  ? "border-indigo-300 bg-white ring-1 ring-indigo-200"
-                  : "border-border/60 bg-white/60 hover:border-indigo-200",
+                  ? "border-indigo-300 bg-background ring-1 ring-indigo-200"
+                  : "border-border/60 bg-background/60 hover:border-indigo-200",
               )}
             >
               <p className="text-xs font-semibold text-foreground">Use in full</p>
@@ -1130,8 +1130,8 @@ function CustomerCard({
               className={cn(
                 "rounded-xl border px-3 py-3 text-left transition-all",
                 customer.testimonialAttribution !== "named"
-                  ? "border-indigo-300 bg-white ring-1 ring-indigo-200"
-                  : "border-border/60 bg-white/60 hover:border-indigo-200",
+                  ? "border-indigo-300 bg-background ring-1 ring-indigo-200"
+                  : "border-border/60 bg-background/60 hover:border-indigo-200",
               )}
             >
               <p className="text-xs font-semibold text-foreground">Anonymize</p>
@@ -2436,28 +2436,28 @@ export default function HQ() {
                   <p className={cn("text-sm font-semibold leading-tight", !wartime ? "text-primary" : "text-foreground")}>Peacetime</p>
                   <p className="text-[10px] mt-0.5 text-muted-foreground leading-snug">Expand & warm pipeline</p>
                 </div>
-                {!wartime && <div className="ml-auto h-4 w-4 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><div className="h-1.5 w-1.5 rounded-full bg-white" /></div>}
+                {!wartime && <div className="ml-auto h-4 w-4 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><div className="h-1.5 w-1.5 rounded-full bg-background dark:bg-background" /></div>}
               </button>
               <button
                 onClick={() => { if (!wartime) toggleMode(); }}
                 className={cn(
                   "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all border",
                   wartime
-                    ? "bg-[#F4E2D8] border-[#DDB99E]"
+                    ? "bg-[#F4E2D8] border-[#DDB99E] dark:bg-[#3d1c12] dark:border-[#5a2c1d]"
                     : "border-transparent hover:bg-secondary/60"
                 )}
               >
                 <div className={cn(
                   "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border",
-                  wartime ? "bg-[#E8C4B0] border-[#DDB99E]" : "bg-secondary/60 border-border/50"
+                  wartime ? "bg-[#E8C4B0] border-[#DDB99E] dark:bg-[#5a2c1d] dark:border-[#7c3e2a]" : "bg-secondary/60 border-border/50"
                 )}>
-                  <Flame className={cn("h-4 w-4", wartime ? "text-[#7C3E2A]" : "text-muted-foreground")} />
+                  <Flame className={cn("h-4 w-4", wartime ? "text-[#7C3E2A] dark:text-[#edd4c6]" : "text-muted-foreground")} />
                 </div>
                 <div className="min-w-0">
-                  <p className={cn("text-sm font-semibold leading-tight", wartime ? "text-[#7C3E2A]" : "text-foreground")}>Wartime</p>
+                  <p className={cn("text-sm font-semibold leading-tight", wartime ? "text-[#7C3E2A] dark:text-[#edd4c6]" : "text-foreground")}>Wartime</p>
                   <p className="text-[10px] mt-0.5 text-muted-foreground leading-snug">Focus & close deals</p>
                 </div>
-                {wartime && <div className="ml-auto h-4 w-4 rounded-full bg-[#7C3E2A] flex items-center justify-center flex-shrink-0"><div className="h-1.5 w-1.5 rounded-full bg-[#F4E2D8]" /></div>}
+                {wartime && <div className="ml-auto h-4 w-4 rounded-full bg-[#7C3E2A] dark:bg-[#edd4c6] flex items-center justify-center flex-shrink-0"><div className="h-1.5 w-1.5 rounded-full bg-[#F4E2D8] dark:bg-[#3d1c12]" /></div>}
               </button>
             </div>
           </nav>
@@ -3300,35 +3300,35 @@ export default function HQ() {
                 )}
 
                 {(activeTm.industries.length > 0 || activeTm.companySizes.length > 0 || activeTm.locations.length > 0) && (
-                  <div className="rounded-xl bg-teal-50 border border-teal-200 p-4 flex flex-col gap-2.5">
+                  <div className="rounded-xl bg-teal-50 border border-teal-200 dark:bg-teal-500/10 dark:border-teal-500/20 p-4 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <p className="text-[11px] font-semibold text-teal-700 uppercase tracking-wide">
+                      <p className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wide">
                         ICP summary — {activeTm.name}
                       </p>
                       {tmSampleLoading ? (
-                        <span className="flex items-center gap-1.5 text-[10px] font-semibold text-teal-600 bg-white border border-teal-200 rounded-full px-2.5 py-0.5">
+                        <span className="flex items-center gap-1.5 text-[10px] font-semibold text-teal-600 dark:text-teal-300 bg-background border border-teal-200 dark:border-teal-500/20 rounded-full px-2.5 py-0.5">
                           <Loader2 className="h-2.5 w-2.5 animate-spin" />
                           counting…
                         </span>
                       ) : tmSampleTotal !== null ? (
-                        <span className="text-[10px] font-semibold text-teal-700 bg-white border border-teal-200 rounded-full px-2.5 py-0.5">
+                        <span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-background border border-teal-200 dark:border-teal-500/20 rounded-full px-2.5 py-0.5">
                           {tmSampleTotal.toLocaleString()} {tmSampleTotal === 1 ? "company" : "companies"} in your database
                         </span>
                       ) : null}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {activeTm.industries.map(v => (
-                        <span key={`ind-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
+                        <span key={`ind-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-background border border-teal-200 dark:border-teal-500/20 text-[11px] font-medium text-teal-700 dark:text-teal-300">
                           <Globe className="h-2.5 w-2.5 flex-shrink-0" />{v}
                         </span>
                       ))}
                       {activeTm.companySizes.map(v => (
-                        <span key={`sz-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
+                        <span key={`sz-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-background border border-teal-200 dark:border-teal-500/20 text-[11px] font-medium text-teal-700 dark:text-teal-300">
                           <BarChart3 className="h-2.5 w-2.5 flex-shrink-0" />{v}
                         </span>
                       ))}
                       {activeTm.locations.map(v => (
-                        <span key={`loc-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-medium text-teal-700">
+                        <span key={`loc-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-background border border-teal-200 dark:border-teal-500/20 text-[11px] font-medium text-teal-700 dark:text-teal-300">
                           <MapPin className="h-2.5 w-2.5 flex-shrink-0" />{v}
                         </span>
                       ))}

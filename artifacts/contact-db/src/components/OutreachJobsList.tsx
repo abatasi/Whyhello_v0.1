@@ -110,7 +110,7 @@ function BattlecardPreviewDialog({
           </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-auto bg-slate-100 p-5">
+        <div className="min-h-0 flex-1 overflow-auto bg-muted/30 p-5">
           {previewError ? (
             <div className="mx-auto max-w-lg rounded-lg border border-amber-200 bg-amber-50 p-5 text-center text-sm text-amber-900" data-testid={`status-battlecard-preview-error-${job.id}`}>
               {previewError}
@@ -128,7 +128,7 @@ function BattlecardPreviewDialog({
                   title={`${job.title} — slide ${index + 1}`}
                   srcDoc={`<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}body>div{transform-origin:top left}</style></head><body>${slide}</body></html>`}
                   sandbox=""
-                  className="aspect-[4/3] w-full rounded-md border border-slate-300 bg-white shadow-lg"
+                  className="aspect-[4/3] w-full rounded-md border border-slate-300 dark:border-slate-700 bg-background shadow-lg"
                   data-testid={`preview-battlecard-slide-${job.id}-${index + 1}`}
                 />
               ))}

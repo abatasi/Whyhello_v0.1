@@ -1,11 +1,12 @@
 import { apiFetch } from "@/lib/apiFetch";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useTheme } from "next-themes";
 import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
   Settings, ShieldCheck, Flame, ChevronDown, Clock,
   Factory, Briefcase, Upload, Gauge, List, Milestone, Menu,
-  MessageSquare, ClipboardList, Layers3, House,
+  MessageSquare, ClipboardList, Layers3, House, Sun, Moon, Monitor
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
@@ -30,6 +31,18 @@ function formatRelative(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function nextTheme(theme: string | undefined): "light" | "dark" | "system" {
+  if (theme === "system" || !theme) return "light";
+  if (theme === "light") return "dark";
+  return "system";
+}
+
+function themeLabel(theme: string | undefined): string {
+  if (theme === "light") return "Light";
+  if (theme === "dark") return "Dark";
+  return "System";
+}
+
 function CreditTracker({ wartime }: { wartime: boolean }) {
   const { data: status } = useCreditsStatus();
   if (!status) return null;
@@ -42,14 +55,14 @@ function CreditTracker({ wartime }: { wartime: boolean }) {
     tier === "enterprise" ? "Enterprise" : tier === "professional" ? "Pro" : "Free";
 
   const colorClass = wartime
-    ? "text-[#7C3E2A]"
+    ? "text-[#7C3E2A] dark:text-[#E0BBA8]"
     : isUnlimited
-    ? "text-[#6F5BAF]"
+    ? "text-[#6F5BAF] dark:text-primary"
     : pct >= 0.9
     ? "text-destructive"
     : pct >= 0.7
-    ? "text-amber-600"
-    : "text-[#6F5BAF]";
+    ? "text-amber-600 dark:text-amber-500"
+    : "text-[#6F5BAF] dark:text-primary";
 
   const usageText = isUnlimited
     ? "∞"
@@ -69,7 +82,7 @@ function CreditTracker({ wartime }: { wartime: boolean }) {
     >
       <Zap className="h-3 w-3 flex-shrink-0" />
       <span>{usageText}</span>
-      <span className="hidden sm:inline text-[#99A1A6] font-normal">{tierLabel === "Free" ? "credits" : `· ${tierLabel}`}</span>
+      <span className="hidden sm:inline text-muted-foreground/80 font-normal">{tierLabel === "Free" ? "credits" : `· ${tierLabel}`}</span>
     </div>
   );
 }
@@ -169,10 +182,10 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
       <div className={cn(
         "flex h-7 w-full items-center gap-2 rounded-[7px] border px-2.5 transition-colors",
         wartime
-          ? "border-[#DDB99E] bg-[#EDD4C6] text-[#5C2E22]"
-          : "border-[#E4E8EB] bg-[#F7F9FA] focus-within:border-[#AAA4EF] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#6155D9]/[0.08]",
+          ? "border-[#DDB99E] bg-[#EDD4C6] text-[#5C2E22] dark:border-[#5a2c1d] dark:bg-[#3d1c12] dark:text-[#edd4c6]"
+          : "border-border bg-secondary/50 focus-within:border-primary/50 focus-within:bg-background focus-within:ring-2 focus-within:ring-primary/20",
       )}>
-        <Search className={cn("h-3.5 w-3.5 flex-shrink-0", wartime ? "text-[#A0624A]" : "text-[#8A959C]")} />
+        <Search className={cn("h-3.5 w-3.5 flex-shrink-0", wartime ? "text-[#A0624A] dark:text-[#E0BBA8]" : "text-muted-foreground")} />
         <input
           ref={inputRef}
           type="text"
@@ -182,7 +195,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
           onChange={(e) => setQuery(e.target.value)}
           className={cn(
             "min-w-0 flex-1 bg-transparent text-[11px] font-medium outline-none",
-            wartime ? "placeholder:text-[#A0624A]/70 text-[#5C2E22]" : "text-[#35414A] placeholder:text-[#96A0A6]",
+            wartime ? "placeholder:text-[#A0624A]/70 text-[#5C2E22] dark:placeholder:text-[#e8c9b8]/70 dark:text-[#edd4c6]" : "text-foreground placeholder:text-muted-foreground",
           )}
         />
         {query && (
@@ -190,7 +203,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
             onClick={() => setQuery("")}
             className={cn(
               "transition-colors flex-shrink-0",
-              wartime ? "text-[#A0624A] hover:text-[#5C2E22]" : "text-muted-foreground hover:text-foreground",
+              wartime ? "text-[#A0624A] hover:text-[#5C2E22] dark:text-[#E0BBA8] dark:hover:text-[#edd4c6]" : "text-muted-foreground hover:text-foreground",
             )}
             aria-label="Clear"
           >
@@ -390,8 +403,8 @@ function MoreDropdown({ wartime }: { wartime: boolean }) {
           "flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
           wartime
             ? isMoreActive
-              ? "bg-[#E0BBA8] text-[#5C2E22]"
-              : "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22]"
+              ? "bg-[#E0BBA8] text-[#5C2E22] dark:bg-[#5a2c1d] dark:text-[#edd4c6]"
+              : "text-[#7C3E2A] hover:bg-[#EDD4C6] hover:text-[#5C2E22] dark:text-[#e8c9b8] dark:hover:bg-[#3d1c12] dark:hover:text-[#edd4c6]"
             : isMoreActive
             ? "bg-secondary/50 text-foreground"
             : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
@@ -447,8 +460,8 @@ function HQPill({ wartime }: { wartime: boolean }) {
           "flex h-7 items-center gap-1.5 rounded-[7px] border px-2.5 text-[10px] font-semibold transition-all select-none cursor-pointer",
           wartime
             ? isActive
-              ? "bg-[#7C3E2A] text-[#F4E2D8] border-[#7C3E2A]"
-              : "bg-[#E8C4B0] text-[#7C3E2A] border-[#DDB99E] hover:bg-[#E0BBA8] hover:text-[#5C2E22]"
+              ? "bg-[#7C3E2A] text-[#F4E2D8] border-[#7C3E2A] dark:bg-[#e8c9b8] dark:text-[#3d1c12] dark:border-[#e8c9b8]"
+              : "bg-[#E8C4B0] text-[#7C3E2A] border-[#DDB99E] hover:bg-[#E0BBA8] hover:text-[#5C2E22] dark:bg-[#3d1c12] dark:text-[#e8c9b8] dark:border-[#5a2c1d] dark:hover:bg-[#5a2c1d] dark:hover:text-[#edd4c6]"
             : isActive
             ? "bg-foreground text-background border-foreground"
             : "bg-secondary text-foreground border-border hover:bg-secondary/80",
@@ -485,6 +498,8 @@ function LogoMenu({ wartime, sidebar = false, expanded = false }: { wartime: boo
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const { data: exports } = useListExports();
   const { toast } = useToast();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const darkTheme = resolvedTheme === "dark";
   const hasExports = (exports?.length ?? 0) > 0;
   const recentExports = exports?.slice(0, 3) ?? [];
 
@@ -686,6 +701,24 @@ function LogoMenu({ wartime, sidebar = false, expanded = false }: { wartime: boo
               <Settings className="h-4 w-4 flex-shrink-0" />
               <span>Settings</span>
             </Link>
+
+            <div className="px-4 py-2.5 flex items-center justify-between hover:bg-secondary/40 transition-colors">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                {theme === "system" ? <Monitor className="h-4 w-4 flex-shrink-0" /> : darkTheme ? <Moon className="h-4 w-4 flex-shrink-0" /> : <Sun className="h-4 w-4 flex-shrink-0" />}
+                <span>Theme</span>
+              </div>
+              <button
+                data-testid="button-theme-menu"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTheme(nextTheme(theme));
+                }}
+                className="flex items-center justify-center p-1 rounded-md bg-secondary/80 text-foreground border border-border/50 hover:bg-secondary transition-colors"
+                aria-label={`Theme: ${themeLabel(theme)}. Change theme`}
+              >
+                <span className="text-[10px] font-semibold px-1 uppercase">{themeLabel(theme)}</span>
+              </button>
+            </div>
           </div>
 
           <div className="border-t border-border/60" />
@@ -709,6 +742,8 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [location] = useLocation();
   const { user } = useUser();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const darkTheme = resolvedTheme === "dark";
   const displayName = user?.firstName
     ? `${user.firstName} ${user.lastName ?? ""}`.trim()
     : user?.primaryEmailAddress?.emailAddress ?? "Account";
@@ -783,6 +818,16 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
         </nav>
 
         <div className="master-sidebar-bottom">
+          <button
+            onClick={() => setTheme(nextTheme(theme))}
+            data-testid="button-theme-desktop"
+            className="master-route"
+            title={!expanded ? `Theme: ${themeLabel(theme)}` : undefined}
+            aria-label={`Theme: ${themeLabel(theme)}. Change theme`}
+          >
+            {theme === "system" ? <Monitor size={18} /> : darkTheme ? <Moon size={18} /> : <Sun size={18} />}
+            <span>{themeLabel(theme)} Theme</span>
+          </button>
           <Link href="/settings" className="master-route" aria-label="Settings" title={!expanded ? "Settings" : undefined}>
             <Settings size={18} />
             <span>Settings</span>
@@ -808,6 +853,8 @@ export function Navbar() {
   const { signOut } = useClerk();
   const [location] = useLocation();
   const { mode } = useAppMode();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const darkTheme = resolvedTheme === "dark";
   const wartime = mode === "wartime";
   const [mobileOpen, setMobileOpen] = useState(false);
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -837,7 +884,7 @@ export function Navbar() {
         className={cn(
         "sticky top-0 z-40 w-full md:ml-11 md:w-[calc(100%-44px)] border-b transition-colors duration-300",
         wartime
-          ? "border-[#e8c9b8] bg-[#F4E2D8]"
+          ? "border-[#e8c9b8] bg-[#F4E2D8] dark:border-[#5a2c1d] dark:bg-[#3d1c12]"
           : "border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
         )}
       >
@@ -868,7 +915,7 @@ export function Navbar() {
           onClick={() => setMobileOpen(v => !v)}
           className={cn(
             "p-2 -mr-1 rounded-lg transition-colors flex-shrink-0",
-            wartime ? "text-[#7C3E2A] hover:bg-[#EDD4C6]" : "text-foreground hover:bg-secondary/40",
+            wartime ? "text-[#7C3E2A] hover:bg-[#EDD4C6] dark:text-[#edd4c6] dark:hover:bg-[#5a2c1d]" : "text-foreground hover:bg-secondary/40",
           )}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
@@ -882,7 +929,7 @@ export function Navbar() {
           className={cn(
             "md:hidden border-t overflow-y-auto",
             "max-h-[calc(100svh-3.5rem)]",
-            wartime ? "border-[#e8c9b8] bg-[#F4E2D8]" : "border-border bg-background",
+            wartime ? "border-[#e8c9b8] bg-[#F4E2D8] dark:border-[#5a2c1d] dark:bg-[#3d1c12]" : "border-border bg-background",
           )}
         >
           {/* Nav + more items */}
@@ -899,7 +946,7 @@ export function Navbar() {
                   className={cn(
                     "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors",
                     wartime
-                      ? isActive ? "bg-[#E0BBA8] text-[#5C2E22]" : "text-[#7C3E2A] hover:bg-[#EDD4C6]/60"
+                      ? isActive ? "bg-[#E0BBA8] text-[#5C2E22] dark:bg-[#5a2c1d] dark:text-[#edd4c6]" : "text-[#7C3E2A] hover:bg-[#EDD4C6]/60 dark:text-[#e8c9b8] dark:hover:bg-[#5a2c1d]"
                       : isActive ? "bg-secondary/60 text-foreground" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
                   )}
                 >
@@ -910,7 +957,7 @@ export function Navbar() {
             })}
           </nav>
 
-          <div className={cn("h-px mx-4 my-2", wartime ? "bg-[#e8c9b8]" : "bg-border/60")} />
+          <div className={cn("h-px mx-4 my-2", wartime ? "bg-[#e8c9b8] dark:bg-[#5a2c1d]" : "bg-border/60")} />
 
           {/* Profile row */}
           <Link
@@ -918,24 +965,43 @@ export function Navbar() {
             onClick={closeMobile}
             className={cn(
               "flex items-center gap-3 mx-3 px-3 py-3 my-1 rounded-xl transition-colors",
-              wartime ? "hover:bg-[#EDD4C6]/60" : "hover:bg-secondary/30",
+              wartime ? "hover:bg-[#EDD4C6]/60 dark:hover:bg-[#5a2c1d]/60" : "hover:bg-secondary/30",
             )}
           >
             {user?.imageUrl ? (
-              <img src={user.imageUrl} alt="Profile" className={cn("h-9 w-9 rounded-full object-cover border flex-shrink-0", wartime ? "border-[#DDB99E]" : "border-border")} />
+              <img src={user.imageUrl} alt="Profile" className={cn("h-9 w-9 rounded-full object-cover border flex-shrink-0", wartime ? "border-[#DDB99E] dark:border-[#5a2c1d]" : "border-border")} />
             ) : (
-              <div className={cn("h-9 w-9 rounded-full flex items-center justify-center font-semibold text-sm border flex-shrink-0", wartime ? "bg-[#EDD4C6] text-[#7C3E2A] border-[#DDB99E]" : "bg-primary/10 text-primary border-primary/20")}>
+              <div className={cn("h-9 w-9 rounded-full flex items-center justify-center font-semibold text-sm border flex-shrink-0", wartime ? "bg-[#EDD4C6] text-[#7C3E2A] border-[#DDB99E] dark:bg-[#5a2c1d] dark:text-[#edd4c6] dark:border-[#7c3e2a]" : "bg-primary/10 text-primary border-primary/20")}>
                 {getInitials(displayName)}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className={cn("text-sm font-semibold truncate", wartime ? "text-[#5C2E22]" : "text-foreground")}>{displayName}</p>
+              <p className={cn("text-sm font-semibold truncate", wartime ? "text-[#5C2E22] dark:text-[#f4e2d8]" : "text-foreground")}>{displayName}</p>
               <p className="text-xs text-muted-foreground">Profile &amp; settings</p>
             </div>
             <CreditTracker wartime={wartime} />
           </Link>
 
-          <div className={cn("h-px mx-4 my-2", wartime ? "bg-[#e8c9b8]" : "bg-border/60")} />
+          <div className={cn("h-px mx-4 my-2", wartime ? "bg-[#e8c9b8] dark:bg-[#5a2c1d]" : "bg-border/60")} />
+
+          <div className="px-3">
+            <button
+              type="button"
+              onClick={() => setTheme(nextTheme(theme))}
+              data-testid="button-theme-mobile"
+              aria-label={`Theme: ${themeLabel(theme)}. Change theme`}
+              className={cn(
+                "flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-medium text-left transition-colors",
+                wartime ? "text-[#7C3E2A] hover:bg-[#EDD4C6]/60 dark:text-[#e8c9b8] dark:hover:bg-[#5a2c1d]/60" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
+              )}
+            >
+              {theme === "system" ? <Monitor className="h-4 w-4 flex-shrink-0" /> : darkTheme ? <Moon className="h-4 w-4 flex-shrink-0" /> : <Sun className="h-4 w-4 flex-shrink-0" />}
+              <span className="flex-1">Theme</span>
+              <span className="text-xs font-semibold uppercase tracking-wide">{themeLabel(theme)}</span>
+            </button>
+          </div>
+
+          <div className={cn("h-px mx-4 my-2", wartime ? "bg-[#e8c9b8] dark:bg-[#5a2c1d]" : "bg-border/60")} />
 
           {/* Sign out */}
           <div className="px-3 pb-4">
@@ -943,7 +1009,7 @@ export function Navbar() {
               onClick={() => { closeMobile(); signOut({ redirectUrl: basePath || "/" }); }}
               className={cn(
                 "flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-medium text-left transition-colors",
-                wartime ? "text-[#7C3E2A] hover:bg-[#EDD4C6]/60" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
+                wartime ? "text-[#7C3E2A] hover:bg-[#EDD4C6]/60 dark:text-[#e8c9b8] dark:hover:bg-[#5a2c1d]/60" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
               )}
             >
               <LogOut className="h-4 w-4 flex-shrink-0" />

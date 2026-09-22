@@ -140,7 +140,7 @@ export default function PublicContactProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-background">
         <PublicHeader onLogin={login} />
         <div className="max-w-5xl mx-auto px-6 py-8 animate-pulse space-y-6">
           <div className="h-8 w-28 bg-muted rounded" />
@@ -158,7 +158,7 @@ export default function PublicContactProfile() {
 
   if (isError || !contact) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-background">
         <PublicHeader onLogin={login} />
         <div className="p-8 text-center mt-20">
           <h2 className="text-2xl font-bold mb-4">Contact not found</h2>
@@ -183,7 +183,7 @@ export default function PublicContactProfile() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-background">
       <PublicHeader onLogin={login} />
 
       {/* Dark overlay below header — dims all content */}
@@ -204,7 +204,7 @@ export default function PublicContactProfile() {
           <div className="flex flex-col gap-3">
             <button
               onClick={login}
-              className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-white border border-border rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors shadow-sm"
+              className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-card border border-border rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors shadow-sm"
             >
               <GoogleIcon />
               Continue with Google
@@ -226,7 +226,7 @@ export default function PublicContactProfile() {
       </div>
 
       {/* Full profile content — rendered but dimmed beneath overlay */}
-      <div className="bg-[#F8FAFC] min-h-full">
+      <div className="bg-background min-h-full">
         <div className="max-w-5xl mx-auto px-6 py-8">
           <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors gap-1.5">
             <ArrowLeft className="h-4 w-4" />

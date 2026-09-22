@@ -8,31 +8,31 @@ import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
 
 export const GREETING_LIBRARY = [
-  "Why hello, Leandro 👋",
+  "Why hello, Leandro",
   "Hell yeah, Leandro",
-  "Why hello, stranger 👋",
+  "Why hello, stranger",
   "Leandro returns!",
   "And we’re back.",
   "There you are, Leandro.",
   "Ah, Leandro. We meet again.",
-  "Howdy, Leandro 🤠",
+  "Howdy, Leandro",
   "Well, well, well… Leandro.",
   "Leandro has entered the building.",
   "Ready when you are, Leandro.",
   "Another day, another prospect.",
   "Shall we find some buyers, Leandro?",
   "Let’s see who’s worth knowing today.",
-  "Bonjour, Leandro 👋",
-  "Hola, Leandro 👋",
-  "Guten Tag, Leandro 👋",
-  "Marhaba, Leandro 👋",
-  "Salam, Leandro 👋",
-  "Buongiorno, Leandro ☀️",
-  "Morning, Leandro ☀️",
+  "Bonjour, Leandro",
+  "Hola, Leandro",
+  "Guten Tag, Leandro",
+  "Marhaba, Leandro",
+  "Salam, Leandro",
+  "Buongiorno, Leandro",
+  "Morning, Leandro",
   "Good afternoon, Leandro.",
-  "Evening, Leandro 🌙",
-  "Early start today, Leandro? ☕",
-  "Burning the midnight oil, Leandro? 🌙",
+  "Evening, Leandro",
+  "Early start today, Leandro?",
+  "Burning the midnight oil, Leandro?",
   "Who are we meeting today, Leandro?",
   "Let’s find someone worth talking to.",
   "Your Buyers await, Leandro.",
@@ -40,15 +40,15 @@ export const GREETING_LIBRARY = [
   "Let’s make some introductions.",
   "Let’s find your next conversation.",
   "Who’s on the radar today, Leandro?",
-  "Let’s find a reason to say hello. 👋",
+  "Let’s find a reason to say hello.",
 ] as const;
 
 const TIME_AWARE_GREETINGS = new Set([
-  "Morning, Leandro ☀️",
+  "Morning, Leandro",
   "Good afternoon, Leandro.",
-  "Evening, Leandro 🌙",
-  "Early start today, Leandro? ☕",
-  "Burning the midnight oil, Leandro? 🌙",
+  "Evening, Leandro",
+  "Early start today, Leandro?",
+  "Burning the midnight oil, Leandro?",
 ]);
 
 function greetingForHour(hour: number): string[] {
@@ -66,10 +66,10 @@ function greetingForHour(hour: number): string[] {
 }
 
 function scoreBadgeClass(score: number): string {
-  if (score >= 90) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (score >= 75) return "bg-blue-50 text-blue-700 border-blue-200";
-  if (score >= 50) return "bg-amber-50 text-amber-700 border-amber-200";
-  return "bg-red-50 text-red-700 border-red-200";
+  if (score >= 90) return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20";
+  if (score >= 75) return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20";
+  if (score >= 50) return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
+  return "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20";
 }
 
 function LeadRow({ lead, revealed }: { lead: TopLead; revealed: boolean }) {
@@ -116,7 +116,7 @@ function BuyerRow({ buyer }: { buyer: TopBuyer }) {
     <tr className="border-b border-border/70 last:border-0 hover:bg-secondary/20 transition-colors">
       <td className="px-5 py-4">
         <Link href={`/companies/${buyer.id}`} className="group flex min-w-[180px] items-center gap-3">
-          <span className="grid h-[29px] w-[29px] shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600">
+          <span className="grid h-[29px] w-[29px] shrink-0 place-items-center rounded-lg bg-secondary text-secondary-foreground">
             <Building2 className="h-3.5 w-3.5" />
           </span>
           <span className="min-w-0 truncate text-[11px] font-semibold text-foreground transition-colors group-hover:text-primary">
@@ -189,10 +189,10 @@ function ActivitySkeleton() {
 }
 
 function activityTone(type: HomeActivity["type"]): string {
-  if (type === "contact-activated") return "bg-emerald-50 text-emerald-700";
-  if (type === "hq") return "bg-blue-50 text-blue-700";
-  if (type === "playbook") return "bg-amber-50 text-amber-700";
-  return "bg-violet-50 text-violet-700";
+  if (type === "contact-activated") return "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400";
+  if (type === "hq") return "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400";
+  if (type === "playbook") return "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400";
+  return "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400";
 }
 
 export default function Home() {
@@ -216,13 +216,13 @@ export default function Home() {
       <div className="home-approved-design flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-[1240px] px-6 pb-[70px] pt-8 md:px-[42px]">
           <section className="mb-6 border-b border-border pb-[18px]">
-            <h1 className="text-[24px] font-bold leading-[1.2] tracking-[-0.035em] text-[#17212B]">{greeting}</h1>
+            <h1 className="text-[24px] font-bold leading-[1.2] tracking-[-0.035em] text-foreground">{greeting}</h1>
           </section>
 
           <section className="mb-6">
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-bold tracking-tight text-[#17212B]">Your latest moves 🏄</h2>
+                <h2 className="text-[14px] font-bold tracking-tight text-foreground">🏄 Your latest moves</h2>
               </div>
               {activityLoading ? <ActivitySkeleton /> : activityError ? (
                 <div className="px-5 py-6 text-sm text-muted-foreground">Recent activity is unavailable right now.</div>
@@ -261,7 +261,7 @@ export default function Home() {
           <section className="mb-6">
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-bold tracking-tight text-[#17212B]">Your next conversation</h2>
+                <h2 className="text-[14px] font-bold tracking-tight text-foreground">Your next conversation</h2>
               </div>
               {isError ? (
                 <div className="px-6 py-12 text-center">
@@ -274,7 +274,7 @@ export default function Home() {
                     <thead className="border-b border-border bg-muted/50">
                       <tr>
                         {["Name", "Score", "Email", "Title", "Company", "Location"].map((heading) => (
-                          <th key={heading} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{heading}</th>
+                          <th key={heading} className="px-5 py-3 text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">{heading}</th>
                         ))}
                       </tr>
                     </thead>
@@ -297,7 +297,7 @@ export default function Home() {
           <section>
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-bold tracking-tight text-[#17212B]">Your next buyer</h2>
+                <h2 className="text-[14px] font-bold tracking-tight text-foreground">Your next buyer</h2>
               </div>
               {buyersError ? (
                 <div className="px-6 py-12 text-center">
@@ -310,7 +310,7 @@ export default function Home() {
                     <thead className="border-b border-border bg-muted/50">
                       <tr>
                         {["Company", "HQ fit", "Industry", "Target market", "Known contacts", "Location"].map((heading) => (
-                          <th key={heading} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{heading}</th>
+                          <th key={heading} className="px-5 py-3 text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">{heading}</th>
                         ))}
                       </tr>
                     </thead>

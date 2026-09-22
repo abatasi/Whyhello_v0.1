@@ -6,9 +6,9 @@ export default function Landing() {
   const [, navigate] = useLocation();
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Top bar */}
-      <header className="w-full px-8 py-5 flex items-center justify-between border-b border-border/40 bg-white">
+      <header className="w-full px-8 py-5 flex items-center justify-between border-b border-border/40 bg-background">
         <img src={whyhelloLogo} alt="Whyhello" className="h-8 w-auto" />
         <button
           onClick={() => navigate("/sign-in")}
@@ -57,7 +57,7 @@ export default function Landing() {
           <div className="flex flex-col gap-3 max-w-sm">
             <button
               onClick={() => navigate("/sign-in")}
-              className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-white border border-border rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors shadow-sm"
+              className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-background border border-border rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors shadow-sm"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -94,7 +94,7 @@ export default function Landing() {
             ].map((c, i) => (
               <div
                 key={c.name}
-                className="bg-white rounded-xl p-4 shadow-sm border border-border/50 flex items-center gap-3"
+                className="bg-background rounded-xl p-4 shadow-sm border border-border/50 flex items-center gap-3"
                 style={{ opacity: 1 - i * 0.15, transform: `scale(${1 - i * 0.02})` }}
               >
                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-100 to-primary/30 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
@@ -109,7 +109,7 @@ export default function Landing() {
                 </span>
               </div>
             ))}
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-border/50 mt-4">
+            <div className="bg-background rounded-xl p-4 shadow-sm border border-border/50 mt-4">
               <p className="text-xs font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
                 <SlidersHorizontal className="w-3 h-3" /> Active Filters
               </p>

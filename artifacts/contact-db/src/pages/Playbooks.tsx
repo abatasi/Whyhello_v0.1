@@ -688,7 +688,7 @@ function PlaceholderNode({ data }: NodeProps) {
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !border-2 !border-white !bg-slate-300 !rounded-full"
+        className="!w-3 !h-3 !border-2 !border-background !bg-muted-foreground/30 !rounded-full"
         style={{ top: -6 }}
       />
 
@@ -700,7 +700,7 @@ function PlaceholderNode({ data }: NodeProps) {
             ? "border-primary bg-primary/5 shadow-md"
             : open
               ? "border-primary/60 bg-primary/3 shadow-sm"
-              : "border-slate-300 bg-white/80 hover:border-primary/50 hover:bg-primary/5",
+              : "border-slate-300 bg-background hover:border-primary/50 hover:bg-primary/5",
         )}
         onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOver(true); }}
         onDragLeave={e => { e.stopPropagation(); setDragOver(false); }}
@@ -709,7 +709,7 @@ function PlaceholderNode({ data }: NodeProps) {
       >
         <div className={cn(
           "h-7 w-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors flex-shrink-0",
-          dragOver || open ? "border-primary bg-primary/10" : "border-dashed border-slate-300 bg-slate-50",
+          dragOver || open ? "border-primary bg-primary/10" : "border-dashed border-border bg-secondary/30",
         )}>
           <Plus className={cn("h-3.5 w-3.5 transition-colors", dragOver || open ? "text-primary" : "text-slate-400")} />
         </div>
@@ -838,7 +838,7 @@ function PlaybookNodeComponent({ data, selected, id }: NodeProps) {
   return (
     <div
       className={cn(
-        "group relative rounded-xl border bg-white shadow-sm transition-all select-none",
+        "group relative rounded-xl border bg-card shadow-sm transition-all select-none",
         "min-w-[220px] max-w-[260px]",
         selected ? cn("shadow-lg ring-2 ring-primary/40", cat.border) : cn("hover:shadow-md", cat.border),
         !complete && "ring-1 ring-red-300",
@@ -972,7 +972,7 @@ function PlaybookEdge({
           >
             <button
               onClick={onInsert}
-              className="h-5 w-5 rounded-full bg-white border border-border shadow-md flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
+              className="h-5 w-5 rounded-full bg-background border border-border shadow-md flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
             >
               <Plus className="h-3 w-3" />
             </button>
@@ -2045,7 +2045,7 @@ function ProspectRoster({
               )}
               {/* Primary can't be removed while sub-lanes exist */}
               {p.isPrimary && subLaneCount > 0 && (
-                <span className="text-[9px] opacity-50 ml-0.5" title="Remove all threads first">🔒</span>
+                <span className="text-[9px] opacity-50 ml-0.5" title="Remove all threads first">(Locked)</span>
               )}
             </div>
           );
@@ -2817,9 +2817,9 @@ function CanvasInner({
             minZoom={0.2}
             maxZoom={2}
             proOptions={{ hideAttribution: true }}
-            className="bg-[#fafafa]"
+            className="bg-background"
           >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#d1d5db" />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} className="dark:opacity-20" color="#d1d5db" />
             {showMinimap && (
               <MiniMap
                 nodeColor={(node) => {

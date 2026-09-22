@@ -4,6 +4,9 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppModeProvider } from "@/contexts/AppModeContext";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { useTheme } from "next-themes";
+import { dark } from "@clerk/themes";
 import {
   ClerkProvider,
   SignIn,
@@ -95,7 +98,7 @@ const clerkAppearance = {
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg border border-border/50",
+    cardBox: "bg-card text-card-foreground rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg border border-border/50",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-foreground font-display font-bold",
@@ -112,11 +115,11 @@ const clerkAppearance = {
     logoImage: "h-10 w-auto",
     socialButtonsBlockButton: "border border-border hover:bg-secondary/50 transition-colors",
     formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
-    formFieldInput: "border-input bg-white text-foreground focus:ring-2 focus:ring-primary/30",
+    formFieldInput: "border-input bg-background text-foreground focus:ring-2 focus:ring-primary/30",
     footerAction: "border-t border-border/40",
     dividerLine: "bg-border",
     alert: "bg-destructive/10 border border-destructive/20 rounded-lg",
-    otpCodeFieldInput: "border-input bg-white text-foreground",
+    otpCodeFieldInput: "border-input bg-background text-foreground",
     formFieldRow: "gap-2",
     main: "gap-4",
   },
@@ -124,7 +127,7 @@ const clerkAppearance = {
 
 function LoadingSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
     </div>
   );
@@ -159,7 +162,7 @@ function CompanyProfileRoute() {
 
 function SignInPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
     </div>
   );
@@ -167,7 +170,7 @@ function SignInPage() {
 
 function SignUpPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
     </div>
   );
@@ -230,12 +233,31 @@ function Router() {
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
+  const { resolvedTheme } = useTheme();
 
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
+      appearance={{
+        ...clerkAppearance,
+        theme: resolvedTheme === "dark" ? [shadcn, dark] : shadcn,
+        variables: {
+          ...clerkAppearance.variables,
+          colorBackground: "hsl(var(--background))",
+          colorInput: "hsl(var(--input))",
+          colorInputForeground: "hsl(var(--foreground))",
+          colorNeutral: "hsl(var(--secondary))",
+          colorForeground: "hsl(var(--foreground))",
+          colorMutedForeground: "hsl(var(--muted-foreground))",
+        },
+        elements: {
+          ...clerkAppearance.elements,
+          cardBox: "bg-card text-card-foreground rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg border border-border/50",
+          formFieldInput: "border-input bg-background text-foreground focus:ring-2 focus:ring-primary/30",
+          otpCodeFieldInput: "border-input bg-background text-foreground",
+        }
+      }}
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
       afterSignOutUrl={basePath || "/"}
@@ -269,11 +291,13 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <AppModeProvider>
-        <ClerkProviderWithRoutes />
-      </AppModeProvider>
-    </WouterRouter>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <WouterRouter base={basePath}>
+        <AppModeProvider>
+          <ClerkProviderWithRoutes />
+        </AppModeProvider>
+      </WouterRouter>
+    </ThemeProvider>
   );
 }
 
