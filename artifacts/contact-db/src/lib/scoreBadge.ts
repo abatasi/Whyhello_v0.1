@@ -13,3 +13,11 @@ export function scoreBadgeClass(score: number | null | undefined): string {
   }
   return "border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400";
 }
+
+export function scoreBadgeLabel(score: number | null | undefined): string {
+  if (score == null) return "—";
+  if (score >= 90) return `${score} · Excellent`;
+  if (score >= 75) return `${score} · Strong`;
+  if (score >= 50) return `${score} · Potential`;
+  return `${score} · Low Fit`;
+}

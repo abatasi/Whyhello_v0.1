@@ -11,7 +11,7 @@ import {
 import { useUser, useClerk } from "@clerk/react";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
 import { cn, getInitials } from "@/lib/utils";
-import { scoreBadgeClass } from "@/lib/scoreBadge";
+import { scoreBadgeClass, scoreBadgeLabel } from "@/lib/scoreBadge";
 import {
   useListExports,
   downloadExportFile,
@@ -140,12 +140,12 @@ function RecentContactMenuItem({
       </span>
       <span
         className={cn(
-          "inline-flex min-w-[42px] shrink-0 items-center justify-center rounded-full border px-2.5 py-1 text-[11px] font-bold",
+          "inline-flex min-w-[42px] shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-bold",
           scoreBadgeClass(aggregateScore?.metaScore),
         )}
         aria-label={aggregateScore ? `Contact score ${aggregateScore.metaScore}` : "Contact score unavailable"}
       >
-        {isLoading ? "…" : aggregateScore?.metaScore ?? "—"}
+        {isLoading ? "…" : scoreBadgeLabel(aggregateScore?.metaScore)}
       </span>
     </button>
   );
@@ -385,12 +385,12 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
                         </span>
                         <span
                           className={cn(
-                            "inline-flex min-w-[42px] shrink-0 items-center justify-center rounded-full border px-2.5 py-1 text-[11px] font-bold",
+                            "inline-flex min-w-[42px] shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-bold",
                             scoreBadgeClass(companyScore),
                           )}
                           aria-label={companyScore != null ? `Company score ${companyScore}` : "Company score unavailable"}
                         >
-                          {companyScore ?? "—"}
+                          {scoreBadgeLabel(companyScore)}
                         </span>
                       </button>
                     );
