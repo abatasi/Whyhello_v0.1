@@ -4,14 +4,19 @@ import { Link, useLocation } from "wouter";
 import { useTheme } from "next-themes";
 import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
-  Settings, ShieldCheck, Flame, ChevronDown, Clock,
+  Settings, ShieldCheck, Flame, ChevronDown, Clock, Bookmark,
   Factory, Briefcase, Upload, Gauge, List, Milestone, Menu,
   MessageSquare, ClipboardList, Layers3, House, Sun, Moon, Monitor
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
 import { cn, getInitials } from "@/lib/utils";
-import { useListExports, downloadExportFile, useCreditsStatus } from "@workspace/api-client-react";
+import {
+  useListExports,
+  downloadExportFile,
+  useCreditsStatus,
+  useListSavedSearches,
+} from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useAppMode } from "@/contexts/AppModeContext";
@@ -102,13 +107,37 @@ interface CompanyResult {
   location: string | null;
 }
 
+const RECENT_SEARCHES_KEY = "whyhello-recent-global-searches";
+
+interface NavbarSavedSearch {
+  id: number;
+  name: string;
+  filters: Record<string, unknown>;
+  tab?: string;
+  search?: string | null;
+}
+
 function GlobalSearch({ wartime }: { wartime: boolean }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
+  const { data: savedSearchData = [] } = useListSavedSearches();
+  const savedSearches = savedSearchData as NavbarSavedSearch[];
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) ?? "[]");
+      if (Array.isArray(stored)) {
+        setRecentSearches(stored.filter((item): item is string => typeof item === "string").slice(0, 5));
+      }
+    } catch {
+      setRecentSearches([]);
+    }
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -118,6 +147,18 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
+
+  useEffect(() => {
+    function handleShortcut(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOpen(true);
+        requestAnimationFrame(() => inputRef.current?.focus());
+      }
+    }
+    document.addEventListener("keydown", handleShortcut);
+    return () => document.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -164,7 +205,15 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
   const companies = companiesData?.data ?? [];
   const isLoading = enabled && (contactsLoading || companiesLoading);
   const hasResults = contacts.length > 0 || companies.length > 0;
-  const showDropdown = open && debouncedQuery.length >= 2;
+  const showDropdown = open;
+
+  function rememberSearch(value: string) {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    const next = [trimmed, ...recentSearches.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())].slice(0, 5);
+    setRecentSearches(next);
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+  }
 
   function closeSearch() {
     setOpen(false);
@@ -173,12 +222,40 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
   }
 
   function navigateTo(path: string) {
+    rememberSearch(query);
     navigate(path);
     closeSearch();
   }
 
+  function openSearch(value: string) {
+    rememberSearch(value);
+    navigate(`/directory?search=${encodeURIComponent(value)}`);
+    closeSearch();
+  }
+
+  function openSavedSearch(savedSearch: NavbarSavedSearch) {
+    const params = new URLSearchParams();
+    const search = savedSearch.search ?? (
+      typeof savedSearch.filters.search === "string" ? savedSearch.filters.search : ""
+    );
+    const tab = savedSearch.tab ?? (
+      typeof savedSearch.filters.tab === "string" ? savedSearch.filters.tab : "contacts"
+    );
+    params.set("tab", tab);
+    if (search) params.set("search", search);
+    Object.entries(savedSearch.filters).forEach(([key, value]) => {
+      if (key === "search" || key === "tab") return;
+      if (Array.isArray(value) && value.length > 0) params.set(key, value.join(","));
+    });
+    navigate(`/directory?${params.toString()}`);
+    closeSearch();
+  }
+
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div
+      ref={containerRef}
+      className="relative w-full origin-center transition-transform duration-200 hover:scale-[1.015] focus-within:scale-[1.015]"
+    >
       <div className={cn(
         "flex h-7 w-full items-center gap-2 rounded-[7px] border px-2.5 transition-colors",
         wartime
@@ -193,8 +270,11 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
           value={query}
           onFocus={() => setOpen(true)}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && query.trim()) openSearch(query);
+          }}
           className={cn(
-            "min-w-0 flex-1 bg-transparent text-[11px] font-medium outline-none",
+            "min-w-0 flex-1 cursor-pointer bg-transparent text-[11px] font-medium outline-none",
             wartime ? "placeholder:text-[#A0624A]/70 text-[#5C2E22] dark:placeholder:text-[#e8c9b8]/70 dark:text-[#edd4c6]" : "text-foreground placeholder:text-muted-foreground",
           )}
         />
@@ -210,11 +290,60 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
             <X className="h-3.5 w-3.5" />
           </button>
         )}
+        <kbd className={cn(
+          "ml-auto flex-shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold leading-none",
+          wartime
+            ? "border-[#C99478]/60 bg-[#F4E2D8]/70 text-[#7C3E2A] dark:border-[#8a4933] dark:bg-[#5a2c1d] dark:text-[#E0BBA8]"
+            : "border-border bg-background/70 text-muted-foreground",
+        )}>
+          Ctrl K
+        </kbd>
       </div>
 
       {showDropdown && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-border bg-card shadow-lg z-50 overflow-hidden">
-          {isLoading ? (
+        <div className="absolute left-1/2 top-full z-50 mt-2 w-full min-w-[22rem] -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+          {debouncedQuery.length < 2 ? (
+            <div className="max-h-[24rem] overflow-y-auto py-2">
+              <div className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Recent searches
+              </div>
+              {recentSearches.length > 0 ? (
+                recentSearches.map((recent) => (
+                  <button
+                    key={recent}
+                    type="button"
+                    onClick={() => openSearch(recent)}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-secondary/50"
+                  >
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="truncate">{recent}</span>
+                  </button>
+                ))
+              ) : (
+                <p className="px-3 py-2 text-xs text-muted-foreground">No recent searches yet.</p>
+              )}
+
+              <div className="mx-3 my-2 border-t border-border/70" />
+              <div className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Saved searches
+              </div>
+              {savedSearches.length > 0 ? (
+                savedSearches.slice(0, 6).map((saved) => (
+                  <button
+                    key={saved.id}
+                    type="button"
+                    onClick={() => openSavedSearch(saved)}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-secondary/50"
+                  >
+                    <Bookmark className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="truncate">{saved.name}</span>
+                  </button>
+                ))
+              ) : (
+                <p className="px-3 py-2 text-xs text-muted-foreground">No saved searches yet.</p>
+              )}
+            </div>
+          ) : isLoading ? (
             <div className="px-4 py-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Searching…
@@ -889,7 +1018,7 @@ export function Navbar() {
         )}
       >
       {/* ── Desktop bar (md+) — navigation left, utilities right ── */}
-      <div className="hidden h-11 w-full grid-cols-[minmax(0,1fr)_minmax(280px,420px)_minmax(0,1fr)] items-center gap-[18px] px-[18px] pl-[18px] md:grid">
+      <div className="hidden h-11 w-full grid-cols-[minmax(0,1fr)_minmax(360px,560px)_minmax(0,1fr)] items-center gap-[18px] px-[18px] pl-[18px] md:grid">
         <div />
         <GlobalSearch wartime={wartime} />
         <div className="flex min-w-0 items-center justify-end gap-3">
