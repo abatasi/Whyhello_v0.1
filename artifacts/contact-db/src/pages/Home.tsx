@@ -416,7 +416,7 @@ export default function Home() {
   return (
     <Shell>
       <div className="home-approved-design flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-[1240px] px-6 pb-[70px] pt-8 md:px-[42px]">
+        <div className="w-full max-w-[1240px] px-6 pb-[70px] pt-8 md:px-[42px]">
           <section className="mb-6 border-b border-border pb-[18px]">
             <h1 className="text-[24px] font-bold leading-[1.2] tracking-[-0.035em] text-foreground">{greeting}</h1>
           </section>
