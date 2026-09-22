@@ -1,8 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "wouter";
 import { useUser } from "@clerk/react";
-import { Building2, ClipboardList, Send, SlidersHorizontal, Target, UserCheck } from "lucide-react";
-import { useBatchRevealStatuses, useHomeActivity, useTopBuyers, useTopLeads } from "@workspace/api-client-react";
+import {
+  Building2,
+  ClipboardList,
+  Send,
+  SlidersHorizontal,
+  Target,
+  UserCheck,
+  ChevronRight,
+  ArrowRight,
+  MapPin,
+  Mail
+} from "lucide-react";
+import {
+  useBatchRevealStatuses,
+  useHomeActivity,
+  useTopBuyers,
+  useTopLeads,
+  useGetInsightRelevance,
+  useTriggerInsightRelevance
+} from "@workspace/api-client-react";
 import type { HomeActivity, TopBuyer, TopLead } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
@@ -72,41 +90,213 @@ function scoreBadgeClass(score: number): string {
   return "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20";
 }
 
-function LeadRow({ lead, revealed }: { lead: TopLead; revealed: boolean }) {
+function getCategoryStyle(category: string): string {
+  const cat = category.toLowerCase();
+  switch(cat) {
+    case 'personal':
+      return "bg-pink-100 text-pink-700 dark:bg-pink-500/10 dark:text-pink-400 border-pink-200 dark:border-pink-500/20";
+    case 'company':
+      return "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/20";
+    case 'industry':
+      return "bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border-purple-200 dark:border-purple-500/20";
+    case 'role':
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20";
+    case 'colleague':
+      return "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20";
+    case 'counterpart':
+      return "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20";
+    default:
+      return "bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400 border-slate-200 dark:border-slate-500/20";
+  }
+}
+
+function ExpandedLeadContent({ lead }: { lead: TopLead }) {
+  const { data: insights, isLoading, isError } = useGetInsightRelevance(lead.id);
+  const triggerRelevance = useTriggerInsightRelevance();
+  const triggered = useRef(false);
+
+  useEffect(() => {
+    if (!isLoading && !isError && insights && insights.length === 0 && !triggered.current) {
+      triggered.current = true;
+      triggerRelevance.mutate(lead.id);
+    }
+  }, [insights, isLoading, isError, lead.id, triggerRelevance]);
+
+  const topInsights = useMemo(() => {
+    if (!insights) return [];
+    return [...insights].sort((a, b) => b.score - a.score).slice(0, 3);
+  }, [insights]);
+
   return (
-    <tr className="border-b border-border/70 last:border-0 hover:bg-secondary/20 transition-colors">
-      <td className="px-5 py-4">
-        <Link href={`/contacts/${lead.id}`} className="group flex items-center gap-3 min-w-[180px]">
-          <span className="grid h-[29px] w-[29px] shrink-0 place-items-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
-            {lead.firstName[0]}{lead.lastName[0]}
-          </span>
-          <span className="min-w-0 truncate text-[11px] font-semibold text-foreground transition-colors group-hover:text-primary">
-            {lead.firstName} {lead.lastName}
-          </span>
-        </Link>
-      </td>
-      <td className="px-5 py-4">
-        <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold whitespace-nowrap", scoreBadgeClass(lead.score))}>
-          {lead.score} · {lead.scoreCategory}
-        </span>
-      </td>
-      <td className="px-5 py-4 whitespace-nowrap">
-        {revealed && lead.email ? (
-          <a href={`mailto:${lead.email}`} className="text-[11px] text-primary hover:underline">{lead.email}</a>
-        ) : (
-          <span className="inline-flex rounded-md border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-            Access Email
-          </span>
+    <div className="mx-[18px] mb-[18px] mt-2 rounded-[10px] border border-border bg-card shadow-sm overflow-hidden" data-testid={`expanded-lead-${lead.id}`}>
+      <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border">
+        {/* Left column: Rich contact view */}
+        <div className="p-5 md:w-1/3 flex flex-col justify-between bg-muted/10">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-[13px] font-bold text-primary">
+                {lead.firstName[0]}{lead.lastName[0]}
+              </span>
+              <div>
+                <h3 className="text-[14px] font-semibold tracking-tight text-foreground">{lead.firstName} {lead.lastName}</h3>
+                <p className="text-[12px] text-muted-foreground">{lead.jobTitle}</p>
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              {lead.companyName && (
+                <div className="flex items-center gap-2.5 text-[12px] text-muted-foreground">
+                  <Building2 className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                  <span className="truncate">{lead.companyName}</span>
+                </div>
+              )}
+              {lead.location && (
+                <div className="flex items-center gap-2.5 text-[12px] text-muted-foreground">
+                  <MapPin className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                  <span className="truncate">{lead.location}</span>
+                </div>
+              )}
+              {lead.email && (
+                <div className="flex items-center gap-2.5 text-[12px] text-muted-foreground">
+                  <Mail className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                  <a href={`mailto:${lead.email}`} className="truncate hover:text-primary transition-colors">{lead.email}</a>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="mt-6">
+            <Link
+              href={`/contacts/${lead.id}`}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-secondary px-3 py-2 text-[12px] font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+            >
+              Open Full Profile <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Right column: Top Insights */}
+        <div className="p-5 md:w-2/3">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">Why talk to them?</h4>
+            <span className="text-[11px] font-medium text-muted-foreground">Top insights</span>
+          </div>
+
+          <div className="space-y-3">
+            {isLoading || (insights?.length === 0 && triggerRelevance.isPending) ? (
+              <div className="space-y-3 animate-pulse">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-[58px] rounded-lg bg-muted/50 border border-border/50" />
+                ))}
+              </div>
+            ) : isError || triggerRelevance.isError ? (
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-center text-sm text-red-500 dark:text-red-400">
+                Failed to load insights.
+              </div>
+            ) : topInsights.length > 0 ? (
+              topInsights.map(insight => (
+                <div key={`${insight.signalType}-${insight.signalId}`} className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/50 p-3 hover:bg-background transition-colors">
+                  <div className="shrink-0 mt-0.5">
+                    <span className={cn(
+                      "inline-flex items-center justify-center rounded-[4px] border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                      getCategoryStyle(insight.signalType)
+                    )}>
+                      {insight.signalType}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] leading-snug text-foreground/90">{insight.description}</p>
+                  </div>
+                  <div className="shrink-0 ml-2">
+                    <span className="inline-flex min-w-[28px] items-center justify-center rounded bg-muted/60 px-1.5 py-1 text-[11px] font-bold text-muted-foreground border border-border/40">
+                      {insight.score}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="flex h-[120px] items-center justify-center rounded-lg border border-dashed border-border/60">
+                <p className="text-sm text-muted-foreground">No insights discovered yet.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeadRow({
+  lead,
+  revealed,
+  isExpanded,
+  onToggle
+}: {
+  lead: TopLead;
+  revealed: boolean;
+  isExpanded: boolean;
+  onToggle: () => void
+}) {
+  return (
+    <>
+      <tr
+        onClick={onToggle}
+        className={cn(
+          "group/row cursor-pointer transition-colors hover:bg-secondary/20",
+          isExpanded ? "border-b-0 bg-secondary/5" : "border-b border-border/70 last:border-0"
         )}
-      </td>
-      <td className="px-5 py-4 text-[11px] text-muted-foreground min-w-[150px]">{lead.jobTitle || "—"}</td>
-      <td className="px-5 py-4 text-[11px] text-muted-foreground min-w-[140px]">
-        {lead.companyName ? <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{lead.companyName}</span> : "—"}
-      </td>
-      <td className="px-5 py-4 text-[11px] text-muted-foreground whitespace-nowrap">
-        {lead.location || "—"}
-      </td>
-    </tr>
+        data-testid={`row-lead-${lead.id}`}
+      >
+        <td className="px-5 py-4 relative">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              data-testid={`button-toggle-lead-${lead.id}`}
+              className="text-muted-foreground/50 transition-colors group-hover/row:text-muted-foreground"
+              aria-label={isExpanded ? "Collapse row" : "Expand row"}
+              aria-expanded={isExpanded}
+              aria-controls={`expanded-lead-${lead.id}`}
+            >
+              <ChevronRight className={cn("h-4 w-4 transition-transform duration-200", isExpanded && "rotate-90")} />
+            </button>
+            <Link href={`/contacts/${lead.id}`} onClick={(e) => e.stopPropagation()} className="group flex items-center gap-3 min-w-[150px]">
+              <span className="grid h-[29px] w-[29px] shrink-0 place-items-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
+                {lead.firstName[0]}{lead.lastName[0]}
+              </span>
+              <span className="min-w-0 truncate text-[11px] font-semibold text-foreground transition-colors group-hover:text-primary">
+                {lead.firstName} {lead.lastName}
+              </span>
+            </Link>
+          </div>
+        </td>
+        <td className="px-5 py-4">
+          <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold whitespace-nowrap", scoreBadgeClass(lead.score))}>
+            {lead.score} · {lead.scoreCategory}
+          </span>
+        </td>
+        <td className="px-5 py-4 whitespace-nowrap">
+          {revealed && lead.email ? (
+            <a href={`mailto:${lead.email}`} onClick={(e) => e.stopPropagation()} className="text-[11px] text-primary hover:underline">{lead.email}</a>
+          ) : (
+            <span className="inline-flex rounded-md border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+              Access Email
+            </span>
+          )}
+        </td>
+        <td className="px-5 py-4 text-[11px] text-muted-foreground min-w-[150px]">{lead.jobTitle || "—"}</td>
+        <td className="px-5 py-4 text-[11px] text-muted-foreground min-w-[140px]">
+          {lead.companyName ? <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{lead.companyName}</span> : "—"}
+        </td>
+        <td className="px-5 py-4 text-[11px] text-muted-foreground whitespace-nowrap">
+          {lead.location || "—"}
+        </td>
+      </tr>
+      {isExpanded && (
+        <tr id={`expanded-lead-${lead.id}`} className="border-b border-border/70 bg-secondary/5">
+          <td colSpan={6} className="p-0">
+            <ExpandedLeadContent lead={lead} />
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -204,12 +394,24 @@ export default function Home() {
   });
   const choices = greetingForHour(new Date().getHours());
   const greeting = choices[greetingIndex % choices.length].replaceAll("Leandro", firstName);
+
   const { data: leads, isLoading, isError, error } = useTopLeads();
   const { data: buyers, isLoading: buyersLoading, isError: buyersError, error: buyersErrorDetail } = useTopBuyers();
   const { data: activity, isLoading: activityLoading, isError: activityError } = useHomeActivity();
+
   const leadIds = (leads ?? []).map((lead) => lead.id);
   const { data: revealStatuses } = useBatchRevealStatuses(leadIds);
   const revealedIds = new Set(revealStatuses?.revealedIds ?? []);
+
+  const [expandedLeadId, setExpandedLeadId] = useState<number | null>(null);
+  const initializedExpanded = useRef(false);
+
+  useEffect(() => {
+    if (leads?.length && !initializedExpanded.current) {
+      initializedExpanded.current = true;
+      setExpandedLeadId(leads[0].id);
+    }
+  }, [leads]);
 
   return (
     <Shell>
@@ -283,7 +485,15 @@ export default function Home() {
                     </thead>
                     <tbody>
                       {isLoading ? <SkeletonRows /> : leads?.length
-                        ? leads.map((lead) => <LeadRow key={lead.id} lead={lead} revealed={revealedIds.has(lead.id)} />)
+                        ? leads.map((lead) => (
+                          <LeadRow
+                            key={lead.id}
+                            lead={lead}
+                            revealed={revealedIds.has(lead.id)}
+                            isExpanded={expandedLeadId === lead.id}
+                            onToggle={() => setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id)}
+                          />
+                        ))
                         : (
                           <tr><td colSpan={6} className="px-6 py-14 text-center">
                              <p className="font-semibold text-foreground">No scored conversations yet.</p>
