@@ -11,11 +11,13 @@ import {
 import { useUser, useClerk } from "@clerk/react";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
 import { cn, getInitials } from "@/lib/utils";
+import { scoreBadgeClass } from "@/lib/scoreBadge";
 import {
   useListExports,
   downloadExportFile,
   useCreditsStatus,
   useGetContactMetaScore,
+  useTopBuyers,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -133,8 +135,17 @@ function RecentContactMenuItem({
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium text-foreground">{contact.name}</span>
         <span className="block truncate text-xs text-muted-foreground">
-          {context || "Contact"} · Contact score {isLoading ? "…" : aggregateScore?.metaScore ?? "—"}
+          {context || "Contact"}
         </span>
+      </span>
+      <span
+        className={cn(
+          "inline-flex min-w-[42px] shrink-0 items-center justify-center rounded-full border px-2.5 py-1 text-[11px] font-bold",
+          scoreBadgeClass(aggregateScore?.metaScore),
+        )}
+        aria-label={aggregateScore ? `Contact score ${aggregateScore.metaScore}` : "Contact score unavailable"}
+      >
+        {isLoading ? "…" : aggregateScore?.metaScore ?? "—"}
       </span>
     </button>
   );
@@ -150,6 +161,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
+  const { data: topBuyers = [] } = useTopBuyers();
 
   useEffect(() => {
     try {
@@ -353,24 +365,36 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
                 Companies
               </div>
               {recentCompanies.length > 0
-                ? recentCompanies.map((company) => (
-                    <button
-                      key={company.id}
-                      type="button"
-                      onClick={() => navigateTo(`/companies/${company.id}`)}
-                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-secondary/50"
-                    >
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-amber-100 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10">
-                        <Building2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-foreground">{company.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {company.industry || "Company"} · {formatRelative(new Date(company.visitedAt).toISOString())}
+                ? recentCompanies.map((company) => {
+                    const companyScore = topBuyers.find((buyer) => buyer.id === company.id)?.score;
+                    return (
+                      <button
+                        key={company.id}
+                        type="button"
+                        onClick={() => navigateTo(`/companies/${company.id}`)}
+                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-secondary/50"
+                      >
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-amber-100 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10">
+                          <Building2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         </span>
-                      </span>
-                    </button>
-                  ))
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-foreground">{company.name}</span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {company.industry || "Company"} · {formatRelative(new Date(company.visitedAt).toISOString())}
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "inline-flex min-w-[42px] shrink-0 items-center justify-center rounded-full border px-2.5 py-1 text-[11px] font-bold",
+                            scoreBadgeClass(companyScore),
+                          )}
+                          aria-label={companyScore != null ? `Company score ${companyScore}` : "Company score unavailable"}
+                        >
+                          {companyScore ?? "—"}
+                        </span>
+                      </button>
+                    );
+                  })
                 : <p className="px-3 py-2 text-xs text-muted-foreground">No recent company visits.</p>}
             </div>
           ) : isLoading ? (
