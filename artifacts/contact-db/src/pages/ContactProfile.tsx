@@ -31,7 +31,7 @@ import {
   type InsightQuote,
 } from "@workspace/api-client-react";
 import lostFriendoImg from "@/assets/lost-friendo.png";
-import agnesKrauseProfileImg from "@assets/agnes_krause_profile.png";
+import { getContactProfileImage } from "@/lib/contactProfileImages";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
 import { ComposeDrawer } from "@/components/ComposeDrawer";
@@ -1497,10 +1497,10 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                 <div className="px-4 sm:px-6 pb-5">
                   <div className="flex items-end gap-4 -mt-10 mb-3">
                     <div className="h-18 w-18 rounded-full border-4 border-card bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-xl font-bold text-primary shadow-md flex-shrink-0 overflow-hidden" style={{ height: "4.5rem", width: "4.5rem" }}>
-                      {contact.id === 3836 ? (
+                      {getContactProfileImage(contact.id) ? (
                         <img
-                          src={agnesKrauseProfileImg}
-                          alt="Agnes Krause"
+                          src={getContactProfileImage(contact.id)}
+                          alt={`${contact.firstName} ${contact.lastName}`}
                           className="h-full w-full object-cover"
                         />
                       ) : (

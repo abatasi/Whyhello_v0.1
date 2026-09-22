@@ -24,6 +24,7 @@ import {
 import type { HomeActivity, TopBuyer, TopLead } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
+import { getContactProfileImage } from "@/lib/contactProfileImages";
 
 export const GREETING_LIBRARY = [
   "Why hello, Leandro",
@@ -111,6 +112,7 @@ function getCategoryStyle(category: string): string {
 }
 
 function ExpandedLeadContent({ lead }: { lead: TopLead }) {
+  const profileImage = getContactProfileImage(lead.id);
   const { data: insights, isLoading, isError } = useGetInsightRelevance(lead.id);
   const triggerRelevance = useTriggerInsightRelevance();
   const triggered = useRef(false);
@@ -134,8 +136,16 @@ function ExpandedLeadContent({ lead }: { lead: TopLead }) {
         <div className="p-5 md:w-1/3 flex flex-col justify-between bg-muted/10">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-[13px] font-bold text-primary">
-                {lead.firstName[0]}{lead.lastName[0]}
+              <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary/10 text-[13px] font-bold text-primary">
+                {profileImage ? (
+                  <img
+                    src={profileImage}
+                    alt={`${lead.firstName} ${lead.lastName}`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <>{lead.firstName[0]}{lead.lastName[0]}</>
+                )}
               </span>
               <div>
                 <h3 className="text-[14px] font-semibold tracking-tight text-foreground">{lead.firstName} {lead.lastName}</h3>
@@ -235,6 +245,8 @@ function LeadRow({
   isExpanded: boolean;
   onToggle: () => void
 }) {
+  const profileImage = getContactProfileImage(lead.id);
+
   return (
     <>
       <tr
@@ -258,8 +270,16 @@ function LeadRow({
               <ChevronRight className={cn("h-4 w-4 transition-transform duration-200", isExpanded && "rotate-90")} />
             </button>
             <Link href={`/contacts/${lead.id}`} onClick={(e) => e.stopPropagation()} className="group flex items-center gap-3 min-w-[150px]">
-              <span className="grid h-[29px] w-[29px] shrink-0 place-items-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
-                {lead.firstName[0]}{lead.lastName[0]}
+              <span className="grid h-[29px] w-[29px] shrink-0 place-items-center overflow-hidden rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
+                {profileImage ? (
+                  <img
+                    src={profileImage}
+                    alt={`${lead.firstName} ${lead.lastName}`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <>{lead.firstName[0]}{lead.lastName[0]}</>
+                )}
               </span>
               <span className="min-w-0 truncate text-[11px] font-semibold text-foreground transition-colors group-hover:text-primary">
                 {lead.firstName} {lead.lastName}
