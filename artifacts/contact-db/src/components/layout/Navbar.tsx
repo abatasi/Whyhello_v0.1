@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import { useTheme } from "next-themes";
 import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
-  Settings, ShieldCheck, Flame, ChevronDown, Clock, Bookmark,
+  Settings, ShieldCheck, Flame, ChevronDown, Clock,
   Factory, Briefcase, Upload, Gauge, List, Milestone, Menu,
   MessageSquare, ClipboardList, Layers3, House, Sun, Moon, Monitor
 } from "lucide-react";
@@ -15,7 +15,7 @@ import {
   useListExports,
   downloadExportFile,
   useCreditsStatus,
-  useListSavedSearches,
+  useGetContactMetaScore,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -23,6 +23,8 @@ import { useAppMode } from "@/contexts/AppModeContext";
 import {
   getRecentContactVisits,
   getRecentCompanyVisits,
+  type RecentContactVisit,
+  type RecentCompanyVisit,
 } from "@/lib/recentVisits";
 import "./sidebar-navigation.css";
 
@@ -109,12 +111,33 @@ interface CompanyResult {
 
 const RECENT_SEARCHES_KEY = "whyhello-recent-global-searches";
 
-interface NavbarSavedSearch {
-  id: number;
-  name: string;
-  filters: Record<string, unknown>;
-  tab?: string;
-  search?: string | null;
+function RecentContactMenuItem({
+  contact,
+  onSelect,
+}: {
+  contact: RecentContactVisit;
+  onSelect: () => void;
+}) {
+  const { data: aggregateScore, isLoading } = useGetContactMetaScore(contact.id);
+  const context = [contact.title, contact.companyName].filter(Boolean).join(" · ");
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-secondary/50"
+    >
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+        {getInitials(contact.name)}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium text-foreground">{contact.name}</span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {context || "Contact"} · Contact score {isLoading ? "…" : aggregateScore?.metaScore ?? "—"}
+        </span>
+      </span>
+    </button>
+  );
 }
 
 function GlobalSearch({ wartime }: { wartime: boolean }) {
@@ -122,11 +145,11 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentContacts, setRecentContacts] = useState<RecentContactVisit[]>([]);
+  const [recentCompanies, setRecentCompanies] = useState<RecentCompanyVisit[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
-  const { data: savedSearchData = [] } = useListSavedSearches();
-  const savedSearches = savedSearchData as NavbarSavedSearch[];
 
   useEffect(() => {
     try {
@@ -145,7 +168,11 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
   }, [query]);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (open) {
+      inputRef.current?.focus();
+      setRecentContacts(getRecentContactVisits());
+      setRecentCompanies(getRecentCompanyVisits());
+    }
   }, [open]);
 
   useEffect(() => {
@@ -233,24 +260,6 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
     closeSearch();
   }
 
-  function openSavedSearch(savedSearch: NavbarSavedSearch) {
-    const params = new URLSearchParams();
-    const search = savedSearch.search ?? (
-      typeof savedSearch.filters.search === "string" ? savedSearch.filters.search : ""
-    );
-    const tab = savedSearch.tab ?? (
-      typeof savedSearch.filters.tab === "string" ? savedSearch.filters.tab : "contacts"
-    );
-    params.set("tab", tab);
-    if (search) params.set("search", search);
-    Object.entries(savedSearch.filters).forEach(([key, value]) => {
-      if (key === "search" || key === "tab") return;
-      if (Array.isArray(value) && value.length > 0) params.set(key, value.join(","));
-    });
-    navigate(`/directory?${params.toString()}`);
-    closeSearch();
-  }
-
   return (
     <div
       ref={containerRef}
@@ -325,23 +334,44 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
 
               <div className="mx-3 my-2 border-t border-border/70" />
               <div className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Saved searches
+                Recent visits
               </div>
-              {savedSearches.length > 0 ? (
-                savedSearches.slice(0, 6).map((saved) => (
-                  <button
-                    key={saved.id}
-                    type="button"
-                    onClick={() => openSavedSearch(saved)}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-secondary/50"
-                  >
-                    <Bookmark className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="truncate">{saved.name}</span>
-                  </button>
-                ))
-              ) : (
-                <p className="px-3 py-2 text-xs text-muted-foreground">No saved searches yet.</p>
-              )}
+              <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
+                Contacts
+              </div>
+              {recentContacts.length > 0
+                ? recentContacts.map((contact) => (
+                    <RecentContactMenuItem
+                      key={contact.id}
+                      contact={contact}
+                      onSelect={() => navigateTo(`/contacts/${contact.id}`)}
+                    />
+                  ))
+                : <p className="px-3 py-2 text-xs text-muted-foreground">No recent contact visits.</p>}
+
+              <div className="px-3 pb-1 pt-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
+                Companies
+              </div>
+              {recentCompanies.length > 0
+                ? recentCompanies.map((company) => (
+                    <button
+                      key={company.id}
+                      type="button"
+                      onClick={() => navigateTo(`/companies/${company.id}`)}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-secondary/50"
+                    >
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-amber-100 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10">
+                        <Building2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-foreground">{company.name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {company.industry || "Company"} · {formatRelative(new Date(company.visitedAt).toISOString())}
+                        </span>
+                      </span>
+                    </button>
+                  ))
+                : <p className="px-3 py-2 text-xs text-muted-foreground">No recent company visits.</p>}
             </div>
           ) : isLoading ? (
             <div className="px-4 py-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
