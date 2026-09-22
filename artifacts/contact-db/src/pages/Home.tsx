@@ -222,7 +222,10 @@ export default function Home() {
           <section className="mb-6">
             <div className="overflow-hidden rounded-[10px] border border-border bg-card">
               <div className="flex min-h-[56px] items-center border-b border-border px-5">
-                <h2 className="text-[14px] font-bold tracking-tight text-foreground">🏄 Your latest moves</h2>
+                <h2 className="flex items-center gap-2 text-[14px] font-bold tracking-tight text-foreground">
+                  <span aria-hidden="true">🏄</span>
+                  <span>Your latest moves</span>
+                </h2>
               </div>
               {activityLoading ? <ActivitySkeleton /> : activityError ? (
                 <div className="px-5 py-6 text-sm text-muted-foreground">Recent activity is unavailable right now.</div>
