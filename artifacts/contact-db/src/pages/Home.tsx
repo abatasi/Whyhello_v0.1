@@ -180,42 +180,58 @@ function IcebreakerCard({
   const publishedDate = metadata?.publishedDate || insight?.publishedDate;
   const content = (
     <>
-      <div className="h-[74px] w-[108px] shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/50">
-        {image ? (
-          <img
-            src={image}
-            alt=""
-            className="h-full w-full object-cover"
-            onError={() => setImageFailed(true)}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center px-2 text-center text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-            {insight?.mediaType || relevance.signalType}
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="mb-1.5 flex items-start justify-between gap-3">
-          <span className={cn(
-            "inline-flex items-center justify-center rounded-[4px] border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-            getCategoryStyle(relevance.signalType),
-          )}>
-            {relevance.signalType}
-          </span>
-          <span className="inline-flex min-w-[28px] shrink-0 items-center justify-center rounded border border-border/40 bg-muted/60 px-1.5 py-1 text-[11px] font-bold text-muted-foreground">
-            {relevance.score}
-          </span>
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="h-[82px] w-[112px] shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/50">
+          {image ? (
+            <img
+              src={image}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center px-2 text-center text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+              {insight?.mediaType || relevance.signalType}
+            </div>
+          )}
         </div>
-        <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground">
-          {insight?.title || relevance.description}
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex items-start justify-between gap-2">
+            <span className={cn(
+              "inline-flex items-center justify-center rounded-[4px] border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+              getCategoryStyle(relevance.signalType),
+            )}>
+              {relevance.signalType}
+            </span>
+            {insight?.url && <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          </div>
+          <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground">
+            {insight?.title || "Untitled insight"}
+          </p>
+          {(source || publishedDate) && (
+            <p className="mt-1 truncate text-[10px] text-muted-foreground">
+              {[source, publishedDate].filter(Boolean).join(" · ")}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-col items-start justify-center border-t border-border/60 pt-3 md:items-center md:border-l md:border-t-0 md:px-4 md:pt-0">
+        <span className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Score</span>
+        <span className="inline-flex min-w-[34px] items-center justify-center rounded border border-border/40 bg-muted/60 px-2 py-1 text-[12px] font-bold text-foreground">
+          {relevance.score}
+        </span>
+      </div>
+      <div className="min-w-0 border-t border-border/60 pt-3 md:border-l md:border-t-0 md:pl-4 md:pt-0">
+        <p className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Relevance</p>
+        <p className="text-[12px] leading-relaxed text-foreground/80">
+          {relevance.description}
         </p>
-        {(source || publishedDate) && (
-          <p className="mt-1 truncate text-[10px] text-muted-foreground">
-            {[source, publishedDate].filter(Boolean).join(" · ")}
+        {relevance.matchedHqSignals.length > 0 && (
+          <p className="mt-2 text-[10px] leading-snug text-muted-foreground">
+            {relevance.matchedHqSignals.slice(0, 2).join(" · ")}
           </p>
         )}
       </div>
-      {insight?.url && <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
     </>
   );
 
@@ -224,13 +240,13 @@ function IcebreakerCard({
       href={insight.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/50 p-3 transition-colors hover:bg-background"
+      className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-3 transition-colors hover:bg-background md:grid-cols-[minmax(0,1.25fr)_68px_minmax(0,1fr)]"
       aria-label={`Open insight: ${insight.title}`}
     >
       {content}
     </a>
   ) : (
-    <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/50 p-3">
+    <div className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-3 md:grid-cols-[minmax(0,1.25fr)_68px_minmax(0,1fr)]">
       {content}
     </div>
   );
