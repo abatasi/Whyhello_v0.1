@@ -33,9 +33,9 @@ import {
 } from "@workspace/api-client-react";
 import type { ContactMetaScore, HomeActivity, InsightRelevanceScore, TopBuyer, TopLead } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
+import { OverallScorePill } from "@/components/OverallScorePill";
 import { cn } from "@/lib/utils";
 import { getContactProfileImage } from "@/lib/contactProfileImages";
-import { scoreBadgeClass, scoreBadgeLabel } from "@/lib/scoreBadge";
 
 export const GREETING_LIBRARY = [
   "Why hello, Leandro",
@@ -130,12 +130,7 @@ function ScoringBreakdownCard({ metaScore }: { metaScore: ContactMetaScore }) {
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Scoring breakdown</p>
           <p className="mt-0.5 text-[10px] text-muted-foreground">Aggregate relevance across four signal categories</p>
         </div>
-        <span className={cn(
-          "inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[10px] font-bold",
-          scoreBadgeClass(metaScore.metaScore),
-        )}>
-          {scoreBadgeLabel(metaScore.metaScore)}
-        </span>
+        <OverallScorePill score={metaScore.metaScore} />
       </div>
       <div className="space-y-2">
         {categories.map(({ label, value }) => (
@@ -434,9 +429,7 @@ function LeadRow({
           </div>
         </td>
         <td className="px-5 py-4">
-          <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold whitespace-nowrap", scoreBadgeClass(lead.score))}>
-            {lead.score} · {lead.scoreCategory}
-          </span>
+          <OverallScorePill score={lead.score} category={lead.scoreCategory} />
         </td>
         <td className="px-5 py-4 whitespace-nowrap">
           {revealed && lead.email ? (
@@ -481,9 +474,7 @@ function BuyerRow({ buyer }: { buyer: TopBuyer }) {
         </Link>
       </td>
       <td className="px-5 py-4">
-        <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold whitespace-nowrap", scoreBadgeClass(buyer.score))}>
-          {buyer.score} · {buyer.scoreCategory}
-        </span>
+        <OverallScorePill score={buyer.score} category={buyer.scoreCategory} />
       </td>
       <td className="px-5 py-4 text-[11px] text-muted-foreground">{buyer.industry || "—"}</td>
       <td className="px-5 py-4 text-[11px] text-muted-foreground">

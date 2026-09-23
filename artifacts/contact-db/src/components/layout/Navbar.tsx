@@ -11,7 +11,7 @@ import {
 import { useUser, useClerk } from "@clerk/react";
 import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
 import { cn, getInitials } from "@/lib/utils";
-import { scoreBadgeClass, scoreBadgeLabel } from "@/lib/scoreBadge";
+import { OverallScorePill } from "@/components/OverallScorePill";
 import {
   useListExports,
   downloadExportFile,
@@ -138,15 +138,7 @@ function RecentContactMenuItem({
           {context || "Contact"}
         </span>
       </span>
-      <span
-        className={cn(
-          "inline-flex min-w-[42px] shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-bold",
-          scoreBadgeClass(aggregateScore?.metaScore),
-        )}
-        aria-label={aggregateScore ? `Contact score ${aggregateScore.metaScore}` : "Contact score unavailable"}
-      >
-        {isLoading ? "…" : scoreBadgeLabel(aggregateScore?.metaScore)}
-      </span>
+      <OverallScorePill score={aggregateScore?.metaScore} loading={isLoading} />
     </button>
   );
 }
@@ -383,15 +375,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
                             {company.industry || "Company"} · {formatRelative(new Date(company.visitedAt).toISOString())}
                           </span>
                         </span>
-                        <span
-                          className={cn(
-                            "inline-flex min-w-[42px] shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-bold",
-                            scoreBadgeClass(companyScore),
-                          )}
-                          aria-label={companyScore != null ? `Company score ${companyScore}` : "Company score unavailable"}
-                        >
-                          {scoreBadgeLabel(companyScore)}
-                        </span>
+                        <OverallScorePill score={companyScore} />
                       </button>
                     );
                   })
