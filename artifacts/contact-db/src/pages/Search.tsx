@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown,
   ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList, X,
   Mail, Phone, Clock,
+  GripVertical,
 } from "lucide-react";
 import {
   getRecentContactVisits,
@@ -63,6 +64,97 @@ type SortConfig = {
   column: string;
   direction: "asc" | "desc";
 };
+
+type ContactColumn = "email" | "mobile" | "jobTitle" | "companyName" | "location" | "department" | "seniority" | "insightCount";
+type CompanyColumn = "industry" | "website" | "location" | "size" | "insightCount";
+
+const CONTACT_COLUMN_LABELS: Record<ContactColumn, string> = {
+  email: "Email",
+  mobile: "Mobile",
+  jobTitle: "Title",
+  companyName: "Company",
+  location: "Location",
+  department: "Department",
+  seniority: "Seniority",
+  insightCount: "Insights",
+};
+
+const COMPANY_COLUMN_LABELS: Record<CompanyColumn, string> = {
+  industry: "Industry",
+  website: "Website",
+  location: "Location",
+  size: "Employee Size",
+  insightCount: "Insights",
+};
+
+const COLUMN_WIDTHS: Record<ContactColumn | CompanyColumn, string> = {
+  email: "min-w-[200px]",
+  mobile: "min-w-[160px]",
+  jobTitle: "min-w-[160px]",
+  companyName: "min-w-[140px]",
+  location: "min-w-[140px]",
+  department: "min-w-[130px]",
+  seniority: "min-w-[120px]",
+  insightCount: "min-w-[100px]",
+  industry: "min-w-[140px]",
+  website: "min-w-[180px]",
+  size: "min-w-[130px]",
+};
+
+function DraggableTh<T extends string>({
+  column,
+  label,
+  sortConfig,
+  onSort,
+  onMove,
+}: {
+  column: T;
+  label: string;
+  sortConfig: SortConfig | null;
+  onSort?: (column: string) => void;
+  onMove: (from: T, to: T) => void;
+}) {
+  return (
+    <th
+      draggable
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", column);
+      }}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        const from = event.dataTransfer.getData("text/plain") as T;
+        if (from && from !== column) onMove(from, column);
+      }}
+      onClick={() => onSort?.(column)}
+      className={cn(
+        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-grab active:cursor-grabbing select-none",
+        COLUMN_WIDTHS[column as ContactColumn | CompanyColumn],
+        sortConfig?.column === column ? "text-primary" : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      <div className="flex items-center gap-1">
+        <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50" />
+        {label}
+        {onSort && <SortIcon column={column} sortConfig={sortConfig} />}
+      </div>
+    </th>
+  );
+}
+
+function reorderColumns<T extends string>(columns: T[], from: T, to: T): T[] {
+  const fromIndex = columns.indexOf(from);
+  const toIndex = columns.indexOf(to);
+  if (fromIndex < 0 || toIndex < 0) return columns;
+  const next = [...columns];
+  next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, from);
+  return next;
+}
 
 function parseArrayParam(val: string | null): string[] {
   if (!val) return [];
@@ -141,6 +233,12 @@ export default function Search() {
 
   const [contactSort, setContactSort] = useState<SortConfig | null>(null);
   const [companySort, setCompanySort] = useState<SortConfig | null>(null);
+  const [contactColumnOrder, setContactColumnOrder] = useState<ContactColumn[]>([
+    "email", "mobile", "jobTitle", "companyName", "location", "department", "seniority", "insightCount",
+  ]);
+  const [companyColumnOrder, setCompanyColumnOrder] = useState<CompanyColumn[]>([
+    "industry", "website", "location", "size", "insightCount",
+  ]);
 
   const [selectedListId, setSelectedListId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -723,14 +821,16 @@ export default function Search() {
                                 />
                               </th>
                               <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[180px] sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
-                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap min-w-[200px]">Email</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap min-w-[160px]">Mobile</th>
-                              <SortableTh column="jobTitle" label="Title" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[160px]" />
-                              <SortableTh column="companyName" label="Company" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
-                              <SortableTh column="location" label="Location" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[140px]" />
-                              <SortableTh column="department" label="Department" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[130px]" />
-                              <SortableTh column="seniority" label="Seniority" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[120px]" />
-                              <SortableTh column="insightCount" label="Insights" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[100px]" />
+                              {contactColumnOrder.map((column) => (
+                                <DraggableTh
+                                  key={column}
+                                  column={column}
+                                  label={CONTACT_COLUMN_LABELS[column]}
+                                  sortConfig={contactSort}
+                                  onSort={column === "email" || column === "mobile" ? undefined : handleContactSort}
+                                  onMove={(from, to) => setContactColumnOrder((columns) => reorderColumns(columns, from, to))}
+                                />
+                              ))}
                             </tr>
                           </thead>
                           <tbody>
@@ -760,78 +860,89 @@ export default function Search() {
                                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
                                         {getInitials(`${contact.firstName} ${contact.lastName}`)}
                                       </div>
-                                      <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                                      <span className="font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
                                         {contact.firstName} {contact.lastName}
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                                    {revealedSet.has(contact.id) ? (
-                                      contact.email ? (
-                                        <a href={`mailto:${contact.email}`} className="text-sm text-primary hover:underline truncate block max-w-[190px]">
-                                          {contact.email}
-                                        </a>
-                                      ) : <span className="text-muted-foreground text-sm">—</span>
-                                    ) : (
-                                      <button
-                                        onClick={() => revealMutation.mutate(contact.id)}
-                                        disabled={revealMutation.isPending && revealMutation.variables === contact.id}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 whitespace-nowrap"
-                                      >
-                                        {revealMutation.isPending && revealMutation.variables === contact.id
-                                          ? <div className="h-3 w-3 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-                                          : <Mail className="h-3 w-3" />
-                                        }
-                                        Get Email
-                                      </button>
-                                    )}
-                                  </td>
-                                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                                    {revealedSet.has(contact.id) ? (
-                                      contact.phone ? (
-                                        <a href={`tel:${contact.phone}`} className="text-sm text-foreground hover:text-primary transition-colors whitespace-nowrap">
-                                          {contact.phone}
-                                        </a>
-                                      ) : <span className="text-muted-foreground text-sm">—</span>
-                                    ) : (
-                                      <button
-                                        onClick={() => revealMutation.mutate(contact.id)}
-                                        disabled={revealMutation.isPending && revealMutation.variables === contact.id}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 whitespace-nowrap"
-                                      >
-                                        {revealMutation.isPending && revealMutation.variables === contact.id
-                                          ? <div className="h-3 w-3 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-                                          : <Phone className="h-3 w-3" />
-                                        }
-                                        Get Mobile
-                                      </button>
-                                    )}
-                                  </td>
-                                  <td className="px-4 py-3 text-muted-foreground">{contact.jobTitle ?? "—"}</td>
-                                  <td className="px-4 py-3">
-                                    {contact.companyName
-                                      ? <span className="text-primary font-medium">{contact.companyName}</span>
-                                      : <span className="text-muted-foreground">—</span>
+                                  {contactColumnOrder.map((column) => {
+                                    if (column === "email") {
+                                      return (
+                                        <td key={column} className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                          {revealedSet.has(contact.id) ? (
+                                            contact.email ? (
+                                              <a href={`mailto:${contact.email}`} className="block max-w-[190px] truncate text-sm text-primary hover:underline">
+                                                {contact.email}
+                                              </a>
+                                            ) : <span className="text-sm text-muted-foreground">—</span>
+                                          ) : (
+                                            <button
+                                              onClick={() => revealMutation.mutate(contact.id)}
+                                              disabled={revealMutation.isPending && revealMutation.variables === contact.id}
+                                              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+                                            >
+                                              {revealMutation.isPending && revealMutation.variables === contact.id
+                                                ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                                                : <Mail className="h-3 w-3" />}
+                                              Get Email
+                                            </button>
+                                          )}
+                                        </td>
+                                      );
                                     }
-                                  </td>
-                                  <td className="px-4 py-3 text-muted-foreground">{contact.location ?? "—"}</td>
-                                  <td className="px-4 py-3 text-muted-foreground">{contact.department ?? "—"}</td>
-                                  <td className="px-4 py-3">
-                                    {contact.seniority
-                                      ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-secondary/50 text-foreground/80 border-border">{contact.seniority}</span>
-                                      : <span className="text-muted-foreground">—</span>
+                                    if (column === "mobile") {
+                                      return (
+                                        <td key={column} className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                          {revealedSet.has(contact.id) ? (
+                                            contact.phone ? (
+                                              <a href={`tel:${contact.phone}`} className="whitespace-nowrap text-sm text-foreground transition-colors hover:text-primary">
+                                                {contact.phone}
+                                              </a>
+                                            ) : <span className="text-sm text-muted-foreground">—</span>
+                                          ) : (
+                                            <button
+                                              onClick={() => revealMutation.mutate(contact.id)}
+                                              disabled={revealMutation.isPending && revealMutation.variables === contact.id}
+                                              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+                                            >
+                                              {revealMutation.isPending && revealMutation.variables === contact.id
+                                                ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                                                : <Phone className="h-3 w-3" />}
+                                              Get Mobile
+                                            </button>
+                                          )}
+                                        </td>
+                                      );
                                     }
-                                  </td>
-                                  <td className="px-4 py-3">
-                                    {insightLevel
-                                      ? (
-                                        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border", insightLevel.className)}>
-                                          {insightLevel.label}
-                                        </span>
-                                      )
-                                      : <span className="text-muted-foreground text-xs">—</span>
+                                    if (column === "jobTitle") return <td key={column} className="px-4 py-3 text-muted-foreground">{contact.jobTitle ?? "—"}</td>;
+                                    if (column === "companyName") {
+                                      return (
+                                        <td key={column} className="px-4 py-3">
+                                          {contact.companyName
+                                            ? <span className="font-medium text-primary">{contact.companyName}</span>
+                                            : <span className="text-muted-foreground">—</span>}
+                                        </td>
+                                      );
                                     }
-                                  </td>
+                                    if (column === "location") return <td key={column} className="px-4 py-3 text-muted-foreground">{contact.location ?? "—"}</td>;
+                                    if (column === "department") return <td key={column} className="px-4 py-3 text-muted-foreground">{contact.department ?? "—"}</td>;
+                                    if (column === "seniority") {
+                                      return (
+                                        <td key={column} className="px-4 py-3">
+                                          {contact.seniority
+                                            ? <span className="inline-flex items-center rounded-full border border-border bg-secondary/50 px-2 py-0.5 text-xs font-medium text-foreground/80">{contact.seniority}</span>
+                                            : <span className="text-muted-foreground">—</span>}
+                                        </td>
+                                      );
+                                    }
+                                    return (
+                                      <td key={column} className="px-4 py-3">
+                                        {insightLevel
+                                          ? <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold", insightLevel.className)}>{insightLevel.label}</span>
+                                          : <span className="text-xs text-muted-foreground">—</span>}
+                                      </td>
+                                    );
+                                  })}
                                 </tr>
                               );
                             })}
@@ -877,11 +988,16 @@ export default function Search() {
                                 />
                               </th>
                               <SortableTh column="name" label="Company Name" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px] sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
-                              <SortableTh column="industry" label="Industry" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[140px]" />
-                              <SortableTh column="website" label="Website" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px]" />
-                              <SortableTh column="location" label="Location" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[140px]" />
-                              <SortableTh column="size" label="Employee Size" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[130px]" />
-                              <SortableTh column="insightCount" label="Insights" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[100px]" />
+                              {companyColumnOrder.map((column) => (
+                                <DraggableTh
+                                  key={column}
+                                  column={column}
+                                  label={COMPANY_COLUMN_LABELS[column]}
+                                  sortConfig={companySort}
+                                  onSort={handleCompanySort}
+                                  onMove={(from, to) => setCompanyColumnOrder((columns) => reorderColumns(columns, from, to))}
+                                />
+                              ))}
                             </tr>
                           </thead>
                           <tbody>
@@ -911,7 +1027,7 @@ export default function Search() {
                                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center flex-shrink-0">
                                       <Building2 className="h-4 w-4 text-slate-500" />
                                     </div>
-                                    <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                                    <span className="font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
                                       {company.name}
                                     </span>
                                     {competitorIds.has(company.id) && (
@@ -919,34 +1035,36 @@ export default function Search() {
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 text-muted-foreground">{company.industry ?? "—"}</td>
-                                <td className="px-4 py-3">
-                                  {company.website ? (
-                                    <a
-                                      href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-primary hover:underline flex items-center gap-1 max-w-[200px] truncate"
-                                    >
-                                      {company.website}
-                                      <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                                    </a>
-                                  ) : (
-                                    <span className="text-muted-foreground">—</span>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-muted-foreground">{company.location ?? "—"}</td>
-                                <td className="px-4 py-3 text-muted-foreground">{company.size ?? "—"}</td>
-                                <td className="px-4 py-3">
-                                  {companyInsightLevel ? (
-                                    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", companyInsightLevel.className)}>
-                                      {companyInsightLevel.label}
-                                    </span>
-                                  ) : (
-                                    <span className="text-muted-foreground">—</span>
-                                  )}
-                                </td>
+                                {companyColumnOrder.map((column) => {
+                                  if (column === "industry") return <td key={column} className="px-4 py-3 text-muted-foreground">{company.industry ?? "—"}</td>;
+                                  if (column === "website") {
+                                    return (
+                                      <td key={column} className="px-4 py-3">
+                                        {company.website ? (
+                                          <a
+                                            href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="flex max-w-[200px] items-center gap-1 truncate text-primary hover:underline"
+                                          >
+                                            {company.website}
+                                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                          </a>
+                                        ) : <span className="text-muted-foreground">—</span>}
+                                      </td>
+                                    );
+                                  }
+                                  if (column === "location") return <td key={column} className="px-4 py-3 text-muted-foreground">{company.location ?? "—"}</td>;
+                                  if (column === "size") return <td key={column} className="px-4 py-3 text-muted-foreground">{company.size ?? "—"}</td>;
+                                  return (
+                                    <td key={column} className="px-4 py-3">
+                                      {companyInsightLevel
+                                        ? <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", companyInsightLevel.className)}>{companyInsightLevel.label}</span>
+                                        : <span className="text-muted-foreground">—</span>}
+                                    </td>
+                                  );
+                                })}
                               </tr>
                               );
                             })}
