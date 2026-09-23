@@ -11,18 +11,27 @@ import {
   ChevronRight,
   ArrowRight,
   MapPin,
-  Mail
+  Mail,
+  ExternalLink
 } from "lucide-react";
 import {
   useBatchRevealStatuses,
   useHomeActivity,
   useTopBuyers,
   useTopLeads,
+  useGetContact,
+  useGetContactInsights,
+  useGetContactIndustryInsights,
+  useGetContactRoleInsights,
+  useGetContactColleagueInsights,
+  useGetContactCounterpartInsights,
+  useGetCompanyInsights,
   useGetInsightRelevance,
   useTriggerInsightRelevance,
-  useGetContactMetaScore
+  useGetContactMetaScore,
+  useInsightMeta
 } from "@workspace/api-client-react";
-import type { ContactMetaScore, HomeActivity, TopBuyer, TopLead } from "@workspace/api-client-react";
+import type { ContactMetaScore, HomeActivity, InsightRelevanceScore, TopBuyer, TopLead } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
 import { getContactProfileImage } from "@/lib/contactProfileImages";
@@ -152,8 +161,98 @@ function ScoringBreakdownCard({ metaScore }: { metaScore: ContactMetaScore }) {
   );
 }
 
+type IcebreakerSource = {
+  id: number;
+  title: string;
+  url: string;
+  source: string;
+  mediaType: string;
+  description?: string | null;
+  publishedDate?: string | null;
+};
+
+function IcebreakerCard({
+  relevance,
+  insight,
+}: {
+  relevance: InsightRelevanceScore;
+  insight?: IcebreakerSource;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const { data: metadata } = useInsightMeta(insight?.url ?? "");
+  const image = !imageFailed ? metadata?.ogImage : null;
+  const source = metadata?.source || insight?.source;
+  const publishedDate = metadata?.publishedDate || insight?.publishedDate;
+  const content = (
+    <>
+      <div className="h-[74px] w-[108px] shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/50">
+        {image ? (
+          <img
+            src={image}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center px-2 text-center text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+            {insight?.mediaType || relevance.signalType}
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1.5 flex items-start justify-between gap-3">
+          <span className={cn(
+            "inline-flex items-center justify-center rounded-[4px] border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+            getCategoryStyle(relevance.signalType),
+          )}>
+            {relevance.signalType}
+          </span>
+          <span className="inline-flex min-w-[28px] shrink-0 items-center justify-center rounded border border-border/40 bg-muted/60 px-1.5 py-1 text-[11px] font-bold text-muted-foreground">
+            {relevance.score}
+          </span>
+        </div>
+        <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground">
+          {insight?.title || relevance.description}
+        </p>
+        {(source || publishedDate) && (
+          <p className="mt-1 truncate text-[10px] text-muted-foreground">
+            {[source, publishedDate].filter(Boolean).join(" · ")}
+          </p>
+        )}
+      </div>
+      {insight?.url && <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+    </>
+  );
+
+  return insight?.url ? (
+    <a
+      href={insight.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/50 p-3 transition-colors hover:bg-background"
+      aria-label={`Open insight: ${insight.title}`}
+    >
+      {content}
+    </a>
+  ) : (
+    <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/50 p-3">
+      {content}
+    </div>
+  );
+}
+
 function ExpandedLeadContent({ lead }: { lead: TopLead }) {
   const profileImage = getContactProfileImage(lead.id);
+  const { data: contact, isLoading: contactLoading } = useGetContact(lead.id);
+  const { data: personalInsights = [], isLoading: personalLoading } = useGetContactInsights(lead.id);
+  const { data: industryInsights = [], isLoading: industryLoading } = useGetContactIndustryInsights(lead.id);
+  const { data: roleInsights = [], isLoading: roleLoading } = useGetContactRoleInsights(lead.id);
+  const { data: colleagueInsights = [], isLoading: colleagueLoading } = useGetContactColleagueInsights(lead.id);
+  const { data: counterpartInsights = [], isLoading: counterpartLoading } = useGetContactCounterpartInsights(lead.id);
+  const companyId = contact?.company?.id ?? 0;
+  const { data: companyInsights = [], isLoading: companyLoading } = useGetCompanyInsights(companyId, {
+    query: { enabled: companyId > 0 },
+  });
   const { data: insights, isLoading, isError } = useGetInsightRelevance(lead.id);
   const { data: metaScore, isLoading: metaScoreLoading } = useGetContactMetaScore(lead.id);
   const triggerRelevance = useTriggerInsightRelevance();
@@ -170,6 +269,22 @@ function ExpandedLeadContent({ lead }: { lead: TopLead }) {
     if (!insights) return [];
     return [...insights].sort((a, b) => b.score - a.score).slice(0, 3);
   }, [insights]);
+  const sourceInsights = useMemo(() => {
+    const map = new Map<string, IcebreakerSource>();
+    const groups: Array<[string, IcebreakerSource[]]> = [
+      ["personal", personalInsights],
+      ["company", companyInsights],
+      ["industry", industryInsights],
+      ["role", roleInsights],
+      ["colleague", colleagueInsights],
+      ["counterpart", counterpartInsights],
+    ];
+    groups.forEach(([category, items]) => {
+      items.forEach((item) => map.set(`${category}-${item.id}`, item));
+    });
+    return map;
+  }, [personalInsights, companyInsights, industryInsights, roleInsights, colleagueInsights, counterpartInsights]);
+  const sourceInsightsLoading = contactLoading || personalLoading || companyLoading || industryLoading || roleLoading || colleagueLoading || counterpartLoading;
 
   return (
     <div className="mx-[18px] mb-[18px] mt-2 rounded-[10px] border border-border bg-card shadow-sm overflow-hidden" data-testid={`expanded-lead-${lead.id}`}>
@@ -232,13 +347,10 @@ function ExpandedLeadContent({ lead }: { lead: TopLead }) {
 
         {/* Right column: Top Insights */}
         <div className="p-5 md:w-2/3">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">Why talk to them?</h4>
-            <span className="text-[11px] font-medium text-muted-foreground">Top insights</span>
-          </div>
+          <h4 className="mb-4 text-[12px] font-bold uppercase tracking-wider text-muted-foreground">🧊 Top Icebreakers</h4>
 
           <div className="space-y-3">
-            {isLoading || (insights?.length === 0 && triggerRelevance.isPending) ? (
+            {isLoading || sourceInsightsLoading || (insights?.length === 0 && triggerRelevance.isPending) ? (
               <div className="space-y-3 animate-pulse">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="h-[58px] rounded-lg bg-muted/50 border border-border/50" />
@@ -249,25 +361,12 @@ function ExpandedLeadContent({ lead }: { lead: TopLead }) {
                 Failed to load insights.
               </div>
             ) : topInsights.length > 0 ? (
-              topInsights.map(insight => (
-                <div key={`${insight.signalType}-${insight.signalId}`} className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/50 p-3 hover:bg-background transition-colors">
-                  <div className="shrink-0 mt-0.5">
-                    <span className={cn(
-                      "inline-flex items-center justify-center rounded-[4px] border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-                      getCategoryStyle(insight.signalType)
-                    )}>
-                      {insight.signalType}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] leading-snug text-foreground/90">{insight.description}</p>
-                  </div>
-                  <div className="shrink-0 ml-2">
-                    <span className="inline-flex min-w-[28px] items-center justify-center rounded bg-muted/60 px-1.5 py-1 text-[11px] font-bold text-muted-foreground border border-border/40">
-                      {insight.score}
-                    </span>
-                  </div>
-                </div>
+              topInsights.map((relevance) => (
+                <IcebreakerCard
+                  key={`${relevance.signalType}-${relevance.signalId}`}
+                  relevance={relevance}
+                  insight={sourceInsights.get(`${relevance.signalType}-${relevance.signalId}`)}
+                />
               ))
             ) : (
               <div className="flex h-[120px] items-center justify-center rounded-lg border border-dashed border-border/60">
