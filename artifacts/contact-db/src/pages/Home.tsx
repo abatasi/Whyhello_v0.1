@@ -12,7 +12,13 @@ import {
   ArrowRight,
   MapPin,
   Mail,
-  ExternalLink
+  ExternalLink,
+  User,
+  Building,
+  TrendingUp,
+  Briefcase,
+  Users,
+  Handshake
 } from "lucide-react";
 import {
   useBatchRevealStatuses,
@@ -115,6 +121,18 @@ function getCategoryStyle(category: string): string {
   }
 }
 
+function getCategoryIcon(category: string) {
+  switch (category.toLowerCase()) {
+    case "personal": return User;
+    case "company": return Building;
+    case "industry": return TrendingUp;
+    case "role": return Briefcase;
+    case "colleague": return Users;
+    case "counterpart": return Handshake;
+    default: return Target;
+  }
+}
+
 function ScoringBreakdownCard({ metaScore }: { metaScore: ContactMetaScore }) {
   const categories = [
     { label: "Personal", value: metaScore.personalBest },
@@ -178,6 +196,7 @@ function IcebreakerCard({
   const image = !imageFailed ? metadata?.ogImage : null;
   const source = metadata?.source || insight?.source;
   const publishedDate = metadata?.publishedDate || insight?.publishedDate;
+  const CategoryIcon = getCategoryIcon(relevance.signalType);
   const content = (
     <>
       <div className="flex min-w-0 items-start gap-3">
@@ -198,9 +217,10 @@ function IcebreakerCard({
         <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex items-start justify-between gap-2">
             <span className={cn(
-              "inline-flex items-center justify-center rounded-[4px] border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+              "inline-flex items-center justify-center gap-1 rounded-[4px] border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
               getCategoryStyle(relevance.signalType),
             )}>
+              <CategoryIcon className="h-2.5 w-2.5" />
               {relevance.signalType}
             </span>
             {insight?.url && <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
@@ -225,8 +245,7 @@ function IcebreakerCard({
               ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-400"
               : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-500/20 dark:bg-slate-500/10 dark:text-slate-400",
       )}>
-        <span className="mb-1 text-[9px] font-bold uppercase tracking-wider opacity-75">Score</span>
-        <span className="text-[26px] font-bold leading-none tracking-tight">
+        <span className="text-[38px] font-bold leading-none tracking-tight">
           {relevance.score}
         </span>
       </div>
