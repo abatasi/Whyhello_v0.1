@@ -19,13 +19,14 @@ import {
   useTopBuyers,
   useTopLeads,
   useGetInsightRelevance,
-  useTriggerInsightRelevance
+  useTriggerInsightRelevance,
+  useGetContactMetaScore
 } from "@workspace/api-client-react";
-import type { HomeActivity, TopBuyer, TopLead } from "@workspace/api-client-react";
+import type { ContactMetaScore, HomeActivity, TopBuyer, TopLead } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
 import { getContactProfileImage } from "@/lib/contactProfileImages";
-import { scoreBadgeClass } from "@/lib/scoreBadge";
+import { scoreBadgeClass, scoreBadgeLabel } from "@/lib/scoreBadge";
 
 export const GREETING_LIBRARY = [
   "Why hello, Leandro",
@@ -105,9 +106,56 @@ function getCategoryStyle(category: string): string {
   }
 }
 
+function ScoringBreakdownCard({ metaScore }: { metaScore: ContactMetaScore }) {
+  const categories = [
+    { label: "Personal", value: metaScore.personalBest },
+    { label: "Company", value: metaScore.companyBest },
+    { label: "Industry", value: metaScore.industryBest },
+    { label: "Role", value: metaScore.roleBest },
+  ];
+
+  return (
+    <div className="mt-5 rounded-lg border border-border/70 bg-background/60 p-3.5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Scoring breakdown</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">Aggregate relevance across four signal categories</p>
+        </div>
+        <span className={cn(
+          "inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[10px] font-bold",
+          scoreBadgeClass(metaScore.metaScore),
+        )}>
+          {scoreBadgeLabel(metaScore.metaScore)}
+        </span>
+      </div>
+      <div className="space-y-2">
+        {categories.map(({ label, value }) => (
+          <div key={label} className="flex items-center gap-2">
+            <span className="w-14 shrink-0 text-[10px] text-muted-foreground">{label}</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn(
+                  "h-full rounded-full",
+                  value >= 75 ? "bg-violet-400" : value >= 50 ? "bg-blue-400" : value >= 25 ? "bg-slate-400" : "bg-slate-300 dark:bg-slate-600",
+                )}
+                style={{ width: `${value}%` }}
+              />
+            </div>
+            <span className="w-6 shrink-0 text-right text-[10px] font-semibold text-foreground">{value}</span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-[9px] text-muted-foreground">
+        {metaScore.signalCount} signal{metaScore.signalCount !== 1 ? "s" : ""} scored
+      </p>
+    </div>
+  );
+}
+
 function ExpandedLeadContent({ lead }: { lead: TopLead }) {
   const profileImage = getContactProfileImage(lead.id);
   const { data: insights, isLoading, isError } = useGetInsightRelevance(lead.id);
+  const { data: metaScore, isLoading: metaScoreLoading } = useGetContactMetaScore(lead.id);
   const triggerRelevance = useTriggerInsightRelevance();
   const triggered = useRef(false);
 
@@ -166,6 +214,11 @@ function ExpandedLeadContent({ lead }: { lead: TopLead }) {
                 </div>
               )}
             </div>
+            {metaScoreLoading ? (
+              <div className="mt-5 h-[150px] animate-pulse rounded-lg border border-border/60 bg-muted/40" />
+            ) : metaScore ? (
+              <ScoringBreakdownCard metaScore={metaScore} />
+            ) : null}
           </div>
           <div className="mt-6">
             <Link
