@@ -215,9 +215,18 @@ function IcebreakerCard({
           )}
         </div>
       </div>
-      <div className="flex h-[82px] flex-col items-center justify-center rounded-md border border-border/60 bg-muted/35">
-        <span className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Score</span>
-        <span className="text-[26px] font-bold leading-none tracking-tight text-foreground">
+      <div className={cn(
+        "flex h-[82px] flex-col items-center justify-center rounded-md border",
+        relevance.score >= 75
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400"
+          : relevance.score >= 50
+            ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400"
+            : relevance.score >= 25
+              ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-400"
+              : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-500/20 dark:bg-slate-500/10 dark:text-slate-400",
+      )}>
+        <span className="mb-1 text-[9px] font-bold uppercase tracking-wider opacity-75">Score</span>
+        <span className="text-[26px] font-bold leading-none tracking-tight">
           {relevance.score}
         </span>
       </div>
