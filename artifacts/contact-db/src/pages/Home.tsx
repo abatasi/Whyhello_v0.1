@@ -215,9 +215,9 @@ function IcebreakerCard({
           )}
         </div>
       </div>
-      <div className="flex flex-col items-start justify-center border-t border-border/60 pt-3 md:items-center md:border-l md:border-t-0 md:px-4 md:pt-0">
-        <span className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Score</span>
-        <span className="inline-flex min-w-[34px] items-center justify-center rounded border border-border/40 bg-muted/60 px-2 py-1 text-[12px] font-bold text-foreground">
+      <div className="flex h-[82px] flex-col items-center justify-center rounded-md border border-border/60 bg-muted/35">
+        <span className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Score</span>
+        <span className="text-[26px] font-bold leading-none tracking-tight text-foreground">
           {relevance.score}
         </span>
       </div>
@@ -240,13 +240,13 @@ function IcebreakerCard({
       href={insight.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-3 transition-colors hover:bg-background md:grid-cols-[minmax(0,1.25fr)_68px_minmax(0,1fr)]"
+      className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-3 transition-colors hover:bg-background md:grid-cols-[minmax(230px,0.9fr)_92px_minmax(0,1.8fr)]"
       aria-label={`Open insight: ${insight.title}`}
     >
       {content}
     </a>
   ) : (
-    <div className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-3 md:grid-cols-[minmax(0,1.25fr)_68px_minmax(0,1fr)]">
+    <div className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-3 md:grid-cols-[minmax(230px,0.9fr)_92px_minmax(0,1.8fr)]">
       {content}
     </div>
   );
