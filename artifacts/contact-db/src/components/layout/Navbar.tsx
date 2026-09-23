@@ -960,7 +960,19 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
     >
       <div className="master-sidebar-inner">
         <div className="master-brand-row">
-          <LogoMenu wartime={wartime} sidebar expanded={expanded} />
+          <div className="sidebar-logo-menu relative flex shrink-0 items-center">
+            <div
+              className={cn(
+                "sidebar-logo-trigger",
+                wartime ? "bg-transparent" : "bg-background",
+              )}
+              aria-label="Whyhello"
+            >
+              <div className={cn("sidebar-logo-crop", expanded && "sidebar-logo-crop-expanded")}>
+                <img src={whyhelloLogo} alt="Whyhello" />
+              </div>
+            </div>
+          </div>
         </div>
 
         <nav className="master-route-nav" aria-label="Primary">
