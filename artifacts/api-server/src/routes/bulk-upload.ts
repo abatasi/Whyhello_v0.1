@@ -250,6 +250,11 @@ router.post("/:table", upload.single("file"), async (req, res) => {
   if (rows.length === 0) { res.status(400).json({ error: "File has no data rows" }); return; }
 
   const results = { inserted: 0, skipped: 0, errors: [] as { row: number; reason: string }[] };
+  // Shared across contact and insight import branches.
+  const val = (v: string | undefined) => {
+    const s = v?.trim() ?? "";
+    return /^(n\/a|-+|none|null|undefined)$/i.test(s) ? null : s || null;
+  };
 
   if (tableKey === "companies") {
     for (let i = 0; i < rows.length; i++) {
@@ -286,11 +291,6 @@ router.post("/:table", upload.single("file"), async (req, res) => {
       db.select({ id: companiesTable.id }).from(companiesTable).then(rs => new Set(rs.map(r => r.id))),
     ]);
 
-    // Treat "N/A", "n/a", "-" etc. as blank
-    const val = (v: string | undefined) => {
-      const s = v?.trim() ?? "";
-      return /^(n\/a|-+|none|null|undefined)$/i.test(s) ? null : s || null;
-    };
     const fkInt = (v: string | undefined, validSet: Set<number>) => {
       const n = parseInt(v ?? "");
       return !isNaN(n) && validSet.has(n) ? n : null;
@@ -338,22 +338,25 @@ router.post("/:table", upload.single("file"), async (req, res) => {
       const r = rows[i];
       const contactId = parseInt(r.contactId ?? "");
       const title = r.title?.trim();
-      if (!contactId || !title) {
-        results.errors.push({ row: i + 2, reason: "Missing required fields: contactId and/or title" });
+      const url = r.url?.trim();
+      const mediaType = r.mediaType?.trim();
+      if (!contactId || !title || !url || !mediaType) {
+        results.errors.push({ row: i + 2, reason: "Missing required fields: contactId, title, url, and/or mediaType" });
         continue;
       }
       try {
-        await db.insert(contactInsightsTable).values({
+        const inserted = await db.insert(contactInsightsTable).values({
           contactId,
           title,
-          url: r.url?.trim() || "",
+          url,
           source: val(r.source),
-          mediaType: r.mediaType?.trim() || null,
+          mediaType,
           category: r.category?.trim() || "personal",
           description: r.description || null,
           publishedDate: val(r.publishedDate),
-        });
-        results.inserted++;
+        }).onConflictDoNothing().returning({ id: contactInsightsTable.id });
+        if (inserted.length) results.inserted++;
+        else results.skipped++;
       } catch (err) {
         results.errors.push({ row: i + 2, reason: String(err) });
       }

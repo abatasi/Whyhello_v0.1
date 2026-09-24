@@ -1307,8 +1307,9 @@ export async function seedInsightsIfEmpty() {
 
     if (existing > 0) continue;
 
-    await db.insert(contactInsightsTable).values(
-      insights.map((i) => ({
+    const uniqueInsights = [...new Map(insights.map((insight) => [insight.url, insight])).values()];
+    const inserted = await db.insert(contactInsightsTable).values(
+      uniqueInsights.map((i) => ({
         contactId: contact.id,
         title: i.title,
         url: i.url,
@@ -1317,8 +1318,8 @@ export async function seedInsightsIfEmpty() {
         description: i.description,
         publishedDate: i.publishedDate,
       })),
-    );
-    totalSeeded += insights.length;
+    ).onConflictDoNothing().returning({ id: contactInsightsTable.id });
+    totalSeeded += inserted.length;
   }
   if (totalSeeded > 0) {
     console.log(`Seeded ${totalSeeded} new insights.`);

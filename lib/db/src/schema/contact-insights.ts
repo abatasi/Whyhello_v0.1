@@ -1,4 +1,5 @@
-import { pgTable, serial, integer, varchar, text } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, varchar, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { contactsTable } from "./contacts";
 
 export const contactInsightsTable = pgTable("contact_insights", {
@@ -11,7 +12,12 @@ export const contactInsightsTable = pgTable("contact_insights", {
   mediaType: varchar("media_type", { length: 50 }).notNull(),
   description: text("description"),
   publishedDate: varchar("published_date", { length: 50 }),
-});
+}, (table) => [
+  // The same source may belong to multiple contacts, but not twice to one contact.
+  uniqueIndex("contact_insights_contact_url_unique")
+    .on(table.contactId, table.url)
+    .where(sql`${table.url} <> ''`),
+]);
 
 export type ContactInsight = typeof contactInsightsTable.$inferSelect;
 export type InsertContactInsight = typeof contactInsightsTable.$inferInsert;

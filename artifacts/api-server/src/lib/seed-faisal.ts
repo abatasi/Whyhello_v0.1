@@ -280,10 +280,11 @@ export async function seedFaisalKarmali() {
     .where(eq(contactInsightsTable.contactId, contactId));
 
   if (existingPersonal === 0) {
-    await db.insert(contactInsightsTable).values(
-      FAISAL_PERSONAL_INSIGHTS.map((i) => ({ contactId, ...i }))
-    );
-    console.log(`Faisal seed: ${FAISAL_PERSONAL_INSIGHTS.length} personal insights added.`);
+    const uniqueInsights = [...new Map(FAISAL_PERSONAL_INSIGHTS.map((insight) => [insight.url, insight])).values()];
+    const inserted = await db.insert(contactInsightsTable).values(
+      uniqueInsights.map((i) => ({ contactId, ...i }))
+    ).onConflictDoNothing().returning({ id: contactInsightsTable.id });
+    console.log(`Faisal seed: ${inserted.length} personal insights added.`);
   }
 
   // 6. Colleague insights
