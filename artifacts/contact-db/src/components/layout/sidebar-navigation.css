@@ -1,7 +1,7 @@
 .master-sidebar {
   position: fixed;
   inset: 0 auto 0 0;
-  width: 44px;
+  width: 42px;
   z-index: 100;
   flex-direction: column;
   color: hsl(var(--muted-foreground));
@@ -12,7 +12,7 @@
 }
 
 .master-sidebar.is-expanded {
-  width: 400px;
+  width: 380px;
   box-shadow: 14px 0 34px rgba(0, 0, 0, .14);
 }
 
@@ -34,7 +34,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: 9px 6px 12px;
+  padding: 9px 5px 12px;
   overflow: visible;
 }
 

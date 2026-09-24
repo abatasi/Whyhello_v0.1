@@ -1061,7 +1061,7 @@ export function Navbar() {
       <MasterSidebar wartime={wartime} />
       <header
         className={cn(
-        "sticky top-0 z-40 w-full md:ml-11 md:w-[calc(100%-44px)] border-b transition-colors duration-300",
+        "sticky top-0 z-40 w-full md:ml-[42px] md:w-[calc(100%-42px)] border-b transition-colors duration-300",
         wartime
           ? "border-[#e8c9b8] bg-[#F4E2D8] dark:border-[#5a2c1d] dark:bg-[#3d1c12]"
           : "border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
