@@ -1101,11 +1101,31 @@ Example:
 *Rationale:* The quoted snippet is the single most credible element in the HOOK — it is the buyer's own words. Bolding it separates evidence from commentary, gives the eye a landing point, and signals that the sender actually read the source rather than skimming a headline.
 
 **Rule S-2 — Double-space between all sections**
-Every layer boundary — between HOOK and BRIDGE, BRIDGE and VALUE, VALUE and PROOF, PROOF and CTA — is separated by a blank line, producing a visible paragraph gap in the rendered email. This applies unconditionally: short emails, medium emails, and long emails all use the same spacing. Length setting controls word count within each layer, not the spacing between them.
+Every layer boundary — between HOOK and BRIDGE, BRIDGE and VALUE, VALUE and PROOF, PROOF and CTA — is separated by a blank line, producing a visible paragraph gap in the rendered email. This applies unconditionally: short emails, medium emails, and long emails all use the same spacing. Length setting controls how much each layer develops, not the spacing between them.
 
-*Rationale:* Single-spaced sections create visual crowding and blur the four-stage arc. The blank line between sections gives each layer room to land before the next one begins. This is especially important on medium-length emails, where the reduced word count per layer makes tight spacing feel compressed.
+*Rationale:* Single-spaced sections create visual crowding and blur the four-stage arc. The blank line between sections gives each layer room to land before the next one begins. This is especially important on shorter emails, where compact layers can otherwise feel compressed.
 
 **Future rules will be added to this section as the styling strategy develops.**
+
+### 7.6 Single-Email Lengths
+
+Length controls the depth of each message layer, not just the total number of words. Every single-email draft and its variants retain HOOK → BRIDGE → VALUE → PROOF → CTA, with blank lines between layers. Use verified proof only; do not invent a claim to fill a length target. The figures below count **visible email body copy only**, excluding the subject line and signature. Markdown emphasis and hidden source-link URLs are formatting, not visible body copy.
+
+| Setting | Body target | Acceptable body range | Approx. words | Intended feel |
+| --- | ---: | ---: | ---: | --- |
+| Short | 450 characters | 350–550 | 60–90 | Punchy and highly skimmable |
+| Medium | 750 characters | 600–900 | 100–145 | Conversational, enough room to develop an argument |
+| Long | 1,150 characters | 950–1,300 | 160–210 | Insight-rich, more context and proof |
+
+| Component | Short (~450) | Medium (~750) | Long (~1,150) |
+| --- | ---: | ---: | ---: |
+| HOOK | 70–100 | 100–140 | 130–180 |
+| BRIDGE | 50–70 | 80–110 | 110–150 |
+| VALUE | 120–150 | 190–240 | 280–350 |
+| PROOF | 70–100 | 120–160 | 180–240 |
+| CTA | 40–60 | 50–70 | 50–80 |
+
+The component allocations are approximate proportions, not hard caps: their upper bounds do not sum to the medium and long overall targets. The **overall acceptable range takes priority**. Develop the value and proof (or grounded context when proof is limited) rather than adding filler or repeating the same email at greater length. Short still includes concise proof; medium develops the argument; long makes room for meaningful insight and evidence. Generated bodies outside the selected range are revised before they are saved, including a refreshed verbatim structure block.
 
 ---
 

@@ -17,21 +17,21 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { getAuth } from "@clerk/express";
 import { inspectLinkedInSource, type LinkedInSourceData } from "../lib/linkedin-source";
 import { isContactAuthoredLinkedInSignal } from "../lib/linkedin-authorship";
+import { unrelatedSportsVideo } from "../lib/video-relevance";
 
+const VIDEO_MEDIA_TYPES = new Set(["video", "youtube", "youtube_video"]);
 function getUserId(req: Request): string | null {
   const auth = getAuth(req);
   return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
 }
 
 const LINKEDIN_MEDIA_TYPES = new Set(["linkedin", "linkedin_post"]);
-const VIDEO_MEDIA_TYPES = new Set(["video", "youtube", "youtube_video"]);
 const RELEVANCE_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const FRESHNESS_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
 const FRESHNESS_ANNUAL_DECAY = 0.2;
 const FRESHNESS_FLOOR = 0.2;
 const ORDINARY_SCORE_FLOOR = 10;
 const EXTRAORDINARY_SCORE_THRESHOLD = 10;
-const FEATURED_VIDEO_SCORE_FLOOR = 85;
 
 function parseInsightDate(value: string | null | undefined): Date | null {
   const normalized = value?.trim();
@@ -359,9 +359,9 @@ SCORING RUBRIC (0–100):
 - 0-19: No meaningful connection to the seller's offering
 
 VIDEO FORMAT:
-- Any Personal Insight with a video format is safely attributable to the contact. Treat it as memorable first-hand personal evidence and score the contact's perspective, claims, and priorities—not merely the video's topic.
-- Apply an 85-point minimum to Personal video signals before freshness adjustments, even when the title or description does not repeat the contact's name.
-- Videos in Company, Industry, Role, Colleague, or Counterpart Insights are not assumed to feature the contact directly. Score them under their normal category and HQ-alignment rules without a direct-attribution boost.
+- Video format and placement under Personal do not prove the contact appears in, authored, or endorses the video. Score its actual content and verified connection to the HQ profile, not its format.
+- A sports clip, namesake, entertainment video, or other content without substantive business evidence is low relevance (0–19), even if the title contains the contact's name or an ambiguous abbreviation such as "TD" (which may mean touchdown, not TD Bank).
+- A video with clear evidence of the contact speaking about a relevant business topic may score highly on its merits. Do not transfer facts, titles, or themes between different videos, even if they are adjacent in the list. Every description must refer only to its own type, id, title, and provided source context.
 
 PERSONAL LINKEDIN PROXIMITY:
 - A contact-authored LinkedIn post is direct personal evidence.
@@ -438,9 +438,8 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const key = `${s.signalType}-${s.signalId}`;
       const sig = signals.find((x) => `${x.signalType}-${x.signalId}` === key);
       const quotable = sig?.quotable;
-      const isPersonalVideo = !!sig
-        && sig.signalType === "personal"
-        && VIDEO_MEDIA_TYPES.has(sig.mediaType ?? "");
+      const sportsOverride = sig ? unrelatedSportsVideo(sig) : null;
+      if (sportsOverride) return { ...s, ...sportsOverride };
       const sourcePublishedDate = sig?.signalType === "personal"
         && LINKEDIN_MEDIA_TYPES.has(sig.mediaType ?? "")
         ? linkedInSources.get(key)?.publishedDate ?? sig.publishedDate
@@ -459,9 +458,7 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       const proximityAdjustedScore = isLinkedInEngagement
         ? Math.min(engagementCeiling, Math.round(hqScore * engagementMultiplier))
         : hqScore;
-      const formatAdjustedScore = isPersonalVideo
-        ? Math.max(proximityAdjustedScore, FEATURED_VIDEO_SCORE_FLOOR)
-        : sig?.signalType === "personal"
+      const formatAdjustedScore = sig?.signalType === "personal"
           && LINKEDIN_MEDIA_TYPES.has(sig.mediaType ?? "")
           && !isLinkedInEngagement
           ? Math.max(

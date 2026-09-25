@@ -422,9 +422,9 @@ function loadVoiceProfile(): VoiceProfileData | null {
 // ── IntroEmailModal ────────────────────────────────────────────────────────
 
 const EMAIL_LENGTHS = [
-  { id: "short",  label: "Short",  chars: "~100 chars", description: "One punchy paragraph" },
-  { id: "medium", label: "Medium", chars: "~200 chars", description: "Intro + value prop"  },
-  { id: "long",   label: "Long",   chars: "~350 chars", description: "Full context + CTA"  },
+  { id: "short",  label: "Short",  chars: "~450 chars", range: "350–550", description: "Punchy & skimmable" },
+  { id: "medium", label: "Medium", chars: "~750 chars", range: "600–900", description: "Conversational & developed" },
+  { id: "long",   label: "Long",   chars: "~1,150 chars", range: "950–1,300", description: "Insight-rich & detailed" },
 ] as const;
 
 const EMAIL_TONES = ["Professional", "Friendly", "Direct", "Warm", "Authoritative"];
@@ -517,7 +517,8 @@ function IntroEmailModal({
 
             {/* Length */}
             <div>
-              <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-3">Length</p>
+              <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-1">Length</p>
+              <p className="text-[11px] text-muted-foreground mb-3">Approximate email body length; subject and signature excluded.</p>
               <div className="grid grid-cols-3 gap-2.5">
                 {EMAIL_LENGTHS.map(opt => (
                   <button
@@ -532,6 +533,7 @@ function IntroEmailModal({
                   >
                     <span className="text-sm font-semibold">{opt.label}</span>
                     <span className="text-[11px] font-medium opacity-75">{opt.chars}</span>
+                    <span className="text-[10px] opacity-65">{opt.range} chars</span>
                     <span className="text-[10px] opacity-55 leading-tight">{opt.description}</span>
                   </button>
                 ))}

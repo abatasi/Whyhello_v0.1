@@ -18,6 +18,7 @@ import {
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { loadRelationshipInsights, type RelationshipKind, type RelationshipSourceContact } from "../lib/relationship-insights.js";
+import { countEmailBodyCharacters, emailLengthInstruction, getEmailLength } from "../lib/email-length.js";
 
 export const contactJobsRouter: IRouter = Router({ mergeParams: true });
 export const jobsRouter: IRouter = Router({ mergeParams: true });
@@ -347,12 +348,7 @@ async function runGeneration(jobId: number) {
       : "  No specific insights selected — use general professional context about their role and company.";
   }
 
-  const lengthMap: Record<string, string> = {
-    short:  "~100 words body — HOOK + BRIDGE + VALUE + CTA; omit PROOF or compress to one EB clause",
-    medium: "~200 words body — full HOOK / BRIDGE / VALUE / PROOF / CTA arc with one EB sentence",
-    long:   "~350 words body — complete arc with an expanded VALUE paragraph, full PROOF with customer reference and EB, and a tailored CTA",
-  };
-  const lengthDesc = lengthMap[params.length] ?? "~200 words body";
+  const lengthDesc = emailLengthInstruction(params.length);
   const tone = params.tone ?? "professional";
   const vp = params.voiceProfile;
 
@@ -796,17 +792,30 @@ ABSOLUTE PROHIBITIONS
   • Never add section labels (HOOK:, BRIDGE:, etc.) to the email body
   • Never fabricate statistics or claim specific results unless drawn from the seller context above`;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-5-mini",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: `Write the outreach email to ${contact.firstName} ${contact.lastName}.` },
-    ],
-    stream: false,
-  });
-
-  const rawResult = completion.choices[0]?.message?.content ?? "";
-  const result = stripPersonalSignoff(rawResult);
+  const lengthSpec = getEmailLength(params.length);
+  const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: `Write the outreach email to ${contact.firstName} ${contact.lastName}.` },
+  ];
+  let result = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-5-mini",
+      messages,
+      stream: false,
+    });
+    result = stripPersonalSignoff(completion.choices[0]?.message?.content ?? "");
+    const { subject, body } = parseEmailResult(result);
+    const bodyLength = countEmailBodyCharacters(body);
+    if (subject && bodyLength >= lengthSpec.min && bodyLength <= lengthSpec.max) break;
+    if (attempt === 2) {
+      throw new Error(`Email body did not meet the ${lengthSpec.min}–${lengthSpec.max} character range after revision`);
+    }
+    messages.push(
+      { role: "assistant", content: result },
+      { role: "user", content: `Revise this email, preserving the factual evidence, five-layer structure, links, subject, and verbatim [STRUCTURE_JSON] extracts. The current visible body is ${bodyLength} characters; it must be ${lengthSpec.min}–${lengthSpec.max}, ideally ${lengthSpec.target}. Count only rendered email body copy, excluding the subject, Markdown formatting, and hidden link URLs. Return the entire corrected email and updated structure block.` },
+    );
+  }
   // Store enriched source keys: "category-id|Title|mediaType|score"
   // The frontend parses the pipe-separated format for the Sources tab display.
   // Old jobs without pipes fall back to showing the raw key.
