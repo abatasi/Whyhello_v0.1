@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { getInitials, cn } from "@/lib/utils";
-import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
+import BrandLogo from "@/components/BrandLogo";
 
 const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
   article:        { label: "Article",        icon: Newspaper,  color: "text-blue-600",   bg: "bg-blue-50 border-blue-100" },
@@ -41,11 +41,7 @@ function PublicHeader({ onLogin }: { onLogin: () => void }) {
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center">
-          <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto dark:hidden" />
-          <span className="hidden dark:inline-flex items-center gap-2 text-lg font-bold tracking-tight text-white">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground">w</span>
-            whyhello.
-          </span>
+          <BrandLogo size="footer" />
         </Link>
         <div className="flex items-center gap-3">
           <button
