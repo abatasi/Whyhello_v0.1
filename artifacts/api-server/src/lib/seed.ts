@@ -1318,7 +1318,7 @@ export async function seedInsightsIfEmpty() {
         description: i.description,
         publishedDate: i.publishedDate,
       })),
-    ).onConflictDoNothing().returning({ id: contactInsightsTable.id });
+    ).returning({ id: contactInsightsTable.id });
     totalSeeded += inserted.length;
   }
   if (totalSeeded > 0) {

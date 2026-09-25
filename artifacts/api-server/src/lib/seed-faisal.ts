@@ -283,7 +283,7 @@ export async function seedFaisalKarmali() {
     const uniqueInsights = [...new Map(FAISAL_PERSONAL_INSIGHTS.map((insight) => [insight.url, insight])).values()];
     const inserted = await db.insert(contactInsightsTable).values(
       uniqueInsights.map((i) => ({ contactId, ...i }))
-    ).onConflictDoNothing().returning({ id: contactInsightsTable.id });
+    ).returning({ id: contactInsightsTable.id });
     console.log(`Faisal seed: ${inserted.length} personal insights added.`);
   }
 

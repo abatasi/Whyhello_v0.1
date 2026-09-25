@@ -11,7 +11,7 @@ import {
   industryInsightsTable,
   roleInsightsTable,
 } from "@workspace/db/schema";
-import { eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -345,7 +345,15 @@ router.post("/:table", upload.single("file"), async (req, res) => {
         continue;
       }
       try {
-        const inserted = await db.insert(contactInsightsTable).values({
+        const [existing] = await db.select({ id: contactInsightsTable.id })
+          .from(contactInsightsTable)
+          .where(and(eq(contactInsightsTable.contactId, contactId), eq(contactInsightsTable.url, url)))
+          .limit(1);
+        if (existing) {
+          results.skipped++;
+          continue;
+        }
+        await db.insert(contactInsightsTable).values({
           contactId,
           title,
           url,
@@ -354,9 +362,8 @@ router.post("/:table", upload.single("file"), async (req, res) => {
           category: r.category?.trim() || "personal",
           description: r.description || null,
           publishedDate: val(r.publishedDate),
-        }).onConflictDoNothing().returning({ id: contactInsightsTable.id });
-        if (inserted.length) results.inserted++;
-        else results.skipped++;
+        });
+        results.inserted++;
       } catch (err) {
         results.errors.push({ row: i + 2, reason: String(err) });
       }

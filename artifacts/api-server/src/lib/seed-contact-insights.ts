@@ -53,7 +53,7 @@ export async function seedProductionContactInsightsIfNeeded() {
         publishedDate: i.publishedDate || null,
         category: i.category || "personal",
       }))
-    ).onConflictDoNothing().returning({ id: contactInsightsTable.id });
+    ).returning({ id: contactInsightsTable.id });
     inserted += rows.length;
     skipped += uniqueInsights.length - rows.length;
   }

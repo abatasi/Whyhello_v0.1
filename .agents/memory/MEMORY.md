@@ -3,3 +3,4 @@
 - [Quotables extraction pipeline](quotables-extraction.md) — LinkedIn post body fetched live from URL; source label injected into quotes prompt block; carousel in Outreach panel; dev userId bypass header
 - [Doctrine-first development](doctrine-first-dev.md) — Messaging/Scoring code changes must update the Quran/Bible in the same turn; Torah not actively maintained
 - [User-scoped buyer ranking](user-scoped-buyer-ranking.md) — Home buyer fit must come from the signed-in user’s HQ target markets, never global contact scores
+- [Insight uniqueness and publishing](insight-uniqueness-publishing.md) — prioritize a publishable schema over DB-enforced insight URL uniqueness while legacy production duplicates remain
