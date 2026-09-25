@@ -909,6 +909,8 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [location] = useLocation();
   const { user } = useUser();
+  const { signOut } = useClerk();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const { theme, resolvedTheme, setTheme } = useTheme();
   const darkTheme = resolvedTheme === "dark";
   const displayName = user?.firstName
@@ -1011,14 +1013,28 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
             <Settings size={18} />
             <span>Settings</span>
           </Link>
-          <Link href="/profile" className="master-route master-user-route" aria-label={`${displayName} profile`} title={!expanded ? displayName : undefined}>
-            {user?.imageUrl ? (
-              <img src={user.imageUrl} alt="" className="master-user-avatar" />
-            ) : (
-              <i className="master-user-avatar master-user-initials">{getInitials(displayName)}</i>
+          <div className="master-user-row">
+            <Link href="/profile" className="master-route master-user-route" aria-label={`${displayName} profile`} title={!expanded ? displayName : undefined}>
+              {user?.imageUrl ? (
+                <img src={user.imageUrl} alt="" className="master-user-avatar" />
+              ) : (
+                <i className="master-user-avatar master-user-initials">{getInitials(displayName)}</i>
+              )}
+              <span>{displayName}</span>
+            </Link>
+            {expanded && (
+              <button
+                type="button"
+                className="master-logout-button"
+                data-testid="button-sidebar-signout"
+                aria-label="Sign out"
+                onClick={() => void signOut({ redirectUrl: basePath || "/" })}
+              >
+                <LogOut size={16} aria-hidden="true" />
+                <span>Sign out</span>
+              </button>
             )}
-            <span>{displayName}</span>
-          </Link>
+          </div>
         </div>
       </div>
     </aside>

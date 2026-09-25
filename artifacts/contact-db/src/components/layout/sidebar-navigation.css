@@ -244,6 +244,58 @@
   border-top: 1px solid hsl(var(--border));
 }
 
+.master-user-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.master-user-route {
+  flex: 1;
+  min-width: 0;
+}
+
+.master-sidebar.is-expanded .master-user-route > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.master-logout-button {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.master-logout-button:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--secondary) / 0.8);
+}
+
+.master-logout-button:focus-visible {
+  outline: 2px solid #938bee;
+  outline-offset: 2px;
+}
+
+.master-sidebar.is-wartime .master-logout-button:hover {
+  color: #5c2e22;
+  background: #edd4c6;
+}
+
+.dark .master-sidebar.is-wartime .master-logout-button:hover {
+  color: #f4e2d8;
+  background: #5a2c1d;
+}
+
 .master-user-avatar {
   display: block;
   width: 22px;
