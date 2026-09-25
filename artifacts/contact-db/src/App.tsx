@@ -169,7 +169,8 @@ function AuthPageShell({ children, isSignUp }: { children: React.ReactNode; isSi
         <main className="flex min-h-[100dvh] w-full flex-col px-5 sm:px-10 lg:w-[53%] lg:px-14 xl:px-20">
           <div className="flex items-center justify-between border-b border-border/70 py-6">
             <Link href="/" data-testid="link-auth-home" className="inline-flex items-center gap-2.5 text-foreground no-underline">
-              <span className="flex size-8 items-center justify-center rounded-[10px] bg-primary text-primary-foreground text-xl font-bold leading-none">w</span>
+              <span className="flex size-8 items-center justify-center rounded-[10px] bg-primary text-primary-foreground text-xl font-bold leading-none dark:hidden">w</span>
+              <img src={`${basePath}/images/whyhello-dark-logo.png`} alt="" aria-hidden="true" className="hidden h-8 w-auto dark:block" />
               <span className="text-[21px] font-bold tracking-[-0.07em]">whyhello<span className="text-primary">.</span></span>
             </Link>
             <Link href="/" data-testid="link-auth-back" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground no-underline hover:text-foreground">
@@ -301,6 +302,12 @@ function ClerkProviderWithRoutes() {
       appearance={{
         ...clerkAppearance,
         theme: resolvedTheme === "dark" ? [shadcn, dark] : shadcn,
+        options: {
+          ...clerkAppearance.options,
+          logoImageUrl: resolvedTheme === "dark"
+            ? `${window.location.origin}${basePath}/images/whyhello-dark-logo.png`
+            : `${window.location.origin}${basePath}/logo.svg`,
+        },
         variables: {
           ...clerkAppearance.variables,
           colorBackground: "hsl(var(--card))",
