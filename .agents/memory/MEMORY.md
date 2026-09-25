@@ -5,3 +5,4 @@
 - [User-scoped buyer ranking](user-scoped-buyer-ranking.md) — Home buyer fit must come from the signed-in user’s HQ target markets, never global contact scores
 - [Insight uniqueness and publishing](insight-uniqueness-publishing.md) — prioritize a publishable schema over DB-enforced insight URL uniqueness while legacy production duplicates remain
 - [Whyhello logo on dark backgrounds](whyhello-logo-counters.md) — original image has white letter counters and a pale W edge matte; both need transparency cleanup
+- [Theme selector alignment](theme-selector-alignment.md) — Tailwind v4 dark utilities default to system preference; align them with next-themes class switching
