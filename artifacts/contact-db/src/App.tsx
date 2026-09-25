@@ -20,6 +20,7 @@ import { shadcn } from "@clerk/themes";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import BrandLogo, { markLogoUrl } from "@/components/BrandLogo";
+import AuthPhotoRotation from "@/components/AuthPhotoRotation";
 
 import Search from "@/pages/Search";
 import Home from "@/pages/Home";
@@ -200,11 +201,7 @@ function AuthPageShell({ children, isSignUp }: { children: React.ReactNode; isSi
           </div>
         </main>
         <aside className="relative hidden min-h-[100dvh] flex-1 overflow-hidden bg-[#25323b] lg:block">
-          <img
-            src={`${basePath}/images/business-conversation.jpg`}
-            alt="Two professionals in conversation at a meeting table"
-            className="absolute inset-0 h-full w-full object-cover object-center"
-          />
+          <AuthPhotoRotation />
           <div className="absolute bottom-8 left-8 right-8 max-w-[500px] rounded-2xl border border-white/20 bg-[#14242e]/95 px-8 py-8 text-[#f4f4ee] shadow-xl xl:bottom-12 xl:left-12 xl:right-12 xl:px-10 xl:py-10">
             <span className="mb-5 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#c0d1df]">The Whyhello perspective</span>
             <p className="text-[clamp(1.6rem,2.5vw,2.45rem)] font-medium leading-[1.22] tracking-[-0.045em]">
