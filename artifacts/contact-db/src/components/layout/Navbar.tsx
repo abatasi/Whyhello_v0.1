@@ -9,7 +9,7 @@ import {
   MessageSquare, ClipboardList, Layers3, House, Sun, Moon, Monitor
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
-import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
+import { darkLogoUrl, lightLogoUrl } from "@/components/BrandLogo";
 import { cn, getInitials } from "@/lib/utils";
 import { OverallScorePill } from "@/components/OverallScorePill";
 import {
@@ -738,7 +738,7 @@ function LogoMenu({ wartime, sidebar = false, expanded = false }: { wartime: boo
       >
         {/* Crop the combined logo PNG to just the W mark (clip right side to hide wordmark) */}
         <div className={cn("sidebar-logo-crop", expanded && "sidebar-logo-crop-expanded")}>
-          <img src={whyhelloLogo} alt="Whyhello" />
+          <img src={darkTheme ? darkLogoUrl : lightLogoUrl} alt="Whyhello" />
         </div>
       </button>
 
@@ -955,7 +955,7 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
               aria-label="Whyhello"
             >
               <div className={cn("sidebar-logo-crop", expanded && "sidebar-logo-crop-expanded")}>
-                <img src={whyhelloLogo} alt="Whyhello" />
+                <img src={darkTheme ? darkLogoUrl : lightLogoUrl} alt="Whyhello" />
               </div>
             </div>
           </div>
@@ -1097,7 +1097,7 @@ export function Navbar() {
       <div className="md:hidden flex items-center px-4 h-14 gap-2">
         {/* W logo mark */}
         <div className="overflow-hidden flex-shrink-0" style={{ width: 36, height: 24 }}>
-          <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto max-w-none" />
+          <img src={darkTheme ? darkLogoUrl : lightLogoUrl} alt="Whyhello" className="h-6 w-auto max-w-none" />
         </div>
 
         <div className="flex-1" />

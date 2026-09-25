@@ -4,3 +4,4 @@
 - [Doctrine-first development](doctrine-first-dev.md) — Messaging/Scoring code changes must update the Quran/Bible in the same turn; Torah not actively maintained
 - [User-scoped buyer ranking](user-scoped-buyer-ranking.md) — Home buyer fit must come from the signed-in user’s HQ target markets, never global contact scores
 - [Insight uniqueness and publishing](insight-uniqueness-publishing.md) — prioritize a publishable schema over DB-enforced insight URL uniqueness while legacy production duplicates remain
+- [Whyhello logo on dark backgrounds](whyhello-logo-counters.md) — original image has white letter counters and a pale W edge matte; both need transparency cleanup
