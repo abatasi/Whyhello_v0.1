@@ -41,7 +41,11 @@ function PublicHeader({ onLogin }: { onLogin: () => void }) {
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center">
-          <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto" />
+          <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto dark:hidden" />
+          <span className="hidden dark:inline-flex items-center gap-2 text-lg font-bold tracking-tight text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground">w</span>
+            whyhello.
+          </span>
         </Link>
         <div className="flex items-center gap-3">
           <button
@@ -191,8 +195,8 @@ export default function PublicContactProfile() {
 
       {/* Sign-in card — fixed center of viewport below header */}
       <div className="fixed left-0 right-0 bottom-0 top-16 z-20 flex items-center justify-center px-4 pointer-events-none">
-        <div className="pointer-events-auto bg-card border border-border rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
-          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-xl font-bold text-primary mx-auto mb-4 shadow-sm">
+        <div className="pointer-events-auto bg-card dark:bg-slate-900 border border-border dark:border-slate-600 rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+          <div className="h-14 w-14 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-950 flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-sm">
             {getInitials(fullName)}
           </div>
           <h2 className="text-xl font-bold text-foreground mb-2">
@@ -235,11 +239,11 @@ export default function PublicContactProfile() {
 
           {/* Hero Card */}
           <div className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden mb-6">
-            <div className="h-28 bg-gradient-to-r from-primary/15 via-indigo-100/60 to-violet-100/40" />
+            <div className="h-28 bg-slate-800 dark:bg-slate-700" />
             <div className="px-8 pb-7">
               <div className="flex flex-col sm:flex-row gap-6 items-start">
                 <div className="-mt-14 flex-shrink-0">
-                  <div className="h-28 w-28 rounded-full border-4 border-card bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-3xl font-bold text-primary shadow-md">
+                  <div className="h-28 w-28 rounded-full border-4 border-card bg-slate-900 text-white dark:bg-white dark:text-slate-950 flex items-center justify-center text-3xl font-bold shadow-md">
                     {getInitials(fullName)}
                   </div>
                 </div>

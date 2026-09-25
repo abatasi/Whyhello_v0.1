@@ -1,127 +1,135 @@
-import { useLocation } from "wouter";
-import { Building2, Users, Search, SlidersHorizontal } from "lucide-react";
-import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
+import { Link } from "wouter";
+import { ArrowRight, ArrowUpRight, Building2, Search, SlidersHorizontal, Users } from "lucide-react";
+
+const imageUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/business-conversation.jpg`;
+
+const benefits = [
+  {
+    number: "01",
+    icon: Search,
+    title: "Find the right person",
+    description: "Search across professional contacts with the context you need to make a relevant introduction.",
+  },
+  {
+    number: "02",
+    icon: SlidersHorizontal,
+    title: "Make the search yours",
+    description: "Narrow by role, seniority, industry, location, and company size. Less noise, more signal.",
+  },
+  {
+    number: "03",
+    icon: Building2,
+    title: "See the bigger picture",
+    description: "Understand the companies behind your contacts before you start the conversation.",
+  },
+];
 
 export default function Landing() {
-  const [, navigate] = useLocation();
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Top bar */}
-      <header className="w-full px-8 py-5 flex items-center justify-between border-b border-border/40 bg-background">
-        <img src={whyhelloLogo} alt="Whyhello" className="h-8 w-auto" />
-        <button
-          onClick={() => navigate("/sign-in")}
-          className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Sign in
-        </button>
-      </header>
-
-      <div className="flex flex-1">
-        {/* Left: Hero content */}
-        <div className="flex-1 flex flex-col justify-center px-16 py-20 max-w-2xl">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-3 py-1.5 rounded-full mb-6 w-fit">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            Contact Intelligence Platform
-          </div>
-
-          <h1 className="text-5xl font-display font-bold leading-tight mb-6 text-foreground">
-            Find the right people,
-            <br />
-            <span className="text-primary">faster than ever.</span>
-          </h1>
-
-          <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-md">
-            Search and filter millions of professional contacts and companies by industry, seniority, location, and more — all in one place.
-          </p>
-
-          {/* Feature highlights */}
-          <div className="grid grid-cols-2 gap-4 mb-12">
-            {[
-              { icon: Search, label: "Smart search across all contacts" },
-              { icon: SlidersHorizontal, label: "Multi-criteria filter engine" },
-              { icon: Users, label: "Detailed contact profiles" },
-              { icon: Building2, label: "Full company intelligence" },
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-3 text-sm text-muted-foreground">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-primary" />
-                </div>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Auth buttons */}
-          <div className="flex flex-col gap-3 max-w-sm">
-            <button
-              onClick={() => navigate("/sign-in")}
-              className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-background border border-border rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors shadow-sm"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-              </svg>
-              Continue with Google
-            </button>
-
-            <button
-              onClick={() => navigate("/sign-in")}
-              className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm"
-            >
-              Continue with Email
-            </button>
-
-            <p className="text-xs text-center text-muted-foreground mt-2">
-              By continuing, you agree to our{" "}
-              <span className="underline underline-offset-2 cursor-pointer">Terms of Service</span>{" "}
-              and{" "}
-              <span className="underline underline-offset-2 cursor-pointer">Privacy Policy</span>.
-            </p>
+    <div className="min-h-[100dvh] bg-background text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <header className="relative z-10 border-b border-border/80 bg-background">
+        <div className="mx-auto flex h-[76px] max-w-[1600px] items-center justify-between px-5 sm:px-10 lg:px-16">
+          <Link href="/" data-testid="link-landing-home" className="inline-flex items-center gap-2.5 text-foreground no-underline">
+            <span className="flex size-8 items-center justify-center rounded-[10px] bg-primary text-primary-foreground text-xl font-bold leading-none">w</span>
+            <span className="text-[21px] font-bold tracking-[-0.07em]">whyhello<span className="text-primary">.</span></span>
+          </Link>
+          <div className="flex items-center gap-3 sm:gap-7">
+            <Link href="/sign-in" data-testid="link-landing-signin" className="text-sm font-semibold text-foreground no-underline transition-opacity hover:opacity-65">Sign in</Link>
+            <Link href="/sign-up" data-testid="link-landing-signup" style={{ color: "hsl(var(--primary-foreground))" }} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground no-underline transition-opacity hover:opacity-90 sm:px-5">
+              Get started <ArrowUpRight size={15} strokeWidth={2} />
+            </Link>
           </div>
         </div>
+      </header>
 
-        {/* Right: Visual panel */}
-        <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary/5 via-primary/10 to-indigo-100 items-center justify-center p-16">
-          <div className="w-full max-w-sm space-y-3">
-            {[
-              { name: "Sarah Chen", title: "CTO", company: "Acme Corp", badge: "C-Suite", dept: "Engineering" },
-              { name: "Marcus Johnson", title: "VP of Product", company: "Blue Horizon", badge: "VP", dept: "Product" },
-              { name: "Priya Patel", title: "Senior Engineer", company: "TechCorp", badge: "IC", dept: "Engineering" },
-            ].map((c, i) => (
-              <div
-                key={c.name}
-                className="bg-background rounded-xl p-4 shadow-sm border border-border/50 flex items-center gap-3"
-                style={{ opacity: 1 - i * 0.15, transform: `scale(${1 - i * 0.02})` }}
-              >
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-100 to-primary/30 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                  {c.name.split(" ").map(n => n[0]).join("")}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-foreground">{c.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{c.title} · {c.company}</p>
-                </div>
-                <span className="text-xs bg-secondary px-2 py-0.5 rounded-full font-medium text-foreground/70 flex-shrink-0">
-                  {c.badge}
-                </span>
+      <main>
+        <section className="mx-auto grid max-w-[1600px] lg:min-h-[690px] lg:grid-cols-[minmax(0,48%)_minmax(0,52%)]">
+          <div className="flex flex-col justify-center px-6 pb-14 pt-16 sm:px-10 lg:px-16 lg:py-20 xl:px-24">
+            <div className="mb-8 inline-flex w-fit items-center gap-2.5 rounded-full border border-border bg-secondary/50 px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.15em] text-foreground">
+              <span className="size-1.5 rounded-full bg-primary" />
+              Contact intelligence, made human
+            </div>
+            <h1 data-testid="text-landing-headline" className="max-w-[680px] text-[clamp(3.35rem,5.7vw,6.35rem)] font-bold leading-[0.99] tracking-[-0.07em] text-foreground">
+              Better business starts with <span className="text-primary">better hello.</span>
+            </h1>
+            <p className="mt-8 max-w-[470px] text-[17px] leading-[1.75] text-muted-foreground sm:text-[18px]">
+              Find the people who matter, understand the context behind every connection, and turn a first hello into something meaningful.
+            </p>
+            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link href="/sign-up" data-testid="link-hero-signup" style={{ color: "hsl(var(--primary-foreground))" }} className="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground no-underline transition-opacity hover:opacity-90">
+                Start connecting <ArrowRight size={17} strokeWidth={2} />
+              </Link>
+              <Link href="/sign-in" data-testid="link-hero-signin" className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border bg-card px-6 text-sm font-semibold text-foreground no-underline transition-colors hover:bg-secondary">
+                I have an account
+              </Link>
+            </div>
+            <div className="mt-12 flex items-center gap-3 border-t border-border pt-6 text-xs font-medium text-muted-foreground">
+              <Users size={17} strokeWidth={1.7} className="text-primary" />
+              A more considered way to grow your network.
+            </div>
+          </div>
+
+          <div className="relative min-h-[460px] overflow-hidden bg-[#26343a] sm:min-h-[550px] lg:min-h-full">
+            <img src={imageUrl} alt="Two professionals having a thoughtful business conversation across a meeting table" className="absolute inset-0 h-full w-full object-cover object-center" />
+            <div className="absolute bottom-5 left-5 right-5 max-w-[385px] rounded-xl border border-white/15 bg-[#172b34]/95 p-5 text-[#f7f7f2] shadow-[0_24px_60px_-30px_rgba(0,0,0,0.7)] sm:bottom-9 sm:left-9 sm:p-6 lg:bottom-12 lg:left-12">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#b9d3dc]">The right connection</span>
+                <span className="flex size-8 items-center justify-center rounded-full border border-white/20 text-[#e4eff1]"><ArrowUpRight size={15} /></span>
               </div>
-            ))}
-            <div className="bg-background rounded-xl p-4 shadow-sm border border-border/50 mt-4">
-              <p className="text-xs font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
-                <SlidersHorizontal className="w-3 h-3" /> Active Filters
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {["C-Suite", "Engineering", "201–500 employees", "San Francisco"].map(f => (
-                  <span key={f} className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">{f}</span>
+              <p className="text-[20px] font-semibold leading-[1.3] tracking-[-0.035em] sm:text-[24px]">Know who you&apos;re talking to. Know why it matters.</p>
+              <div className="mt-5 flex flex-wrap gap-2 border-t border-white/20 pt-4">
+                {["People", "Companies", "Context"].map((item) => (
+                  <span key={item} className="rounded-md bg-[#dce9e9] px-2.5 py-1 text-[11px] font-bold text-[#17343c]">{item}</span>
                 ))}
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+
+        <section className="border-y border-border bg-card">
+          <div className="mx-auto grid max-w-[1600px] gap-8 px-6 py-9 sm:grid-cols-[1fr_auto] sm:items-center sm:px-10 lg:px-16 xl:px-24">
+            <p className="max-w-[660px] text-[18px] font-semibold leading-snug tracking-[-0.03em] text-foreground sm:text-[21px]">
+              A name is a starting point. The right context is what moves a relationship forward.
+            </p>
+            <span className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Search with purpose, connect with confidence</span>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1600px] px-6 py-20 sm:px-10 lg:px-16 lg:py-28 xl:px-24">
+          <div className="max-w-[660px]">
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">How it works</span>
+            <h2 className="mt-4 text-[clamp(2.2rem,4vw,4rem)] font-bold leading-[1.08] tracking-[-0.06em] text-foreground">From who to why, in a few thoughtful steps.</h2>
+          </div>
+          <div className="mt-12 grid border-t border-border md:grid-cols-3">
+            {benefits.map(({ number, icon: Icon, title, description }, index) => (
+              <div key={number} className={`border-b border-border px-1 py-8 md:border-b-0 md:px-7 md:py-10 ${index > 0 ? "md:border-l" : "md:pl-0"}`}>
+                <div className="flex items-start justify-between">
+                  <span className="flex size-11 items-center justify-center rounded-lg bg-secondary text-primary"><Icon size={21} strokeWidth={1.8} /></span>
+                  <span className="font-mono text-xs text-muted-foreground">{number} / 03</span>
+                </div>
+                <h3 className="mt-8 text-[22px] font-bold tracking-[-0.035em] text-foreground">{title}</h3>
+                <p className="mt-3 max-w-[330px] text-sm leading-7 text-muted-foreground">{description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-[#172b34] px-6 py-20 text-[#f5f6f0] sm:px-10 lg:px-16 lg:py-24">
+          <div className="mx-auto flex max-w-[1400px] flex-col gap-9 md:flex-row md:items-end md:justify-between">
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#b2d0da]">The next conversation starts here</span>
+              <h2 className="mt-5 max-w-[720px] text-[clamp(2.5rem,5vw,5.5rem)] font-bold leading-[1.04] tracking-[-0.065em] text-[#f5f6f0]">Make the first hello count.</h2>
+            </div>
+            <Link href="/sign-up" data-testid="link-footer-signup" style={{ color: "#17343c" }} className="inline-flex min-h-12 w-fit shrink-0 items-center gap-4 rounded-lg bg-[#e5eeee] px-6 text-sm font-bold text-[#17343c] no-underline transition-opacity hover:opacity-85">
+              Get started <ArrowUpRight size={17} />
+            </Link>
+          </div>
+        </section>
+      </main>
+      <footer className="flex flex-col gap-3 border-t border-border px-6 py-7 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-10 lg:px-16">
+        <span className="font-bold tracking-[-0.03em] text-foreground">whyhello<span className="text-primary">.</span></span>
+        <span>© {new Date().getFullYear()} Whyhello. Relationships worth building.</span>
+      </footer>
     </div>
   );
 }

@@ -17,6 +17,8 @@ import {
 } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
+import { Link } from "wouter";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 import Search from "@/pages/Search";
 import Home from "@/pages/Home";
@@ -85,41 +87,41 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: "hsl(226,70%,55%)",
-    colorForeground: "hsl(222,47%,11%)",
-    colorMutedForeground: "hsl(215,16%,47%)",
-    colorDanger: "hsl(0,84%,60%)",
-    colorBackground: "hsl(210,33%,99%)",
-    colorInput: "hsl(214,32%,91%)",
-    colorInputForeground: "hsl(222,47%,11%)",
-    colorNeutral: "hsl(214,32%,91%)",
-    fontFamily: "'Inter', sans-serif",
-    borderRadius: "0.75rem",
+    colorPrimary: "hsl(var(--primary))",
+    colorForeground: "hsl(var(--foreground))",
+    colorMutedForeground: "hsl(var(--muted-foreground))",
+    colorDanger: "hsl(var(--destructive))",
+    colorBackground: "hsl(var(--card))",
+    colorInput: "hsl(var(--secondary))",
+    colorInputForeground: "hsl(var(--foreground))",
+    colorNeutral: "hsl(var(--border))",
+    fontFamily: "'DM Sans', sans-serif",
+    borderRadius: "0.625rem",
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-card text-card-foreground rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg border border-border/50",
+    cardBox: "!bg-card dark:!bg-slate-800 !text-card-foreground rounded-2xl w-[440px] max-w-full overflow-hidden border border-border dark:!border-slate-500 shadow-[0_20px_70px_-35px_rgba(20,31,51,0.35)]",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "text-foreground font-display font-bold",
-    headerSubtitle: "text-muted-foreground",
-    socialButtonsBlockButtonText: "text-foreground font-medium",
-    formFieldLabel: "text-foreground font-medium",
-    footerActionLink: "text-primary font-medium hover:text-primary/80",
-    footerActionText: "text-muted-foreground",
-    dividerText: "text-muted-foreground",
-    identityPreviewEditButton: "text-primary hover:text-primary/80",
-    formFieldSuccessText: "text-green-600",
-    alertText: "text-foreground",
+    headerTitle: "!text-foreground !font-bold !tracking-tight",
+    headerSubtitle: "!text-muted-foreground",
+    socialButtonsBlockButtonText: "!text-foreground !font-semibold",
+    formFieldLabel: "!text-foreground !font-semibold",
+    footerActionLink: "!text-primary !font-semibold hover:!opacity-80",
+    footerActionText: "!text-muted-foreground",
+    dividerText: "!text-muted-foreground",
+    identityPreviewEditButton: "!text-primary",
+    formFieldSuccessText: "!text-foreground",
+    alertText: "!text-foreground",
     logoBox: "flex justify-center mb-2",
     logoImage: "h-10 w-auto",
-    socialButtonsBlockButton: "border border-border hover:bg-secondary/50 transition-colors",
-    formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
-    formFieldInput: "border-input bg-background text-foreground focus:ring-2 focus:ring-primary/30",
-    footerAction: "border-t border-border/40",
-    dividerLine: "bg-border",
-    alert: "bg-destructive/10 border border-destructive/20 rounded-lg",
-    otpCodeFieldInput: "border-input bg-background text-foreground",
+    socialButtonsBlockButton: "!bg-card dark:!bg-slate-800 !border !border-border dark:!border-slate-500 !text-foreground hover:!bg-secondary transition-colors",
+    formButtonPrimary: "!bg-primary !text-primary-foreground hover:!opacity-90 transition-opacity",
+    formFieldInput: "!border-border dark:!border-slate-500 !bg-secondary dark:!bg-slate-950 !text-foreground placeholder:!text-muted-foreground focus:!ring-2 focus:!ring-primary/30",
+    footerAction: "!border-t !border-border",
+    dividerLine: "!bg-border",
+    alert: "!bg-secondary !border !border-border rounded-lg",
+    otpCodeFieldInput: "!border-border dark:!border-slate-500 !bg-secondary dark:!bg-slate-950 !text-foreground",
     formFieldRow: "gap-2",
     main: "gap-4",
   },
@@ -160,19 +162,76 @@ function CompanyProfileRoute() {
   return isSignedIn ? <CompanyProfile /> : <PublicCompanyProfile />;
 }
 
+function AuthPageShell({ children, isSignUp }: { children: React.ReactNode; isSignUp: boolean }) {
+  return (
+    <div className="min-h-[100dvh] bg-background text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="mx-auto flex min-h-[100dvh] max-w-[1800px] flex-col lg:flex-row">
+        <main className="flex min-h-[100dvh] w-full flex-col px-5 sm:px-10 lg:w-[53%] lg:px-14 xl:px-20">
+          <div className="flex items-center justify-between border-b border-border/70 py-6">
+            <Link href="/" data-testid="link-auth-home" className="inline-flex items-center gap-2.5 text-foreground no-underline">
+              <span className="flex size-8 items-center justify-center rounded-[10px] bg-primary text-primary-foreground text-xl font-bold leading-none">w</span>
+              <span className="text-[21px] font-bold tracking-[-0.07em]">whyhello<span className="text-primary">.</span></span>
+            </Link>
+            <Link href="/" data-testid="link-auth-back" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground no-underline hover:text-foreground">
+              <ArrowLeft size={15} strokeWidth={1.8} /> Back to home
+            </Link>
+          </div>
+          <div className="flex flex-1 flex-col items-center justify-center py-12 sm:py-16">
+            <div className="mb-8 w-full max-w-[440px] px-1">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground">
+                <span className="size-1.5 rounded-full bg-primary" /> Your relationship workspace
+              </div>
+              <h1 className="text-[clamp(2rem,3.3vw,3rem)] leading-[1.1] tracking-[-0.055em] font-bold text-foreground">
+                {isSignUp ? "Make every introduction count." : "Good to see you again."}
+              </h1>
+              <p className="mt-3 max-w-[370px] text-[15px] leading-7 text-muted-foreground">
+                {isSignUp ? "Start building a more thoughtful way to find and know the people behind your next opportunity." : "The people, context, and connections that matter are right where you left them."}
+              </p>
+            </div>
+            {children}
+            <p className="mt-9 max-w-[440px] text-center text-xs leading-5 text-muted-foreground">
+              A better way to keep the right conversations moving.
+            </p>
+          </div>
+          <div className="flex items-center justify-between gap-4 border-t border-border/70 py-5 text-[11px] text-muted-foreground">
+            <span>© {new Date().getFullYear()} Whyhello</span>
+            <span>Built for better business relationships.</span>
+          </div>
+        </main>
+        <aside className="relative hidden min-h-[100dvh] flex-1 overflow-hidden bg-[#25323b] lg:block">
+          <img
+            src={`${basePath}/images/business-conversation.jpg`}
+            alt="Two professionals in conversation at a meeting table"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          <div className="absolute bottom-8 left-8 right-8 max-w-[500px] rounded-2xl border border-white/20 bg-[#14242e]/95 px-8 py-8 text-[#f4f4ee] shadow-xl xl:bottom-12 xl:left-12 xl:right-12 xl:px-10 xl:py-10">
+            <span className="mb-5 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#c0d1df]">The Whyhello perspective</span>
+            <p className="text-[clamp(1.6rem,2.5vw,2.45rem)] font-medium leading-[1.22] tracking-[-0.045em]">
+              The best opportunities start with a real conversation.
+            </p>
+            <div className="mt-7 flex items-center gap-2 border-t border-white/20 pt-5 text-xs font-semibold text-[#e6edf0]">
+              Find your people <ArrowUpRight size={15} />
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
 function SignInPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <AuthPageShell isSignUp={false}>
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
-    </div>
+    </AuthPageShell>
   );
 }
 
 function SignUpPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <AuthPageShell isSignUp>
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
+    </AuthPageShell>
   );
 }
 
@@ -244,18 +303,16 @@ function ClerkProviderWithRoutes() {
         theme: resolvedTheme === "dark" ? [shadcn, dark] : shadcn,
         variables: {
           ...clerkAppearance.variables,
-          colorBackground: "hsl(var(--background))",
-          colorInput: "hsl(var(--input))",
+          colorBackground: "hsl(var(--card))",
+          colorInput: "hsl(var(--secondary))",
           colorInputForeground: "hsl(var(--foreground))",
-          colorNeutral: "hsl(var(--secondary))",
+          colorNeutral: "hsl(var(--border))",
           colorForeground: "hsl(var(--foreground))",
           colorMutedForeground: "hsl(var(--muted-foreground))",
+          colorPrimary: "hsl(var(--primary))",
         },
         elements: {
           ...clerkAppearance.elements,
-          cardBox: "bg-card text-card-foreground rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg border border-border/50",
-          formFieldInput: "border-input bg-background text-foreground focus:ring-2 focus:ring-primary/30",
-          otpCodeFieldInput: "border-input bg-background text-foreground",
         }
       }}
       signInUrl={`${basePath}/sign-in`}
