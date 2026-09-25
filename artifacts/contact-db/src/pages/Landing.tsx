@@ -1,7 +1,9 @@
 import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight, Building2, Search, SlidersHorizontal, Users } from "lucide-react";
+import whyhelloLogo from "@assets/Untitled_design_1773415520137.png";
 
 const imageUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/business-conversation.jpg`;
+const darkLogoUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/whyhello-logo-dark-full.png`;
 
 const benefits = [
   {
@@ -29,9 +31,9 @@ export default function Landing() {
     <div className="min-h-[100dvh] bg-background text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <header className="relative z-10 border-b border-border/80 bg-background">
         <div className="mx-auto flex h-[76px] max-w-[1600px] items-center justify-between px-5 sm:px-10 lg:px-16">
-          <Link href="/" data-testid="link-landing-home" className="inline-flex items-center gap-2.5 text-foreground no-underline">
-            <span className="flex size-8 items-center justify-center rounded-[10px] bg-primary text-primary-foreground text-xl font-bold leading-none">w</span>
-            <span className="text-[21px] font-bold tracking-[-0.07em]">whyhello<span className="text-primary">.</span></span>
+          <Link href="/" data-testid="link-landing-home" className="inline-flex items-center no-underline">
+            <img src={whyhelloLogo} alt="Whyhello" className="h-8 w-auto dark:hidden" />
+            <img src={darkLogoUrl} alt="Whyhello" className="hidden h-8 w-auto dark:block" />
           </Link>
           <div className="flex items-center gap-3 sm:gap-7">
             <Link href="/sign-in" data-testid="link-landing-signin" className="text-sm font-semibold text-foreground no-underline transition-opacity hover:opacity-65">Sign in</Link>
@@ -127,7 +129,10 @@ export default function Landing() {
         </section>
       </main>
       <footer className="flex flex-col gap-3 border-t border-border px-6 py-7 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-10 lg:px-16">
-        <span className="font-bold tracking-[-0.03em] text-foreground">whyhello<span className="text-primary">.</span></span>
+        <span>
+          <img src={whyhelloLogo} alt="Whyhello" className="h-6 w-auto dark:hidden" />
+          <img src={darkLogoUrl} alt="Whyhello" className="hidden h-6 w-auto dark:block" />
+        </span>
         <span>© {new Date().getFullYear()} Whyhello. Relationships worth building.</span>
       </footer>
     </div>
