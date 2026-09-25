@@ -19,6 +19,7 @@ import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import BrandLogo, { lightLogoUrl, darkLogoUrl } from "@/components/BrandLogo";
 
 import Search from "@/pages/Search";
 import Home from "@/pages/Home";
@@ -65,6 +66,7 @@ const clerkPubKey = publishableKeyFromHost(
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const absoluteLogoUrl = (url: string) => new URL(url, window.location.origin).href;
 
 // Clerk passes full paths to routerPush/routerReplace, but wouter's
 // setLocation prepends the base — strip it to avoid doubling.
@@ -84,7 +86,7 @@ const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+    logoImageUrl: absoluteLogoUrl(lightLogoUrl),
   },
   variables: {
     colorPrimary: "hsl(var(--primary))",
@@ -168,10 +170,8 @@ function AuthPageShell({ children, isSignUp }: { children: React.ReactNode; isSi
       <div className="mx-auto flex min-h-[100dvh] max-w-[1800px] flex-col lg:flex-row">
         <main className="flex min-h-[100dvh] w-full flex-col px-5 sm:px-10 lg:w-[53%] lg:px-14 xl:px-20">
           <div className="flex items-center justify-between border-b border-border/70 py-6">
-            <Link href="/" data-testid="link-auth-home" className="inline-flex items-center gap-2.5 text-foreground no-underline">
-              <span className="flex size-8 items-center justify-center rounded-[10px] bg-primary text-primary-foreground text-xl font-bold leading-none dark:hidden">w</span>
-              <img src={`${basePath}/images/whyhello-dark-logo.png`} alt="" aria-hidden="true" className="hidden h-8 w-auto dark:block" />
-              <span className="text-[21px] font-bold tracking-[-0.07em]">whyhello<span className="text-primary">.</span></span>
+            <Link href="/" data-testid="link-auth-home" className="inline-flex items-center no-underline">
+              <BrandLogo />
             </Link>
             <Link href="/" data-testid="link-auth-back" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground no-underline hover:text-foreground">
               <ArrowLeft size={15} strokeWidth={1.8} /> Back to home
@@ -305,8 +305,8 @@ function ClerkProviderWithRoutes() {
         options: {
           ...clerkAppearance.options,
           logoImageUrl: resolvedTheme === "dark"
-            ? `${window.location.origin}${basePath}/images/whyhello-dark-logo.png`
-            : `${window.location.origin}${basePath}/logo.svg`,
+            ? absoluteLogoUrl(darkLogoUrl)
+            : absoluteLogoUrl(lightLogoUrl),
         },
         variables: {
           ...clerkAppearance.variables,
