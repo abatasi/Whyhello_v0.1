@@ -1,5 +1,6 @@
 export const lightLogoUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/whyhello-logo-light-full.png`;
 export const darkLogoUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/whyhello-logo-dark-full.png`;
+export const markLogoUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/whyhello-mark.png`;
 
 export default function BrandLogo({ size = "header" }: { size?: "header" | "footer" }) {
   const height = size === "footer" ? "h-6" : "h-8";

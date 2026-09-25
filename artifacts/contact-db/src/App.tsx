@@ -19,7 +19,7 @@ import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
-import BrandLogo, { lightLogoUrl, darkLogoUrl } from "@/components/BrandLogo";
+import BrandLogo, { markLogoUrl } from "@/components/BrandLogo";
 
 import Search from "@/pages/Search";
 import Home from "@/pages/Home";
@@ -86,7 +86,7 @@ const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    logoImageUrl: absoluteLogoUrl(lightLogoUrl),
+    logoImageUrl: absoluteLogoUrl(markLogoUrl),
   },
   variables: {
     colorPrimary: "hsl(var(--primary))",
@@ -115,7 +115,7 @@ const clerkAppearance = {
     identityPreviewEditButton: "!text-primary",
     formFieldSuccessText: "!text-foreground",
     alertText: "!text-foreground",
-    logoBox: "flex justify-center mb-2",
+    logoBox: "flex justify-center mb-2 pt-2",
     logoImage: "h-10 w-auto",
     socialButtonsBlockButton: "!bg-card dark:!bg-slate-800 !border !border-border dark:!border-slate-500 !text-foreground hover:!bg-secondary transition-colors",
     formButtonPrimary: "!bg-primary !text-primary-foreground hover:!opacity-90 transition-opacity",
@@ -302,12 +302,6 @@ function ClerkProviderWithRoutes() {
       appearance={{
         ...clerkAppearance,
         theme: resolvedTheme === "dark" ? [shadcn, dark] : shadcn,
-        options: {
-          ...clerkAppearance.options,
-          logoImageUrl: resolvedTheme === "dark"
-            ? absoluteLogoUrl(darkLogoUrl)
-            : absoluteLogoUrl(lightLogoUrl),
-        },
         variables: {
           ...clerkAppearance.variables,
           colorBackground: "hsl(var(--card))",
