@@ -677,24 +677,10 @@ export default function Search({ directory }: { directory: Tab }) {
     <Shell>
       <div className="flex h-full min-h-0 flex-col">
         {/* Space for the directory title and future page-level content */}
-        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-8 py-6">
+        <header className="flex shrink-0 items-center border-b border-border px-8 py-6">
           <h1 className="text-[1.40625rem] leading-tight font-display font-bold">
             {activeTab === "contacts" ? "Find People" : "Find Companies"}
           </h1>
-          {!sidebarOpen && (
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground bg-card border border-border rounded-lg shadow-sm hover:bg-secondary/50 transition-colors flex-shrink-0"
-              title="Show filters"
-            >
-              <Filter className="h-3.5 w-3.5" />
-              <span>Filters</span>
-              {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="ml-0.5 px-1.5 text-xs">{activeFilterCount}</Badge>
-              )}
-              <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-          )}
         </header>
         <div className="flex flex-1 min-h-0">
         {/* Left Sidebar Filters */}
@@ -702,6 +688,7 @@ export default function Search({ directory }: { directory: Tab }) {
           {sidebarOpen && (
             <motion.div
               key="sidebar"
+              id="directory-filters"
               initial={{ width: 0 }}
               animate={{ width: 320 }}
               exit={{ width: 0 }}
@@ -741,6 +728,9 @@ export default function Search({ directory }: { directory: Tab }) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setSidebarOpen(false)}
+                  aria-label="Collapse filters"
+                  aria-expanded={true}
+                  aria-controls="directory-filters"
                   className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                   title="Collapse filters"
                 >
@@ -928,7 +918,25 @@ export default function Search({ directory }: { directory: Tab }) {
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
           {/* Directory tabs */}
           <div className="px-8 pt-6 pb-4">
-            <div className="flex space-x-1 border-b border-border">
+            <div className="flex items-center gap-4">
+              {!sidebarOpen && (
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Show filters"
+                  aria-expanded={false}
+                  aria-controls="directory-filters"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-foreground bg-card border border-border rounded-lg shadow-sm hover:bg-secondary/50 transition-colors flex-shrink-0"
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  <span>Show filters</span>
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-0.5 px-1.5 text-xs">{activeFilterCount}</Badge>
+                  )}
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <div className="flex flex-1 space-x-1 border-b border-border">
               <Link
                 href="/directory/people"
                 className={cn(
@@ -961,6 +969,7 @@ export default function Search({ directory }: { directory: Tab }) {
                   <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                 )}
               </Link>
+              </div>
             </div>
           </div>
 
