@@ -24,6 +24,7 @@ export * from "./directoryCounts";
 export * from "./enrichmentPreview";
 export * from "./enrichmentPreviewInput";
 export * from "./enrichmentPreviewInputType";
+export * from "./enrichmentResult";
 export * from "./errorResponse";
 export * from "./filterOptions";
 export * from "./healthStatus";

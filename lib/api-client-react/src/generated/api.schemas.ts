@@ -195,6 +195,16 @@ export interface EnrichmentPreview {
   isUnlimited: boolean;
 }
 
+export interface EnrichmentResult {
+  selectedCount: number;
+  alreadyEnrichedCount: number;
+  enrichedCount: number;
+  creditsCharged: number;
+  /** @nullable */
+  creditsRemaining: number | null;
+  isUnlimited: boolean;
+}
+
 export interface DirectoryCounts {
   total: number;
   netNew: number;

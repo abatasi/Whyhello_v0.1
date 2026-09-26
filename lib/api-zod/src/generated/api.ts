@@ -37,6 +37,26 @@ export const PreviewEnrichmentResponse = zod.object({
 });
 
 /**
+ * @summary Confirm enrichment and spend credits on new reveals
+ */
+
+export const enrichRecordsBodyIdsMax = 1000;
+
+export const EnrichRecordsBody = zod.object({
+  type: zod.enum(["contacts", "companies"]),
+  ids: zod.array(zod.number().min(1)).min(1).max(enrichRecordsBodyIdsMax),
+});
+
+export const EnrichRecordsResponse = zod.object({
+  selectedCount: zod.number(),
+  alreadyEnrichedCount: zod.number(),
+  enrichedCount: zod.number(),
+  creditsCharged: zod.number(),
+  creditsRemaining: zod.number().nullable(),
+  isUnlimited: zod.boolean(),
+});
+
+/**
  * @summary List contacts with filters
  */
 export const listContactsQueryPageDefault = 1;

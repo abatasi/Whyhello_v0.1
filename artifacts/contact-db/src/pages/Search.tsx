@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useId, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDebounce } from "use-debounce";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
@@ -27,6 +28,7 @@ import {
   useBatchRevealStatuses,
   useRevealContact,
   usePreviewEnrichment,
+  useEnrichRecords,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
@@ -449,7 +451,46 @@ export default function Search({ directory }: { directory: Tab }) {
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [enrichOpen, setEnrichOpen] = useState(false);
+  const [enrichSelection, setEnrichSelection] = useState<{ type: Tab; ids: number[] } | null>(null);
   const enrichmentPreview = usePreviewEnrichment();
+  const confirmEnrichment = useEnrichRecords();
+  const queryClient = useQueryClient();
+
+  const closeEnrichment = () => {
+    if (confirmEnrichment.isPending) return;
+    setEnrichOpen(false);
+    setEnrichSelection(null);
+    enrichmentPreview.reset();
+    confirmEnrichment.reset();
+  };
+
+  const handleConfirmEnrichment = () => {
+    if (!enrichSelection || !enrichmentPreview.data || confirmEnrichment.isPending ||
+        (enrichmentPreview.data.creditsRemaining !== null &&
+          enrichmentPreview.data.creditsRequired > enrichmentPreview.data.creditsRemaining)) return;
+    confirmEnrichment.mutate({ data: enrichSelection }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["credits", "status"] });
+        queryClient.invalidateQueries({ queryKey: ["credits", "reveal-statuses-batch"] });
+        queryClient.invalidateQueries({ queryKey: ["credits", "reveal-status"] });
+        queryClient.invalidateQueries({ queryKey: ["credits", "company-reveal-status"] });
+        queryClient.invalidateQueries({ queryKey: ["credits", "revealed-contacts"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+        queryClient.invalidateQueries({ queryKey: ["home", "top-leads"] });
+        queryClient.invalidateQueries({ queryKey: ["home", "activity"] });
+        setSelectedIds(new Set());
+      },
+      onError: () => {
+        // A lost response can follow a successful commit; reload server state
+        // rather than assuming no credits were used.
+        queryClient.invalidateQueries({ queryKey: ["credits", "status"] });
+        queryClient.invalidateQueries({ queryKey: ["credits", "reveal-statuses-batch"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      },
+    });
+  };
 
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
@@ -724,8 +765,11 @@ export default function Search({ directory }: { directory: Tab }) {
                 className="gap-1.5"
                 onClick={() => {
                   enrichmentPreview.reset();
+                  confirmEnrichment.reset();
+                  const selection = { type: activeTab, ids: Array.from(selectedIds) };
+                  setEnrichSelection(selection);
                   setEnrichOpen(true);
-                  enrichmentPreview.mutate({ data: { type: activeTab, ids: Array.from(selectedIds) } });
+                  enrichmentPreview.mutate({ data: selection });
                 }}
               >
                 <Sparkles className="h-4 w-4" /> Enrich
@@ -1338,33 +1382,47 @@ export default function Search({ directory }: { directory: Tab }) {
         </div>
       </div>
 
-      <Dialog open={enrichOpen} onOpenChange={(open) => {
-        setEnrichOpen(open);
-        if (!open) enrichmentPreview.reset();
-      }}>
+      <Dialog open={enrichOpen} onOpenChange={(open) => { if (!open) closeEnrichment(); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Review enrichment
+              {confirmEnrichment.isSuccess ? "Enrichment complete" : "Review enrichment"}
             </DialogTitle>
             <DialogDescription>
-              Preview the credit cost for your selected {activeTab === "contacts" ? "contacts" : "companies"}.
+              {confirmEnrichment.isSuccess
+                ? "Your Directory has been updated."
+                : `Review the credit cost for your selected ${enrichSelection?.type === "companies" ? "companies" : "contacts"} before confirming.`}
             </DialogDescription>
           </DialogHeader>
-          {enrichmentPreview.isPending && (
+          {confirmEnrichment.isSuccess && (
+            <div className="space-y-2 rounded-lg border border-border p-4 text-sm" role="status">
+              <p className="font-semibold">
+                {formatNumber(confirmEnrichment.data.enrichedCount)} new {enrichSelection?.type === "companies" ? "companies" : "contacts"} enriched
+              </p>
+              <p className="text-muted-foreground">
+                {formatNumber(confirmEnrichment.data.creditsCharged)} {confirmEnrichment.data.creditsCharged === 1 ? "credit" : "credits"} used
+                {confirmEnrichment.data.alreadyEnrichedCount > 0 &&
+                  ` · ${formatNumber(confirmEnrichment.data.alreadyEnrichedCount)} already enriched at no charge`}
+              </p>
+              {!confirmEnrichment.data.isUnlimited && (
+                <p className="text-muted-foreground">{formatNumber(confirmEnrichment.data.creditsRemaining ?? 0)} credits remaining this month.</p>
+              )}
+            </div>
+          )}
+          {!confirmEnrichment.isSuccess && enrichmentPreview.isPending && (
             <p className="py-5 text-sm text-muted-foreground" role="status">Calculating your credit estimate…</p>
           )}
-          {enrichmentPreview.isError && (
+          {!confirmEnrichment.isSuccess && enrichmentPreview.isError && (
             <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
               Could not calculate the estimate. Refresh the directory and try again.
             </p>
           )}
-          {enrichmentPreview.data && !enrichmentPreview.isPending && (() => {
+          {!confirmEnrichment.isSuccess && enrichmentPreview.data && !enrichmentPreview.isPending && (() => {
             const estimate = enrichmentPreview.data;
             const insufficient = estimate.creditsRemaining !== null &&
               estimate.creditsRequired > estimate.creditsRemaining;
-            const noun = activeTab === "contacts" ? "contact" : "company";
+            const noun = enrichSelection?.type === "companies" ? "company" : "contact";
             return (
               <div className="space-y-4 text-sm">
                 <dl className="divide-y divide-border rounded-lg border border-border px-4">
@@ -1398,13 +1456,37 @@ export default function Search({ directory }: { directory: Tab }) {
                     : `${formatNumber(estimate.creditsRemaining ?? 0)} credits remaining this month.${insufficient ? " Not enough for this selection." : ""}`}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  This is a preview only. No {noun}s will be enriched and no credits will be used here.
+                  Credits are only used when you confirm. The final charge is recalculated at confirmation.
                 </p>
               </div>
             );
           })()}
+          {confirmEnrichment.isPending && (
+            <p className="text-sm text-muted-foreground" role="status">Enriching your selection… Please wait.</p>
+          )}
+          {confirmEnrichment.isError && (
+            <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+              {confirmEnrichment.error.status === 402
+                ? "Not enough credits remain. Close and reopen Enrich to review a fresh estimate."
+                : confirmEnrichment.error.status === 409
+                  ? "Some selected records are no longer available. Refresh the directory and try again."
+                  : "Could not confirm the result. Check the Directory and your credit balance before trying again; previously enriched records won't be charged twice."}
+            </p>
+          )}
           <DialogFooter>
-            <Button onClick={() => { setEnrichOpen(false); enrichmentPreview.reset(); }}>Close</Button>
+            <Button variant={confirmEnrichment.isSuccess ? "default" : "outline"} disabled={confirmEnrichment.isPending} onClick={closeEnrichment}>
+              {confirmEnrichment.isSuccess ? "Done" : "Cancel"}
+            </Button>
+            {!confirmEnrichment.isSuccess && enrichmentPreview.data && !enrichmentPreview.isPending && (
+              <Button
+                disabled={confirmEnrichment.isPending || confirmEnrichment.isError ||
+                  (enrichmentPreview.data.creditsRemaining !== null &&
+                    enrichmentPreview.data.creditsRequired > enrichmentPreview.data.creditsRemaining)}
+                onClick={handleConfirmEnrichment}
+              >
+                Confirm · use {formatNumber(enrichmentPreview.data.creditsRequired)} {enrichmentPreview.data.creditsRequired === 1 ? "credit" : "credits"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -30,6 +30,7 @@ import type {
   CreateOutreachJobRequest,
   EnrichmentPreview,
   EnrichmentPreviewInput,
+  EnrichmentResult,
   ErrorResponse,
   FilterOptions,
   HealthStatus,
@@ -210,6 +211,92 @@ export const usePreviewEnrichment = <
   TContext
 > => {
   return useMutation(getPreviewEnrichmentMutationOptions(options));
+};
+
+/**
+ * @summary Confirm enrichment and spend credits on new reveals
+ */
+export const getEnrichRecordsUrl = () => {
+  return `/api/credits/enrich`;
+};
+
+export const enrichRecords = async (
+  enrichmentPreviewInput: EnrichmentPreviewInput,
+  options?: RequestInit,
+): Promise<EnrichmentResult> => {
+  return customFetch<EnrichmentResult>(getEnrichRecordsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(enrichmentPreviewInput),
+  });
+};
+
+export const getEnrichRecordsMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof enrichRecords>>,
+    TError,
+    { data: BodyType<EnrichmentPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof enrichRecords>>,
+  TError,
+  { data: BodyType<EnrichmentPreviewInput> },
+  TContext
+> => {
+  const mutationKey = ["enrichRecords"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof enrichRecords>>,
+    { data: BodyType<EnrichmentPreviewInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return enrichRecords(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EnrichRecordsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof enrichRecords>>
+>;
+export type EnrichRecordsMutationBody = BodyType<EnrichmentPreviewInput>;
+export type EnrichRecordsMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Confirm enrichment and spend credits on new reveals
+ */
+export const useEnrichRecords = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof enrichRecords>>,
+    TError,
+    { data: BodyType<EnrichmentPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof enrichRecords>>,
+  TError,
+  { data: BodyType<EnrichmentPreviewInput> },
+  TContext
+> => {
+  return useMutation(getEnrichRecordsMutationOptions(options));
 };
 
 /**
