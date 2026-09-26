@@ -476,6 +476,8 @@ In future automation contexts (e.g. batch outreach, sequence enrollment), the Me
 
 **8:4** — The Meta Score is stored in the `contact_meta_scores` table with one row per contact (unique on `contact_id`). Each scoring run upserts this row. There is no history; the current Meta Score represents the current scoring run only.
 
+The contact profile and Directory must show the same stored Meta Score. After a scoring run, the Directory's cached contact lists are invalidated; returning to the Directory or focusing it again refreshes the list so a newly computed score cannot remain blank in a stale row.
+
 **8:5** — The Meta Score **does not replace individual signal scores** and does not affect message generation. The Tribunal (§5.1) uses individual signal scores for all selection decisions. The Meta Score operates at the contact level, above the signal level.
 
 **8:6** — A contact that has never been scored has **no Meta Score** (NULL). The platform must not assume a Meta Score of 0 for unscored contacts — absence of a score means absence of scoring, not absence of relevance.

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "./custom-fetch";
+import { getListContactsQueryKey } from "./generated/api";
 
 export interface ContactMetaScore {
   metaScore: number;      // 0–100 aggregate across all four core categories
@@ -98,6 +99,8 @@ export function useTriggerInsightRelevance() {
       queryClient.invalidateQueries({
         queryKey: ["contacts", contactId, "insights", "relevance", "meta"],
       });
+      // The Directory reads this same stored meta score through the contacts list.
+      queryClient.invalidateQueries({ queryKey: getListContactsQueryKey() });
     },
   });
 }

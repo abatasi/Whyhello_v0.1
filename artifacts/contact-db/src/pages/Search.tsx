@@ -599,7 +599,12 @@ export default function Search({ directory }: { directory: Tab }) {
   };
   const { data: contactsData, isLoading: isContactsLoading } = useListContacts(
     contactParams,
-    { query: { queryKey: getListContactsQueryKey(contactParams), enabled: activeTab === "contacts" } },
+    { query: {
+      queryKey: getListContactsQueryKey(contactParams),
+      enabled: activeTab === "contacts",
+      refetchOnMount: "always",
+      refetchOnWindowFocus: true,
+    } },
   );
 
   const { data: companiesData, isLoading: isCompaniesLoading } = useListCompanies(
