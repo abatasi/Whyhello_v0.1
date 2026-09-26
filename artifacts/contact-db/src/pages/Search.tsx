@@ -492,7 +492,7 @@ export default function Search({ directory }: { directory: Tab }) {
 
   return (
     <Shell>
-      <div className="flex h-[calc(100vh-4rem)]">
+      <div className="flex h-full min-h-0">
         {/* Left Sidebar Filters */}
         <AnimatePresence initial={false}>
           {sidebarOpen && (
@@ -721,7 +721,7 @@ export default function Search({ directory }: { directory: Tab }) {
         </AnimatePresence>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
           {/* Header & Tabs */}
           <div className="px-8 pt-8 pb-4">
             <div className="flex items-center gap-4 mb-6">
@@ -780,7 +780,7 @@ export default function Search({ directory }: { directory: Tab }) {
           </div>
 
           {/* Results Area */}
-          <div className="flex-1 overflow-auto px-8 pb-8">
+          <div className="flex flex-1 min-h-0 flex-col overflow-hidden px-8 pb-4">
             <AnimatePresence mode="wait">
               {activeTab === "contacts" ? (
                 <motion.div
@@ -789,14 +789,15 @@ export default function Search({ directory }: { directory: Tab }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  className="flex flex-1 min-h-0 flex-col"
                 >
                   {isContactsLoading ? (
                     <TableSkeleton cols={8} rows={8} />
                   ) : !contactsData?.data.length ? (
                     <EmptyState />
                   ) : (
-                    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                      <div className="overflow-auto max-h-[calc(100vh-22rem)]">
+                    <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                      <div className="min-h-0 flex-1 overflow-auto">
                         <table className="w-full text-sm">
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
@@ -956,14 +957,15 @@ export default function Search({ directory }: { directory: Tab }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  className="flex flex-1 min-h-0 flex-col"
                 >
                   {isCompaniesLoading ? (
                     <TableSkeleton cols={6} rows={8} />
                   ) : !companiesData?.data.length ? (
                     <EmptyState />
                   ) : (
-                    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                      <div className="overflow-auto max-h-[calc(100vh-22rem)]">
+                    <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                      <div className="min-h-0 flex-1 overflow-auto">
                         <table className="w-full text-sm">
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
@@ -1085,7 +1087,10 @@ export default function Search({ directory }: { directory: Tab }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-foreground text-background rounded-2xl shadow-2xl px-5 py-3"
+            className={cn(
+              "fixed left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-foreground text-background rounded-2xl shadow-2xl px-5 py-3",
+              ((activeTab === "contacts" ? contactsData?.totalPages : companiesData?.totalPages) ?? 0) > 1 ? "bottom-24" : "bottom-6",
+            )}
           >
             <span className="text-sm font-medium">
               {selectedIds.size} {activeTab === "contacts" ? "contact" : "company"}{selectedIds.size !== 1 ? "s" : ""} selected
@@ -1451,7 +1456,7 @@ function MultiSelectFilter({
 
 function TableSkeleton({ cols, rows }: { cols: number; rows: number }) {
   return (
-    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden animate-pulse">
+    <div className="flex-1 rounded-xl border border-border bg-card shadow-sm overflow-hidden animate-pulse">
       <div className="h-10 bg-muted/40 border-b border-border" />
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex gap-4 px-5 py-3 border-b border-border/50">
@@ -1467,7 +1472,7 @@ function TableSkeleton({ cols, rows }: { cols: number; rows: number }) {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center py-20 text-center">
       <div className="bg-secondary/50 p-6 rounded-full mb-4">
         <SearchIcon className="h-10 w-10 text-muted-foreground" />
       </div>
