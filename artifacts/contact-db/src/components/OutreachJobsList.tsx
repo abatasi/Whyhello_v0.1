@@ -786,7 +786,7 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
                     {primaryLabel}
                   </Button>
 
-                  {hasStructure && (
+                   {hasStructure && job.type !== "intro_email" && (
                     <Button
                       size="sm"
                       variant="outline"
