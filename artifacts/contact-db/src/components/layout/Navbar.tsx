@@ -914,6 +914,10 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [directoryOpen, setDirectoryOpen] = useState(false);
   const [location] = useLocation();
+  useEffect(() => {
+    setExpanded(false);
+    setDirectoryOpen(false);
+  }, [location]);
   const { user } = useUser();
   const { signOut } = useClerk();
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -949,6 +953,12 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
       onMouseLeave={() => { setExpanded(false); setDirectoryOpen(false); }}
       onFocusCapture={() => setExpanded(true)}
       onBlurCapture={handleBlur}
+      onClickCapture={(event) => {
+        if ((event.target as Element).closest("a[href]")) {
+          setExpanded(false);
+          setDirectoryOpen(false);
+        }
+      }}
     >
       <div className="master-sidebar-inner">
         <div className="master-brand-row">
@@ -1119,7 +1129,10 @@ export function Navbar() {
   const moreItems = isMaster ? [...baseMoreItems, ...masterMoreItems] : baseMoreItems;
   const allMobileItems = [...navItems, ...moreItems];
 
-  function closeMobile() { setMobileOpen(false); }
+  function closeMobile() {
+    setMobileOpen(false);
+    setMobileDirectoryOpen(false);
+  }
 
   return (
     <>

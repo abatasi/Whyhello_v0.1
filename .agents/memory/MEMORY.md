@@ -7,3 +7,4 @@
 - [Whyhello logo on dark backgrounds](whyhello-logo-counters.md) — original image has white letter counters and a pale W edge matte; both need transparency cleanup
 - [Theme selector alignment](theme-selector-alignment.md) — Tailwind v4 dark utilities default to system preference; align them with next-themes class switching
 - [Dark card surfaces](dark-card-surfaces.md) — dark-mode cards share the page background; use borders for category distinction, not tinted fills
+- [Drizzle correlated SQL qualifiers](drizzle-correlated-sql.md) — table-column interpolation in aggregate SELECT fragments may lose its table qualifier

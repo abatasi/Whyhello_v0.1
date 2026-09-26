@@ -173,10 +173,10 @@ router.get("/", async (req, res) => {
           saved: uid
             ? sql<number>`count(*) FILTER (WHERE
                 EXISTS (SELECT 1 FROM contact_reveals cr
-                  WHERE cr.contact_id = ${contactsTable.id} AND cr.user_id = ${uid})
+                  WHERE cr.contact_id = contacts.id AND cr.user_id = ${uid})
                 AND EXISTS (SELECT 1 FROM list_contacts lc
                   JOIN lists l ON l.id = lc.list_id
-                  WHERE lc.contact_id = ${contactsTable.id}
+                  WHERE lc.contact_id = contacts.id
                     AND l.type = 'contacts'
                     AND (l.user_id = ${uid} OR l.user_id IS NULL))
               )::int`
