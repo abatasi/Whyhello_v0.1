@@ -44,6 +44,7 @@ export function useRevealContact() {
       queryClient.invalidateQueries({ queryKey: ["credits", "reveal-status", contactId] });
       queryClient.invalidateQueries({ queryKey: ["credits", "status"] });
       queryClient.invalidateQueries({ queryKey: ["credits", "reveal-statuses-batch"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
       queryClient.invalidateQueries({ queryKey: ["home", "top-leads"] });
       queryClient.invalidateQueries({ queryKey: ["home", "activity"] });
     },
@@ -76,6 +77,7 @@ export function useRevealCompany() {
     onSuccess: (_, companyId) => {
       queryClient.invalidateQueries({ queryKey: ["credits", "company-reveal-status", companyId] });
       queryClient.invalidateQueries({ queryKey: ["credits", "status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
     },
   });
 }

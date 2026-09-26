@@ -682,6 +682,40 @@ export default function Search({ directory }: { directory: Tab }) {
             {activeTab === "contacts" ? "Find People" : "Find Companies"}
           </h1>
         </header>
+        <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border px-8 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSidebarOpen((open) => !open)}
+            aria-expanded={sidebarOpen}
+            aria-controls="directory-filters"
+            className="gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            {sidebarOpen ? "Hide filters" : "Show filters"}
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="px-1.5 text-xs">{activeFilterCount}</Badge>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { setSaveName(""); setSaveError(""); setSaveDialogOpen(true); }}
+            className="gap-2"
+          >
+            <BookmarkPlus className="h-4 w-4" />
+            Save Search
+          </Button>
+          <div className="w-full min-w-[220px] flex-1 sm:max-w-md">
+            <Input
+              placeholder={activeTab === "contacts" ? "Search people, titles, companies..." : "Search companies..."}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              icon={<SearchIcon className="h-4 w-4" />}
+              aria-label={activeTab === "contacts" ? "Search people" : "Search companies"}
+            />
+          </div>
+        </div>
         <div className="flex flex-1 min-h-0">
         {/* Left Sidebar Filters */}
         <AnimatePresence initial={false}>
@@ -696,8 +730,22 @@ export default function Search({ directory }: { directory: Tab }) {
               className="border-r border-border bg-card flex-shrink-0 overflow-hidden"
             >
         <div className="w-80 h-full overflow-y-auto flex flex-col">
-          <div className="p-5 border-b border-border sticky top-0 bg-card z-10">
-            <div className="flex items-center justify-between mb-4">
+          <div className="border-b border-border sticky top-0 bg-card z-10">
+            <div className="grid grid-cols-3 border-b border-border py-4">
+              {([
+                ["Total", activeTab === "contacts" ? contactsData?.total : companiesData?.total],
+                ["Net New", activeTab === "contacts"
+                  ? contactsData && contactsData.total - contactsData.saved
+                  : companiesData && companiesData.total - companiesData.saved],
+                ["Saved", activeTab === "contacts" ? contactsData?.saved : companiesData?.saved],
+              ] as const).map(([label, value], index) => (
+                <div key={label} className={cn("min-w-0 text-center", index > 0 && "border-l border-border")}>
+                  <div className="text-lg font-semibold tabular-nums">{value === undefined ? "—" : formatNumber(value)}</div>
+                  <div className="text-xs text-muted-foreground">{label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between gap-2 px-5 py-4">
               <h2 className="font-semibold flex items-center gap-2">
                 <Filter className="h-4 w-4" /> Filters
                 {activeFilterCount > 0 && (
@@ -715,35 +763,8 @@ export default function Search({ directory }: { directory: Tab }) {
                     Clear All
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => { setSaveName(""); setSaveError(""); setSaveDialogOpen(true); }}
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-primary"
-                  title="Save current search"
-                >
-                  <BookmarkPlus className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSidebarOpen(false)}
-                  aria-label="Collapse filters"
-                  aria-expanded={true}
-                  aria-controls="directory-filters"
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                  title="Collapse filters"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
               </div>
             </div>
-            <Input
-              placeholder={activeTab === "contacts" ? "Search people, titles, companies..." : "Search companies..."}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              icon={<SearchIcon className="h-4 w-4" />}
-            />
           </div>
 
           {/* Saved Searches */}
@@ -917,65 +938,8 @@ export default function Search({ directory }: { directory: Tab }) {
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
-          {/* Directory tabs */}
-          <div className="px-8 pt-6 pb-4">
-            <div className="flex items-center gap-4">
-              {!sidebarOpen && (
-                <button
-                  type="button"
-                  onClick={() => setSidebarOpen(true)}
-                  aria-label="Show filters"
-                  aria-expanded={false}
-                  aria-controls="directory-filters"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-foreground bg-card border border-border rounded-lg shadow-sm hover:bg-secondary/50 transition-colors flex-shrink-0"
-                >
-                  <Filter className="h-3.5 w-3.5" />
-                  <span>Show filters</span>
-                  {activeFilterCount > 0 && (
-                    <Badge variant="secondary" className="ml-0.5 px-1.5 text-xs">{activeFilterCount}</Badge>
-                  )}
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              )}
-              <div className="flex flex-1 space-x-1 border-b border-border">
-               {activeTab === "contacts" && <Link
-                href="/directory/people"
-                className={cn(
-                  "pb-3 px-4 font-medium text-sm transition-all relative",
-                  activeTab === "contacts" ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                )}
-                aria-current={activeTab === "contacts" ? "page" : undefined}
-              >
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  People{contactsData && <Badge variant="secondary" className="ml-1 px-1.5">{formatNumber(contactsData.total)}</Badge>}
-                </div>
-                {activeTab === "contacts" && (
-                  <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                )}
-               </Link>}
-               {activeTab === "companies" && <Link
-                href="/directory/companies"
-                className={cn(
-                  "pb-3 px-4 font-medium text-sm transition-all relative",
-                  activeTab === "companies" ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                )}
-                aria-current={activeTab === "companies" ? "page" : undefined}
-              >
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  Companies{companiesData && <Badge variant="secondary" className="ml-1 px-1.5">{formatNumber(companiesData.total)}</Badge>}
-                </div>
-                {activeTab === "companies" && (
-                  <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                )}
-               </Link>}
-              </div>
-            </div>
-          </div>
-
           {/* Results Area */}
-          <div className="flex flex-1 min-h-0 flex-col overflow-hidden px-8 pb-4">
+          <div className="flex flex-1 min-h-0 flex-col overflow-hidden px-8 pt-6 pb-4">
             <AnimatePresence mode="wait">
               {activeTab === "contacts" ? (
                 <motion.div

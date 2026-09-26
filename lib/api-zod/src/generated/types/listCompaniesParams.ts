@@ -5,6 +5,7 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+import type { ListCompaniesSortOrder } from "./listCompaniesSortOrder";
 
 export type ListCompaniesParams = {
   search?: string;
@@ -12,6 +13,9 @@ export type ListCompaniesParams = {
   size?: string;
   location?: string;
   country?: string;
+  listId?: number;
+  sortBy?: string;
+  sortOrder?: ListCompaniesSortOrder;
   page?: number;
   limit?: number;
 };

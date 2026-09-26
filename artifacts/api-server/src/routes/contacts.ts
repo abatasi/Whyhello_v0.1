@@ -15,6 +15,8 @@ function splitParam(v: unknown): string[] {
 router.get("/", async (req, res) => {
   try {
     const raw = req.query as Record<string, string>;
+    const auth = getAuth(req);
+    const uid = (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId;
     const page = Math.max(1, parseInt(raw.page ?? "1") || 1);
     const limit = Math.min(100, Math.max(1, parseInt(raw.limit ?? "20") || 20));
     const offset = (page - 1) * limit;
@@ -71,8 +73,6 @@ router.get("/", async (req, res) => {
       const listIdVal = parseInt(raw.listId);
       if (!isNaN(listIdVal)) {
         // listId filter requires auth — lists are private resources
-        const auth = getAuth(req);
-        const uid = (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId;
         if (!uid) {
           res.status(401).json({ error: "Authentication required to filter by list" });
           return;
@@ -139,7 +139,7 @@ router.get("/", async (req, res) => {
     }
     orderByClause.push(asc(contactsTable.id));
 
-    const [rows, [{ count }]] = await Promise.all([
+    const [rows, [{ count, saved }]] = await Promise.all([
       db
         .select({
           id: contactsTable.id,
@@ -168,7 +168,20 @@ router.get("/", async (req, res) => {
         .limit(limit)
         .offset(offset),
       db
-        .select({ count: sql<number>`count(*)::int` })
+        .select({
+          count: sql<number>`count(*)::int`,
+          saved: uid
+            ? sql<number>`count(*) FILTER (WHERE
+                EXISTS (SELECT 1 FROM contact_reveals cr
+                  WHERE cr.contact_id = ${contactsTable.id} AND cr.user_id = ${uid})
+                AND EXISTS (SELECT 1 FROM list_contacts lc
+                  JOIN lists l ON l.id = lc.list_id
+                  WHERE lc.contact_id = ${contactsTable.id}
+                    AND l.type = 'contacts'
+                    AND (l.user_id = ${uid} OR l.user_id IS NULL))
+              )::int`
+            : sql<number>`0::int`,
+        })
         .from(contactsTable)
         .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
         .where(where),
@@ -177,6 +190,7 @@ router.get("/", async (req, res) => {
     res.json({
       data: rows,
       total: count,
+      saved,
       page,
       limit,
       totalPages: Math.ceil(count / limit),

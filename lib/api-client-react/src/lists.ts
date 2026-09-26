@@ -90,6 +90,8 @@ export function useAddMembersToList() {
       queryClient.invalidateQueries({ queryKey: ["lists", listId] });
       queryClient.invalidateQueries({ queryKey: ["lists", listId, "members"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
     },
   });
 }
@@ -110,6 +112,8 @@ export function useRemoveListMember() {
       queryClient.invalidateQueries({ queryKey: ["lists", listId] });
       queryClient.invalidateQueries({ queryKey: ["lists", listId, "members"] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
     },
   });
 }

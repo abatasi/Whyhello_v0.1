@@ -10,6 +10,7 @@ import type { CompanySummaryWithInsights } from "./companySummaryWithInsights";
 export interface CompanyListResponse {
   data: CompanySummaryWithInsights[];
   total: number;
+  saved: number;
   page: number;
   limit: number;
   totalPages: number;

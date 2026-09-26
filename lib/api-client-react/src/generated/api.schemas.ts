@@ -170,6 +170,7 @@ export interface CompanyDetail {
 export interface ContactListResponse {
   data: ContactSummary[];
   total: number;
+  saved: number;
   page: number;
   limit: number;
   totalPages: number;
@@ -178,6 +179,7 @@ export interface ContactListResponse {
 export interface CompanyListResponse {
   data: CompanySummaryWithInsights[];
   total: number;
+  saved: number;
   page: number;
   limit: number;
   totalPages: number;
@@ -266,6 +268,17 @@ export type ListCompaniesParams = {
   size?: string;
   location?: string;
   country?: string;
+  listId?: number;
+  sortBy?: string;
+  sortOrder?: ListCompaniesSortOrder;
   page?: number;
   limit?: number;
 };
+
+export type ListCompaniesSortOrder =
+  (typeof ListCompaniesSortOrder)[keyof typeof ListCompaniesSortOrder];
+
+export const ListCompaniesSortOrder = {
+  asc: "asc",
+  desc: "desc",
+} as const;

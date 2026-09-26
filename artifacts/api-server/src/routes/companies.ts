@@ -16,6 +16,8 @@ function splitParam(v: unknown): string[] {
 router.get("/", async (req, res) => {
   try {
     const raw = req.query as Record<string, string>;
+    const auth = getAuth(req);
+    const uid = (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId;
     const page = Math.max(1, parseInt(raw.page ?? "1") || 1);
     const limit = Math.min(100, Math.max(1, parseInt(raw.limit ?? "20") || 20));
     const offset = (page - 1) * limit;
@@ -54,8 +56,6 @@ router.get("/", async (req, res) => {
       const listIdVal = parseInt(raw.listId);
       if (!isNaN(listIdVal)) {
         // listId filter requires auth — lists are private resources
-        const auth = getAuth(req);
-        const uid = (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId;
         if (!uid) {
           res.status(401).json({ error: "Authentication required to filter by list" });
           return;
@@ -105,7 +105,7 @@ router.get("/", async (req, res) => {
         orderByClause.push(sql`${companiesTable.name} ASC NULLS LAST`);
     }
 
-    const [rows, [{ count }]] = await Promise.all([
+    const [rows, [{ count, saved }]] = await Promise.all([
       db.select({
         id: companiesTable.id,
         name: companiesTable.name,
@@ -119,12 +119,26 @@ router.get("/", async (req, res) => {
         foundedYear: companiesTable.foundedYear,
         insightCount: sql<number>`(SELECT COUNT(*)::int FROM company_insights WHERE company_insights.company_id = companies.id)`,
       }).from(companiesTable).where(where).orderBy(...orderByClause).limit(limit).offset(offset),
-      db.select({ count: sql<number>`count(*)::int` }).from(companiesTable).where(where),
+       db.select({
+         count: sql<number>`count(*)::int`,
+         saved: uid
+           ? sql<number>`count(*) FILTER (WHERE
+               EXISTS (SELECT 1 FROM company_reveals cr
+                 WHERE cr.company_id = ${companiesTable.id} AND cr.user_id = ${uid})
+               AND EXISTS (SELECT 1 FROM list_companies lc
+                 JOIN lists l ON l.id = lc.list_id
+                 WHERE lc.company_id = ${companiesTable.id}
+                   AND l.type = 'companies'
+                   AND (l.user_id = ${uid} OR l.user_id IS NULL))
+             )::int`
+           : sql<number>`0::int`,
+       }).from(companiesTable).where(where),
     ]);
 
     res.json({
       data: rows,
       total: count,
+      saved,
       page,
       limit,
       totalPages: Math.ceil(count / limit),

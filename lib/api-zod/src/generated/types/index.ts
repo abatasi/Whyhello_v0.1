@@ -27,6 +27,7 @@ export * from "./industryInsight";
 export * from "./insightQuotable";
 export * from "./insightSourceContact";
 export * from "./listCompaniesParams";
+export * from "./listCompaniesSortOrder";
 export * from "./listContactsParams";
 export * from "./listContactsSortOrder";
 export * from "./outreachJob";

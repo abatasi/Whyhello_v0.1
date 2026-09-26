@@ -10,6 +10,7 @@ import type { ContactSummary } from "./contactSummary";
 export interface ContactListResponse {
   data: ContactSummary[];
   total: number;
+  saved: number;
   page: number;
   limit: number;
   totalPages: number;
