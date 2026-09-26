@@ -675,7 +675,28 @@ export default function Search({ directory }: { directory: Tab }) {
 
   return (
     <Shell>
-      <div className="flex h-full min-h-0">
+      <div className="flex h-full min-h-0 flex-col">
+        {/* Space for the directory title and future page-level content */}
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-8 py-6">
+          <h1 className="text-[1.40625rem] leading-tight font-display font-bold">
+            {activeTab === "contacts" ? "Find People" : "Find Companies"}
+          </h1>
+          {!sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground bg-card border border-border rounded-lg shadow-sm hover:bg-secondary/50 transition-colors flex-shrink-0"
+              title="Show filters"
+            >
+              <Filter className="h-3.5 w-3.5" />
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="ml-0.5 px-1.5 text-xs">{activeFilterCount}</Badge>
+              )}
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </header>
+        <div className="flex flex-1 min-h-0">
         {/* Left Sidebar Filters */}
         <AnimatePresence initial={false}>
           {sidebarOpen && (
@@ -905,27 +926,8 @@ export default function Search({ directory }: { directory: Tab }) {
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
-          {/* Header & Tabs */}
-          <div className="px-8 pt-8 pb-4">
-            <div className="flex items-center gap-4 mb-6">
-              {!sidebarOpen && (
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground bg-card border border-border rounded-lg shadow-sm hover:bg-secondary/50 transition-colors flex-shrink-0"
-                  title="Show filters"
-                >
-                  <Filter className="h-3.5 w-3.5" />
-                  <span>Filters</span>
-                  {activeFilterCount > 0 && (
-                    <Badge variant="secondary" className="ml-0.5 px-1.5 text-xs">{activeFilterCount}</Badge>
-                  )}
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              )}
-              <h1 className="text-3xl font-display font-bold">
-                {activeTab === "contacts" ? "People Directory" : "Companies Directory"}
-              </h1>
-            </div>
+          {/* Directory tabs */}
+          <div className="px-8 pt-6 pb-4">
             <div className="flex space-x-1 border-b border-border">
               <Link
                 href="/directory/people"
@@ -1347,6 +1349,7 @@ export default function Search({ directory }: { directory: Tab }) {
               )}
             </AnimatePresence>
           </div>
+        </div>
         </div>
       </div>
 
