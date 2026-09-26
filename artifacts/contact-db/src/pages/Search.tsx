@@ -30,6 +30,7 @@ import {
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
+import { ResizableColumnHandle } from "@/components/ResizableColumnHandle";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -91,19 +92,42 @@ const COMPANY_COLUMN_LABELS: Record<CompanyColumn, string> = {
   insightCount: "Insights",
 };
 
-const COLUMN_WIDTHS: Record<ContactColumn | CompanyColumn, string> = {
-  email: "min-w-[200px]",
-  mobile: "min-w-[160px]",
-  jobTitle: "min-w-[160px]",
-  companyName: "min-w-[140px]",
-  location: "min-w-[140px]",
-  department: "min-w-[130px]",
-  seniority: "min-w-[120px]",
-  insightCount: "min-w-[100px]",
-  industry: "min-w-[140px]",
-  website: "min-w-[180px]",
-  size: "min-w-[130px]",
+const DEFAULT_CONTACT_WIDTHS: Record<ContactColumn | "name", number> = {
+  name: 200,
+  email: 200,
+  mobile: 160,
+  jobTitle: 160,
+  companyName: 140,
+  location: 140,
+  department: 130,
+  seniority: 120,
+  insightCount: 100,
 };
+
+const DEFAULT_COMPANY_WIDTHS: Record<CompanyColumn | "name", number> = {
+  name: 220,
+  industry: 140,
+  website: 180,
+  location: 140,
+  size: 130,
+  insightCount: 100,
+};
+
+function loadColumnWidths<T extends string>(key: string, defaults: Record<T, number>): Record<T, number> {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(key) ?? "{}") as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(defaults).map(([column, width]) => [
+        column,
+        typeof stored[column] === "number" && Number.isFinite(stored[column])
+          ? Math.max(column === "name" ? 150 : 90, Math.min(720, stored[column]))
+          : width,
+      ]),
+    ) as Record<T, number>;
+  } catch {
+    return { ...defaults };
+  }
+}
 
 function DraggableTh<T extends string>({
   column,
@@ -111,17 +135,25 @@ function DraggableTh<T extends string>({
   sortConfig,
   onSort,
   onMove,
+  width,
+  onResize,
 }: {
   column: T;
   label: string;
   sortConfig: SortConfig | null;
   onSort?: (column: string) => void;
   onMove: (from: T, to: T) => void;
+  width: number;
+  onResize: (width: number) => void;
 }) {
   return (
     <th
       draggable
       onDragStart={(event) => {
+        if ((event.target as HTMLElement).closest("[role='separator']")) {
+          event.preventDefault();
+          return;
+        }
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", column);
       }}
@@ -136,16 +168,16 @@ function DraggableTh<T extends string>({
       }}
       onClick={() => onSort?.(column)}
       className={cn(
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-grab active:cursor-grabbing select-none",
-        COLUMN_WIDTHS[column as ContactColumn | CompanyColumn],
+        "relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-grab active:cursor-grabbing select-none",
         sortConfig?.column === column ? "text-primary" : "text-muted-foreground hover:text-foreground",
       )}
     >
-      <div className="flex items-center gap-1">
-        <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50" />
-        {label}
+      <div className="flex min-w-0 items-center gap-1 overflow-hidden pr-1">
+        <GripVertical className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/50" />
+        <span className="truncate">{label}</span>
         {onSort && <SortIcon column={column} sortConfig={sortConfig} />}
       </div>
+      <ResizableColumnHandle label={label} width={width} onResize={onResize} />
     </th>
   );
 }
@@ -191,27 +223,32 @@ function SortableTh({
   sortConfig,
   onSort,
   className,
+  width,
+  onResize,
 }: {
   column: string;
   label: string;
   sortConfig: SortConfig | null;
   onSort: (col: string) => void;
   className?: string;
+  width: number;
+  onResize: (width: number) => void;
 }) {
   const isActive = sortConfig?.column === column;
   return (
     <th
       onClick={() => onSort(column)}
       className={cn(
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide cursor-pointer select-none whitespace-nowrap",
+        "relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide cursor-pointer select-none whitespace-nowrap",
         isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
         className,
       )}
     >
-      <div className="flex items-center">
-        {label}
+      <div className="flex min-w-0 items-center overflow-hidden pr-1">
+        <span className="truncate">{label}</span>
         <SortIcon column={column} sortConfig={sortConfig} />
       </div>
+      <ResizableColumnHandle label={label} width={width} minWidth={150} onResize={onResize} />
     </th>
   );
 }
@@ -243,6 +280,19 @@ export default function Search({ directory }: { directory: Tab }) {
   const [companyColumnOrder, setCompanyColumnOrder] = useState<CompanyColumn[]>([
     "industry", "website", "location", "size", "insightCount",
   ]);
+  const [contactColumnWidths, setContactColumnWidths] = useState(() =>
+    loadColumnWidths("directory:people:column-widths", DEFAULT_CONTACT_WIDTHS),
+  );
+  const [companyColumnWidths, setCompanyColumnWidths] = useState(() =>
+    loadColumnWidths("directory:companies:column-widths", DEFAULT_COMPANY_WIDTHS),
+  );
+
+  useEffect(() => {
+    try { window.localStorage.setItem("directory:people:column-widths", JSON.stringify(contactColumnWidths)); } catch { /* Storage may be unavailable. */ }
+  }, [contactColumnWidths]);
+  useEffect(() => {
+    try { window.localStorage.setItem("directory:companies:column-widths", JSON.stringify(companyColumnWidths)); } catch { /* Storage may be unavailable. */ }
+  }, [companyColumnWidths]);
 
   const [selectedListId, setSelectedListId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -489,6 +539,8 @@ export default function Search({ directory }: { directory: Tab }) {
   const someContactsSelected = contacts.some((c) => selectedIds.has(c.id));
   const allCompaniesSelected = companies.length > 0 && companies.every((c) => selectedIds.has(c.id));
   const someCompaniesSelected = companies.some((c) => selectedIds.has(c.id));
+  const contactTableWidth = 40 + Object.values(contactColumnWidths).reduce((total, width) => total + width, 0);
+  const companyTableWidth = 40 + Object.values(companyColumnWidths).reduce((total, width) => total + width, 0);
 
   return (
     <Shell>
@@ -798,10 +850,16 @@ export default function Search({ directory }: { directory: Tab }) {
                   ) : (
                     <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                       <div className="min-h-0 flex-1 overflow-auto">
-                        <table className="w-full text-sm">
+                        <table className="table-fixed min-w-full text-sm [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: contactTableWidth }}>
+                          <colgroup>
+                            <col style={{ width: 40 }} />
+                            <col style={{ width: contactColumnWidths.name }} />
+                            {contactColumnOrder.map((column) => <col key={column} style={{ width: contactColumnWidths[column] }} />)}
+                            <col />
+                          </colgroup>
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-4 py-3 w-10 sticky left-0 z-30 bg-muted">
+                              <th className="px-3 py-3 sticky left-0 z-30 bg-muted">
                                 <input
                                   type="checkbox"
                                   checked={allContactsSelected}
@@ -811,7 +869,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </th>
-                              <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} className="min-w-[180px] sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
+                              <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} width={contactColumnWidths.name} onResize={(width) => setContactColumnWidths((current) => ({ ...current, name: width }))} className="sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
                               {contactColumnOrder.map((column) => (
                                 <DraggableTh
                                   key={column}
@@ -820,8 +878,11 @@ export default function Search({ directory }: { directory: Tab }) {
                                   sortConfig={contactSort}
                                   onSort={column === "email" || column === "mobile" ? undefined : handleContactSort}
                                   onMove={(from, to) => setContactColumnOrder((columns) => reorderColumns(columns, from, to))}
+                                  width={contactColumnWidths[column]}
+                                  onResize={(width) => setContactColumnWidths((current) => ({ ...current, [column]: width }))}
                                 />
                               ))}
+                              <th aria-hidden="true" className="bg-muted" />
                             </tr>
                           </thead>
                           <tbody>
@@ -838,7 +899,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                   )}
                                   onClick={() => setLocation(`/contacts/${contact.id}`)}
                                 >
-                                  <td className={cn("px-4 py-3 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(contact.id, e)}>
+                                  <td className={cn("px-3 py-3 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(contact.id, e)}>
                                     <input
                                       type="checkbox"
                                       checked={isSelected}
@@ -851,7 +912,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
                                         {getInitials(`${contact.firstName} ${contact.lastName}`)}
                                       </div>
-                                      <span className="font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
+                                      <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
                                         {contact.firstName} {contact.lastName}
                                       </span>
                                     </div>
@@ -862,7 +923,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                         <td key={column} className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                                           {revealedSet.has(contact.id) ? (
                                             contact.email ? (
-                                              <a href={`mailto:${contact.email}`} className="block max-w-[190px] truncate text-sm text-primary hover:underline">
+                                               <a href={`mailto:${contact.email}`} className="block w-full truncate text-sm text-primary hover:underline">
                                                 {contact.email}
                                               </a>
                                             ) : <span className="text-sm text-muted-foreground">—</span>
@@ -934,6 +995,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                       </td>
                                     );
                                   })}
+                                  <td aria-hidden="true" />
                                 </tr>
                               );
                             })}
@@ -966,10 +1028,16 @@ export default function Search({ directory }: { directory: Tab }) {
                   ) : (
                     <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                       <div className="min-h-0 flex-1 overflow-auto">
-                        <table className="w-full text-sm">
+                        <table className="table-fixed min-w-full text-sm [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: companyTableWidth }}>
+                          <colgroup>
+                            <col style={{ width: 40 }} />
+                            <col style={{ width: companyColumnWidths.name }} />
+                            {companyColumnOrder.map((column) => <col key={column} style={{ width: companyColumnWidths[column] }} />)}
+                            <col />
+                          </colgroup>
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-4 py-3 w-10 sticky left-0 z-30 bg-muted">
+                              <th className="px-3 py-3 sticky left-0 z-30 bg-muted">
                                 <input
                                   type="checkbox"
                                   checked={allCompaniesSelected}
@@ -979,7 +1047,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </th>
-                              <SortableTh column="name" label="Company Name" sortConfig={companySort} onSort={handleCompanySort} className="min-w-[180px] sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
+                              <SortableTh column="name" label="Company Name" sortConfig={companySort} onSort={handleCompanySort} width={companyColumnWidths.name} onResize={(width) => setCompanyColumnWidths((current) => ({ ...current, name: width }))} className="sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
                               {companyColumnOrder.map((column) => (
                                 <DraggableTh
                                   key={column}
@@ -988,8 +1056,11 @@ export default function Search({ directory }: { directory: Tab }) {
                                   sortConfig={companySort}
                                   onSort={handleCompanySort}
                                   onMove={(from, to) => setCompanyColumnOrder((columns) => reorderColumns(columns, from, to))}
+                                  width={companyColumnWidths[column]}
+                                  onResize={(width) => setCompanyColumnWidths((current) => ({ ...current, [column]: width }))}
                                 />
                               ))}
+                              <th aria-hidden="true" className="bg-muted" />
                             </tr>
                           </thead>
                           <tbody>
@@ -1006,7 +1077,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                 )}
                                 onClick={() => setLocation(`/companies/${company.id}`)}
                               >
-                                <td className={cn("px-4 py-3 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(company.id, e)}>
+                                <td className={cn("px-3 py-3 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(company.id, e)}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -1019,7 +1090,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center flex-shrink-0">
                                       <Building2 className="h-4 w-4 text-slate-500" />
                                     </div>
-                                    <span className="font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
+                                    <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
                                       {company.name}
                                     </span>
                                     {competitorIds.has(company.id) && (
@@ -1038,7 +1109,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={(e) => e.stopPropagation()}
-                                            className="flex max-w-[200px] items-center gap-1 truncate text-primary hover:underline"
+                                            className="flex max-w-full min-w-0 items-center gap-1 truncate text-primary hover:underline"
                                           >
                                             {company.website}
                                             <ExternalLink className="h-3 w-3 flex-shrink-0" />
@@ -1057,6 +1128,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                     </td>
                                   );
                                 })}
+                                <td aria-hidden="true" />
                               </tr>
                               );
                             })}
