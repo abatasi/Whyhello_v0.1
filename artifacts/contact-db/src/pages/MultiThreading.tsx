@@ -131,9 +131,12 @@ function sortBySeniority(contacts: Contact[]): Contact[] {
 }
 
 function matchContactsToSeat(seat: BuyingCenterSeat, contacts: Contact[]): Contact[] {
-  const hasSeniority = seat.seniorities.length > 0;
+  // All levels selected means no seniority restriction, including for contacts
+  // whose seniority is unknown. Keep this aligned with the HQ preview.
+  const hasSeniority = seat.seniorities.length > 0 &&
+    !SENIORITY_OPTIONS.every(option => seat.seniorities.includes(option));
   const hasDept = seat.departments.length > 0;
-  if (!hasSeniority && !hasDept) return [];
+  if (seat.seniorities.length === 0 && !hasDept) return [];
 
   // Role is canonical when assigned; legacy contacts without one still match
   // their stored department for existing buying-center configurations.

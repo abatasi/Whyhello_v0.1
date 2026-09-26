@@ -1720,24 +1720,46 @@ function BuyingCenterModal({ seatName, seniorities, departments, roleOptions, ro
   const [sampleContacts, setSampleContacts] = useState<ContactSample[]>([]);
   const [sampleTotal, setSampleTotal] = useState<number>(0);
   const [sampleLoading, setSampleLoading] = useState(false);
+  const [sampleError, setSampleError] = useState(false);
   const hasFilter = seniorities.length > 0 || departments.length > 0;
+  // Choosing every seniority level means "any seniority", including contacts
+  // whose seniority has not been recorded yet.
+  const restrictSeniority = seniorities.length > 0 &&
+    !SENIORITY_OPTIONS.every(option => seniorities.includes(option));
 
   useEffect(() => {
-    if (!open || !hasFilter) { setSampleContacts([]); setSampleTotal(0); return; }
+    if (!open || !hasFilter) {
+      setSampleContacts([]);
+      setSampleTotal(0);
+      setSampleError(false);
+      setSampleLoading(false);
+      return;
+    }
+    let cancelled = false;
     const params = new URLSearchParams({ limit: "3", page: "1" });
-    if (seniorities.length > 0) params.set("seniority", seniorities.join(","));
+    if (restrictSeniority) params.set("seniority", seniorities.join(","));
     if (departments.length > 0) params.set("department", departments.join(","));
+    setSampleContacts([]);
+    setSampleTotal(0);
+    setSampleError(false);
     setSampleLoading(true);
     const timer = setTimeout(async () => {
       try {
         const res = await apiFetch(`/api/contacts?${params}`);
+        if (!res.ok) throw new Error("Could not load qualifying contacts");
         const json = await res.json();
-        setSampleContacts(json.data ?? []);
-        setSampleTotal(json.total ?? 0);
-      } catch { /* ignore */ } finally { setSampleLoading(false); }
+        if (!cancelled) {
+          setSampleContacts(json.data ?? []);
+          setSampleTotal(json.total ?? 0);
+        }
+      } catch {
+        if (!cancelled) setSampleError(true);
+      } finally {
+        if (!cancelled) setSampleLoading(false);
+      }
     }, 350);
-    return () => clearTimeout(timer);
-  }, [seniorities.join(","), departments.join(","), open]);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [seatName, seniorities.join(","), departments.join(","), open, hasFilter, restrictSeniority]);
 
   const initials = (c: ContactSample) => {
     const f = (c.firstName ?? "").charAt(0).toUpperCase();
@@ -1804,13 +1826,19 @@ function BuyingCenterModal({ seatName, seniorities, departments, roleOptions, ro
             <div className="flex flex-col gap-2">
               <div className="h-px bg-border/50" />
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-foreground">Example contacts</p>
-                {!sampleLoading && sampleTotal > 0 && (
-                  <span className="text-[10px] font-semibold text-muted-foreground bg-secondary/60 border border-border/60 px-2 py-0.5 rounded-full">
-                    {sampleTotal.toLocaleString()} match{sampleTotal === 1 ? "" : "es"} in your database
+                <p className="text-xs font-semibold text-foreground">Qualifying records</p>
+                {!sampleLoading && !sampleError && (
+                  <span className="text-xs font-semibold text-foreground bg-secondary/60 border border-border/60 px-2 py-0.5 rounded-full" role="status">
+                    {sampleTotal.toLocaleString()} contact{sampleTotal === 1 ? "" : "s"}
                   </span>
                 )}
               </div>
+              {seniorities.length > 0 && !restrictSeniority && (
+                <p className="text-[11px] text-muted-foreground">
+                  All seniority levels selected; contacts without a recorded seniority are included.
+                </p>
+              )}
+              <p className="text-xs font-semibold text-foreground">Example contacts</p>
 
               {sampleLoading ? (
                 <div className="flex flex-col gap-2">
@@ -1824,6 +1852,8 @@ function BuyingCenterModal({ seatName, seniorities, departments, roleOptions, ro
                     </div>
                   ))}
                 </div>
+              ) : sampleError ? (
+                <p className="text-xs text-destructive" role="alert">Could not load qualifying contacts. Close and reopen this seat to try again.</p>
               ) : sampleContacts.length === 0 ? (
                 <div className="flex items-center gap-2 p-3 rounded-xl border border-border/40 bg-secondary/20">
                   <Users className="h-4 w-4 text-muted-foreground/40 shrink-0" />
