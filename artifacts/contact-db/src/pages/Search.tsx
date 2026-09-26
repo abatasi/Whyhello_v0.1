@@ -5,7 +5,7 @@ import { useDebounce } from "use-debounce";
 import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
-  ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList, X,
+  ExternalLink, Bookmark, Trash2, BookmarkPlus, Check, LayoutList, X,
   Mail, Phone, Clock, Factory, BriefcaseBusiness, TrendingUp, MapPin,
   Sparkles, ClipboardList, Download, type LucideIcon,
 } from "lucide-react";
@@ -24,8 +24,6 @@ import {
   useCreateSavedSearch,
   useDeleteSavedSearch,
   useListLists,
-  useCreateList,
-  useAddMembersToList,
   useBatchRevealStatuses,
   useRevealContact,
 } from "@workspace/api-client-react";
@@ -442,10 +440,6 @@ export default function Search({ directory }: { directory: Tab }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [addToListOpen, setAddToListOpen] = useState(false);
-  const [newListName, setNewListName] = useState("");
-  const [addListError, setAddListError] = useState("");
-  const [addSuccess, setAddSuccess] = useState("");
 
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
@@ -465,8 +459,6 @@ export default function Search({ directory }: { directory: Tab }) {
   const deleteSearch = useDeleteSavedSearch();
 
   const { data: allLists = [] } = useListLists();
-  const createList = useCreateList();
-  const addMembers = useAddMembersToList();
 
   const handleSaveSearch = () => {
     if (!saveName.trim()) { setSaveError("Please enter a name."); return; }
@@ -521,34 +513,6 @@ export default function Search({ directory }: { directory: Tab }) {
       else ids.forEach((id) => next.add(id));
       return next;
     });
-  };
-
-  const doAddToList = (listId: number) => {
-    addMembers.mutate(
-      { listId, ids: Array.from(selectedIds) },
-      {
-        onSuccess: (res) => {
-          setAddToListOpen(false);
-          setNewListName("");
-          setAddListError("");
-          setAddSuccess(`Added ${res.added} ${activeTab} to list.`);
-          setSelectedIds(new Set());
-          setTimeout(() => setAddSuccess(""), 3000);
-        },
-        onError: () => setAddListError("Failed to add to list. Try again."),
-      },
-    );
-  };
-
-  const handleAddToNewList = () => {
-    if (!newListName.trim()) { setAddListError("Please enter a list name."); return; }
-    createList.mutate(
-      { name: newListName.trim(), type: activeTab },
-      {
-        onSuccess: (list) => doAddToList(list.id),
-        onError: () => setAddListError("Failed to create list. Try again."),
-      },
-    );
   };
 
   const handleLoadSearch = (s: (typeof savedSearches)[number]) => {
@@ -1349,105 +1313,6 @@ export default function Search({ directory }: { directory: Tab }) {
         </div>
         </div>
       </div>
-
-      {/* Floating Selection Action Bar */}
-      <AnimatePresence>
-        {selectedIds.size > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
-            className={cn(
-              "fixed left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-foreground text-background rounded-2xl shadow-2xl px-5 py-3",
-              ((activeTab === "contacts" ? contactsData?.totalPages : companiesData?.totalPages) ?? 0) > 1 ? "bottom-24" : "bottom-6",
-            )}
-          >
-            <span className="text-sm font-medium">
-              {selectedIds.size} {activeTab === "contacts" ? "contact" : "company"}{selectedIds.size !== 1 ? "s" : ""} selected
-            </span>
-            <div className="h-4 w-px bg-background/20" />
-            <button
-              onClick={() => { setNewListName(""); setAddListError(""); setAddToListOpen(true); }}
-              className="flex items-center gap-1.5 text-sm font-semibold text-primary bg-background rounded-lg px-3 py-1.5 hover:bg-primary hover:text-background transition-colors"
-            >
-              <ListPlus className="h-4 w-4" /> Add to List
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Success Toast */}
-      <AnimatePresence>
-        {addSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-emerald-600 text-white rounded-xl shadow-lg px-4 py-2.5 text-sm font-medium"
-          >
-            <Check className="h-4 w-4" /> {addSuccess}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Add to List Dialog */}
-      <Dialog open={addToListOpen} onOpenChange={(o) => { setAddToListOpen(o); if (!o) { setNewListName(""); setAddListError(""); } }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ListPlus className="h-5 w-5 text-primary" />
-              Add {selectedIds.size} {activeTab === "contacts" ? "contact" : "company"}{selectedIds.size !== 1 ? "s" : ""} to a List
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-1 space-y-5">
-            {/* Existing lists */}
-            {filteredLists.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Your {activeTab} lists</p>
-                <ul className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {filteredLists.map((list) => (
-                    <li key={list.id}>
-                      <button
-                        onClick={() => doAddToList(list.id)}
-                        disabled={addMembers.isPending}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-colors text-sm group"
-                      >
-                        <span className="font-medium group-hover:text-primary">{list.name}</span>
-                        <span className="text-muted-foreground text-xs">{list.memberCount} members</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Divider */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground">{filteredLists.length > 0 ? "or create new" : "create a new list"}</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-
-            {/* Create new */}
-            <div className="flex gap-2">
-              <input
-                autoFocus={filteredLists.length === 0}
-                type="text"
-                placeholder="New list name…"
-                value={newListName}
-                onChange={(e) => { setNewListName(e.target.value); setAddListError(""); }}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAddToNewList(); }}
-                className="flex-1 px-3 py-2 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              <Button onClick={handleAddToNewList} disabled={createList.isPending || addMembers.isPending} className="gap-1.5">
-                <Plus className="h-4 w-4" /> Create & Add
-              </Button>
-            </div>
-            {addListError && <p className="text-xs text-destructive">{addListError}</p>}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Save Search Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={(open) => { setSaveDialogOpen(open); if (!open) { setSaveName(""); setSaveError(""); } }}>
