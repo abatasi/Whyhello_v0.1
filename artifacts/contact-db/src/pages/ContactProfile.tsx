@@ -1194,7 +1194,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
     return (
       <div className={cn("p-8 text-center mt-20", embedded && "h-full flex flex-col items-center justify-center mt-0")}>
         <h2 className="text-2xl font-bold mb-4">Contact not found</h2>
-        <Link href="/"><Button>Back to Search</Button></Link>
+        <Link href="/directory/people"><Button>Back to Directory</Button></Link>
       </div>
     );
   }
@@ -1981,7 +1981,7 @@ export default function ContactProfile() {
       <div className="flex flex-col overflow-hidden bg-background h-[calc(100vh-4rem)]">
         {/* Back nav */}
         <div className="px-3 sm:px-6 pt-3 pb-2 flex-shrink-0">
-          <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1.5">
+          <Link href="/directory/people" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1.5">
             <ArrowLeft className="h-4 w-4" />
             Back to Directory
           </Link>

@@ -172,7 +172,7 @@ export default function CompanyProfile() {
       <Shell>
         <div className="p-8 text-center mt-20">
           <h2 className="text-2xl font-bold mb-4">Company not found</h2>
-          <Link href="/"><Button>Back to Search</Button></Link>
+          <Link href="/directory/companies"><Button>Back to Directory</Button></Link>
         </div>
       </Shell>
     );
@@ -181,7 +181,7 @@ export default function CompanyProfile() {
   return (
     <Shell>
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <Link href="/?tab=companies" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors">
+        <Link href="/directory/companies" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Directory
         </Link>
