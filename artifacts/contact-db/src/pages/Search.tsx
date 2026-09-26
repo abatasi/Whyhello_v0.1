@@ -4,10 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDebounce } from "use-debounce";
 import {
   Building2, Users, Search as SearchIcon, Filter,
-  ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown,
+  ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
   ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList, X,
   Mail, Phone, Clock,
-  GripVertical,
 } from "lucide-react";
 import {
   getRecentContactVisits,
@@ -34,6 +33,13 @@ import { ResizableColumnHandle } from "@/components/ResizableColumnHandle";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -70,10 +76,11 @@ type SortConfig = {
   direction: "asc" | "desc";
 };
 
-type ContactColumn = "email" | "mobile" | "jobTitle" | "companyName" | "location" | "department" | "seniority" | "insightCount";
-type CompanyColumn = "industry" | "website" | "location" | "size" | "insightCount";
+type ContactColumn = "name" | "email" | "mobile" | "jobTitle" | "companyName" | "location" | "department" | "seniority" | "insightCount";
+type CompanyColumn = "name" | "industry" | "website" | "location" | "size" | "insightCount";
 
 const CONTACT_COLUMN_LABELS: Record<ContactColumn, string> = {
+  name: "Name",
   email: "Email",
   mobile: "Mobile",
   jobTitle: "Title",
@@ -85,6 +92,7 @@ const CONTACT_COLUMN_LABELS: Record<ContactColumn, string> = {
 };
 
 const COMPANY_COLUMN_LABELS: Record<CompanyColumn, string> = {
+  name: "Company Name",
   industry: "Industry",
   website: "Website",
   location: "Location",
@@ -92,34 +100,47 @@ const COMPANY_COLUMN_LABELS: Record<CompanyColumn, string> = {
   insightCount: "Insights",
 };
 
-const DEFAULT_CONTACT_WIDTHS: Record<ContactColumn | "name", number> = {
-  name: 200,
-  email: 200,
-  mobile: 160,
-  jobTitle: 160,
-  companyName: 140,
-  location: 140,
-  department: 130,
-  seniority: 120,
-  insightCount: 100,
+const DEFAULT_CONTACT_WIDTHS: Record<ContactColumn, number> = {
+  name: 230,
+  email: 260,
+  mobile: 190,
+  jobTitle: 220,
+  companyName: 230,
+  location: 200,
+  department: 180,
+  seniority: 155,
+  insightCount: 125,
 };
 
-const DEFAULT_COMPANY_WIDTHS: Record<CompanyColumn | "name", number> = {
-  name: 220,
-  industry: 140,
-  website: 180,
-  location: 140,
-  size: 130,
-  insightCount: 100,
+const DEFAULT_COMPANY_WIDTHS: Record<CompanyColumn, number> = {
+  name: 253,
+  industry: 200,
+  website: 260,
+  location: 200,
+  size: 160,
+  insightCount: 125,
 };
 
-function loadColumnWidths<T extends string>(key: string, defaults: Record<T, number>): Record<T, number> {
+const PREVIOUS_CONTACT_WIDTHS: Record<ContactColumn, number> = {
+  name: 200, email: 200, mobile: 160, jobTitle: 160, companyName: 140,
+  location: 140, department: 130, seniority: 120, insightCount: 100,
+};
+const PREVIOUS_COMPANY_WIDTHS: Record<CompanyColumn, number> = {
+  name: 220, industry: 140, website: 180, location: 140, size: 130, insightCount: 100,
+};
+
+function loadColumnWidths<T extends string>(
+  key: string,
+  defaults: Record<T, number>,
+  previousDefaults: Record<T, number>,
+): Record<T, number> {
   try {
     const stored = JSON.parse(window.localStorage.getItem(key) ?? "{}") as Record<string, unknown>;
     return Object.fromEntries(
       Object.entries(defaults).map(([column, width]) => [
         column,
-        typeof stored[column] === "number" && Number.isFinite(stored[column])
+        stored[column] === previousDefaults[column as T] ? width
+        : typeof stored[column] === "number" && Number.isFinite(stored[column])
           ? Math.max(column === "name" ? 150 : 90, Math.min(720, stored[column]))
           : width,
       ]),
@@ -135,49 +156,97 @@ function DraggableTh<T extends string>({
   sortConfig,
   onSort,
   onMove,
+  order,
+  dragging,
   width,
   onResize,
+  className,
 }: {
   column: T;
   label: string;
   sortConfig: SortConfig | null;
-  onSort?: (column: string) => void;
+  onSort: (column: string, direction: "asc" | "desc") => void;
   onMove: (from: T, to: T) => void;
+  order: T[];
+  dragging: { current: T | null };
   width: number;
   onResize: (width: number) => void;
+  className?: string;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const suppressClick = useRef(false);
+  const index = order.indexOf(column);
+
   return (
     <th
       draggable
+      aria-sort={sortConfig?.column === column ? (sortConfig.direction === "asc" ? "ascending" : "descending") : undefined}
       onDragStart={(event) => {
         if ((event.target as HTMLElement).closest("[role='separator']")) {
           event.preventDefault();
           return;
         }
+        dragging.current = column;
+        suppressClick.current = true;
+        setMenuOpen(false);
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", column);
       }}
+      onDragEnd={() => {
+        dragging.current = null;
+        window.setTimeout(() => { suppressClick.current = false; }, 0);
+      }}
       onDragOver={(event) => {
+        const from = dragging.current;
+        if (!from || from === column) return;
         event.preventDefault();
         event.dataTransfer.dropEffect = "move";
+        const fromIndex = order.indexOf(from);
+        const center = event.currentTarget.getBoundingClientRect();
+        const pastMidpoint = fromIndex < index
+          ? event.clientX > center.left + center.width / 2
+          : event.clientX < center.left + center.width / 2;
+        if (pastMidpoint) onMove(from, column);
       }}
       onDrop={(event) => {
         event.preventDefault();
-        const from = event.dataTransfer.getData("text/plain") as T;
-        if (from && from !== column) onMove(from, column);
+        if (dragging.current && dragging.current !== column) onMove(dragging.current, column);
+        dragging.current = null;
       }}
-      onClick={() => onSort?.(column)}
+      onClick={() => {
+        if (!suppressClick.current) setMenuOpen(true);
+      }}
       className={cn(
         "relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-grab active:cursor-grabbing select-none",
         sortConfig?.column === column ? "text-primary" : "text-muted-foreground hover:text-foreground",
+        className,
       )}
     >
-      <div className="flex min-w-0 items-center gap-1 overflow-hidden pr-1">
-        <GripVertical className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/50" />
-        <span className="truncate">{label}</span>
-        {onSort && <SortIcon column={column} sortConfig={sortConfig} />}
-      </div>
-      <ResizableColumnHandle label={label} width={width} onResize={onResize} />
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className="pointer-events-none flex w-full min-w-0 items-center overflow-hidden pr-1 text-left uppercase focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" title={`${label} options`}>
+            <span className="truncate">{label}</span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-[190px]">
+          <DropdownMenuItem onSelect={() => onSort(column, "asc")}>
+            <ChevronUp /> Sort ascending
+            {sortConfig?.column === column && sortConfig.direction === "asc" && <Check className="ml-auto" />}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onSort(column, "desc")}>
+            <ChevronDown /> Sort descending
+            {sortConfig?.column === column && sortConfig.direction === "desc" && <Check className="ml-auto" />}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(column, order[index - 1])}>
+            <ChevronLeft /> Move Left
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={index === order.length - 1} onSelect={() => onMove(column, order[index + 1])}>
+            <ChevronRight /> Move Right
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ResizableColumnHandle label={label} width={width} minWidth={column === "name" ? 150 : 90} onResize={onResize} />
     </th>
   );
 }
@@ -185,7 +254,7 @@ function DraggableTh<T extends string>({
 function reorderColumns<T extends string>(columns: T[], from: T, to: T): T[] {
   const fromIndex = columns.indexOf(from);
   const toIndex = columns.indexOf(to);
-  if (fromIndex < 0 || toIndex < 0) return columns;
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return columns;
   const next = [...columns];
   next.splice(fromIndex, 1);
   next.splice(toIndex, 0, from);
@@ -206,51 +275,6 @@ function getInsightLevel(count: number): { label: string; className: string } | 
   if (count >= 4) return { label: "Medium", className: "bg-amber-100 text-amber-700 border-amber-200" };
   if (count >= 1) return { label: "Low", className: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20" };
   return null;
-}
-
-function SortIcon({ column, sortConfig }: { column: string; sortConfig: SortConfig | null }) {
-  if (!sortConfig || sortConfig.column !== column) {
-    return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50 ml-1 flex-shrink-0" />;
-  }
-  return sortConfig.direction === "asc"
-    ? <ChevronUp className="h-3.5 w-3.5 text-primary ml-1 flex-shrink-0" />
-    : <ChevronDown className="h-3.5 w-3.5 text-primary ml-1 flex-shrink-0" />;
-}
-
-function SortableTh({
-  column,
-  label,
-  sortConfig,
-  onSort,
-  className,
-  width,
-  onResize,
-}: {
-  column: string;
-  label: string;
-  sortConfig: SortConfig | null;
-  onSort: (col: string) => void;
-  className?: string;
-  width: number;
-  onResize: (width: number) => void;
-}) {
-  const isActive = sortConfig?.column === column;
-  return (
-    <th
-      onClick={() => onSort(column)}
-      className={cn(
-        "relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide cursor-pointer select-none whitespace-nowrap",
-        isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
-        className,
-      )}
-    >
-      <div className="flex min-w-0 items-center overflow-hidden pr-1">
-        <span className="truncate">{label}</span>
-        <SortIcon column={column} sortConfig={sortConfig} />
-      </div>
-      <ResizableColumnHandle label={label} width={width} minWidth={150} onResize={onResize} />
-    </th>
-  );
 }
 
 export default function Search({ directory }: { directory: Tab }) {
@@ -275,16 +299,18 @@ export default function Search({ directory }: { directory: Tab }) {
   const [contactSort, setContactSort] = useState<SortConfig | null>(null);
   const [companySort, setCompanySort] = useState<SortConfig | null>(null);
   const [contactColumnOrder, setContactColumnOrder] = useState<ContactColumn[]>([
-    "email", "mobile", "jobTitle", "companyName", "location", "department", "seniority", "insightCount",
+    "name", "email", "mobile", "jobTitle", "companyName", "location", "department", "seniority", "insightCount",
   ]);
   const [companyColumnOrder, setCompanyColumnOrder] = useState<CompanyColumn[]>([
-    "industry", "website", "location", "size", "insightCount",
+    "name", "industry", "website", "location", "size", "insightCount",
   ]);
+  const draggingContactColumn = useRef<ContactColumn | null>(null);
+  const draggingCompanyColumn = useRef<CompanyColumn | null>(null);
   const [contactColumnWidths, setContactColumnWidths] = useState(() =>
-    loadColumnWidths("directory:people:column-widths", DEFAULT_CONTACT_WIDTHS),
+    loadColumnWidths("directory:people:column-widths", DEFAULT_CONTACT_WIDTHS, PREVIOUS_CONTACT_WIDTHS),
   );
   const [companyColumnWidths, setCompanyColumnWidths] = useState(() =>
-    loadColumnWidths("directory:companies:column-widths", DEFAULT_COMPANY_WIDTHS),
+    loadColumnWidths("directory:companies:column-widths", DEFAULT_COMPANY_WIDTHS, PREVIOUS_COMPANY_WIDTHS),
   );
 
   useEffect(() => {
@@ -510,21 +536,8 @@ export default function Search({ directory }: { directory: Tab }) {
 
   const activeFilterCount = Object.values(filters).reduce((acc, arr) => acc + arr.length, 0) + (selectedListId ? 1 : 0);
 
-  const handleContactSort = (col: string) => {
-    setContactSort((prev) =>
-      prev?.column === col
-        ? { column: col, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { column: col, direction: "asc" },
-    );
-  };
-
-  const handleCompanySort = (col: string) => {
-    setCompanySort((prev) =>
-      prev?.column === col
-        ? { column: col, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { column: col, direction: "asc" },
-    );
-  };
+  const handleContactSort = (column: string, direction: "asc" | "desc") => setContactSort({ column, direction });
+  const handleCompanySort = (column: string, direction: "asc" | "desc") => setCompanySort({ column, direction });
 
   const contacts = contactsData?.data ?? [];
   const companies = companiesData?.data ?? [];
@@ -853,7 +866,6 @@ export default function Search({ directory }: { directory: Tab }) {
                         <table className="table-fixed min-w-full text-sm [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: contactTableWidth }}>
                           <colgroup>
                             <col style={{ width: 40 }} />
-                            <col style={{ width: contactColumnWidths.name }} />
                             {contactColumnOrder.map((column) => <col key={column} style={{ width: contactColumnWidths[column] }} />)}
                             <col />
                           </colgroup>
@@ -869,17 +881,19 @@ export default function Search({ directory }: { directory: Tab }) {
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </th>
-                              <SortableTh column="name" label="Name" sortConfig={contactSort} onSort={handleContactSort} width={contactColumnWidths.name} onResize={(width) => setContactColumnWidths((current) => ({ ...current, name: width }))} className="sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
                               {contactColumnOrder.map((column) => (
                                 <DraggableTh
                                   key={column}
                                   column={column}
                                   label={CONTACT_COLUMN_LABELS[column]}
                                   sortConfig={contactSort}
-                                  onSort={column === "email" || column === "mobile" ? undefined : handleContactSort}
+                                  onSort={handleContactSort}
                                   onMove={(from, to) => setContactColumnOrder((columns) => reorderColumns(columns, from, to))}
+                                  order={contactColumnOrder}
+                                  dragging={draggingContactColumn}
                                   width={contactColumnWidths[column]}
                                   onResize={(width) => setContactColumnWidths((current) => ({ ...current, [column]: width }))}
+                                  className={column === "name" && contactColumnOrder[0] === "name" ? "sticky left-10 z-20 bg-muted" : "bg-muted"}
                                 />
                               ))}
                               <th aria-hidden="true" className="bg-muted" />
@@ -907,17 +921,25 @@ export default function Search({ directory }: { directory: Tab }) {
                                       className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
                                     />
                                   </td>
-                                  <td className={cn("px-4 py-3 sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]", isSelected && "bg-primary/5")}>
-                                    <div className="flex items-center gap-3">
-                                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
-                                        {getInitials(`${contact.firstName} ${contact.lastName}`)}
-                                      </div>
-                                      <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
-                                        {contact.firstName} {contact.lastName}
-                                      </span>
-                                    </div>
-                                  </td>
                                   {contactColumnOrder.map((column) => {
+                                    if (column === "name") {
+                                      return (
+                                        <td key={column} className={cn(
+                                          "px-4 py-3",
+                                          contactColumnOrder[0] === "name" && "sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]",
+                                          isSelected && "bg-primary/5",
+                                        )}>
+                                          <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                                              {getInitials(`${contact.firstName} ${contact.lastName}`)}
+                                            </div>
+                                            <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
+                                              {contact.firstName} {contact.lastName}
+                                            </span>
+                                          </div>
+                                        </td>
+                                      );
+                                    }
                                     if (column === "email") {
                                       return (
                                         <td key={column} className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -1031,7 +1053,6 @@ export default function Search({ directory }: { directory: Tab }) {
                         <table className="table-fixed min-w-full text-sm [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: companyTableWidth }}>
                           <colgroup>
                             <col style={{ width: 40 }} />
-                            <col style={{ width: companyColumnWidths.name }} />
                             {companyColumnOrder.map((column) => <col key={column} style={{ width: companyColumnWidths[column] }} />)}
                             <col />
                           </colgroup>
@@ -1047,7 +1068,6 @@ export default function Search({ directory }: { directory: Tab }) {
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </th>
-                              <SortableTh column="name" label="Company Name" sortConfig={companySort} onSort={handleCompanySort} width={companyColumnWidths.name} onResize={(width) => setCompanyColumnWidths((current) => ({ ...current, name: width }))} className="sticky left-10 z-20 bg-muted border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]" />
                               {companyColumnOrder.map((column) => (
                                 <DraggableTh
                                   key={column}
@@ -1056,8 +1076,11 @@ export default function Search({ directory }: { directory: Tab }) {
                                   sortConfig={companySort}
                                   onSort={handleCompanySort}
                                   onMove={(from, to) => setCompanyColumnOrder((columns) => reorderColumns(columns, from, to))}
+                                  order={companyColumnOrder}
+                                  dragging={draggingCompanyColumn}
                                   width={companyColumnWidths[column]}
                                   onResize={(width) => setCompanyColumnWidths((current) => ({ ...current, [column]: width }))}
+                                  className={column === "name" && companyColumnOrder[0] === "name" ? "sticky left-10 z-20 bg-muted" : "bg-muted"}
                                 />
                               ))}
                               <th aria-hidden="true" className="bg-muted" />
@@ -1085,20 +1108,26 @@ export default function Search({ directory }: { directory: Tab }) {
                                     className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
                                   />
                                 </td>
-                                <td className={cn("px-4 py-3 sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]", isSelected && "bg-primary/5")}>
-                                  <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center flex-shrink-0">
-                                      <Building2 className="h-4 w-4 text-slate-500" />
-                                    </div>
-                                    <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
-                                      {company.name}
-                                    </span>
-                                    {competitorIds.has(company.id) && (
-                                      <CompetitorBadge />
-                                    )}
-                                  </div>
-                                </td>
                                 {companyColumnOrder.map((column) => {
+                                  if (column === "name") {
+                                    return (
+                                      <td key={column} className={cn(
+                                        "px-4 py-3",
+                                        companyColumnOrder[0] === "name" && "sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]",
+                                        isSelected && "bg-primary/5",
+                                      )}>
+                                        <div className="flex items-center gap-3">
+                                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center flex-shrink-0">
+                                            <Building2 className="h-4 w-4 text-slate-500" />
+                                          </div>
+                                          <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
+                                            {company.name}
+                                          </span>
+                                          {competitorIds.has(company.id) && <CompetitorBadge />}
+                                        </div>
+                                      </td>
+                                    );
+                                  }
                                   if (column === "industry") return <td key={column} className="px-4 py-3 text-muted-foreground">{company.industry ?? "—"}</td>;
                                   if (column === "website") {
                                     return (

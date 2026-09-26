@@ -106,6 +106,12 @@ router.get("/", async (req, res) => {
         orderByClause.push(sql`${contactsTable.firstName} ${sql.raw(sortDir)} NULLS LAST`);
         orderByClause.push(sql`${contactsTable.lastName} ${sql.raw(sortDir)} NULLS LAST`);
         break;
+      case "email":
+        orderByClause.push(sql`${contactsTable.email} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
+      case "mobile":
+        orderByClause.push(sql`${contactsTable.phone} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
       case "jobTitle":
         orderByClause.push(sql`${contactsTable.jobTitle} ${sql.raw(sortDir)} NULLS LAST`);
         break;

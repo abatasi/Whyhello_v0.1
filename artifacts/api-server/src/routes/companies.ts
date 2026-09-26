@@ -98,6 +98,9 @@ router.get("/", async (req, res) => {
       case "size":
         orderByClause.push(sql`${companiesTable.size} ${sql.raw(sortDir)} NULLS LAST`);
         break;
+      case "insightCount":
+        orderByClause.push(sql`(SELECT count(*)::int FROM company_insights WHERE company_id = ${companiesTable.id}) ${sql.raw(sortDir)}`);
+        break;
       default:
         orderByClause.push(sql`${companiesTable.name} ASC NULLS LAST`);
     }

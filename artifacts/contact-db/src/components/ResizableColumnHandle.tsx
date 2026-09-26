@@ -64,7 +64,7 @@ export function ResizableColumnHandle({
         onResize(clamp(width + (event.key === "ArrowRight" ? 10 : -10)));
       }}
     >
-      <span aria-hidden="true" className="h-5 w-0.5 rounded-full bg-muted-foreground/50 opacity-60 group-hover/resize:bg-primary group-hover/resize:opacity-100" />
+      <span aria-hidden="true" className="h-full w-px bg-primary opacity-0 transition-opacity group-hover/resize:opacity-100 group-focus-within/resize:opacity-100" />
     </span>
   );
 }
