@@ -20,6 +20,11 @@ router.get("/", async (req, res) => {
     const page = Math.max(1, parseInt(raw.page ?? "1") || 1);
     const limit = Math.min(100, Math.max(1, parseInt(raw.limit ?? "20") || 20));
     const offset = (page - 1) * limit;
+    const segment = raw.segment ?? "all";
+    if (!["all", "netNew", "enriched"].includes(segment)) {
+      res.status(400).json({ error: "Invalid segment" });
+      return;
+    }
 
     const industries = splitParam(raw.industry);
     const departments = splitParam(raw.department);
@@ -96,6 +101,13 @@ router.get("/", async (req, res) => {
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const revealed = uid
+      ? sql`EXISTS (SELECT 1 FROM contact_reveals cr
+          WHERE cr.contact_id = contacts.id AND cr.user_id = ${uid})`
+      : sql`false`;
+    const rowWhere = segment === "all"
+      ? where
+      : and(where, segment === "enriched" ? revealed : sql`NOT (${revealed})`);
 
     const sortDir = raw.sortOrder === "desc" ? "DESC" : "ASC";
     const insightCountExpr = sql`(SELECT count(*)::int FROM contact_insights WHERE contact_id = ${contactsTable.id})`;
@@ -139,7 +151,7 @@ router.get("/", async (req, res) => {
     }
     orderByClause.push(asc(contactsTable.id));
 
-    const [rows, [{ count, saved }]] = await Promise.all([
+    const [rows, [{ count, saved, enriched }]] = await Promise.all([
       db
         .select({
           id: contactsTable.id,
@@ -163,13 +175,14 @@ router.get("/", async (req, res) => {
         .from(contactsTable)
         .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
         .leftJoin(contactMetaScoresTable, eq(contactsTable.id, contactMetaScoresTable.contactId))
-        .where(where)
+        .where(rowWhere)
         .orderBy(...orderByClause)
         .limit(limit)
         .offset(offset),
       db
         .select({
           count: sql<number>`count(*)::int`,
+          enriched: sql<number>`count(*) FILTER (WHERE ${revealed})::int`,
           saved: uid
             ? sql<number>`count(*) FILTER (WHERE
                 EXISTS (SELECT 1 FROM contact_reveals cr
@@ -186,14 +199,16 @@ router.get("/", async (req, res) => {
         .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
         .where(where),
     ]);
+    const total = segment === "enriched" ? enriched : segment === "netNew" ? count - enriched : count;
 
     res.json({
       data: rows,
-      total: count,
+      total,
+      counts: { total: count, netNew: count - enriched, enriched },
       saved,
       page,
       limit,
-      totalPages: Math.ceil(count / limit),
+      totalPages: Math.ceil(total / limit),
     });
   } catch (err) {
     console.error(err);

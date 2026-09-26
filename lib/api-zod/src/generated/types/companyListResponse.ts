@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CompanySummaryWithInsights } from "./companySummaryWithInsights";
+import type { DirectoryCounts } from "./directoryCounts";
 
 export interface CompanyListResponse {
   data: CompanySummaryWithInsights[];
   total: number;
+  counts: DirectoryCounts;
   saved: number;
   page: number;
   limit: number;

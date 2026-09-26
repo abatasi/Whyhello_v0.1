@@ -5,9 +5,11 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+import type { ListCompaniesSegment } from "./listCompaniesSegment";
 import type { ListCompaniesSortOrder } from "./listCompaniesSortOrder";
 
 export type ListCompaniesParams = {
+  segment?: ListCompaniesSegment;
   search?: string;
   industry?: string;
   size?: string;

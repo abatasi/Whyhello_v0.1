@@ -5,9 +5,11 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+import type { ListContactsSegment } from "./listContactsSegment";
 import type { ListContactsSortOrder } from "./listContactsSortOrder";
 
 export type ListContactsParams = {
+  segment?: ListContactsSegment;
   search?: string;
   jobTitle?: string;
   department?: string;

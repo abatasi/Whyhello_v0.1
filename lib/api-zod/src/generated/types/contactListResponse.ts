@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ContactSummary } from "./contactSummary";
+import type { DirectoryCounts } from "./directoryCounts";
 
 export interface ContactListResponse {
   data: ContactSummary[];
   total: number;
+  counts: DirectoryCounts;
   saved: number;
   page: number;
   limit: number;

@@ -167,9 +167,16 @@ export interface CompanyDetail {
   contacts?: ContactSummary[];
 }
 
+export interface DirectoryCounts {
+  total: number;
+  netNew: number;
+  enriched: number;
+}
+
 export interface ContactListResponse {
   data: ContactSummary[];
   total: number;
+  counts: DirectoryCounts;
   saved: number;
   page: number;
   limit: number;
@@ -179,6 +186,7 @@ export interface ContactListResponse {
 export interface CompanyListResponse {
   data: CompanySummaryWithInsights[];
   total: number;
+  counts: DirectoryCounts;
   saved: number;
   page: number;
   limit: number;
@@ -238,6 +246,7 @@ export interface CreateChatMessageRequest {
 }
 
 export type ListContactsParams = {
+  segment?: ListContactsSegment;
   search?: string;
   jobTitle?: string;
   department?: string;
@@ -254,6 +263,15 @@ export type ListContactsParams = {
   limit?: number;
 };
 
+export type ListContactsSegment =
+  (typeof ListContactsSegment)[keyof typeof ListContactsSegment];
+
+export const ListContactsSegment = {
+  all: "all",
+  netNew: "netNew",
+  enriched: "enriched",
+} as const;
+
 export type ListContactsSortOrder =
   (typeof ListContactsSortOrder)[keyof typeof ListContactsSortOrder];
 
@@ -263,6 +281,7 @@ export const ListContactsSortOrder = {
 } as const;
 
 export type ListCompaniesParams = {
+  segment?: ListCompaniesSegment;
   search?: string;
   industry?: string;
   size?: string;
@@ -274,6 +293,15 @@ export type ListCompaniesParams = {
   page?: number;
   limit?: number;
 };
+
+export type ListCompaniesSegment =
+  (typeof ListCompaniesSegment)[keyof typeof ListCompaniesSegment];
+
+export const ListCompaniesSegment = {
+  all: "all",
+  netNew: "netNew",
+  enriched: "enriched",
+} as const;
 
 export type ListCompaniesSortOrder =
   (typeof ListCompaniesSortOrder)[keyof typeof ListCompaniesSortOrder];

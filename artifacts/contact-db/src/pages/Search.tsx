@@ -51,6 +51,11 @@ import {
 import { getInitials, formatNumber, cn } from "@/lib/utils";
 
 type Tab = "contacts" | "companies";
+type DirectorySegment = "all" | "netNew" | "enriched";
+
+function parseSegment(value: unknown): DirectorySegment {
+  return value === "netNew" || value === "enriched" ? value : "all";
+}
 
 type Filters = {
   industry: string[];
@@ -385,6 +390,7 @@ export default function Search({ directory }: { directory: Tab }) {
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [debouncedSearch] = useDebounce(searchTerm, 400);
   const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
+  const [segment, setSegment] = useState<DirectorySegment>(() => parseSegment(searchParams.get("segment")));
 
   const [filters, setFilters] = useState<Filters>({
     industry: parseArrayParam(searchParams.get("industry")),
@@ -473,6 +479,7 @@ export default function Search({ directory }: { directory: Tab }) {
           seniority: filters.seniority,
           companySize: filters.companySize,
           location: filters.location,
+          segment,
         },
       },
       {
@@ -527,6 +534,8 @@ export default function Search({ directory }: { directory: Tab }) {
     if (targetTab !== activeTab) {
       const params = new URLSearchParams();
       if (s.search) params.set("search", s.search);
+      const savedSegment = parseSegment(s.filters.segment);
+      if (savedSegment !== "all") params.set("segment", savedSegment);
       Object.entries(nextFilters).forEach(([key, values]) => {
         if (values.length) params.set(key, values.join(","));
       });
@@ -536,6 +545,7 @@ export default function Search({ directory }: { directory: Tab }) {
     }
     setSearchTerm(s.search ?? "");
     setFilters(nextFilters);
+    setSegment(parseSegment(s.filters.segment));
     setPage(1);
   };
 
@@ -552,6 +562,7 @@ export default function Search({ directory }: { directory: Tab }) {
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (page > 1) params.set("page", page.toString());
+    if (segment !== "all") params.set("segment", segment);
     Object.entries(filters).forEach(([key, arr]) => {
       if (arr.length > 0) params.set(key, arr.join(","));
     });
@@ -560,16 +571,17 @@ export default function Search({ directory }: { directory: Tab }) {
     if (window.location.search !== nextQuery) {
       window.history.replaceState(null, "", `${window.location.pathname}${nextQuery}`);
     }
-  }, [activeTab, debouncedSearch, page, filters]);
+  }, [activeTab, debouncedSearch, page, filters, segment]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, filters, activeTab, selectedListId]);
+  }, [debouncedSearch, filters, activeTab, selectedListId, segment]);
 
   const { data: filterOptions } = useGetFilterOptions();
 
   const contactParams = {
     search: debouncedSearch || undefined,
+    segment,
     page,
     limit: 20,
     industry: joinParam(filters.industry),
@@ -589,6 +601,7 @@ export default function Search({ directory }: { directory: Tab }) {
   const { data: companiesData, isLoading: isCompaniesLoading } = useListCompanies(
     {
       search: debouncedSearch || undefined,
+      segment,
       page,
       limit: 20,
       industry: joinParam(filters.industry),
@@ -615,9 +628,10 @@ export default function Search({ directory }: { directory: Tab }) {
     setFilters(EMPTY_FILTERS);
     setSearchTerm("");
     setSelectedListId(null);
+    setSegment("all");
   };
 
-  const activeFilterCount = Object.values(filters).reduce((acc, arr) => acc + arr.length, 0) + (selectedListId ? 1 : 0);
+  const activeFilterCount = Object.values(filters).reduce((acc, arr) => acc + arr.length, 0) + (selectedListId ? 1 : 0) + (segment !== "all" ? 1 : 0);
 
   const handleContactSort = (column: string, direction: "asc" | "desc") => setContactSort({ column, direction });
   const handleCompanySort = (column: string, direction: "asc" | "desc") => setCompanySort({ column, direction });
@@ -725,16 +739,24 @@ export default function Search({ directory }: { directory: Tab }) {
           <div className="sticky top-0 bg-card z-10">
             <div className="grid grid-cols-3 border-b border-border py-4">
               {([
-                ["Total", activeTab === "contacts" ? contactsData?.total : companiesData?.total],
-                ["Net New", activeTab === "contacts"
-                  ? contactsData && contactsData.total - contactsData.saved
-                  : companiesData && companiesData.total - companiesData.saved],
-                ["Saved", activeTab === "contacts" ? contactsData?.saved : companiesData?.saved],
-              ] as const).map(([label, value], index) => (
-                <div key={label} className={cn("min-w-0 text-center", index > 0 && "border-l border-border")}>
+                ["all", "Total", activeTab === "contacts" ? contactsData?.counts.total : companiesData?.counts.total],
+                ["netNew", "Net New", activeTab === "contacts" ? contactsData?.counts.netNew : companiesData?.counts.netNew],
+                ["enriched", "Enriched", activeTab === "contacts" ? contactsData?.counts.enriched : companiesData?.counts.enriched],
+              ] as const).map(([key, label, value], index) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={segment === key}
+                  onClick={() => { setSegment(key); setPage(1); }}
+                  className={cn(
+                    "min-w-0 text-center transition-colors hover:bg-muted/50 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
+                    index > 0 && "border-l border-border",
+                    segment === key && "bg-primary/10 text-primary",
+                  )}
+                >
                   <div className="text-lg font-semibold tabular-nums">{value === undefined ? "—" : formatNumber(value)}</div>
                   <div className="text-xs text-muted-foreground">{label}</div>
-                </div>
+                </button>
               ))}
             </div>
           </div>

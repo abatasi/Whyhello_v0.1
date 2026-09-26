@@ -22,6 +22,7 @@ export const listContactsQueryPageDefault = 1;
 export const listContactsQueryLimitDefault = 20;
 
 export const ListContactsQueryParams = zod.object({
+  segment: zod.enum(["all", "netNew", "enriched"]).optional(),
   search: zod.coerce.string().optional(),
   jobTitle: zod.coerce.string().optional(),
   department: zod.coerce.string().optional(),
@@ -61,6 +62,11 @@ export const ListContactsResponse = zod.object({
     }),
   ),
   total: zod.number(),
+  counts: zod.object({
+    total: zod.number(),
+    netNew: zod.number(),
+    enriched: zod.number(),
+  }),
   saved: zod.number(),
   page: zod.number(),
   limit: zod.number(),
@@ -248,6 +254,7 @@ export const listCompaniesQueryPageDefault = 1;
 export const listCompaniesQueryLimitDefault = 20;
 
 export const ListCompaniesQueryParams = zod.object({
+  segment: zod.enum(["all", "netNew", "enriched"]).optional(),
   search: zod.coerce.string().optional(),
   industry: zod.coerce.string().optional(),
   size: zod.coerce.string().optional(),
@@ -282,6 +289,11 @@ export const ListCompaniesResponse = zod.object({
       ),
   ),
   total: zod.number(),
+  counts: zod.object({
+    total: zod.number(),
+    netNew: zod.number(),
+    enriched: zod.number(),
+  }),
   saved: zod.number(),
   page: zod.number(),
   limit: zod.number(),
