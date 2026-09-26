@@ -156,8 +156,14 @@ function DraggableTh<T extends string>({
   sortConfig,
   onSort,
   onMove,
+  onStartDrag,
+  onPreviewMove,
+  onCommitDrop,
+  onCancelDrag,
   order,
   dragging,
+  movable,
+  previewOffset,
   width,
   onResize,
   className,
@@ -167,8 +173,14 @@ function DraggableTh<T extends string>({
   sortConfig: SortConfig | null;
   onSort: (column: string, direction: "asc" | "desc") => void;
   onMove: (from: T, to: T) => void;
+  onStartDrag: () => void;
+  onPreviewMove: (from: T, to: T) => void;
+  onCommitDrop: (from: T, to: T) => void;
+  onCancelDrag: () => void;
   order: T[];
   dragging: { current: T | null };
+  movable: boolean;
+  previewOffset: number;
   width: number;
   onResize: (width: number) => void;
   className?: string;
@@ -179,14 +191,16 @@ function DraggableTh<T extends string>({
 
   return (
     <th
-      draggable
+      draggable={movable}
+      style={previewOffset ? { transform: `translateX(${previewOffset}px)`, transition: "transform 140ms ease-out", zIndex: 25 } : undefined}
       aria-sort={sortConfig?.column === column ? (sortConfig.direction === "asc" ? "ascending" : "descending") : undefined}
       onDragStart={(event) => {
-        if ((event.target as HTMLElement).closest("[role='separator']")) {
+        if (!movable || (event.target as HTMLElement).closest("[role='separator']")) {
           event.preventDefault();
           return;
         }
         dragging.current = column;
+        onStartDrag();
         suppressClick.current = true;
         setMenuOpen(false);
         event.dataTransfer.effectAllowed = "move";
@@ -194,30 +208,34 @@ function DraggableTh<T extends string>({
       }}
       onDragEnd={() => {
         dragging.current = null;
+        onCancelDrag();
         window.setTimeout(() => { suppressClick.current = false; }, 0);
       }}
       onDragOver={(event) => {
         const from = dragging.current;
-        if (!from || from === column) return;
+        if (!movable || !from || from === column) return;
         event.preventDefault();
         event.dataTransfer.dropEffect = "move";
         const fromIndex = order.indexOf(from);
+        if (fromIndex < 0) return;
         const center = event.currentTarget.getBoundingClientRect();
         const pastMidpoint = fromIndex < index
           ? event.clientX > center.left + center.width / 2
           : event.clientX < center.left + center.width / 2;
-        if (pastMidpoint) onMove(from, column);
+        if (pastMidpoint) onPreviewMove(from, column);
       }}
       onDrop={(event) => {
+        if (!movable || !dragging.current) return;
         event.preventDefault();
-        if (dragging.current && dragging.current !== column) onMove(dragging.current, column);
+        onCommitDrop(dragging.current, column);
         dragging.current = null;
       }}
       onClick={() => {
         if (!suppressClick.current) setMenuOpen(true);
       }}
       className={cn(
-        "relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-grab active:cursor-grabbing select-none",
+        "relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap select-none",
+        movable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         sortConfig?.column === column ? "text-primary" : "text-muted-foreground hover:text-foreground",
         className,
       )}
@@ -237,13 +255,17 @@ function DraggableTh<T extends string>({
             <ChevronDown /> Sort descending
             {sortConfig?.column === column && sortConfig.direction === "desc" && <Check className="ml-auto" />}
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(column, order[index - 1])}>
-            <ChevronLeft /> Move Left
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled={index === order.length - 1} onSelect={() => onMove(column, order[index + 1])}>
-            <ChevronRight /> Move Right
-          </DropdownMenuItem>
+          {movable && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled={index <= 1} onSelect={() => onMove(column, order[index - 1])}>
+                <ChevronLeft /> Move Left
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={index === order.length - 1} onSelect={() => onMove(column, order[index + 1])}>
+                <ChevronRight /> Move Right
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <ResizableColumnHandle label={label} width={width} minWidth={column === "name" ? 150 : 90} onResize={onResize} />
@@ -259,6 +281,59 @@ function reorderColumns<T extends string>(columns: T[], from: T, to: T): T[] {
   next.splice(fromIndex, 1);
   next.splice(toIndex, 0, from);
   return next;
+}
+
+function previewOffset<T extends string>(
+  column: T,
+  order: T[],
+  preview: T[],
+  widths: Record<T, number>,
+): number {
+  const from = order.indexOf(column);
+  const to = preview.indexOf(column);
+  if (from < 0 || to < 0 || from === to) return 0;
+  const crossed = from < to ? order.slice(from + 1, to + 1) : order.slice(to, from);
+  const distance = crossed.reduce((sum, item) => sum + widths[item], 0);
+  return from < to ? distance : -distance;
+}
+
+function useDirectoryColumnOrder<T extends string>(initialOrder: T[]) {
+  const [order, setOrder] = useState(initialOrder);
+  const [preview, setPreview] = useState<T[] | null>(null);
+  const previewRef = useRef<T[] | null>(null);
+  const dragging = useRef<T | null>(null);
+  const fixed = initialOrder[0];
+
+  const start = () => {
+    previewRef.current = [...order];
+    setPreview(previewRef.current);
+  };
+  const previewMove = (from: T, to: T) => {
+    if (from === fixed || to === fixed) return;
+    const current = previewRef.current ?? order;
+    const next = reorderColumns(current, from, to);
+    if (next === current) return;
+    previewRef.current = next;
+    setPreview(next);
+  };
+  const commit = (from: T, to: T) => {
+    if (from !== fixed && to !== fixed) {
+      setOrder(previewRef.current ?? order);
+    }
+    previewRef.current = null;
+    setPreview(null);
+  };
+  const cancel = () => {
+    if (previewRef.current) {
+      previewRef.current = null;
+      setPreview(null);
+    }
+  };
+  const move = (from: T, to: T) => {
+    if (from !== fixed && to !== fixed) setOrder((current) => reorderColumns(current, from, to));
+  };
+
+  return { order, preview, dragging, start, previewMove, commit, cancel, move };
 }
 
 function parseArrayParam(val: string | null): string[] {
@@ -298,14 +373,30 @@ export default function Search({ directory }: { directory: Tab }) {
 
   const [contactSort, setContactSort] = useState<SortConfig | null>(null);
   const [companySort, setCompanySort] = useState<SortConfig | null>(null);
-  const [contactColumnOrder, setContactColumnOrder] = useState<ContactColumn[]>([
+  const {
+    order: contactColumnOrder,
+    preview: contactPreviewOrder,
+    dragging: draggingContactColumn,
+    start: beginContactDrag,
+    previewMove: previewContactMove,
+    commit: commitContactDrop,
+    cancel: cancelContactDrag,
+    move: moveContactColumn,
+  } = useDirectoryColumnOrder<ContactColumn>([
     "name", "email", "mobile", "jobTitle", "companyName", "location", "department", "seniority", "insightCount",
   ]);
-  const [companyColumnOrder, setCompanyColumnOrder] = useState<CompanyColumn[]>([
+  const {
+    order: companyColumnOrder,
+    preview: companyPreviewOrder,
+    dragging: draggingCompanyColumn,
+    start: beginCompanyDrag,
+    previewMove: previewCompanyMove,
+    commit: commitCompanyDrop,
+    cancel: cancelCompanyDrag,
+    move: moveCompanyColumn,
+  } = useDirectoryColumnOrder<CompanyColumn>([
     "name", "industry", "website", "location", "size", "insightCount",
   ]);
-  const draggingContactColumn = useRef<ContactColumn | null>(null);
-  const draggingCompanyColumn = useRef<CompanyColumn | null>(null);
   const [contactColumnWidths, setContactColumnWidths] = useState(() =>
     loadColumnWidths("directory:people:column-widths", DEFAULT_CONTACT_WIDTHS, PREVIOUS_CONTACT_WIDTHS),
   );
@@ -871,7 +962,7 @@ export default function Search({ directory }: { directory: Tab }) {
                           </colgroup>
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-3 py-3 sticky left-0 z-30 bg-muted">
+                              <th className="px-3 py-3 sticky left-0 z-40 bg-muted">
                                 <input
                                   type="checkbox"
                                   checked={allContactsSelected}
@@ -888,15 +979,35 @@ export default function Search({ directory }: { directory: Tab }) {
                                   label={CONTACT_COLUMN_LABELS[column]}
                                   sortConfig={contactSort}
                                   onSort={handleContactSort}
-                                  onMove={(from, to) => setContactColumnOrder((columns) => reorderColumns(columns, from, to))}
-                                  order={contactColumnOrder}
+                                  onMove={moveContactColumn}
+                                  onStartDrag={beginContactDrag}
+                                  onPreviewMove={previewContactMove}
+                                  onCommitDrop={commitContactDrop}
+                                  onCancelDrag={cancelContactDrag}
+                                  order={contactPreviewOrder ?? contactColumnOrder}
                                   dragging={draggingContactColumn}
+                                  movable={column !== "name"}
+                                  previewOffset={contactPreviewOrder ? previewOffset(column, contactColumnOrder, contactPreviewOrder, contactColumnWidths) : 0}
                                   width={contactColumnWidths[column]}
                                   onResize={(width) => setContactColumnWidths((current) => ({ ...current, [column]: width }))}
-                                  className={column === "name" && contactColumnOrder[0] === "name" ? "sticky left-10 z-20 bg-muted" : "bg-muted"}
+                                  className={column === "name" ? "sticky left-10 z-30 bg-muted" : "bg-muted"}
                                 />
                               ))}
-                              <th aria-hidden="true" className="bg-muted" />
+                              <th
+                                aria-hidden="true"
+                                className="bg-muted"
+                                onDragOver={(event) => {
+                                  if (!draggingContactColumn.current) return;
+                                  event.preventDefault();
+                                  previewContactMove(draggingContactColumn.current, contactColumnOrder[contactColumnOrder.length - 1]);
+                                }}
+                                onDrop={(event) => {
+                                  if (!draggingContactColumn.current) return;
+                                  event.preventDefault();
+                                  commitContactDrop(draggingContactColumn.current, contactColumnOrder[contactColumnOrder.length - 1]);
+                                  draggingContactColumn.current = null;
+                                }}
+                              />
                             </tr>
                           </thead>
                           <tbody>
@@ -1058,7 +1169,7 @@ export default function Search({ directory }: { directory: Tab }) {
                           </colgroup>
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-3 py-3 sticky left-0 z-30 bg-muted">
+                              <th className="px-3 py-3 sticky left-0 z-40 bg-muted">
                                 <input
                                   type="checkbox"
                                   checked={allCompaniesSelected}
@@ -1075,15 +1186,35 @@ export default function Search({ directory }: { directory: Tab }) {
                                   label={COMPANY_COLUMN_LABELS[column]}
                                   sortConfig={companySort}
                                   onSort={handleCompanySort}
-                                  onMove={(from, to) => setCompanyColumnOrder((columns) => reorderColumns(columns, from, to))}
-                                  order={companyColumnOrder}
+                                  onMove={moveCompanyColumn}
+                                  onStartDrag={beginCompanyDrag}
+                                  onPreviewMove={previewCompanyMove}
+                                  onCommitDrop={commitCompanyDrop}
+                                  onCancelDrag={cancelCompanyDrag}
+                                  order={companyPreviewOrder ?? companyColumnOrder}
                                   dragging={draggingCompanyColumn}
+                                  movable={column !== "name"}
+                                  previewOffset={companyPreviewOrder ? previewOffset(column, companyColumnOrder, companyPreviewOrder, companyColumnWidths) : 0}
                                   width={companyColumnWidths[column]}
                                   onResize={(width) => setCompanyColumnWidths((current) => ({ ...current, [column]: width }))}
-                                  className={column === "name" && companyColumnOrder[0] === "name" ? "sticky left-10 z-20 bg-muted" : "bg-muted"}
+                                  className={column === "name" ? "sticky left-10 z-30 bg-muted" : "bg-muted"}
                                 />
                               ))}
-                              <th aria-hidden="true" className="bg-muted" />
+                              <th
+                                aria-hidden="true"
+                                className="bg-muted"
+                                onDragOver={(event) => {
+                                  if (!draggingCompanyColumn.current) return;
+                                  event.preventDefault();
+                                  previewCompanyMove(draggingCompanyColumn.current, companyColumnOrder[companyColumnOrder.length - 1]);
+                                }}
+                                onDrop={(event) => {
+                                  if (!draggingCompanyColumn.current) return;
+                                  event.preventDefault();
+                                  commitCompanyDrop(draggingCompanyColumn.current, companyColumnOrder[companyColumnOrder.length - 1]);
+                                  draggingCompanyColumn.current = null;
+                                }}
+                              />
                             </tr>
                           </thead>
                           <tbody>
