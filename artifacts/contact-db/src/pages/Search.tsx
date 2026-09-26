@@ -981,7 +981,7 @@ export default function Search({ directory }: { directory: Tab }) {
                             {contactColumnOrder.map((column) => <col key={column} style={{ width: contactColumnWidths[column] }} />)}
                             <col />
                           </colgroup>
-                          <thead className="sticky top-0 z-10">
+                          <thead className="sticky top-0 z-30">
                             <tr className="border-b border-border bg-muted">
                               <th className="px-3 py-2 sticky left-0 z-40 bg-muted">
                                 <input
@@ -1189,7 +1189,7 @@ export default function Search({ directory }: { directory: Tab }) {
                             {companyColumnOrder.map((column) => <col key={column} style={{ width: companyColumnWidths[column] }} />)}
                             <col />
                           </colgroup>
-                          <thead className="sticky top-0 z-10">
+                          <thead className="sticky top-0 z-30">
                             <tr className="border-b border-border bg-muted">
                               <th className="px-3 py-2 sticky left-0 z-40 bg-muted">
                                 <input
