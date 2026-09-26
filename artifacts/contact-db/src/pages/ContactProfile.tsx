@@ -2028,9 +2028,9 @@ function QuotablesCarousel({
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Quotables</span>
+          <span className="text-[10px] font-bold text-violet-500 dark:text-violet-300 uppercase tracking-widest">Quotables</span>
           {quotes.length > 0 && (
-            <span className="text-[9px] font-semibold bg-violet-100 text-violet-500 rounded-full px-1.5 py-px tabular-nums">
+            <span className="text-[9px] font-semibold bg-violet-100 text-violet-500 dark:bg-violet-800 dark:text-violet-100 rounded-full px-1.5 py-px tabular-nums">
               {quotes.length}
             </span>
           )}
@@ -2043,7 +2043,7 @@ function QuotablesCarousel({
               <button
                 onClick={onReExtract}
                 disabled={isPending}
-                className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors disabled:opacity-30"
+                 className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 dark:text-violet-300 dark:hover:text-violet-100 dark:hover:bg-violet-800/60 transition-colors disabled:opacity-30"
               >
                 <RefreshCw className="h-2.5 w-2.5" />
               </button>
@@ -2061,7 +2061,7 @@ function QuotablesCarousel({
                   onClick={() => setExpanded(v => !v)}
                   aria-expanded={expanded}
                   aria-label={expanded ? "Use compact Quotables view" : "Expand Quotables"}
-                  className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
+                   className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 dark:text-violet-300 dark:hover:text-violet-100 dark:hover:bg-violet-800/60 transition-colors"
                 >
                   {expanded
                     ? <Minimize2 className="h-2.5 w-2.5" />
@@ -2079,7 +2079,7 @@ function QuotablesCarousel({
             onClick={() => setMinimized(v => !v)}
             aria-expanded={!minimized}
             aria-label={minimized ? "Expand Quotables panel" : "Collapse Quotables panel"}
-            className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
+             className="h-5 w-5 rounded flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 dark:text-violet-300 dark:hover:text-violet-100 dark:hover:bg-violet-800/60 transition-colors"
           >
             {minimized
               ? <ChevronUp className="h-2.5 w-2.5" />
@@ -2093,15 +2093,15 @@ function QuotablesCarousel({
         <div className="space-y-2">
 
           {isPending && !current && (
-            <p className="text-[11px] text-violet-400 italic">Scanning LinkedIn posts for quotes…</p>
+             <p className="text-[11px] text-violet-400 dark:text-violet-300 italic">Scanning LinkedIn posts for quotes…</p>
           )}
 
           {current && (
             <div
               className={cn(
-                "rounded-xl bg-gradient-to-br from-violet-50 to-white border border-violet-100 overflow-hidden transition-all duration-200",
+                 "rounded-xl bg-gradient-to-br from-violet-50 to-white dark:from-violet-950 dark:to-slate-900 border border-violet-100 dark:border-violet-700/60 overflow-hidden transition-all duration-200",
                 expanded ? "px-4 pt-4 pb-4" : "px-4 pt-3 pb-3",
-                onInsightClick && current.signalId != null && "cursor-pointer hover:border-violet-300 hover:shadow-sm hover:from-violet-100 active:scale-[0.99]"
+                 onInsightClick && current.signalId != null && "cursor-pointer hover:border-violet-300 dark:hover:border-violet-400 hover:shadow-sm hover:from-violet-100 dark:hover:from-violet-900 active:scale-[0.99]"
               )}
               onClick={() => {
                 if (onInsightClick && current.signalId != null) {
@@ -2116,20 +2116,20 @@ function QuotablesCarousel({
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "absolute -top-1 -left-1.5 font-serif text-violet-200 leading-none select-none pointer-events-none",
+                     "absolute -top-1 -left-1.5 font-serif text-violet-200 dark:text-violet-500 leading-none select-none pointer-events-none",
                     expanded ? "text-[52px]" : "text-[40px]"
                   )}
                 >"</span>
 
                 <p className={cn(
-                  "pl-5 italic text-foreground/85 leading-relaxed font-medium",
+                   "pl-5 italic text-foreground/85 dark:text-violet-50 leading-relaxed font-medium",
                   expanded ? "text-[13px]" : "text-xs"
                 )}>
                   {current.quote}
                 </p>
 
                 <p className={cn(
-                  "pl-5 mt-1.5 text-violet-400 font-medium not-italic",
+                   "pl-5 mt-1.5 text-violet-400 dark:text-violet-200 font-medium not-italic",
                   expanded ? "text-[11px]" : "text-[10px]"
                 )}>
                   — {current.attribution}
@@ -2141,10 +2141,10 @@ function QuotablesCarousel({
 
               {/* HQ bridge — expanded only */}
               {expanded && current.hqBridge && (
-                <div className="mt-3.5 pt-3 border-t border-violet-100">
+                 <div className="mt-3.5 pt-3 border-t border-violet-100 dark:border-violet-700/60">
                   <div className="flex gap-2">
-                    <Sparkles className="h-3 w-3 text-violet-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-[12px] text-violet-700 leading-snug">{current.hqBridge}</p>
+                     <Sparkles className="h-3 w-3 text-violet-400 dark:text-violet-300 flex-shrink-0 mt-0.5" />
+                     <p className="text-[12px] text-violet-700 dark:text-violet-100 leading-snug">{current.hqBridge}</p>
                   </div>
                 </div>
               )}
@@ -2156,16 +2156,16 @@ function QuotablesCarousel({
             <div className="flex items-center justify-between px-1">
               <button
                 onClick={prev}
-                className="h-6 w-6 rounded-full flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
+                 className="h-6 w-6 rounded-full flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 dark:text-violet-300 dark:hover:text-violet-100 dark:hover:bg-violet-800/60 transition-colors"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
-              <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+               <span className="text-[10px] text-muted-foreground/60 dark:text-muted-foreground tabular-nums">
                 {safeIdx + 1} / {quotes.length}
               </span>
               <button
                 onClick={next}
-                className="h-6 w-6 rounded-full flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 transition-colors"
+                 className="h-6 w-6 rounded-full flex items-center justify-center text-violet-300 hover:text-violet-500 hover:bg-violet-50 dark:text-violet-300 dark:hover:text-violet-100 dark:hover:bg-violet-800/60 transition-colors"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
@@ -2579,7 +2579,7 @@ function InsightDetailView({
               <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-500/10 dark:to-yellow-500/5 p-3.5">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-300 flex-shrink-0" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Quotable</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-300">Quotable</span>
                 </div>
                 <p className="text-xs text-amber-950 dark:text-amber-100 leading-relaxed font-bold">
                   "{quote.quote}"
@@ -2904,7 +2904,7 @@ function InsightCardExpanded({
                 <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10 px-2.5 py-2">
                   <div className="flex items-center gap-1 mb-1">
                     <Zap className="h-2.5 w-2.5 text-amber-500 fill-amber-400 flex-shrink-0" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-amber-600">Quotable</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-300">Quotable</span>
                   </div>
                   <p className="text-[10px] text-amber-950 dark:text-amber-100 leading-snug italic line-clamp-3">"{displayQuote.quote}"</p>
                 </div>
