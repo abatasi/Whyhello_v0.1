@@ -1498,7 +1498,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                 <div className="h-20 bg-slate-800 dark:bg-slate-700" />
                 <div className="px-4 sm:px-6 pb-5">
                   <div className="flex items-end gap-4 -mt-10 mb-3">
-                    <div className="h-18 w-18 rounded-full border-4 border-card bg-slate-900 text-white dark:bg-white dark:text-slate-950 flex items-center justify-center text-xl font-bold shadow-md flex-shrink-0 overflow-hidden" style={{ height: "4.5rem", width: "4.5rem" }}>
+                    <div className="h-18 w-18 rounded-full border-4 border-card bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center text-xl font-bold shadow-md flex-shrink-0 overflow-hidden" style={{ height: "4.5rem", width: "4.5rem" }}>
                       {getContactProfileImage(contact.id) ? (
                         <img
                           src={getContactProfileImage(contact.id)}

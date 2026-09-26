@@ -192,7 +192,7 @@ export default function PublicContactProfile() {
       {/* Sign-in card — fixed center of viewport below header */}
       <div className="fixed left-0 right-0 bottom-0 top-16 z-20 flex items-center justify-center px-4 pointer-events-none">
         <div className="pointer-events-auto bg-card dark:bg-slate-900 border border-border dark:border-slate-600 rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
-          <div className="h-14 w-14 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-950 flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-sm">
+          <div className="h-14 w-14 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-sm">
             {getInitials(fullName)}
           </div>
           <h2 className="text-xl font-bold text-foreground mb-2">
@@ -239,7 +239,7 @@ export default function PublicContactProfile() {
             <div className="px-8 pb-7">
               <div className="flex flex-col sm:flex-row gap-6 items-start">
                 <div className="-mt-14 flex-shrink-0">
-                  <div className="h-28 w-28 rounded-full border-4 border-card bg-slate-900 text-white dark:bg-white dark:text-slate-950 flex items-center justify-center text-3xl font-bold shadow-md">
+                  <div className="h-28 w-28 rounded-full border-4 border-card bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center text-3xl font-bold shadow-md">
                     {getInitials(fullName)}
                   </div>
                 </div>
