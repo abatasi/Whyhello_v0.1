@@ -23,4 +23,6 @@ export interface ContactSummary {
   companyIndustry?: string;
   companySize?: string;
   insightCount?: number;
+  /** @nullable */
+  relevanceScore?: number | null;
 }

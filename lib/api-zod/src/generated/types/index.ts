@@ -28,6 +28,7 @@ export * from "./insightQuotable";
 export * from "./insightSourceContact";
 export * from "./listCompaniesParams";
 export * from "./listContactsParams";
+export * from "./listContactsSortOrder";
 export * from "./outreachJob";
 export * from "./outreachJobParams";
 export * from "./roleInsight";

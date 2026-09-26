@@ -114,6 +114,8 @@ export interface ContactSummary {
   companyIndustry?: string;
   companySize?: string;
   insightCount?: number;
+  /** @nullable */
+  relevanceScore?: number | null;
 }
 
 export interface CompanySummary {
@@ -243,9 +245,20 @@ export type ListContactsParams = {
   location?: string;
   country?: string;
   companyId?: number;
+  listId?: number;
+  sortBy?: string;
+  sortOrder?: ListContactsSortOrder;
   page?: number;
   limit?: number;
 };
+
+export type ListContactsSortOrder =
+  (typeof ListContactsSortOrder)[keyof typeof ListContactsSortOrder];
+
+export const ListContactsSortOrder = {
+  asc: "asc",
+  desc: "desc",
+} as const;
 
 export type ListCompaniesParams = {
   search?: string;

@@ -71,6 +71,19 @@ paths:
           in: query
           schema:
             type: integer
+        - name: listId
+          in: query
+          schema:
+            type: integer
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
         - name: page
           in: query
           schema:
@@ -749,6 +762,8 @@ components:
           type: string
         insightCount:
           type: integer
+        relevanceScore:
+          type: ["integer", "null"]
       required:
         - id
         - firstName

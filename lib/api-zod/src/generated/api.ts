@@ -31,6 +31,9 @@ export const ListContactsQueryParams = zod.object({
   location: zod.coerce.string().optional(),
   country: zod.coerce.string().optional(),
   companyId: zod.coerce.number().optional(),
+  listId: zod.coerce.number().optional(),
+  sortBy: zod.coerce.string().optional(),
+  sortOrder: zod.enum(["asc", "desc"]).optional(),
   page: zod.coerce.number().default(listContactsQueryPageDefault),
   limit: zod.coerce.number().default(listContactsQueryLimitDefault),
 });
@@ -54,6 +57,7 @@ export const ListContactsResponse = zod.object({
       companyIndustry: zod.string().optional(),
       companySize: zod.string().optional(),
       insightCount: zod.number().optional(),
+      relevanceScore: zod.number().nullish(),
     }),
   ),
   total: zod.number(),
@@ -338,6 +342,7 @@ export const GetCompanyResponse = zod.object({
         companyIndustry: zod.string().optional(),
         companySize: zod.string().optional(),
         insightCount: zod.number().optional(),
+        relevanceScore: zod.number().nullish(),
       }),
     )
     .optional(),

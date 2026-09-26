@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { contactsTable, companiesTable, contactInsightsTable, listsTable } from "@workspace/db/schema";
+import { contactsTable, companiesTable, contactInsightsTable, contactMetaScoresTable, listsTable } from "@workspace/db/schema";
 import { GetContactParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL, asc, desc } from "drizzle-orm";
 
@@ -130,10 +130,14 @@ router.get("/", async (req, res) => {
       case "insightCount":
         orderByClause.push(sql`${insightCountExpr} ${sql.raw(sortDir)} NULLS LAST`);
         break;
+      case "relevanceScore":
+        orderByClause.push(sql`${contactMetaScoresTable.metaScore} ${sql.raw(sortDir)} NULLS LAST`);
+        break;
       default:
         orderByClause.push(sql`${contactsTable.firstName} ASC NULLS LAST`);
         orderByClause.push(sql`${contactsTable.lastName} ASC NULLS LAST`);
     }
+    orderByClause.push(asc(contactsTable.id));
 
     const [rows, [{ count }]] = await Promise.all([
       db
@@ -154,9 +158,11 @@ router.get("/", async (req, res) => {
           companyIndustry: companiesTable.industry,
           companySize: companiesTable.size,
           insightCount: sql<number>`(SELECT count(*)::int FROM contact_insights WHERE contact_id = ${contactsTable.id})`,
+          relevanceScore: contactMetaScoresTable.metaScore,
         })
         .from(contactsTable)
         .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
+        .leftJoin(contactMetaScoresTable, eq(contactsTable.id, contactMetaScoresTable.contactId))
         .where(where)
         .orderBy(...orderByClause)
         .limit(limit)

@@ -16,6 +16,7 @@ import {
 } from "@/lib/recentVisits";
 import {
   useListContacts,
+  getListContactsQueryKey,
   useListCompanies,
   useGetFilterOptions,
   useListSavedSearches,
@@ -29,6 +30,7 @@ import {
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
+import { OverallScorePill } from "@/components/OverallScorePill";
 import { ResizableColumnHandle } from "@/components/ResizableColumnHandle";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
@@ -76,7 +78,7 @@ type SortConfig = {
   direction: "asc" | "desc";
 };
 
-type ContactColumn = "name" | "email" | "mobile" | "jobTitle" | "companyName" | "location" | "department" | "seniority" | "insightCount";
+type ContactColumn = "name" | "email" | "mobile" | "jobTitle" | "companyName" | "location" | "department" | "seniority" | "insightCount" | "relevanceScore";
 type CompanyColumn = "name" | "industry" | "website" | "location" | "size" | "insightCount";
 
 const CONTACT_COLUMN_LABELS: Record<ContactColumn, string> = {
@@ -89,6 +91,7 @@ const CONTACT_COLUMN_LABELS: Record<ContactColumn, string> = {
   department: "Department",
   seniority: "Seniority",
   insightCount: "Insights",
+  relevanceScore: "Relevance",
 };
 
 const COMPANY_COLUMN_LABELS: Record<CompanyColumn, string> = {
@@ -110,6 +113,7 @@ const DEFAULT_CONTACT_WIDTHS: Record<ContactColumn, number> = {
   department: 180,
   seniority: 155,
   insightCount: 125,
+  relevanceScore: 155,
 };
 
 const DEFAULT_COMPANY_WIDTHS: Record<CompanyColumn, number> = {
@@ -124,6 +128,7 @@ const DEFAULT_COMPANY_WIDTHS: Record<CompanyColumn, number> = {
 const PREVIOUS_CONTACT_WIDTHS: Record<ContactColumn, number> = {
   name: 200, email: 200, mobile: 160, jobTitle: 160, companyName: 140,
   location: 140, department: 130, seniority: 120, insightCount: 100,
+  relevanceScore: 155,
 };
 const PREVIOUS_COMPANY_WIDTHS: Record<CompanyColumn, number> = {
   name: 220, industry: 140, website: 180, location: 140, size: 130, insightCount: 100,
@@ -404,7 +409,7 @@ export default function Search({ directory }: { directory: Tab }) {
     cancel: cancelContactDrag,
     move: moveContactColumn,
   } = useDirectoryColumnOrder<ContactColumn>([
-    "name", "email", "mobile", "jobTitle", "companyName", "location", "department", "seniority", "insightCount",
+    "name", "relevanceScore", "email", "mobile", "jobTitle", "companyName", "location", "department", "seniority", "insightCount",
   ]);
   const {
     order: companyColumnOrder,
@@ -598,21 +603,22 @@ export default function Search({ directory }: { directory: Tab }) {
 
   const { data: filterOptions } = useGetFilterOptions();
 
+  const contactParams = {
+    search: debouncedSearch || undefined,
+    page,
+    limit: 20,
+    industry: joinParam(filters.industry),
+    department: joinParam(filters.department),
+    seniority: joinParam(filters.seniority),
+    companySize: joinParam(filters.companySize),
+    location: joinParam(filters.location),
+    listId: selectedListId ?? undefined,
+    sortBy: contactSort?.column,
+    sortOrder: contactSort?.direction,
+  };
   const { data: contactsData, isLoading: isContactsLoading } = useListContacts(
-    {
-      search: debouncedSearch || undefined,
-      page,
-      limit: 20,
-      industry: joinParam(filters.industry),
-      department: joinParam(filters.department),
-      seniority: joinParam(filters.seniority),
-      companySize: joinParam(filters.companySize),
-      location: joinParam(filters.location),
-      listId: selectedListId ?? undefined,
-      sortBy: contactSort?.column,
-      sortOrder: contactSort?.direction,
-    },
-    { query: { enabled: activeTab === "contacts" } },
+    contactParams,
+    { query: { queryKey: getListContactsQueryKey(contactParams), enabled: activeTab === "contacts" } },
   );
 
   const { data: companiesData, isLoading: isCompaniesLoading } = useListCompanies(
@@ -1142,6 +1148,16 @@ export default function Search({ directory }: { directory: Tab }) {
                                         </td>
                                       );
                                     }
+                                     if (column === "relevanceScore") {
+                                       return (
+                                         <td key={column} className="px-4 py-2">
+                                           <OverallScorePill
+                                             score={contact.relevanceScore}
+                                             className="py-0.5 dark:bg-background dark:text-foreground"
+                                           />
+                                         </td>
+                                       );
+                                     }
                                     return (
                                       <td key={column} className="px-4 py-2">
                                         {insightLevel
