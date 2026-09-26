@@ -28,6 +28,8 @@ import type {
   CounterpartInsight,
   CreateChatMessageRequest,
   CreateOutreachJobRequest,
+  EnrichmentPreview,
+  EnrichmentPreviewInput,
   ErrorResponse,
   FilterOptions,
   HealthStatus,
@@ -123,6 +125,92 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Preview credit usage for selected records without revealing them
+ */
+export const getPreviewEnrichmentUrl = () => {
+  return `/api/credits/enrichment-preview`;
+};
+
+export const previewEnrichment = async (
+  enrichmentPreviewInput: EnrichmentPreviewInput,
+  options?: RequestInit,
+): Promise<EnrichmentPreview> => {
+  return customFetch<EnrichmentPreview>(getPreviewEnrichmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(enrichmentPreviewInput),
+  });
+};
+
+export const getPreviewEnrichmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewEnrichment>>,
+    TError,
+    { data: BodyType<EnrichmentPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewEnrichment>>,
+  TError,
+  { data: BodyType<EnrichmentPreviewInput> },
+  TContext
+> => {
+  const mutationKey = ["previewEnrichment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewEnrichment>>,
+    { data: BodyType<EnrichmentPreviewInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewEnrichment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewEnrichmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewEnrichment>>
+>;
+export type PreviewEnrichmentMutationBody = BodyType<EnrichmentPreviewInput>;
+export type PreviewEnrichmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Preview credit usage for selected records without revealing them
+ */
+export const usePreviewEnrichment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewEnrichment>>,
+    TError,
+    { data: BodyType<EnrichmentPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewEnrichment>>,
+  TError,
+  { data: BodyType<EnrichmentPreviewInput> },
+  TContext
+> => {
+  return useMutation(getPreviewEnrichmentMutationOptions(options));
+};
 
 /**
  * @summary List contacts with filters

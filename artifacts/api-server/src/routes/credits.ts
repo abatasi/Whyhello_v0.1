@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { usersTable, contactRevealsTable, companyRevealsTable, contactsTable, companiesTable } from "@workspace/db/schema";
 import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
+import { PreviewEnrichmentBody } from "@workspace/api-zod";
 
 function getUserId(req: Request): string | null {
   const auth = getAuth(req);
@@ -14,6 +15,7 @@ const TIER_LIMITS: Record<string, number | null> = {
   professional: 10000,
   enterprise: null,
 };
+const CREDITS_PER_RECORD = 1;
 
 function monthStart(): Date {
   const d = new Date();
@@ -46,6 +48,51 @@ async function getCreditStatus(userId: string) {
 }
 
 const router: IRouter = Router();
+
+// Read-only estimate; revealing records and spending credits happen through separate routes.
+router.post("/enrichment-preview", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  const parsed = PreviewEnrichmentBody.safeParse(req.body);
+  if (!parsed.success ||
+      parsed.data.ids.some((id) => !Number.isSafeInteger(id)) ||
+      new Set(parsed.data.ids).size !== parsed.data.ids.length) {
+    res.status(400).json({ error: "Select 1 to 1000 distinct, valid records" });
+    return;
+  }
+
+  const { type, ids } = parsed.data;
+  try {
+    const [records, reveals, status] = await Promise.all([
+      type === "contacts"
+        ? db.select({ id: contactsTable.id }).from(contactsTable).where(inArray(contactsTable.id, ids))
+        : db.select({ id: companiesTable.id }).from(companiesTable).where(inArray(companiesTable.id, ids)),
+      type === "contacts"
+        ? db.select({ id: contactRevealsTable.contactId }).from(contactRevealsTable)
+            .where(and(eq(contactRevealsTable.userId, userId), inArray(contactRevealsTable.contactId, ids)))
+        : db.select({ id: companyRevealsTable.companyId }).from(companyRevealsTable)
+            .where(and(eq(companyRevealsTable.userId, userId), inArray(companyRevealsTable.companyId, ids))),
+      getCreditStatus(userId),
+    ]);
+    if (records.length !== ids.length) {
+      res.status(409).json({ error: "Some selected records are no longer available. Refresh the directory and try again." });
+      return;
+    }
+
+    const toEnrichCount = ids.length - reveals.length;
+    res.json({
+      selectedCount: ids.length,
+      alreadyEnrichedCount: reveals.length,
+      toEnrichCount,
+      creditsPerRecord: CREDITS_PER_RECORD,
+      creditsRequired: toEnrichCount * CREDITS_PER_RECORD,
+      creditsRemaining: status.isUnlimited ? null : Math.max(0, (status.creditsTotal ?? 0) - status.creditsUsed),
+      isUnlimited: status.isUnlimited,
+    });
+  } catch {
+    res.status(500).json({ error: "Failed to calculate enrichment preview" });
+  }
+});
 
 router.get("/status", async (req, res) => {
   const userId = getUserId(req);

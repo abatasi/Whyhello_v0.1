@@ -16,6 +16,27 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Preview credit usage for selected records without revealing them
+ */
+
+export const previewEnrichmentBodyIdsMax = 1000;
+
+export const PreviewEnrichmentBody = zod.object({
+  type: zod.enum(["contacts", "companies"]),
+  ids: zod.array(zod.number().min(1)).min(1).max(previewEnrichmentBodyIdsMax),
+});
+
+export const PreviewEnrichmentResponse = zod.object({
+  selectedCount: zod.number(),
+  alreadyEnrichedCount: zod.number(),
+  toEnrichCount: zod.number(),
+  creditsPerRecord: zod.number(),
+  creditsRequired: zod.number(),
+  creditsRemaining: zod.number().nullable(),
+  isUnlimited: zod.boolean(),
+});
+
+/**
  * @summary List contacts with filters
  */
 export const listContactsQueryPageDefault = 1;

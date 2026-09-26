@@ -26,6 +26,7 @@ import {
   useListLists,
   useBatchRevealStatuses,
   useRevealContact,
+  usePreviewEnrichment,
 } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
@@ -46,6 +47,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { getInitials, formatNumber, cn } from "@/lib/utils";
@@ -446,6 +448,8 @@ export default function Search({ directory }: { directory: Tab }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [enrichOpen, setEnrichOpen] = useState(false);
+  const enrichmentPreview = usePreviewEnrichment();
 
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
@@ -710,7 +714,15 @@ export default function Search({ directory }: { directory: Tab }) {
                 <X className="h-4 w-4" />
                 Clear {selectedIds.size} selected
               </Button>
-              <Button variant="outline" size="sm" disabled title="Coming soon" className="gap-1.5">
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  enrichmentPreview.reset();
+                  setEnrichOpen(true);
+                  enrichmentPreview.mutate({ data: { type: activeTab, ids: Array.from(selectedIds) } });
+                }}
+              >
                 <Sparkles className="h-4 w-4" /> Enrich
               </Button>
               <Button variant="outline" size="sm" disabled title="Coming soon" className="gap-1.5">
@@ -1320,6 +1332,77 @@ export default function Search({ directory }: { directory: Tab }) {
         </div>
         </div>
       </div>
+
+      <Dialog open={enrichOpen} onOpenChange={(open) => {
+        setEnrichOpen(open);
+        if (!open) enrichmentPreview.reset();
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Review enrichment
+            </DialogTitle>
+            <DialogDescription>
+              Preview the credit cost for your selected {activeTab === "contacts" ? "contacts" : "companies"}.
+            </DialogDescription>
+          </DialogHeader>
+          {enrichmentPreview.isPending && (
+            <p className="py-5 text-sm text-muted-foreground" role="status">Calculating your credit estimate…</p>
+          )}
+          {enrichmentPreview.isError && (
+            <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+              Could not calculate the estimate. Refresh the directory and try again.
+            </p>
+          )}
+          {enrichmentPreview.data && !enrichmentPreview.isPending && (() => {
+            const estimate = enrichmentPreview.data;
+            const insufficient = estimate.creditsRemaining !== null &&
+              estimate.creditsRequired > estimate.creditsRemaining;
+            const noun = activeTab === "contacts" ? "contact" : "company";
+            return (
+              <div className="space-y-4 text-sm">
+                <dl className="divide-y divide-border rounded-lg border border-border px-4">
+                  <div className="flex justify-between gap-4 py-3">
+                    <dt className="text-muted-foreground">Selected {noun}s</dt>
+                    <dd className="font-semibold tabular-nums">{formatNumber(estimate.selectedCount)}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4 py-3">
+                    <dt className="text-muted-foreground">Already enriched · no charge</dt>
+                    <dd className="font-semibold tabular-nums">{formatNumber(estimate.alreadyEnrichedCount)}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4 py-3">
+                    <dt className="text-muted-foreground">New {noun}s to enrich</dt>
+                    <dd className="font-semibold tabular-nums">{formatNumber(estimate.toEnrichCount)}</dd>
+                  </div>
+                </dl>
+                <div className="rounded-lg bg-primary/10 px-4 py-3">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="font-medium">Estimated credit use</span>
+                    <strong className="text-xl tabular-nums text-primary">
+                      {formatNumber(estimate.creditsRequired)} {estimate.creditsRequired === 1 ? "credit" : "credits"}
+                    </strong>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatNumber(estimate.toEnrichCount)} × {estimate.creditsPerRecord} credit{estimate.creditsPerRecord === 1 ? "" : "s"} per {noun}
+                  </p>
+                </div>
+                <p className={cn("text-xs", insufficient ? "text-destructive" : "text-muted-foreground")}>
+                  {estimate.isUnlimited
+                    ? "Your plan has no monthly credit limit."
+                    : `${formatNumber(estimate.creditsRemaining ?? 0)} credits remaining this month.${insufficient ? " Not enough for this selection." : ""}`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  This is a preview only. No {noun}s will be enriched and no credits will be used here.
+                </p>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button onClick={() => { setEnrichOpen(false); enrichmentPreview.reset(); }}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Save Search Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={(open) => { setSaveDialogOpen(open); if (!open) { setSaveName(""); setSaveError(""); } }}>

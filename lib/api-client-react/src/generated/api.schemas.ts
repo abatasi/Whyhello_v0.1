@@ -167,6 +167,34 @@ export interface CompanyDetail {
   contacts?: ContactSummary[];
 }
 
+export type EnrichmentPreviewInputType =
+  (typeof EnrichmentPreviewInputType)[keyof typeof EnrichmentPreviewInputType];
+
+export const EnrichmentPreviewInputType = {
+  contacts: "contacts",
+  companies: "companies",
+} as const;
+
+export interface EnrichmentPreviewInput {
+  type: EnrichmentPreviewInputType;
+  /**
+   * @minItems 1
+   * @maxItems 1000
+   */
+  ids: number[];
+}
+
+export interface EnrichmentPreview {
+  selectedCount: number;
+  alreadyEnrichedCount: number;
+  toEnrichCount: number;
+  creditsPerRecord: number;
+  creditsRequired: number;
+  /** @nullable */
+  creditsRemaining: number | null;
+  isUnlimited: boolean;
+}
+
 export interface DirectoryCounts {
   total: number;
   netNew: number;
