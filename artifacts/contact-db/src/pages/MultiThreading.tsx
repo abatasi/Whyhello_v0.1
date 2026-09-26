@@ -630,18 +630,9 @@ function SenioritySwatch({ value }: { value: string }) {
 
 function ContactAvatar({ contact, size = "md" }: { contact: Contact; size?: "sm" | "md" | "lg" }) {
   const initials = getInitials(contact.firstName, contact.lastName);
-  const colors = [
-    "from-violet-200 to-violet-100 text-violet-700",
-    "from-blue-200 to-blue-100 text-blue-700",
-    "from-emerald-200 to-emerald-100 text-emerald-700",
-    "from-amber-200 to-amber-100 text-amber-700",
-    "from-sky-200 to-sky-100 text-sky-700",
-    "from-rose-200 to-rose-100 text-rose-700",
-  ];
-  const color = colors[(contact.id ?? 0) % colors.length];
   const sizeClass = size === "lg" ? "h-16 w-16 text-xl" : size === "md" ? "h-12 w-12 text-sm" : "h-8 w-8 text-xs";
   return (
-    <div className={cn("rounded-full bg-gradient-to-br flex items-center justify-center font-bold flex-shrink-0", sizeClass, color)}>
+    <div className={cn("rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold flex-shrink-0", sizeClass)}>
       {initials}
     </div>
   );

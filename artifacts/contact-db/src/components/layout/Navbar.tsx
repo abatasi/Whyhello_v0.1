@@ -407,7 +407,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
                           className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-secondary/40 transition-colors text-left"
                           onClick={() => navigateTo(`/contacts/${c.id}`)}
                         >
-                          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                          <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
                             {getInitials(`${c.firstName} ${c.lastName}`)}
                           </div>
                           <div className="min-w-0">
@@ -764,7 +764,7 @@ function LogoMenu({ wartime, sidebar = false, expanded = false }: { wartime: boo
                       className="flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/40 transition-colors"
                     >
                       {item.type === "contact" ? (
-                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                        <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
                           {getInitials(item.name)}
                         </div>
                       ) : (

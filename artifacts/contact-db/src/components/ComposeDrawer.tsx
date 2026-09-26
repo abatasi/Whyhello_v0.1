@@ -389,7 +389,7 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
               <div className="absolute left-1/2 -translate-x-1/2 top-1.5 w-8 h-1 rounded-full bg-border/60" />
 
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
                   {getInitials(contactName)}
                 </div>
                 <div className="flex items-center gap-1.5 min-w-0">

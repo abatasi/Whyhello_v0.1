@@ -504,7 +504,7 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
                   onClick={() => handleSelectContact(c)}
                   className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/40 transition-colors text-left"
                 >
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
                     {getInitials(`${c.firstName} ${c.lastName}`)}
                   </div>
                   <div className="min-w-0">
@@ -865,7 +865,7 @@ export default function Messages() {
                         )}
                       >
                         <div className="flex items-center gap-2.5 mb-1.5">
-                          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                          <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
                             {getInitials(name)}
                           </div>
                           <span className="text-sm font-medium text-foreground truncate flex-1">{name}</span>

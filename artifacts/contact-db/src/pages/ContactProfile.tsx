@@ -1595,7 +1595,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                                         onClick={() => { seatContext.onReassign(c.id); setReassignOpen(false); }}
                                         className={cn("w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/50 transition-colors", isCurrent && "bg-secondary/40")}
                                       >
-                                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
+                                        <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                                           {((c.firstName[0] ?? "") + (c.lastName[0] ?? "")).toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -1621,7 +1621,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                                         onClick={() => { seatContext.onReassign(c.id); setReassignOpen(false); }}
                                         className={cn("w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/50 transition-colors", isCurrent && "bg-secondary/40")}
                                       >
-                                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-500 flex-shrink-0">
+                                        <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                                           {((c.firstName[0] ?? "") + (c.lastName[0] ?? "")).toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0">

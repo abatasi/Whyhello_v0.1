@@ -1063,7 +1063,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                           isSelected && "bg-primary/5",
                                         )}>
                                           <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-primary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                                            <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
                                               {getInitials(`${contact.firstName} ${contact.lastName}`)}
                                             </div>
                                             <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
