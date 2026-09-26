@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDebounce } from "use-debounce";
@@ -6,7 +6,7 @@ import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
   ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList, X,
-  Mail, Phone, Clock,
+  Mail, Phone, Clock, Factory, BriefcaseBusiness, TrendingUp, MapPin, type LucideIcon,
 } from "lucide-react";
 import {
   getRecentContactVisits,
@@ -777,44 +777,41 @@ export default function Search({ directory }: { directory: Tab }) {
             </div>
           )}
 
-          {/* Lists Filter */}
-          {filteredLists.length > 0 && (
-            <div className="px-5 pt-5 pb-4 border-b border-border">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
-                <LayoutList className="h-3.5 w-3.5" /> Lists
-              </h3>
-              <ul className="space-y-1">
-                {filteredLists.map((list) => {
-                  const isActive = selectedListId === list.id;
-                  return (
-                    <li key={list.id}>
-                      <button
-                        onClick={() => setSelectedListId(isActive ? null : list.id)}
-                        className={cn(
-                          "w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors text-left",
-                          isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                        )}
-                      >
-                        <span className="truncate">{list.name}</span>
-                        <span className={cn(
-                          "text-xs ml-2 flex-shrink-0 tabular-nums",
-                          isActive ? "text-primary/70" : "text-muted-foreground/70",
-                        )}>
-                          {list.memberCount}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-
-          <div className="p-5 space-y-8">
+          <div className="p-5 space-y-2">
+            <FilterCategory title="Lists" icon={LayoutList} activeCount={selectedListId ? 1 : 0}>
+              {filteredLists.length > 0 ? (
+                <ul className="space-y-1">
+                  {filteredLists.map((list) => {
+                    const isActive = selectedListId === list.id;
+                    return (
+                      <li key={list.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedListId(isActive ? null : list.id)}
+                          className={cn(
+                            "w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors text-left",
+                            isActive
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                          )}
+                        >
+                          <span className="truncate">{list.name}</span>
+                          <span className={cn(
+                            "text-xs ml-2 flex-shrink-0 tabular-nums",
+                            isActive ? "text-primary/70" : "text-muted-foreground/70",
+                          )}>
+                            {list.memberCount}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : <p className="text-xs text-muted-foreground">No lists available.</p>}
+            </FilterCategory>
             <MultiSelectFilter
               title="Industry"
+              icon={Factory}
               options={filterOptions?.industries || []}
               selected={filters.industry}
               onChange={(v) => handleFilterChange("industry", v)}
@@ -823,12 +820,14 @@ export default function Search({ directory }: { directory: Tab }) {
               <>
                 <MultiSelectFilter
                   title="Department"
+                  icon={BriefcaseBusiness}
                   options={filterOptions?.departments || []}
                   selected={filters.department}
                   onChange={(v) => handleFilterChange("department", v)}
                 />
                 <FilterSection
                   title="Seniority"
+                  icon={TrendingUp}
                   options={filterOptions?.seniorities || []}
                   selected={filters.seniority}
                   onChange={(v) => handleFilterChange("seniority", v)}
@@ -837,12 +836,14 @@ export default function Search({ directory }: { directory: Tab }) {
             )}
             <FilterSection
               title="Company Size"
+              icon={Users}
               options={filterOptions?.companySizes || []}
               selected={filters.companySize}
               onChange={(v) => handleFilterChange("companySize", v)}
             />
             <MultiSelectFilter
               title="Location"
+              icon={MapPin}
               options={filterOptions?.locations || []}
               selected={filters.location}
               onChange={(v) => handleFilterChange("location", v)}
@@ -850,7 +851,7 @@ export default function Search({ directory }: { directory: Tab }) {
 
             {/* Recent Visits */}
             {activeTab === "contacts" && recentContacts.length > 0 && (
-              <div>
+              <div className="pt-6">
                 <div className="flex items-center gap-1.5 mb-3">
                   <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-sm font-semibold text-foreground">Recent Visits</span>
@@ -881,7 +882,7 @@ export default function Search({ directory }: { directory: Tab }) {
             )}
 
             {activeTab === "companies" && recentCompanies.length > 0 && (
-              <div>
+              <div className="pt-6">
                 <div className="flex items-center gap-1.5 mb-3">
                   <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-sm font-semibold text-foreground">Recent Visits</span>
@@ -1503,80 +1504,53 @@ export default function Search({ directory }: { directory: Tab }) {
   );
 }
 
-function FilterSection({
-  title, options, selected, onChange,
+function FilterCategory({
+  title, icon: Icon, activeCount = 0, children,
 }: {
   title: string;
-  options: string[];
-  selected: string[];
-  onChange: (v: string) => void;
+  icon: LucideIcon;
+  activeCount?: number;
+  children: ReactNode;
 }) {
-  const [expanded, setExpanded] = useState(true);
-  const [showAll, setShowAll] = useState(false);
-  if (!options || options.length === 0) return null;
-
-  const displayOptions = showAll ? options : options.slice(0, 6);
-  const hasMore = options.length > 6;
-  const activeCount = selected.length;
+  const [expanded, setExpanded] = useState(false);
+  const contentId = useId();
 
   return (
-    <div>
+    <div className={cn(
+      "rounded-lg border transition-colors",
+      expanded ? "border-border bg-card" : "border-transparent border-b-border/60",
+    )}>
       <button
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between group mb-1"
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={contentId}
+        onClick={() => setExpanded((value) => !value)}
+        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-foreground hover:bg-muted/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
       >
-        <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-          {title}
-          {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-              {activeCount}
-            </span>
-          )}
-        </span>
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <span className="flex-1">{title}</span>
+        {activeCount > 0 && (
+          <span className="inline-flex min-w-5 items-center justify-center rounded-full border border-primary/40 px-1 text-[10px] font-bold text-primary">
+            {activeCount}
+          </span>
+        )}
         {expanded
-          ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-          : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />}
+          ? <ChevronUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          : <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
       </button>
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
+            id={contentId}
+            role="region"
+            aria-label={title}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}
           >
-            <div className="pt-2 space-y-2">
-              {displayOptions.map((opt) => {
-                const isSelected = selected.includes(opt);
-                return (
-                  <label
-                    key={opt}
-                    className="flex items-center gap-2 cursor-pointer group"
-                    onClick={() => onChange(opt)}
-                  >
-                    <div className={cn(
-                      "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
-                      isSelected ? "bg-primary border-primary" : "border-input bg-background group-hover:border-primary/50",
-                    )}>
-                      {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
-                    </div>
-                    <span className={cn(
-                      "text-sm transition-colors",
-                      isSelected ? "text-foreground font-medium" : "text-muted-foreground group-hover:text-foreground",
-                    )}>{opt}</span>
-                  </label>
-                );
-              })}
-              {hasMore && (
-                <button
-                  className="text-xs text-primary font-medium mt-2 hover:underline"
-                  onClick={() => setShowAll((v) => !v)}
-                >
-                  {showAll ? "Show less" : `Show ${options.length - 6} more`}
-                </button>
-              )}
-            </div>
+            <div className="border-t border-border/60 px-3 pb-3 pt-3">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1584,60 +1558,90 @@ function FilterSection({
   );
 }
 
+function FilterSection({
+  title, icon, options, selected, onChange,
+}: {
+  title: string;
+  icon: LucideIcon;
+  options: string[];
+  selected: string[];
+  onChange: (v: string) => void;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const displayOptions = showAll ? options : options.slice(0, 6);
+  const hasMore = options.length > 6;
+
+  return (
+    <FilterCategory title={title} icon={icon} activeCount={selected.length}>
+      {options.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No options available.</p>
+      ) : (
+        <div className="space-y-2">
+          {displayOptions.map((opt) => {
+            const isSelected = selected.includes(opt);
+            return (
+              <label
+                key={opt}
+                className="flex items-center gap-2 cursor-pointer group"
+                onClick={() => onChange(opt)}
+              >
+                <div className={cn(
+                  "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
+                  isSelected ? "bg-primary border-primary" : "border-input bg-background group-hover:border-primary/50",
+                )}>
+                  {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
+                </div>
+                <span className={cn(
+                  "text-sm transition-colors",
+                  isSelected ? "text-foreground font-medium" : "text-muted-foreground group-hover:text-foreground",
+                )}>{opt}</span>
+              </label>
+            );
+          })}
+          {hasMore && (
+            <button
+              type="button"
+              className="text-xs text-primary font-medium mt-2 hover:underline"
+              onClick={() => setShowAll((v) => !v)}
+            >
+              {showAll ? "Show less" : `Show ${options.length - 6} more`}
+            </button>
+          )}
+        </div>
+      )}
+    </FilterCategory>
+  );
+}
+
 function MultiSelectFilter({
   title,
+  icon,
   options,
   selected,
   onChange,
 }: {
   title: string;
+  icon: LucideIcon;
   options: string[];
   selected: string[];
   onChange: (v: string) => void;
 }) {
-  const [expanded, setExpanded] = useState(true);
   const [search, setSearch] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  if (!options || options.length === 0) return null;
 
   const filtered = options.filter((opt) =>
     opt.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const activeCount = selected.length;
   const showChecklist = isFocused || search.length > 0;
 
   return (
-    <div>
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between group mb-1"
-      >
-        <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-          {title}
-          {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-              {activeCount}
-            </span>
-          )}
-        </span>
-        {expanded
-          ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-          : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />}
-      </button>
-
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }}
-          >
-            <div className="pt-2 space-y-2">
+    <FilterCategory title={title} icon={icon} activeCount={selected.length}>
+      {options.length === 0 && selected.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No options available.</p>
+      ) : (
+            <div className="space-y-2">
               {/* Active selections — always visible */}
               {selected.length > 0 && (
                 <div className="flex flex-wrap gap-1">
@@ -1730,10 +1734,8 @@ function MultiSelectFilter({
                 )}
               </AnimatePresence>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      )}
+    </FilterCategory>
   );
 }
 
