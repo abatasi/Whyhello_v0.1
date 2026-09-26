@@ -255,7 +255,7 @@ function DraggableTh<T extends string>({
         if (!suppressClick.current) setMenuOpen(true);
       }}
       className={cn(
-        "relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap select-none",
+        "relative px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap select-none",
         movable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         sortConfig?.column === column ? "text-primary" : "text-muted-foreground hover:text-foreground",
         className,
@@ -975,7 +975,7 @@ export default function Search({ directory }: { directory: Tab }) {
                   ) : (
                     <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                       <div className="min-h-0 flex-1 overflow-auto">
-                        <table className="table-fixed min-w-full text-sm [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: contactTableWidth }}>
+                        <table className="table-fixed min-w-full text-[13px] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: contactTableWidth }}>
                           <colgroup>
                             <col style={{ width: 40 }} />
                             {contactColumnOrder.map((column) => <col key={column} style={{ width: contactColumnWidths[column] }} />)}
@@ -983,7 +983,7 @@ export default function Search({ directory }: { directory: Tab }) {
                           </colgroup>
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-3 py-3 sticky left-0 z-40 bg-muted">
+                              <th className="px-3 py-2 sticky left-0 z-40 bg-muted">
                                 <input
                                   type="checkbox"
                                   checked={allContactsSelected}
@@ -1046,7 +1046,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                   )}
                                   onClick={() => setLocation(`/contacts/${contact.id}`)}
                                 >
-                                  <td className={cn("px-3 py-3 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(contact.id, e)}>
+                                  <td className={cn("px-3 py-2 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(contact.id, e)}>
                                     <input
                                       type="checkbox"
                                       checked={isSelected}
@@ -1058,12 +1058,12 @@ export default function Search({ directory }: { directory: Tab }) {
                                     if (column === "name") {
                                       return (
                                         <td key={column} className={cn(
-                                          "px-4 py-3",
+                                          "px-4 py-2",
                                           contactColumnOrder[0] === "name" && "sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]",
                                           isSelected && "bg-primary/5",
                                         )}>
                                           <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                            <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
                                               {getInitials(`${contact.firstName} ${contact.lastName}`)}
                                             </div>
                                             <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
@@ -1075,13 +1075,13 @@ export default function Search({ directory }: { directory: Tab }) {
                                     }
                                     if (column === "email") {
                                       return (
-                                        <td key={column} className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                        <td key={column} className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
                                           {revealedSet.has(contact.id) ? (
                                             contact.email ? (
-                                               <a href={`mailto:${contact.email}`} className="block w-full truncate text-sm text-primary hover:underline">
+                                              <a href={`mailto:${contact.email}`} className="block w-full truncate text-primary hover:underline">
                                                 {contact.email}
                                               </a>
-                                            ) : <span className="text-sm text-muted-foreground">—</span>
+                                            ) : <span className="text-muted-foreground">—</span>
                                           ) : (
                                             <button
                                               onClick={() => revealMutation.mutate(contact.id)}
@@ -1099,13 +1099,13 @@ export default function Search({ directory }: { directory: Tab }) {
                                     }
                                     if (column === "mobile") {
                                       return (
-                                        <td key={column} className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                        <td key={column} className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
                                           {revealedSet.has(contact.id) ? (
                                             contact.phone ? (
-                                              <a href={`tel:${contact.phone}`} className="whitespace-nowrap text-sm text-foreground transition-colors hover:text-primary">
+                                              <a href={`tel:${contact.phone}`} className="whitespace-nowrap text-foreground transition-colors hover:text-primary">
                                                 {contact.phone}
                                               </a>
-                                            ) : <span className="text-sm text-muted-foreground">—</span>
+                                            ) : <span className="text-muted-foreground">—</span>
                                           ) : (
                                             <button
                                               onClick={() => revealMutation.mutate(contact.id)}
@@ -1121,21 +1121,21 @@ export default function Search({ directory }: { directory: Tab }) {
                                         </td>
                                       );
                                     }
-                                    if (column === "jobTitle") return <td key={column} className="px-4 py-3 text-muted-foreground">{contact.jobTitle ?? "—"}</td>;
+                                    if (column === "jobTitle") return <td key={column} className="px-4 py-2 text-muted-foreground">{contact.jobTitle ?? "—"}</td>;
                                     if (column === "companyName") {
                                       return (
-                                        <td key={column} className="px-4 py-3">
+                                        <td key={column} className="px-4 py-2">
                                           {contact.companyName
                                             ? <span className="font-medium text-primary">{contact.companyName}</span>
                                             : <span className="text-muted-foreground">—</span>}
                                         </td>
                                       );
                                     }
-                                    if (column === "location") return <td key={column} className="px-4 py-3 text-muted-foreground">{contact.location ?? "—"}</td>;
-                                    if (column === "department") return <td key={column} className="px-4 py-3 text-muted-foreground">{contact.department ?? "—"}</td>;
+                                    if (column === "location") return <td key={column} className="px-4 py-2 text-muted-foreground">{contact.location ?? "—"}</td>;
+                                    if (column === "department") return <td key={column} className="px-4 py-2 text-muted-foreground">{contact.department ?? "—"}</td>;
                                     if (column === "seniority") {
                                       return (
-                                        <td key={column} className="px-4 py-3">
+                                        <td key={column} className="px-4 py-2">
                                           {contact.seniority
                                             ? <span className="inline-flex items-center rounded-full border border-border bg-secondary/50 px-2 py-0.5 text-xs font-medium text-foreground/80">{contact.seniority}</span>
                                             : <span className="text-muted-foreground">—</span>}
@@ -1143,7 +1143,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                       );
                                     }
                                     return (
-                                      <td key={column} className="px-4 py-3">
+                                      <td key={column} className="px-4 py-2">
                                         {insightLevel
                                           ? <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold", insightLevel.className)}>{insightLevel.label}</span>
                                           : <span className="text-xs text-muted-foreground">—</span>}
@@ -1183,7 +1183,7 @@ export default function Search({ directory }: { directory: Tab }) {
                   ) : (
                     <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                       <div className="min-h-0 flex-1 overflow-auto">
-                        <table className="table-fixed min-w-full text-sm [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: companyTableWidth }}>
+                        <table className="table-fixed min-w-full text-[13px] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: companyTableWidth }}>
                           <colgroup>
                             <col style={{ width: 40 }} />
                             {companyColumnOrder.map((column) => <col key={column} style={{ width: companyColumnWidths[column] }} />)}
@@ -1191,7 +1191,7 @@ export default function Search({ directory }: { directory: Tab }) {
                           </colgroup>
                           <thead className="sticky top-0 z-10">
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-3 py-3 sticky left-0 z-40 bg-muted">
+                              <th className="px-3 py-2 sticky left-0 z-40 bg-muted">
                                 <input
                                   type="checkbox"
                                   checked={allCompaniesSelected}
@@ -1254,7 +1254,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                 )}
                                 onClick={() => setLocation(`/companies/${company.id}`)}
                               >
-                                <td className={cn("px-3 py-3 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(company.id, e)}>
+                                <td className={cn("px-3 py-2 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(company.id, e)}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -1266,12 +1266,12 @@ export default function Search({ directory }: { directory: Tab }) {
                                   if (column === "name") {
                                     return (
                                       <td key={column} className={cn(
-                                        "px-4 py-3",
+                                        "px-4 py-2",
                                         companyColumnOrder[0] === "name" && "sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]",
                                         isSelected && "bg-primary/5",
                                       )}>
                                         <div className="flex items-center gap-3">
-                                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:bg-none dark:bg-background border border-border flex items-center justify-center flex-shrink-0">
+                                          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:bg-none dark:bg-background border border-border flex items-center justify-center flex-shrink-0">
                                             <Building2 className="h-4 w-4 text-slate-500" />
                                           </div>
                                           <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
@@ -1282,10 +1282,10 @@ export default function Search({ directory }: { directory: Tab }) {
                                       </td>
                                     );
                                   }
-                                  if (column === "industry") return <td key={column} className="px-4 py-3 text-muted-foreground">{company.industry ?? "—"}</td>;
+                                  if (column === "industry") return <td key={column} className="px-4 py-2 text-muted-foreground">{company.industry ?? "—"}</td>;
                                   if (column === "website") {
                                     return (
-                                      <td key={column} className="px-4 py-3">
+                                      <td key={column} className="px-4 py-2">
                                         {company.website ? (
                                           <a
                                             href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
@@ -1301,10 +1301,10 @@ export default function Search({ directory }: { directory: Tab }) {
                                       </td>
                                     );
                                   }
-                                  if (column === "location") return <td key={column} className="px-4 py-3 text-muted-foreground">{company.location ?? "—"}</td>;
-                                  if (column === "size") return <td key={column} className="px-4 py-3 text-muted-foreground">{company.size ?? "—"}</td>;
+                                  if (column === "location") return <td key={column} className="px-4 py-2 text-muted-foreground">{company.location ?? "—"}</td>;
+                                  if (column === "size") return <td key={column} className="px-4 py-2 text-muted-foreground">{company.size ?? "—"}</td>;
                                   return (
-                                    <td key={column} className="px-4 py-3">
+                                    <td key={column} className="px-4 py-2">
                                       {companyInsightLevel
                                         ? <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", companyInsightLevel.className)}>{companyInsightLevel.label}</span>
                                         : <span className="text-muted-foreground">—</span>}
