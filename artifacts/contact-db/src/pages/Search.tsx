@@ -981,15 +981,15 @@ export default function Search({ directory }: { directory: Tab }) {
                   ) : (
                     <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                       <div className="min-h-0 flex-1 overflow-auto">
-                        <table className="table-fixed min-w-full text-[13px] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: contactTableWidth }}>
+                         <table className="directory-table table-fixed min-w-full border-separate border-spacing-0 text-[13px] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: contactTableWidth }}>
                           <colgroup>
                             <col style={{ width: 40 }} />
                             {contactColumnOrder.map((column) => <col key={column} style={{ width: contactColumnWidths[column] }} />)}
                             <col />
                           </colgroup>
-                          <thead className="sticky top-0 z-30">
+                           <thead>
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-3 py-2 sticky left-0 z-40 bg-muted">
+                               <th className="px-3 py-2 sticky top-0 left-0 z-50 bg-muted border-b border-border">
                                 <input
                                   type="checkbox"
                                   checked={allContactsSelected}
@@ -1017,13 +1017,13 @@ export default function Search({ directory }: { directory: Tab }) {
                                   previewOffset={contactPreviewOrder ? previewOffset(column, contactColumnOrder, contactPreviewOrder, contactColumnWidths) : 0}
                                   width={contactColumnWidths[column]}
                                   onResize={(width) => setContactColumnWidths((current) => ({ ...current, [column]: width }))}
-                                  className={column === "name" ? "sticky left-10 z-30 bg-muted" : "bg-muted"}
+                                   className={column === "name" ? "sticky top-0 left-10 z-40 bg-muted border-b border-border" : "sticky top-0 z-30 bg-muted border-b border-border"}
                                 />
                               ))}
                               <th
                                 aria-hidden="true"
                                 data-directory-drop-target={contactColumnOrder[contactColumnOrder.length - 1]}
-                                className="bg-muted"
+                                 className="sticky top-0 z-30 bg-muted border-b border-border"
                                 onDragOver={(event) => {
                                   if (!draggingContactColumn.current) return;
                                   event.preventDefault();
@@ -1052,7 +1052,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                   )}
                                   onClick={() => setLocation(`/contacts/${contact.id}`)}
                                 >
-                                  <td className={cn("px-3 py-2 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(contact.id, e)}>
+                                   <td className={cn("px-3 py-2 sticky left-0 z-20 directory-frozen-cell", isSelected && "directory-frozen-cell--selected")} onClick={(e) => toggleId(contact.id, e)}>
                                     <input
                                       type="checkbox"
                                       checked={isSelected}
@@ -1065,8 +1065,8 @@ export default function Search({ directory }: { directory: Tab }) {
                                       return (
                                         <td key={column} className={cn(
                                           "px-4 py-2",
-                                          contactColumnOrder[0] === "name" && "sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]",
-                                          isSelected && "bg-primary/5",
+                                           contactColumnOrder[0] === "name" && "sticky left-10 z-20 directory-frozen-cell border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]",
+                                           isSelected && "directory-frozen-cell--selected",
                                         )}>
                                           <div className="flex items-center gap-3">
                                             <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
@@ -1199,15 +1199,15 @@ export default function Search({ directory }: { directory: Tab }) {
                   ) : (
                     <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                       <div className="min-h-0 flex-1 overflow-auto">
-                        <table className="table-fixed min-w-full text-[13px] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: companyTableWidth }}>
+                         <table className="directory-table table-fixed min-w-full border-separate border-spacing-0 text-[13px] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: companyTableWidth }}>
                           <colgroup>
                             <col style={{ width: 40 }} />
                             {companyColumnOrder.map((column) => <col key={column} style={{ width: companyColumnWidths[column] }} />)}
                             <col />
                           </colgroup>
-                          <thead className="sticky top-0 z-30">
+                           <thead>
                             <tr className="border-b border-border bg-muted">
-                              <th className="px-3 py-2 sticky left-0 z-40 bg-muted">
+                               <th className="px-3 py-2 sticky top-0 left-0 z-50 bg-muted border-b border-border">
                                 <input
                                   type="checkbox"
                                   checked={allCompaniesSelected}
@@ -1235,13 +1235,13 @@ export default function Search({ directory }: { directory: Tab }) {
                                   previewOffset={companyPreviewOrder ? previewOffset(column, companyColumnOrder, companyPreviewOrder, companyColumnWidths) : 0}
                                   width={companyColumnWidths[column]}
                                   onResize={(width) => setCompanyColumnWidths((current) => ({ ...current, [column]: width }))}
-                                  className={column === "name" ? "sticky left-10 z-30 bg-muted" : "bg-muted"}
+                                   className={column === "name" ? "sticky top-0 left-10 z-40 bg-muted border-b border-border" : "sticky top-0 z-30 bg-muted border-b border-border"}
                                 />
                               ))}
                               <th
                                 aria-hidden="true"
                                 data-directory-drop-target={companyColumnOrder[companyColumnOrder.length - 1]}
-                                className="bg-muted"
+                                 className="sticky top-0 z-30 bg-muted border-b border-border"
                                 onDragOver={(event) => {
                                   if (!draggingCompanyColumn.current) return;
                                   event.preventDefault();
@@ -1270,7 +1270,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                 )}
                                 onClick={() => setLocation(`/companies/${company.id}`)}
                               >
-                                <td className={cn("px-3 py-2 sticky left-0 z-20 group-hover:bg-primary/5 bg-card", isSelected && "bg-primary/5")} onClick={(e) => toggleId(company.id, e)}>
+                                 <td className={cn("px-3 py-2 sticky left-0 z-20 directory-frozen-cell", isSelected && "directory-frozen-cell--selected")} onClick={(e) => toggleId(company.id, e)}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -1283,8 +1283,8 @@ export default function Search({ directory }: { directory: Tab }) {
                                     return (
                                       <td key={column} className={cn(
                                         "px-4 py-2",
-                                        companyColumnOrder[0] === "name" && "sticky left-10 z-20 group-hover:bg-primary/5 bg-card border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]",
-                                        isSelected && "bg-primary/5",
+                                         companyColumnOrder[0] === "name" && "sticky left-10 z-20 directory-frozen-cell border-r border-border/60 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.08)]",
+                                         isSelected && "directory-frozen-cell--selected",
                                       )}>
                                         <div className="flex items-center gap-3">
                                           <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:bg-none dark:bg-background border border-border flex items-center justify-center flex-shrink-0">

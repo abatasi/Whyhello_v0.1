@@ -115,6 +115,20 @@ html.dark a:hover {
   color: hsl(var(--foreground) / 0.82);
 }
 
+/* Opaque sticky cells cover columns scrolling beneath them, even on row hover. */
+.directory-table tbody td {
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+}
+
+.directory-table .directory-frozen-cell {
+  background-color: hsl(var(--card));
+}
+
+.directory-table tr:hover .directory-frozen-cell,
+.directory-table .directory-frozen-cell.directory-frozen-cell--selected {
+  background-image: linear-gradient(hsl(var(--primary) / 0.05), hsl(var(--primary) / 0.05));
+}
+
 .home-approved-design,
 .home-approved-design h1,
 .home-approved-design h2,
