@@ -265,7 +265,15 @@ function Router() {
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/" component={HomeRoute} />
-      <Route path="/directory" component={() => <ProtectedRoute component={Search} />} />
+      <Route path="/directory/people" component={() => <ProtectedRoute component={() => <Search directory="contacts" />} />} />
+      <Route path="/directory/companies" component={() => <ProtectedRoute component={() => <Search directory="companies" />} />} />
+      <Route path="/directory" component={() => {
+        const params = new URLSearchParams(window.location.search);
+        const destination = params.get("tab") === "companies" ? "companies" : "people";
+        params.delete("tab");
+        const query = params.toString();
+        return <Redirect to={`/directory/${destination}${query ? `?${query}` : ""}`} />;
+      }} />
       <Route path="/contacts/:id" component={ContactProfileRoute} />
       <Route path="/companies/:id" component={CompanyProfileRoute} />
       <Route path="/lists" component={() => <ProtectedRoute component={Lists} />} />

@@ -235,6 +235,35 @@
   opacity: .82;
 }
 
+.master-directory-group {
+  width: 100%;
+}
+
+.master-directory-caret {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.master-directory-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px 0 5px 18px;
+}
+
+.master-directory-child {
+  width: calc(100% - 5px);
+  height: 34px;
+}
+
+.master-directory-child > svg {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  flex-basis: 16px;
+}
+
 .master-sidebar-bottom {
   display: flex;
   flex-direction: column;

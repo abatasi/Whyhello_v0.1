@@ -60,6 +60,10 @@ const EMPTY_FILTERS: Filters = {
   location: [],
 };
 
+function savedFilterValues(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
 type SortConfig = {
   column: string;
   direction: "asc" | "desc";
@@ -212,19 +216,19 @@ function SortableTh({
   );
 }
 
-export default function Search() {
+export default function Search({ directory }: { directory: Tab }) {
   const [, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
 
-  const [activeTab, setActiveTab] = useState<Tab>((searchParams.get("tab") as Tab) || "contacts");
+  const activeTab = directory;
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [debouncedSearch] = useDebounce(searchTerm, 400);
   const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
 
   const [filters, setFilters] = useState<Filters>({
     industry: parseArrayParam(searchParams.get("industry")),
-    department: parseArrayParam(searchParams.get("department")),
-    seniority: parseArrayParam(searchParams.get("seniority")),
+    department: directory === "contacts" ? parseArrayParam(searchParams.get("department")) : [],
+    seniority: directory === "contacts" ? parseArrayParam(searchParams.get("seniority")) : [],
     companySize: parseArrayParam(searchParams.get("companySize")),
     location: parseArrayParam(searchParams.get("location")),
   });
@@ -354,15 +358,26 @@ export default function Search() {
   };
 
   const handleLoadSearch = (s: (typeof savedSearches)[number]) => {
-    setActiveTab(s.tab as Tab);
+    const targetTab: Tab = s.tab === "companies" ? "companies" : "contacts";
+    const nextFilters: Filters = {
+      industry: savedFilterValues(s.filters.industry),
+      department: targetTab === "contacts" ? savedFilterValues(s.filters.department) : [],
+      seniority: targetTab === "contacts" ? savedFilterValues(s.filters.seniority) : [],
+      companySize: savedFilterValues(s.filters.companySize),
+      location: savedFilterValues(s.filters.location),
+    };
+    if (targetTab !== activeTab) {
+      const params = new URLSearchParams();
+      if (s.search) params.set("search", s.search);
+      Object.entries(nextFilters).forEach(([key, values]) => {
+        if (values.length) params.set(key, values.join(","));
+      });
+      const query = params.toString();
+      setLocation(`/directory/${targetTab === "contacts" ? "people" : "companies"}${query ? `?${query}` : ""}`);
+      return;
+    }
     setSearchTerm(s.search ?? "");
-    setFilters({
-      industry: s.filters.industry ?? [],
-      department: s.filters.department ?? [],
-      seniority: s.filters.seniority ?? [],
-      companySize: s.filters.companySize ?? [],
-      location: s.filters.location ?? [],
-    });
+    setFilters(nextFilters);
     setPage(1);
   };
 
@@ -377,16 +392,15 @@ export default function Search() {
 
   useEffect(() => {
     const params = new URLSearchParams();
-    params.set("tab", activeTab);
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (page > 1) params.set("page", page.toString());
     Object.entries(filters).forEach(([key, arr]) => {
       if (arr.length > 0) params.set(key, arr.join(","));
     });
     const newSearch = params.toString();
-    const newUrl = newSearch ? `?${newSearch}` : window.location.pathname;
-    if (window.location.search !== `?${newSearch}` && newSearch !== "") {
-      window.history.replaceState(null, "", newUrl);
+    const nextQuery = newSearch ? `?${newSearch}` : "";
+    if (window.location.search !== nextQuery) {
+      window.history.replaceState(null, "", `${window.location.pathname}${nextQuery}`);
     }
   }, [activeTab, debouncedSearch, page, filters]);
 
@@ -531,7 +545,7 @@ export default function Search() {
               </div>
             </div>
             <Input
-              placeholder="Search names, companies..."
+              placeholder={activeTab === "contacts" ? "Search people, titles, companies..." : "Search companies..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               icon={<SearchIcon className="h-4 w-4" />}
@@ -552,7 +566,9 @@ export default function Search() {
                       className="flex-1 text-left text-sm py-1.5 px-2 rounded-md hover:bg-primary/10 hover:text-primary transition-colors truncate"
                     >
                       {s.name}
-                      <span className="ml-1.5 text-[10px] text-muted-foreground font-normal capitalize">{s.tab}</span>
+                      <span className="ml-1.5 text-[10px] text-muted-foreground font-normal">
+                        {s.tab === "companies" ? "Companies" : "People"}
+                      </span>
                     </button>
                     <button
                       onClick={() => deleteSearch.mutate(s.id)}
@@ -566,36 +582,6 @@ export default function Search() {
               </ul>
             </div>
           )}
-
-          {/* Tab Toggle */}
-          <div className="px-5 pt-4 pb-3 border-b border-border">
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              <button
-                onClick={() => setActiveTab("contacts")}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors",
-                  activeTab === "contacts"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                <Users className="h-3.5 w-3.5" />
-                Contacts
-              </button>
-              <button
-                onClick={() => setActiveTab("companies")}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors border-l border-border",
-                  activeTab === "companies"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                <Building2 className="h-3.5 w-3.5" />
-                Companies
-              </button>
-            </div>
-          </div>
 
           {/* Lists Filter */}
           {filteredLists.length > 0 && (
@@ -753,30 +739,34 @@ export default function Search() {
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               )}
-              <h1 className="text-3xl font-display font-bold">Directory Search</h1>
+              <h1 className="text-3xl font-display font-bold">
+                {activeTab === "contacts" ? "People Directory" : "Companies Directory"}
+              </h1>
             </div>
             <div className="flex space-x-1 border-b border-border">
-              <button
-                onClick={() => setActiveTab("contacts")}
+              <Link
+                href="/directory/people"
                 className={cn(
                   "pb-3 px-4 font-medium text-sm transition-all relative",
                   activeTab === "contacts" ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
+                aria-current={activeTab === "contacts" ? "page" : undefined}
               >
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Contacts{contactsData && <Badge variant="secondary" className="ml-1 px-1.5">{formatNumber(contactsData.total)}</Badge>}
+                  People{contactsData && <Badge variant="secondary" className="ml-1 px-1.5">{formatNumber(contactsData.total)}</Badge>}
                 </div>
                 {activeTab === "contacts" && (
                   <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                 )}
-              </button>
-              <button
-                onClick={() => setActiveTab("companies")}
+              </Link>
+              <Link
+                href="/directory/companies"
                 className={cn(
                   "pb-3 px-4 font-medium text-sm transition-all relative",
                   activeTab === "companies" ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
+                aria-current={activeTab === "companies" ? "page" : undefined}
               >
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
@@ -785,7 +775,7 @@ export default function Search() {
                 {activeTab === "companies" && (
                   <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                 )}
-              </button>
+              </Link>
             </div>
           </div>
 

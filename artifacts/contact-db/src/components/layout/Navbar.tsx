@@ -260,7 +260,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
 
   function openSearch(value: string) {
     rememberSearch(value);
-    navigate(`/directory?search=${encodeURIComponent(value)}`);
+    navigate(`/directory/people?search=${encodeURIComponent(value)}`);
     closeSearch();
   }
 
@@ -905,8 +905,14 @@ function LogoMenu({ wartime, sidebar = false, expanded = false }: { wartime: boo
   );
 }
 
+const directoryItems = [
+  { label: "People", href: "/directory/people", icon: Users },
+  { label: "Companies", href: "/directory/companies", icon: Building2 },
+];
+
 function MasterSidebar({ wartime }: { wartime: boolean }) {
   const [expanded, setExpanded] = useState(false);
+  const [directoryOpen, setDirectoryOpen] = useState(false);
   const [location] = useLocation();
   const { user } = useUser();
   const { signOut } = useClerk();
@@ -940,7 +946,7 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
       className={cn("master-sidebar hidden md:flex", expanded && "is-expanded", wartime && "is-wartime")}
       aria-label="Whyhello primary navigation"
       onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
+      onMouseLeave={() => { setExpanded(false); setDirectoryOpen(false); }}
       onFocusCapture={() => setExpanded(true)}
       onBlurCapture={handleBlur}
     >
@@ -964,6 +970,48 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
         <nav className="master-route-nav" aria-label="Primary">
           {navItems.map(({ label, href, icon: Icon }) => {
             const active = isRouteActive(href);
+            if (href === "/directory") {
+              return (
+                <div
+                  key={href}
+                  className="master-directory-group"
+                  onMouseEnter={() => setDirectoryOpen(true)}
+                  onMouseLeave={() => setDirectoryOpen(false)}
+                  onFocusCapture={() => setDirectoryOpen(true)}
+                  onBlurCapture={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget as Node)) setDirectoryOpen(false);
+                  }}
+                >
+                  <Link
+                    href="/directory/people"
+                    className={cn("master-route", active && "is-active")}
+                    aria-label="Directory"
+                    aria-expanded={expanded && directoryOpen}
+                    aria-controls="directory-submenu"
+                    title={!expanded ? label : undefined}
+                  >
+                    <Icon size={18} strokeWidth={active ? 2.3 : 1.85} />
+                    <span>{label}</span>
+                    {expanded && <i className="master-directory-caret"><ChevronDown size={15} aria-hidden="true" /></i>}
+                  </Link>
+                  {expanded && directoryOpen && (
+                    <div id="directory-submenu" className="master-directory-submenu">
+                      {directoryItems.map(({ label: childLabel, href: childHref, icon: ChildIcon }) => (
+                        <Link
+                          key={childHref}
+                          href={childHref}
+                          className={cn("master-route master-directory-child", location === childHref && "is-active")}
+                          aria-current={location === childHref ? "page" : undefined}
+                        >
+                          <ChildIcon size={16} strokeWidth={1.85} />
+                          <span>{childLabel}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
             return (
               <Link
                 key={href}
@@ -1052,6 +1100,7 @@ export function Navbar() {
   const darkTheme = resolvedTheme === "dark";
   const wartime = mode === "wartime";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileDirectoryOpen, setMobileDirectoryOpen] = useState(location.startsWith("/directory"));
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const navItems = [
@@ -1133,17 +1182,53 @@ export function Navbar() {
               const isActive = href === "/"
                 ? location === "/" || location === ""
                 : location.startsWith(href);
+              const itemClassName = cn(
+                "flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors text-left",
+                wartime
+                  ? isActive ? "bg-[#E0BBA8] text-[#5C2E22] dark:bg-[#5a2c1d] dark:text-[#edd4c6]" : "text-[#7C3E2A] hover:bg-[#EDD4C6]/60 dark:text-[#e8c9b8] dark:hover:bg-[#5a2c1d]"
+                  : isActive ? "bg-secondary/60 text-foreground" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
+              );
+              if (href === "/directory") {
+                return (
+                  <div key={href}>
+                    <button
+                      type="button"
+                      onClick={() => setMobileDirectoryOpen((open) => !open)}
+                      className={itemClassName}
+                      aria-expanded={mobileDirectoryOpen}
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0 opacity-70" />
+                      <span className="flex-1">Directory</span>
+                      <ChevronDown className={cn("h-4 w-4 transition-transform", mobileDirectoryOpen && "rotate-180")} />
+                    </button>
+                    {mobileDirectoryOpen && (
+                      <div className="ml-6 flex flex-col gap-0.5 border-l border-border pl-3 py-1">
+                        {directoryItems.map(({ label: childLabel, href: childHref, icon: ChildIcon }) => (
+                          <Link
+                            key={childHref}
+                            href={childHref}
+                            onClick={closeMobile}
+                            aria-current={location === childHref ? "page" : undefined}
+                            className={cn(
+                              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium",
+                              location === childHref ? "bg-secondary/60 text-foreground" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
+                            )}
+                          >
+                            <ChildIcon className="h-4 w-4" />
+                            {childLabel}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
               return (
                 <Link
                   key={href}
                   href={href}
                   onClick={closeMobile}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors",
-                    wartime
-                      ? isActive ? "bg-[#E0BBA8] text-[#5C2E22] dark:bg-[#5a2c1d] dark:text-[#edd4c6]" : "text-[#7C3E2A] hover:bg-[#EDD4C6]/60 dark:text-[#e8c9b8] dark:hover:bg-[#5a2c1d]"
-                      : isActive ? "bg-secondary/60 text-foreground" : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
-                  )}
+                  className={itemClassName}
                 >
                   <Icon className="h-4 w-4 flex-shrink-0 opacity-70" />
                   {label}

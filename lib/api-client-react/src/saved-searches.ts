@@ -4,6 +4,8 @@ import { customFetch } from "./custom-fetch";
 export interface SavedSearch {
   id: number;
   name: string;
+  tab: "contacts" | "companies";
+  search: string | null;
   filters: Record<string, unknown>;
   createdAt: string;
 }
@@ -18,6 +20,8 @@ export function useListSavedSearches() {
 
 export interface CreateSavedSearchPayload {
   name: string;
+  tab: "contacts" | "companies";
+  search: string | null;
   filters: Record<string, unknown>;
 }
 
