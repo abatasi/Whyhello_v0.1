@@ -938,7 +938,7 @@ export default function Search({ directory }: { directory: Tab }) {
                 </button>
               )}
               <div className="flex flex-1 space-x-1 border-b border-border">
-              <Link
+               {activeTab === "contacts" && <Link
                 href="/directory/people"
                 className={cn(
                   "pb-3 px-4 font-medium text-sm transition-all relative",
@@ -953,8 +953,8 @@ export default function Search({ directory }: { directory: Tab }) {
                 {activeTab === "contacts" && (
                   <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                 )}
-              </Link>
-              <Link
+               </Link>}
+               {activeTab === "companies" && <Link
                 href="/directory/companies"
                 className={cn(
                   "pb-3 px-4 font-medium text-sm transition-all relative",
@@ -969,7 +969,7 @@ export default function Search({ directory }: { directory: Tab }) {
                 {activeTab === "companies" && (
                   <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                 )}
-              </Link>
+               </Link>}
               </div>
             </div>
           </div>
