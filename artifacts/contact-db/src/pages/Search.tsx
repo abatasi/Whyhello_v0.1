@@ -186,7 +186,9 @@ function DraggableTh<T extends string>({
   className?: string;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hideDraggedLabel, setHideDraggedLabel] = useState(false);
   const suppressClick = useRef(false);
+  const hideLabelFrame = useRef<number | null>(null);
   const index = order.indexOf(column);
 
   return (
@@ -205,8 +207,16 @@ function DraggableTh<T extends string>({
         setMenuOpen(false);
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", column);
+        // Let the browser capture the floating drag image before hiding its source label.
+        hideLabelFrame.current = window.requestAnimationFrame(() => {
+          hideLabelFrame.current = null;
+          setHideDraggedLabel(true);
+        });
       }}
       onDragEnd={() => {
+        if (hideLabelFrame.current !== null) window.cancelAnimationFrame(hideLabelFrame.current);
+        hideLabelFrame.current = null;
+        setHideDraggedLabel(false);
         dragging.current = null;
         onCancelDrag();
         window.setTimeout(() => { suppressClick.current = false; }, 0);
@@ -242,7 +252,7 @@ function DraggableTh<T extends string>({
     >
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
-          <button type="button" className="pointer-events-none flex w-full min-w-0 items-center overflow-hidden pr-1 text-left uppercase focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" title={`${label} options`}>
+          <button type="button" className={cn("pointer-events-none flex w-full min-w-0 items-center overflow-hidden pr-1 text-left uppercase focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", hideDraggedLabel && "opacity-0")} title={`${label} options`}>
             <span className="truncate">{label}</span>
           </button>
         </DropdownMenuTrigger>
