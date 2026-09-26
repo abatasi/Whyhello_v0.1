@@ -348,12 +348,12 @@ interface InsightCategory {
 }
 
 const INSIGHT_CATEGORIES: InsightCategory[] = [
-  { id: "personal",     label: "Personal",     description: "Posts, videos & features about this contact",  icon: User,        color: "text-indigo-600 dark:text-indigo-400",  accentBg: "bg-indigo-50 dark:bg-indigo-500/10",  accentBorder: "border-indigo-200 dark:border-indigo-500/20" },
-  { id: "company",      label: "Company",      description: "News, press releases & content from the company", icon: Building,    color: "text-amber-600 dark:text-amber-400",   accentBg: "bg-amber-50 dark:bg-amber-500/10",   accentBorder: "border-amber-200 dark:border-amber-500/20"  },
-  { id: "industry",     label: "Industry",     description: "Trends & publications across the industry",     icon: TrendingUp,  color: "text-emerald-600 dark:text-emerald-400", accentBg: "bg-emerald-50 dark:bg-emerald-500/10", accentBorder: "border-emerald-200 dark:border-emerald-500/20"},
-  { id: "role",         label: "Role",         description: "Content relevant to this contact's function",   icon: Briefcase,   color: "text-violet-600 dark:text-violet-400",  accentBg: "bg-violet-50 dark:bg-violet-500/10",  accentBorder: "border-violet-200 dark:border-violet-500/20" },
-  { id: "colleague",    label: "Colleague",    description: "Content featuring teammates & peers",           icon: Users,       color: "text-sky-600 dark:text-sky-400",     accentBg: "bg-sky-50 dark:bg-sky-500/10",     accentBorder: "border-sky-200 dark:border-sky-500/20"    },
-  { id: "counterpart",  label: "Counterpart",  description: "Competitor & partner-side perspectives",        icon: Handshake,   color: "text-rose-600 dark:text-rose-400",    accentBg: "bg-rose-50 dark:bg-rose-500/10",    accentBorder: "border-rose-200 dark:border-rose-500/20"   },
+  { id: "personal",     label: "Personal",     description: "Posts, videos & features about this contact",  icon: User,        color: "text-indigo-600 dark:text-indigo-400",  accentBg: "bg-indigo-50 dark:bg-indigo-500/10",  accentBorder: "border-indigo-200 dark:border-indigo-500/40" },
+  { id: "company",      label: "Company",      description: "News, press releases & content from the company", icon: Building,    color: "text-amber-600 dark:text-amber-400",   accentBg: "bg-amber-50 dark:bg-amber-500/10",   accentBorder: "border-amber-200 dark:border-amber-500/40"  },
+  { id: "industry",     label: "Industry",     description: "Trends & publications across the industry",     icon: TrendingUp,  color: "text-emerald-600 dark:text-emerald-400", accentBg: "bg-emerald-50 dark:bg-emerald-500/10", accentBorder: "border-emerald-200 dark:border-emerald-500/40"},
+  { id: "role",         label: "Role",         description: "Content relevant to this contact's function",   icon: Briefcase,   color: "text-violet-600 dark:text-violet-400",  accentBg: "bg-violet-50 dark:bg-violet-500/10",  accentBorder: "border-violet-200 dark:border-violet-500/40" },
+  { id: "colleague",    label: "Colleague",    description: "Content featuring teammates & peers",           icon: Users,       color: "text-sky-600 dark:text-sky-400",     accentBg: "bg-sky-50 dark:bg-sky-500/10",     accentBorder: "border-sky-200 dark:border-sky-500/40"    },
+  { id: "counterpart",  label: "Counterpart",  description: "Competitor & partner-side perspectives",        icon: Handshake,   color: "text-rose-600 dark:text-rose-400",    accentBg: "bg-rose-50 dark:bg-rose-500/10",    accentBorder: "border-rose-200 dark:border-rose-500/40"   },
 ];
 
 // ── Outreach output types ───────────────────────────────────────────────────
@@ -2789,7 +2789,7 @@ function InsightCardExpanded({
         "group relative rounded-xl border transition-all overflow-hidden flex flex-col",
         onCardClick ? "cursor-pointer" : "",
         checked
-          ? cn("shadow-sm ring-1", category.accentBorder, category.accentBg)
+          ? cn("shadow-sm ring-1", category.accentBorder, category.accentBg, "dark:bg-background")
           : "bg-card border-border/60 hover:border-border hover:shadow-sm"
       )}
     >
@@ -2815,7 +2815,7 @@ function InsightCardExpanded({
         </div>
       ) : (
         /* Fallback: compact top bar when no image */
-        <div className={cn("flex items-center gap-2 px-3 py-2 border-b flex-shrink-0", checked ? "border-border/30" : "border-border/40 bg-secondary/20")}>
+        <div className={cn("flex items-center gap-2 px-3 py-2 border-b flex-shrink-0", checked ? "border-border/30" : "border-border/40 bg-secondary/20 dark:bg-background")}>
           <div className={cn("h-5 w-5 rounded flex items-center justify-center flex-shrink-0 border", cfg.bg)}>
             <MIcon className={cn("h-3 w-3", cfg.color)} />
           </div>
@@ -2896,7 +2896,7 @@ function InsightCardExpanded({
         {relevance && (
           <TooltipProvider delayDuration={200}>
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-secondary/40 border border-border/40">
+              <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-secondary/40 dark:bg-background border border-border/40">
                 <RelevanceBadge score={relevance.score} description={relevance.description} />
                 <p className="text-[10px] text-muted-foreground leading-snug flex-1 line-clamp-2">{relevance.description}</p>
               </div>
