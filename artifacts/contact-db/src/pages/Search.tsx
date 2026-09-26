@@ -194,6 +194,7 @@ function DraggableTh<T extends string>({
   return (
     <th
       draggable={movable}
+      data-directory-drop-target={movable ? column : undefined}
       style={previewOffset ? { transform: `translateX(${previewOffset}px)`, transition: "transform 140ms ease-out", zIndex: 25 } : undefined}
       aria-sort={sortConfig?.column === column ? (sortConfig.direction === "asc" ? "ascending" : "descending") : undefined}
       onDragStart={(event) => {
@@ -213,19 +214,29 @@ function DraggableTh<T extends string>({
           setHideDraggedLabel(true);
         });
       }}
-      onDragEnd={() => {
+      onDragEnd={(event) => {
         if (hideLabelFrame.current !== null) window.cancelAnimationFrame(hideLabelFrame.current);
         hideLabelFrame.current = null;
         setHideDraggedLabel(false);
+        // A transformed source header can be the drop target itself. If the
+        // browser skips its drop event, still commit when released over a
+        // movable header in this table; releases elsewhere remain cancellations.
+        if (dragging.current === column && event.clientX > 0 && event.clientY > 0) {
+          const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-directory-drop-target]");
+          if (target && event.currentTarget.closest("table")?.contains(target)) {
+            onCommitDrop(column, target.dataset.directoryDropTarget as T);
+          }
+        }
         dragging.current = null;
         onCancelDrag();
         window.setTimeout(() => { suppressClick.current = false; }, 0);
       }}
       onDragOver={(event) => {
         const from = dragging.current;
-        if (!movable || !from || from === column) return;
+        if (!movable || !from) return;
         event.preventDefault();
         event.dataTransfer.dropEffect = "move";
+        if (from === column) return;
         const fromIndex = order.indexOf(from);
         if (fromIndex < 0) return;
         const center = event.currentTarget.getBoundingClientRect();
@@ -1005,6 +1016,7 @@ export default function Search({ directory }: { directory: Tab }) {
                               ))}
                               <th
                                 aria-hidden="true"
+                                data-directory-drop-target={contactColumnOrder[contactColumnOrder.length - 1]}
                                 className="bg-muted"
                                 onDragOver={(event) => {
                                   if (!draggingContactColumn.current) return;
@@ -1212,6 +1224,7 @@ export default function Search({ directory }: { directory: Tab }) {
                               ))}
                               <th
                                 aria-hidden="true"
+                                data-directory-drop-target={companyColumnOrder[companyColumnOrder.length - 1]}
                                 className="bg-muted"
                                 onDragOver={(event) => {
                                   if (!draggingCompanyColumn.current) return;
