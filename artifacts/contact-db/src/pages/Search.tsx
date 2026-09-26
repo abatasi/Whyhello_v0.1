@@ -662,6 +662,11 @@ export default function Search({ directory }: { directory: Tab }) {
               <Badge variant="secondary" className="px-1.5 text-xs">{activeFilterCount}</Badge>
             )}
           </Button>
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+              Clear All
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -717,7 +722,7 @@ export default function Search({ directory }: { directory: Tab }) {
               className="border-r border-border bg-card flex-shrink-0 overflow-hidden"
             >
         <div className="w-80 h-full overflow-y-auto flex flex-col">
-          <div className="border-b border-border sticky top-0 bg-card z-10">
+          <div className="sticky top-0 bg-card z-10">
             <div className="grid grid-cols-3 border-b border-border py-4">
               {([
                 ["Total", activeTab === "contacts" ? contactsData?.total : companiesData?.total],
@@ -731,26 +736,6 @@ export default function Search({ directory }: { directory: Tab }) {
                   <div className="text-xs text-muted-foreground">{label}</div>
                 </div>
               ))}
-            </div>
-            <div className="flex items-center justify-between gap-2 px-5 py-4">
-              <h2 className="font-semibold flex items-center gap-2">
-                <Filter className="h-4 w-4" /> Filters
-                {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 px-1.5 text-xs">{activeFilterCount}</Badge>
-                )}
-              </h2>
-              <div className="flex items-center gap-1">
-                {activeFilterCount > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    Clear All
-                  </Button>
-                )}
-              </div>
             </div>
           </div>
 
@@ -785,7 +770,7 @@ export default function Search({ directory }: { directory: Tab }) {
             </div>
           )}
 
-          <div className="p-5 space-y-2">
+          <div className="pb-5">
             <FilterCategory title="Lists" icon={LayoutList} activeCount={selectedListId ? 1 : 0}>
               {filteredLists.length > 0 ? (
                 <ul className="space-y-1">
@@ -859,7 +844,7 @@ export default function Search({ directory }: { directory: Tab }) {
 
             {/* Recent Visits */}
             {activeTab === "contacts" && recentContacts.length > 0 && (
-              <div className="pt-6">
+              <div className="px-5 pt-6">
                 <div className="flex items-center gap-1.5 mb-3">
                   <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-sm font-semibold text-foreground">Recent Visits</span>
@@ -890,7 +875,7 @@ export default function Search({ directory }: { directory: Tab }) {
             )}
 
             {activeTab === "companies" && recentCompanies.length > 0 && (
-              <div className="pt-6">
+              <div className="px-5 pt-6">
                 <div className="flex items-center gap-1.5 mb-3">
                   <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-sm font-semibold text-foreground">Recent Visits</span>
@@ -1361,16 +1346,13 @@ function FilterCategory({
   const contentId = useId();
 
   return (
-    <div className={cn(
-      "rounded-lg border transition-colors",
-      expanded ? "border-border bg-card" : "border-transparent border-b-border/60",
-    )}>
+    <div className="border-b border-border/60">
       <button
         type="button"
         aria-expanded={expanded}
         aria-controls={contentId}
         onClick={() => setExpanded((value) => !value)}
-        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-foreground hover:bg-muted/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+        className="flex w-full items-center gap-2.5 px-5 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
       >
         <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span className="flex-1">{title}</span>
@@ -1395,7 +1377,7 @@ function FilterCategory({
             transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}
           >
-            <div className="border-t border-border/60 px-3 pb-3 pt-3">{children}</div>
+            <div className="mx-5 mb-3 rounded-md border border-border p-3">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
