@@ -66,7 +66,12 @@ export const ListContactsQueryParams = zod.object({
   segment: zod.enum(["all", "netNew", "enriched"]).optional(),
   search: zod.coerce.string().optional(),
   jobTitle: zod.coerce.string().optional(),
-  department: zod.coerce.string().optional(),
+  department: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Matches the assigned Role name, or the legacy department for contacts without a Role.",
+    ),
   seniority: zod.coerce.string().optional(),
   industry: zod.coerce.string().optional(),
   companySize: zod.coerce.string().optional(),
@@ -88,6 +93,7 @@ export const ListContactsResponse = zod.object({
       lastName: zod.string(),
       jobTitle: zod.string().optional(),
       department: zod.string().optional(),
+      roleName: zod.string().nullish(),
       seniority: zod.string().optional(),
       email: zod.string().optional(),
       phone: zod.string().optional(),
@@ -389,6 +395,7 @@ export const GetCompanyResponse = zod.object({
         lastName: zod.string(),
         jobTitle: zod.string().optional(),
         department: zod.string().optional(),
+        roleName: zod.string().nullish(),
         seniority: zod.string().optional(),
         email: zod.string().optional(),
         phone: zod.string().optional(),

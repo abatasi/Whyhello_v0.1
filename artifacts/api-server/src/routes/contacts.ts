@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { contactsTable, companiesTable, contactInsightsTable, contactMetaScoresTable, listsTable } from "@workspace/db/schema";
+import { contactsTable, companiesTable, contactInsightsTable, contactMetaScoresTable, listsTable, rolesTable } from "@workspace/db/schema";
 import { GetContactParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL, asc, desc } from "drizzle-orm";
 
@@ -43,10 +43,13 @@ router.get("/", async (req, res) => {
     if (raw.jobTitle) {
       conditions.push(ilike(contactsTable.jobTitle, `%${raw.jobTitle}%`));
     }
-    if (departments.length === 1) {
-      conditions.push(eq(contactsTable.department, departments[0]));
-    } else if (departments.length > 1) {
-      conditions.push(inArray(contactsTable.department, departments));
+    if (departments.length > 0) {
+      // Buying Center selections use Role names, while older contacts without
+      // a Role can still be found through their stored department.
+      conditions.push(or(
+        inArray(contactsTable.roleId, db.select({ id: rolesTable.id }).from(rolesTable).where(inArray(rolesTable.name, departments))),
+        and(sql`${contactsTable.roleId} IS NULL`, inArray(contactsTable.department, departments)),
+      )!);
     }
     if (seniorities.length === 1) {
       conditions.push(eq(contactsTable.seniority, seniorities[0]));

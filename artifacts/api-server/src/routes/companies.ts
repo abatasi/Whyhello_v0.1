@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { contactsTable, companiesTable, listsTable } from "@workspace/db/schema";
+import { contactsTable, companiesTable, listsTable, rolesTable } from "@workspace/db/schema";
 import { GetCompanyParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL } from "drizzle-orm";
 import { companyInsightsTable } from "@workspace/db/schema";
@@ -186,6 +186,7 @@ router.get("/:id", async (req, res) => {
         lastName: contactsTable.lastName,
         jobTitle: contactsTable.jobTitle,
         department: contactsTable.department,
+        roleName: rolesTable.name,
         seniority: contactsTable.seniority,
         email: contactsTable.email,
         phone: contactsTable.phone,
@@ -199,6 +200,7 @@ router.get("/:id", async (req, res) => {
       })
       .from(contactsTable)
       .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
+      .leftJoin(rolesTable, eq(contactsTable.roleId, rolesTable.id))
       .where(eq(contactsTable.companyId, id));
 
     res.json({ ...company, contacts });

@@ -103,6 +103,8 @@ export interface ContactSummary {
   lastName: string;
   jobTitle?: string;
   department?: string;
+  /** @nullable */
+  roleName?: string | null;
   seniority?: string;
   email?: string;
   phone?: string;
@@ -287,6 +289,9 @@ export type ListContactsParams = {
   segment?: ListContactsSegment;
   search?: string;
   jobTitle?: string;
+  /**
+   * Matches the assigned Role name, or the legacy department for contacts without a Role.
+   */
   department?: string;
   seniority?: string;
   industry?: string;

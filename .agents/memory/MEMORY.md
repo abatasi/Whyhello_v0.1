@@ -8,3 +8,4 @@
 - [Theme selector alignment](theme-selector-alignment.md) — Tailwind v4 dark utilities default to system preference; align them with next-themes class switching
 - [Dark card surfaces](dark-card-surfaces.md) — dark-mode cards share the page background; use borders for category distinction, not tinted fills
 - [Drizzle correlated SQL qualifiers](drizzle-correlated-sql.md) — table-column interpolation in aggregate SELECT fragments may lose its table qualifier
+- [Buying Center Role identity](buying-center-role-identity.md) — seat criteria use Role names in saved HQ profiles; renaming a Role requires migrating those saved selections

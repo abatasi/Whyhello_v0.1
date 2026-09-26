@@ -12,6 +12,9 @@ export type ListContactsParams = {
   segment?: ListContactsSegment;
   search?: string;
   jobTitle?: string;
+  /**
+   * Matches the assigned Role name, or the legacy department for contacts without a Role.
+   */
   department?: string;
   seniority?: string;
   industry?: string;

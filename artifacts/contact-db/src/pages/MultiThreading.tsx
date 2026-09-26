@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/apiFetch";
+import { useBuyingCenterRoles } from "@/hooks/useBuyingCenterRoles";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
@@ -26,6 +27,7 @@ interface Contact {
   lastName: string;
   jobTitle: string | null;
   department: string | null;
+  roleName: string | null;
   seniority: string | null;
   email: string | null;
   phone: string | null;
@@ -120,14 +122,6 @@ const SENIORITY_RANK: Record<string, number> = {
 
 const SENIORITY_OPTIONS = ["C-Suite", "VP", "Director", "Manager", "Individual Contributor"];
 
-const DEPARTMENT_OPTIONS = [
-  "Business Development", "Claims", "Clinical", "Consulting", "Content", "Creative",
-  "Customer Experience", "Customer Success", "Data", "Design", "Development", "Digital",
-  "Education", "Engineering", "Executive", "Finance", "Investment Advisor", "Investments",
-  "Legal", "Marketing", "Medical", "Merchandising", "Operations", "Product", "Production",
-  "Programs", "R&D", "Research", "Revenue", "Risk", "Sales", "Security", "Underwriting",
-];
-
 // ── Matching logic ────────────────────────────────────────────────────────────
 
 function sortBySeniority(contacts: Contact[]): Contact[] {
@@ -141,18 +135,18 @@ function matchContactsToSeat(seat: BuyingCenterSeat, contacts: Contact[]): Conta
   const hasDept = seat.departments.length > 0;
   if (!hasSeniority && !hasDept) return [];
 
+  // Role is canonical when assigned; legacy contacts without one still match
+  // their stored department for existing buying-center configurations.
+  const matchesRole = (contact: Contact) =>
+    seat.departments.includes(contact.roleName ?? contact.department ?? "");
   const strict = contacts.filter(c => {
     const senOk = !hasSeniority || seat.seniorities.includes(c.seniority ?? "");
-    const deptOk = !hasDept || seat.departments.includes(c.department ?? "");
+    const deptOk = !hasDept || matchesRole(c);
     return senOk && deptOk;
   });
-  if (strict.length > 0) return sortBySeniority(strict);
-
-  const relaxed = contacts.filter(c =>
-    seat.seniorities.includes(c.seniority ?? "") ||
-    seat.departments.includes(c.department ?? "")
-  );
-  return sortBySeniority(relaxed);
+  // Do not fill a Role-linked seat with a contact from an unrelated Role
+  // merely because their seniority happens to match.
+  return sortBySeniority(strict);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -371,6 +365,7 @@ function CreateBuyingCenterModal({
   onClose: () => void;
   onCreated: (bc: BuyingCenterConfig) => void;
 }) {
+  const { names: roleOptions, loading: rolesLoading, error: rolesError } = useBuyingCenterRoles();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("New buying center");
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -562,9 +557,11 @@ function CreateBuyingCenterModal({
                           />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <p className="text-[11px] font-semibold text-foreground">Departments</p>
+                          <p className="text-[11px] font-semibold text-foreground">Department / Role</p>
+                          {rolesLoading && <p className="text-xs text-muted-foreground">Loading Roles…</p>}
+                          {rolesError && <p className="text-xs text-destructive">Could not load Roles. Reopen this page to try again.</p>}
                           <PillGroup
-                            options={DEPARTMENT_OPTIONS}
+                            options={roleOptions}
                             selected={cfg.departments}
                             onToggle={v => toggleDept(seatName, v)}
                             accent="indigo"

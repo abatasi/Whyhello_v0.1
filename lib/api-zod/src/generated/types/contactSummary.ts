@@ -12,6 +12,8 @@ export interface ContactSummary {
   lastName: string;
   jobTitle?: string;
   department?: string;
+  /** @nullable */
+  roleName?: string | null;
   seniority?: string;
   email?: string;
   phone?: string;

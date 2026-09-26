@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/apiFetch";
+import { useBuyingCenterRoles } from "@/hooks/useBuyingCenterRoles";
 import { useState, useEffect, useRef } from "react";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
@@ -569,13 +570,6 @@ const SENIORITY_OPTIONS = [
   "C-Suite", "VP", "Director", "Manager", "Individual Contributor",
 ];
 
-const DEPARTMENT_OPTIONS = [
-  "Business Development", "Claims", "Clinical", "Consulting", "Content", "Creative",
-  "Customer Experience", "Customer Success", "Data", "Design", "Development", "Digital",
-  "Education", "Engineering", "Executive", "Finance", "Investment Advisor", "Investments", "Legal", "Marketing",
-  "Medical", "Merchandising", "Operations", "Product", "Production", "Programs", "R&D",
-  "Research", "Revenue", "Risk", "Sales", "Security", "Underwriting",
-];
 
 const BUYING_CENTER_SEATS: { seat: string; role: string; icon: React.ElementType; color: string }[] = [
   { seat: "Business Champion",               role: "Promotes the solution internally and helps advance the sale",    icon: Megaphone,     color: "violet"  },
@@ -1505,7 +1499,13 @@ function CompetitorCard({
 
 // ── DeptSelector ──────────────────────────────────────────────────────────────
 
-function DeptSelector({ selected, onChange }: { selected: string[]; onChange: (v: string[]) => void }) {
+function DeptSelector({ selected, options, loading, error, onChange }: {
+  selected: string[];
+  options: string[];
+  loading: boolean;
+  error: boolean;
+  onChange: (v: string[]) => void;
+}) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -1524,7 +1524,7 @@ function DeptSelector({ selected, onChange }: { selected: string[]; onChange: (v
   const toggle = (dept: string) =>
     onChange(selected.includes(dept) ? selected.filter(d => d !== dept) : [...selected, dept]);
 
-  const filtered = DEPARTMENT_OPTIONS.filter(d =>
+  const filtered = options.filter(d =>
     d.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -1562,8 +1562,12 @@ function DeptSelector({ selected, onChange }: { selected: string[]; onChange: (v
                 />
               </div>
               <div className="max-h-48 overflow-y-auto py-1">
-                {filtered.length === 0 ? (
-                  <p className="text-xs text-muted-foreground px-3 py-2">No results</p>
+                {error ? (
+                  <p className="text-xs text-destructive px-3 py-2">Could not load Roles. Reopen this page to try again.</p>
+                ) : loading ? (
+                  <p className="text-xs text-muted-foreground px-3 py-2">Loading Roles…</p>
+                ) : filtered.length === 0 ? (
+                  <p className="text-xs text-muted-foreground px-3 py-2">No matching Roles</p>
                 ) : filtered.map(dept => (
                   <button
                     key={dept}
@@ -1693,10 +1697,13 @@ interface ContactSample {
   companyName: string | null;
 }
 
-function BuyingCenterModal({ seatName, seniorities, departments, onUpdate, open, onClose }: {
+function BuyingCenterModal({ seatName, seniorities, departments, roleOptions, rolesLoading, rolesError, onUpdate, open, onClose }: {
   seatName: string;
   seniorities: string[];
   departments: string[];
+  roleOptions: string[];
+  rolesLoading: boolean;
+  rolesError: boolean;
   onUpdate: (patch: { seniorities?: string[]; departments?: string[] }) => void;
   open: boolean;
   onClose: () => void;
@@ -1787,9 +1794,9 @@ function BuyingCenterModal({ seatName, seniorities, departments, onUpdate, open,
           <div className="flex flex-col gap-2">
             <div>
               <p className="text-xs font-semibold text-foreground">Department</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Select departments where this role is typically found</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Choose a Role for this seat. Existing department selections are preserved.</p>
             </div>
-            <DeptSelector selected={departments} onChange={v => onUpdate({ departments: v })} />
+            <DeptSelector selected={departments} options={roleOptions} loading={rolesLoading} error={rolesError} onChange={v => onUpdate({ departments: v })} />
           </div>
 
           {/* Contact preview */}
@@ -1998,6 +2005,7 @@ const HQ_NAV: {
 
 export default function HQ() {
   const { mode, toggleMode } = useAppMode();
+  const { names: roleOptions, loading: rolesLoading, error: rolesError } = useBuyingCenterRoles();
   const wartime = mode === "wartime";
   const [data, setData] = useState<DNAData>(loadDNA);
   const saved = useAutoSave(data);
@@ -3145,6 +3153,9 @@ export default function HQ() {
                   seatName={activeSeat}
                   seniorities={activeBc.seats.find(s => s.seat === activeSeat)?.seniorities ?? []}
                   departments={activeBc.seats.find(s => s.seat === activeSeat)?.departments ?? []}
+                  roleOptions={roleOptions}
+                  rolesLoading={rolesLoading}
+                  rolesError={rolesError}
                   onUpdate={patch => updateBuyingCenterSeat(activeBc.id, activeSeat, patch)}
                   open={!!activeSeat}
                   onClose={() => setActiveSeat(null)}
