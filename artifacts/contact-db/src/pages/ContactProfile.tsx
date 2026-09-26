@@ -901,7 +901,7 @@ function PlaybookPickerModal({
 export function ContactProfileView({ contactId, embedded, seatContext }: { contactId: number; embedded?: boolean; seatContext?: SeatContext }) {
   const id = contactId;
 
-  const { data: contact, isLoading, isError } = useGetContact(id, { query: { enabled: !!id } });
+  const { data: contact, isLoading, isError } = useGetContact(id, { query: { enabled: !!id, refetchOnMount: "always" } });
   const competitorIds = useCompetitorIds();
   const { data: personalInsights = [] } = useGetContactInsights(id, { query: { enabled: !!id } });
   const { data: industryInsights = [] } = useGetContactIndustryInsights(id, { query: { enabled: !!id } });
@@ -1517,6 +1517,16 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                         {contact.seniority && (
                           <Badge variant="success" className="text-xs">{contact.seniority}</Badge>
                         )}
+                        {contact.liveBuyingCenterSeats?.map(seat => (
+                          <Badge
+                            key={seat}
+                            variant="outline"
+                            className="border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-background dark:text-indigo-300"
+                            title={`Matches ${seat} in your live Buying Center${contact.liveBuyingCenterName ? `, ${contact.liveBuyingCenterName}` : ""}`}
+                          >
+                            Live seat · {seat}
+                          </Badge>
+                        ))}
                         {metaScore != null && (
                           <MetaScoreBadge metaScore={metaScore} />
                         )}

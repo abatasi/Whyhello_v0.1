@@ -111,7 +111,7 @@ export default function CompanyProfile() {
   const id = parseInt(params?.id || "0");
 
   const { data: company, isLoading, isError } = useGetCompany(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id, refetchOnMount: "always" }
   });
   const competitorIds = useCompetitorIds();
   const { data: insights = [] } = useGetCompanyInsights(id, {
@@ -203,6 +203,15 @@ export default function CompanyProfile() {
                   <div>
                     <div className="flex flex-wrap items-center gap-3 mb-2">
                       <h1 className="text-3xl font-display font-bold text-foreground">{company.name}</h1>
+                      {company.liveTargetMarketName && (
+                        <Badge
+                          variant="outline"
+                          className="border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-500/30 dark:bg-background dark:text-teal-300"
+                          title={`Meets all criteria for your live Target Market: ${company.liveTargetMarketName}`}
+                        >
+                          Live Target Market · {company.liveTargetMarketName}
+                        </Badge>
+                      )}
                       {competitorIds.has(id) && <CompetitorBadge />}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-sm">

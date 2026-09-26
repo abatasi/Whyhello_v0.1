@@ -19,5 +19,7 @@ export interface CompanyDetail {
   employeeCount?: number;
   foundedYear?: number;
   linkedinUrl?: string;
+  /** @nullable */
+  liveTargetMarketName: string | null;
   contacts?: ContactSummary[];
 }

@@ -162,18 +162,18 @@ function getInitials(first: string, last: string): string {
 
 const DNA_KEY = "whyhello_dna_v4";
 
-async function persistDnaPatch(patch: (prev: Record<string, unknown>) => Record<string, unknown>) {
-  let dna: Record<string, unknown> = {};
-  try { const raw = localStorage.getItem(DNA_KEY); if (raw) dna = JSON.parse(raw); } catch {}
-  const updated = patch(dna);
-  try { localStorage.setItem(DNA_KEY, JSON.stringify(updated)); } catch {}
-  try {
-    await apiFetch("/api/hq/profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: updated }),
-    });
-  } catch {}
+async function createDnaAudience(
+  type: "buyingCenter" | "targetMarket",
+  audience: BuyingCenterConfig | TargetMarketConfig,
+) {
+  const response = await apiFetch("/api/hq/profile/audiences", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, audience }),
+  });
+  if (!response.ok) throw new Error("Could not save to HQ. Please try again.");
+  const result: { data: Record<string, unknown> } = await response.json();
+  try { localStorage.setItem(DNA_KEY, JSON.stringify(result.data)); } catch { /* server save succeeded */ }
 }
 
 // ── Shared pill toggle ────────────────────────────────────────────────────────
@@ -227,6 +227,7 @@ function CreateTargetMarketModal({
   const [options, setOptions] = useState<{ industries: string[]; companySizes: string[]; locations: string[] }>({ industries: [], companySizes: [], locations: [] });
   const [optLoading, setOptLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -248,18 +249,18 @@ function CreateTargetMarketModal({
 
   async function save() {
     setSaving(true);
+    setSaveError("");
     try {
       const tm: TargetMarketConfig = {
         id: `tm_${Date.now()}`,
         name: name.trim() || "New target market",
         industries, companySizes, locations,
       };
-      await persistDnaPatch(dna => ({
-        ...dna,
-        targetMarkets: [...((dna.targetMarkets as TargetMarketConfig[]) ?? []), tm],
-      }));
+      await createDnaAudience("targetMarket", tm);
       onCreated(tm);
       onClose();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Could not save to HQ. Please try again.");
     } finally { setSaving(false); }
   }
 
@@ -274,6 +275,7 @@ function CreateTargetMarketModal({
             <DialogDescription>
               Define the company criteria for this customer segment. Reflects in HQ once saved.
             </DialogDescription>
+            {saveError && <p role="alert" className="mt-2 text-xs text-destructive">{saveError}</p>}
           </div>
 
           {/* Name */}
@@ -376,6 +378,7 @@ function CreateBuyingCenterModal({
   const [seatConfig, setSeatConfig] = useState<Record<string, { seniorities: string[]; departments: string[] }>>({});
   const [expandedSeat, setExpandedSeat] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -413,6 +416,7 @@ function CreateBuyingCenterModal({
 
   async function save() {
     setSaving(true);
+    setSaveError("");
     try {
       const seats: BuyingCenterSeat[] = BUYING_CENTER_SEATS.map(def => ({
         seat: def.seat,
@@ -420,12 +424,11 @@ function CreateBuyingCenterModal({
         departments: selectedSeats.includes(def.seat) ? (seatConfig[def.seat]?.departments ?? []) : [],
       }));
       const bc: BuyingCenterConfig = { id: `bc_${Date.now()}`, name: name.trim() || "New buying center", seats };
-      await persistDnaPatch(dna => ({
-        ...dna,
-        buyingCenters: [...((dna.buyingCenters as BuyingCenterConfig[]) ?? []), bc],
-      }));
+      await createDnaAudience("buyingCenter", bc);
       onCreated(bc);
       onClose();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Could not save to HQ. Please try again.");
     } finally { setSaving(false); }
   }
 
@@ -438,6 +441,7 @@ function CreateBuyingCenterModal({
           <div className="pr-6 flex items-start justify-between gap-4">
             <div>
               <DialogTitle>New Buying Center</DialogTitle>
+              {saveError && <p role="alert" className="mt-2 text-xs text-destructive">{saveError}</p>}
               <DialogDescription>
                 {step === 1
                   ? "Name this buying center and select the seats that matter for your deals."
@@ -642,11 +646,13 @@ function ContactAvatar({ contact, size = "md" }: { contact: Contact; size?: "sm"
 function BuyingCenterSelector({
   buyingCenters,
   selectedId,
+  liveId,
   onSelect,
   onCreateNew,
 }: {
   buyingCenters: BuyingCenterConfig[];
   selectedId: string;
+  liveId: string | null;
   onSelect: (id: string) => void;
   onCreateNew: () => void;
 }) {
@@ -693,6 +699,7 @@ function BuyingCenterSelector({
                   <p className="text-sm font-medium text-foreground">{bc.name}</p>
                   <p className="text-[10px] text-muted-foreground">{configuredCount} seat{configuredCount !== 1 ? "s" : ""} configured</p>
                 </div>
+                {bc.id === liveId && <span className="text-[10px] font-bold uppercase text-indigo-700">Live</span>}
                 {bc.id === selectedId && <Check className="h-3.5 w-3.5 text-indigo-600 flex-shrink-0" />}
               </button>
             );
@@ -714,11 +721,13 @@ function BuyingCenterSelector({
 function TargetMarketSelector({
   targetMarkets,
   selectedId,
+  liveId,
   onSelect,
   onCreateNew,
 }: {
   targetMarkets: TargetMarketConfig[];
   selectedId: string;
+  liveId: string | null;
   onSelect: (id: string) => void;
   onCreateNew: () => void;
 }) {
@@ -786,6 +795,7 @@ function TargetMarketSelector({
                     {count > 0 ? `${count} filter criterion${count !== 1 ? "a" : ""}` : "No criteria defined"}
                   </p>
                 </div>
+                {tm.id === liveId && <span className="text-[10px] font-bold uppercase text-teal-700">Live</span>}
                 {tm.id === selectedId && <Check className="h-3.5 w-3.5 text-teal-600 flex-shrink-0" />}
               </button>
             );
@@ -875,7 +885,10 @@ export default function MultiThreading() {
   const [selectedBcId, setSelectedBcId] = useState<string>("");
   const [targetMarkets, setTargetMarkets] = useState<TargetMarketConfig[]>([]);
   const [selectedTmId, setSelectedTmId] = useState<string>("");
+  const [liveBcId, setLiveBcId] = useState<string | null>(null);
+  const [liveTmId, setLiveTmId] = useState<string | null>(null);
   const [dnaLoaded, setDnaLoaded] = useState(false);
+  const [dnaError, setDnaError] = useState(false);
   const [createTmOpen, setCreateTmOpen] = useState(false);
   const [createBcOpen, setCreateBcOpen] = useState(false);
 
@@ -909,6 +922,8 @@ export default function MultiThreading() {
       buyingCenters?: BuyingCenterConfig[];
       buyingCenter?: BuyingCenterSeat[];
       targetMarkets?: TargetMarketConfig[];
+      liveBuyingCenterId?: string | null;
+      liveTargetMarketId?: string | null;
     };
 
     function applyDna(d: StoredShape) {
@@ -916,25 +931,35 @@ export default function MultiThreading() {
         ? d.buyingCenters
         : d.buyingCenter ? [{ id: "default", name: "Default", seats: d.buyingCenter }] : [];
       const tms: TargetMarketConfig[] = d.targetMarkets ?? [];
-      if (bcs.length > 0) { setBuyingCenters(bcs); setSelectedBcId(bcs[0].id); }
-      if (tms.length > 0) { setTargetMarkets(tms); }
+      setBuyingCenters(bcs);
+      setTargetMarkets(tms);
+      const liveBc = bcs.find(bc => bc.id === d.liveBuyingCenterId)?.id ?? null;
+      const liveTm = tms.find(tm => tm.id === d.liveTargetMarketId)?.id ?? null;
+      setLiveBcId(liveBc);
+      setLiveTmId(liveTm);
+      setSelectedBcId(liveBc ?? bcs[0]?.id ?? "");
+      setSelectedTmId(liveTm ?? "");
       setDnaLoaded(true);
     }
 
-    // Primary: localStorage (always in sync with DNA page)
-    try {
-      const raw = localStorage.getItem("whyhello_dna_v4");
-      if (raw) { applyDna(JSON.parse(raw) as StoredShape); return; }
-    } catch {}
-
-    // Fallback: API
+    // The server profile is user-scoped; localStorage might belong to a
+    // previous session and must not determine which audience is live.
     apiFetch("/api/hq/profile")
-      .then(r => r.ok ? r.json() : null)
-      .then((json: { data?: StoredShape } | null) => {
-        if (json?.data) applyDna(json.data);
-        else setDnaLoaded(true);
+      .then(r => {
+        if (!r.ok) throw new Error("Could not load HQ profile");
+        return r.json();
       })
-      .catch(() => setDnaLoaded(true));
+      .then((json: { data?: StoredShape } | null) => {
+        if (json?.data) {
+          try { localStorage.setItem("whyhello_dna_v4", JSON.stringify(json.data)); } catch { /* server is authoritative */ }
+          applyDna(json.data);
+        }
+        else {
+          try { localStorage.removeItem("whyhello_dna_v4"); } catch { /* server is authoritative */ }
+          setDnaLoaded(true);
+        }
+      })
+      .catch(() => { setDnaError(true); setDnaLoaded(true); });
   }, []);
 
   // ── Load company list whenever the TM filter changes ──
@@ -1053,12 +1078,16 @@ export default function MultiThreading() {
             </div>
 
             {/* Target market selector */}
-            {dnaLoaded && (
+            {dnaError && (
+              <p role="alert" className="text-xs text-destructive">Could not load your HQ profile. Reload to select or create an audience.</p>
+            )}
+            {dnaLoaded && !dnaError && (
               <div className="flex flex-col gap-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Target Market</p>
                 <TargetMarketSelector
                   targetMarkets={targetMarkets}
                   selectedId={selectedTmId}
+                  liveId={liveTmId}
                   onSelect={id => setSelectedTmId(id)}
                   onCreateNew={() => setCreateTmOpen(true)}
                 />
@@ -1066,16 +1095,22 @@ export default function MultiThreading() {
             )}
 
             {/* Buying center selector */}
-            {dnaLoaded && (
+            {dnaLoaded && !dnaError && (
               <div className="flex flex-col gap-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Buying Center</p>
                 <BuyingCenterSelector
                   buyingCenters={buyingCenters}
                   selectedId={selectedBcId}
+                  liveId={liveBcId}
                   onSelect={id => { setSelectedBcId(id); setActiveTabSeat(null); setOverrides({}); }}
                   onCreateNew={() => setCreateBcOpen(true)}
                 />
               </div>
+            )}
+            {dnaLoaded && !dnaError && (
+              <p className="text-[11px] text-muted-foreground">
+                These selectors change this view only. Set the live Buying Center and Target Market in HQ to power badges across Whyhello.
+              </p>
             )}
 
           </div>

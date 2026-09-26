@@ -21,5 +21,8 @@ export interface ContactDetail {
   linkedinUrl?: string;
   twitterHandle?: string;
   bio?: string;
+  /** @nullable */
+  liveBuyingCenterName: string | null;
+  liveBuyingCenterSeats: string[];
   company?: CompanySummary;
 }

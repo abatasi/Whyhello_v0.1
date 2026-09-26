@@ -37,6 +37,36 @@ export const PreviewEnrichmentResponse = zod.object({
 });
 
 /**
+ * @summary Create a Buying Center or Target Market without replacing the current HQ profile
+ */
+export const CreateHqAudienceBody = zod.union([
+  zod.object({
+    type: zod.enum(["buyingCenter"]),
+    audience: zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      seats: zod.array(
+        zod.object({
+          seat: zod.string(),
+          seniorities: zod.array(zod.string()),
+          departments: zod.array(zod.string()),
+        }),
+      ),
+    }),
+  }),
+  zod.object({
+    type: zod.enum(["targetMarket"]),
+    audience: zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      industries: zod.array(zod.string()),
+      companySizes: zod.array(zod.string()),
+      locations: zod.array(zod.string()),
+    }),
+  }),
+]);
+
+/**
  * @summary Confirm enrichment and spend credits on new reveals
  */
 
@@ -141,6 +171,8 @@ export const GetContactResponse = zod.object({
   linkedinUrl: zod.string().optional(),
   twitterHandle: zod.string().optional(),
   bio: zod.string().optional(),
+  liveBuyingCenterName: zod.string().nullable(),
+  liveBuyingCenterSeats: zod.array(zod.string()),
   company: zod
     .object({
       id: zod.number(),
@@ -387,6 +419,7 @@ export const GetCompanyResponse = zod.object({
   employeeCount: zod.number().optional(),
   foundedYear: zod.number().optional(),
   linkedinUrl: zod.string().optional(),
+  liveTargetMarketName: zod.string().nullable(),
   contacts: zod
     .array(
       zod.object({

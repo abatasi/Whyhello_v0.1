@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/apiFetch";
 import { useBuyingCenterRoles } from "@/hooks/useBuyingCenterRoles";
 import { useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Shell } from "@/components/layout/Shell";
 import { cn } from "@/lib/utils";
 import {
@@ -69,6 +70,8 @@ function mergeTargetMarkets(
 
 function mergeDNA(parsed: StoredDNA): DNAData {
   const d = defaultDNA();
+  const buyingCenters = mergeBuyingCenters(parsed.buyingCenters, parsed.buyingCenter);
+  const targetMarkets = mergeTargetMarkets(parsed.targetMarkets, parsed.targetMarket);
   return {
     ...d,
     ...parsed,
@@ -96,8 +99,10 @@ function mergeDNA(parsed: StoredDNA): DNAData {
       // Migrate legacy records that predate companyId
       companyId: c.companyId ?? null,
     })),
-    buyingCenters: mergeBuyingCenters(parsed.buyingCenters, parsed.buyingCenter),
-    targetMarkets: mergeTargetMarkets(parsed.targetMarkets, parsed.targetMarket),
+    buyingCenters,
+    targetMarkets,
+    liveBuyingCenterId: buyingCenters.some(bc => bc.id === parsed.liveBuyingCenterId) ? parsed.liveBuyingCenterId! : null,
+    liveTargetMarketId: targetMarkets.some(tm => tm.id === parsed.liveTargetMarketId) ? parsed.liveTargetMarketId! : null,
   };
 }
 
@@ -476,6 +481,8 @@ type StoredDNA = Partial<DNAData> & {
 };
 
 interface DNAData {
+  liveBuyingCenterId: string | null;
+  liveTargetMarketId: string | null;
   voice: {
     toneTags: string[];
     communicationStyle: string;
@@ -501,6 +508,8 @@ interface DNAData {
 
 function defaultDNA(): DNAData {
   return {
+    liveBuyingCenterId: null,
+    liveTargetMarketId: null,
     voice: {
       toneTags: [],
       communicationStyle: "balanced",
@@ -604,28 +613,61 @@ const COLOR_MAP: Record<string, {
 
 // ── Auto-save hook ───────────────────────────────────────────────────────────
 
-function useAutoSave(data: DNAData) {
+function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<string>) {
+  const queryClient = useQueryClient();
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout>>();
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  const saveVersion = useRef(0);
+  const hydrated = useRef(false);
 
   useEffect(() => {
+    if (!ready) return;
+    // The server GET populates data; it is not a user edit and needs no PUT.
+    if (!hydrated.current) {
+      hydrated.current = true;
+      return;
+    }
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(async () => {
+    const version = ++saveVersion.current;
+    setSaved(false);
+    timer.current = setTimeout(() => {
       saveDNA(data);
-      try {
-        await apiFetch(API_PROFILE_URL, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data }),
-        });
-      } catch { /* localStorage save already succeeded — API failure is non-fatal */ }
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1800);
+      // Profile PUT replaces the whole JSON document. Serialize in-flight
+      // writes so a slower, older response cannot overwrite the latest choice.
+      saveQueue.current = saveQueue.current.then(async () => {
+        try {
+          const response = await apiFetch(API_PROFILE_URL, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", "X-Profile-Revision": revision.current ?? "new" },
+            body: JSON.stringify({ data }),
+          });
+          if (!response.ok) {
+            throw new Error(response.status === 409
+              ? "Profile changed elsewhere — reload HQ to continue"
+              : "Not synced — edit to retry");
+          }
+          const result: { revision: string } = await response.json();
+          revision.current = result.revision;
+          if (version !== saveVersion.current) return;
+          setSaveError("");
+          setSaved(true);
+          void queryClient.invalidateQueries({
+            predicate: query => typeof query.queryKey[0] === "string" &&
+              /^\/api\/(contacts|companies)\/\d+$/.test(query.queryKey[0]),
+          });
+          void queryClient.invalidateQueries({ queryKey: ["/api/home/top-buyers"] });
+          setTimeout(() => setSaved(false), 1800);
+        } catch (error) {
+          if (version === saveVersion.current) setSaveError(error instanceof Error ? error.message : "Not synced — edit to retry");
+        }
+      });
     }, 600);
     return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [data]);
+  }, [data, ready, queryClient, revision]);
 
-  return saved;
+  return { saved, saveError };
 }
 
 // ── Section wrapper ──────────────────────────────────────────────────────────
@@ -2038,19 +2080,30 @@ export default function HQ() {
   const { names: roleOptions, loading: rolesLoading, error: rolesError } = useBuyingCenterRoles();
   const wartime = mode === "wartime";
   const [data, setData] = useState<DNAData>(loadDNA);
-  const saved = useAutoSave(data);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [profileLoadError, setProfileLoadError] = useState(false);
+  const profileRevision = useRef("new");
+  const { saved, saveError } = useAutoSave(data, profileLoaded && !profileLoadError, profileRevision);
 
   // Load from server on mount — server is the source of truth; localStorage is the fast startup cache
   useEffect(() => {
     let cancelled = false;
     apiFetch(API_PROFILE_URL)
-      .then(r => (r.ok ? r.json() : null))
-      .then((json: { data: StoredDNA } | null) => {
-        if (!cancelled && json?.data) {
-          setData(mergeDNA(json.data));
+      .then(r => {
+        if (!r.ok) throw new Error("Could not load HQ profile");
+        return r.json();
+      })
+      .then((json: { data: StoredDNA | null; revision: string }) => {
+        if (!cancelled) {
+          profileRevision.current = json.revision;
+          if (!json?.data) {
+            try { localStorage.removeItem(STORAGE_KEY); } catch { /* server is authoritative */ }
+          }
+          setData(json?.data ? mergeDNA(json.data) : defaultDNA());
+          setProfileLoaded(true);
         }
       })
-      .catch(() => { /* not authenticated or API unavailable — localStorage data is fine */ });
+      .catch(() => { if (!cancelled) setProfileLoadError(true); });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -2151,7 +2204,11 @@ export default function HQ() {
   function removeBuyingCenter(id: string) {
     const remaining = data.buyingCenters.filter(bc => bc.id !== id);
     if (remaining.length === 0) return;
-    setData(d => ({ ...d, buyingCenters: d.buyingCenters.filter(bc => bc.id !== id) }));
+    setData(d => ({
+      ...d,
+      buyingCenters: d.buyingCenters.filter(bc => bc.id !== id),
+      liveBuyingCenterId: d.liveBuyingCenterId === id ? null : d.liveBuyingCenterId,
+    }));
     if (activeBuyingCenterId === id) setActiveBuyingCenterId(remaining[0].id);
   }
 
@@ -2207,7 +2264,11 @@ export default function HQ() {
   }
   function removeTargetMarket(id: string) {
     const remaining = data.targetMarkets.filter(tm => tm.id !== id);
-    setData(d => ({ ...d, targetMarkets: d.targetMarkets.filter(tm => tm.id !== id) }));
+    setData(d => ({
+      ...d,
+      targetMarkets: d.targetMarkets.filter(tm => tm.id !== id),
+      liveTargetMarketId: d.liveTargetMarketId === id ? null : d.liveTargetMarketId,
+    }));
     if (activeTargetMarketId === id) setActiveTargetMarketId(remaining[0]?.id ?? "");
   }
   function renameTargetMarket(id: string, name: string) {
@@ -2414,17 +2475,19 @@ export default function HQ() {
           </div>
           <div className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-semibold border transition-all duration-300",
-            saved
+            saveError || profileLoadError
+              ? "text-destructive bg-destructive/10 border-destructive/30"
+              : saved
               ? "text-emerald-700 bg-emerald-50 border-emerald-200"
               : "text-muted-foreground bg-secondary border-border/50"
-          )}>
-            {saved ? <CheckCircle2 className="h-3 w-3" /> : <Save className="h-3 w-3" />}
-            {saved ? "Saved" : "Auto-saving"}
+          )} role={saveError || profileLoadError ? "alert" : "status"}>
+            {saved && !saveError ? <CheckCircle2 className="h-3 w-3" /> : <Save className="h-3 w-3" />}
+            {profileLoadError ? "Profile unavailable — reload to retry" : !profileLoaded ? "Loading HQ…" : saveError || (saved ? "Saved" : "Auto-saving")}
           </div>
         </div>
 
         {/* Two-column body */}
-        <div className="flex gap-6 items-start">
+        <div className="flex gap-6 items-start" inert={!profileLoaded || profileLoadError} aria-busy={!profileLoaded}>
 
           {/* Left sidebar nav */}
           <nav className="w-56 flex-shrink-0 sticky top-0 flex flex-col gap-0.5 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
@@ -3102,6 +3165,17 @@ export default function HQ() {
           accentBorder="border-indigo-200"
           accentColor="text-indigo-600"
         >
+          <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-background px-4 py-3 mb-4">
+            <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">Choose one live Buying Center</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              The live Buying Center powers seat badges on contact profiles and other platform features. Opening a tab only edits it; use “Make live” to connect it. No badges appear until a seat has matching criteria.
+            </p>
+            <p className="text-xs font-medium mt-2 text-indigo-700 dark:text-indigo-300">
+              {data.buyingCenters.find(bc => bc.id === data.liveBuyingCenterId)?.name
+                ? `Live now: ${data.buyingCenters.find(bc => bc.id === data.liveBuyingCenterId)?.name}`
+                : "No live Buying Center selected"}
+            </p>
+          </div>
           {data.buyingCenters.length === 0 ? (
             <div className="flex flex-col items-center gap-4 py-14 text-center">
               <div className="h-12 w-12 rounded-2xl bg-indigo-100 border border-indigo-200 flex items-center justify-center">
@@ -3159,6 +3233,9 @@ export default function HQ() {
                         {bc.name}
                       </button>
                     )}
+                    {data.liveBuyingCenterId === bc.id && (
+                      <span className="rounded-full bg-indigo-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Live</span>
+                    )}
                     {data.buyingCenters.length > 1 && !renamingBcId && (
                       <button
                         onClick={e => { e.stopPropagation(); removeBuyingCenter(bc.id); }}
@@ -3178,6 +3255,28 @@ export default function HQ() {
                 </button>
               </div>
 
+              {activeBc && (
+                <div className="flex items-center justify-between gap-3 mb-4 rounded-xl border border-border/60 px-3 py-2">
+                  <span className="text-xs text-muted-foreground">
+                    {data.liveBuyingCenterId === activeBc.id ? "This Buying Center is live across the platform." : "This Buying Center is a draft until you make it live."}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={!profileLoaded || profileLoadError}
+                    aria-pressed={data.liveBuyingCenterId === activeBc.id}
+                    onClick={() => setData(d => ({
+                      ...d,
+                      liveBuyingCenterId: d.liveBuyingCenterId === activeBc.id ? null : activeBc.id,
+                    }))}
+                    className={cn("shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      data.liveBuyingCenterId === activeBc.id
+                        ? "border-indigo-300 bg-indigo-100 text-indigo-800 hover:bg-indigo-50 dark:bg-background dark:text-indigo-300"
+                        : "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700")}
+                  >
+                    {data.liveBuyingCenterId === activeBc.id ? "Remove live" : "Make live"}
+                  </button>
+                </div>
+              )}
               {activeSeat && activeBc && (
                 <BuyingCenterModal
                   seatName={activeSeat}
@@ -3217,6 +3316,17 @@ export default function HQ() {
             accentBorder="border-teal-200"
             accentColor="text-teal-600"
           >
+            <div className="rounded-xl border border-teal-200 dark:border-teal-500/30 bg-teal-50 dark:bg-background px-4 py-3 mb-4">
+              <p className="text-sm font-semibold text-teal-800 dark:text-teal-300">Choose one live Target Market</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                The live Target Market identifies companies that meet all its configured criteria and powers company badges and other platform features. Opening a tab only edits it; use “Make live” to connect it. Add at least one criterion to get matches.
+              </p>
+              <p className="text-xs font-medium mt-2 text-teal-700 dark:text-teal-300">
+                {data.targetMarkets.find(tm => tm.id === data.liveTargetMarketId)?.name
+                  ? `Live now: ${data.targetMarkets.find(tm => tm.id === data.liveTargetMarketId)?.name}`
+                  : "No live Target Market selected"}
+              </p>
+            </div>
             {data.targetMarkets.length === 0 ? (
               <div className="flex flex-col items-center gap-4 py-14 text-center">
                 <div className="h-12 w-12 rounded-2xl bg-teal-100 border border-teal-200 flex items-center justify-center">
@@ -3280,6 +3390,9 @@ export default function HQ() {
                       {tm.name}
                     </button>
                   )}
+                  {data.liveTargetMarketId === tm.id && (
+                    <span className="rounded-full bg-teal-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Live</span>
+                  )}
                   {data.targetMarkets.length > 1 && !renamingTmId && (
                     <button
                       onClick={e => { e.stopPropagation(); removeTargetMarket(tm.id); }}
@@ -3301,6 +3414,26 @@ export default function HQ() {
 
             {activeTm && (
               <>
+                <div className="flex items-center justify-between gap-3 mb-4 rounded-xl border border-border/60 px-3 py-2">
+                  <span className="text-xs text-muted-foreground">
+                    {data.liveTargetMarketId === activeTm.id ? "This Target Market is live across the platform." : "This Target Market is a draft until you make it live."}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={!profileLoaded || profileLoadError}
+                    aria-pressed={data.liveTargetMarketId === activeTm.id}
+                    onClick={() => setData(d => ({
+                      ...d,
+                      liveTargetMarketId: d.liveTargetMarketId === activeTm.id ? null : activeTm.id,
+                    }))}
+                    className={cn("shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      data.liveTargetMarketId === activeTm.id
+                        ? "border-teal-300 bg-teal-100 text-teal-800 hover:bg-teal-50 dark:bg-background dark:text-teal-300"
+                        : "border-teal-600 bg-teal-600 text-white hover:bg-teal-700")}
+                  >
+                    {data.liveTargetMarketId === activeTm.id ? "Remove live" : "Make live"}
+                  </button>
+                </div>
                 {renamingTmId === activeTm.id ? (
                   <div className="flex flex-col items-center gap-3 py-12 text-center rounded-xl border border-dashed border-border/60 bg-secondary/20">
                     <div className="h-10 w-10 rounded-xl bg-teal-100/70 border border-teal-200/60 flex items-center justify-center">

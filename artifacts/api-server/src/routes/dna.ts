@@ -2,13 +2,21 @@ import { Router, type IRouter, type Request } from "express";
 import multer from "multer";
 import mammoth from "mammoth";
 import { createRequire } from "module";
+import { createHash } from "node:crypto";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { db } from "@workspace/db";
 import { dnaProfilesTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
+import { CreateHqAudienceBody } from "@workspace/api-zod";
+import {
+  appendAudienceToProfile,
+  parseDnaProfile,
+  validateAudienceRequest,
+} from "../lib/live-audience";
 
 const require = createRequire(import.meta.url);
+const profileRevision = (data: string) => createHash("md5").update(data).digest("hex");
 
 function getUserId(req: Request): string | null {
   const auth = getAuth(req);
@@ -50,7 +58,7 @@ router.get("/profile", async (req, res) => {
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   try {
     const [row] = await db.select().from(dnaProfilesTable).where(eq(dnaProfilesTable.userId, userId));
-    res.json({ data: row ? JSON.parse(row.data) : null });
+    res.json({ data: row ? JSON.parse(row.data) : null, revision: row ? profileRevision(row.data) : "new" });
   } catch (err) {
     console.error("DNA profile GET error:", err);
     res.status(500).json({ error: "Failed to load DNA profile" });
@@ -66,6 +74,36 @@ router.put("/profile", async (req, res) => {
   if (!data) { res.status(400).json({ error: "No data provided" }); return; }
   try {
     const serialised = JSON.stringify(data);
+    const expectedRevision = req.header("X-Profile-Revision");
+    if (expectedRevision) {
+      if (expectedRevision === "new") {
+        const inserted = await db.insert(dnaProfilesTable)
+          .values({ userId, data: serialised, updatedAt: new Date() })
+          .onConflictDoNothing({ target: dnaProfilesTable.userId })
+          .returning({ userId: dnaProfilesTable.userId });
+        if (!inserted.length) {
+          res.status(409).json({ error: "HQ profile changed. Reload before saving." });
+          return;
+        }
+      } else if (/^[a-f0-9]{32}$/.test(expectedRevision)) {
+        const updated = await db.update(dnaProfilesTable)
+          .set({ data: serialised, updatedAt: new Date() })
+          .where(and(
+            eq(dnaProfilesTable.userId, userId),
+            sql`md5(${dnaProfilesTable.data}) = ${expectedRevision}`,
+          ))
+          .returning({ userId: dnaProfilesTable.userId });
+        if (!updated.length) {
+          res.status(409).json({ error: "HQ profile changed. Reload before saving." });
+          return;
+        }
+      } else {
+        res.status(400).json({ error: "Invalid HQ profile revision" });
+        return;
+      }
+      res.json({ ok: true, revision: profileRevision(serialised) });
+      return;
+    }
     await db
       .insert(dnaProfilesTable)
       .values({ userId, data: serialised, updatedAt: new Date() })
@@ -73,10 +111,70 @@ router.put("/profile", async (req, res) => {
         target: dnaProfilesTable.userId,
         set: { data: serialised, updatedAt: new Date() },
       });
-    res.json({ ok: true });
+    res.json({ ok: true, revision: profileRevision(serialised) });
   } catch (err) {
     console.error("DNA profile PUT error:", err);
     res.status(500).json({ error: "Failed to save DNA profile" });
+  }
+});
+
+// ── POST /api/hq/profile/audiences ────────────────────────────────────────────
+
+router.post("/profile/audiences", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+
+  const parsed = CreateHqAudienceBody.safeParse(req.body);
+  const audienceRequest = parsed.success ? validateAudienceRequest(parsed.data) : null;
+  if (!audienceRequest) {
+    res.status(400).json({ error: "Invalid audience configuration" });
+    return;
+  }
+
+  try {
+    const outcome = await db.transaction(async (tx) => {
+      await tx
+        .insert(dnaProfilesTable)
+        .values({ userId, data: "{}" })
+        .onConflictDoNothing({ target: dnaProfilesTable.userId });
+
+      const [row] = await tx
+        .select({ data: dnaProfilesTable.data })
+        .from(dnaProfilesTable)
+        .where(eq(dnaProfilesTable.userId, userId))
+        .for("update");
+      if (!row) return { kind: "error" as const, status: 500, error: "Failed to load current profile" };
+
+      const profile = parseDnaProfile(row.data);
+      if (!profile) {
+        return { kind: "error" as const, status: 500, error: "Stored HQ profile is invalid" };
+      }
+
+      let updatedProfile;
+      try {
+        updatedProfile = appendAudienceToProfile(profile, audienceRequest);
+      } catch {
+        return { kind: "error" as const, status: 500, error: "Stored HQ profile audiences are invalid" };
+      }
+      if (!updatedProfile) {
+        return { kind: "error" as const, status: 409, error: "Audience ID already exists" };
+      }
+
+      await tx
+        .update(dnaProfilesTable)
+        .set({ data: JSON.stringify(updatedProfile), updatedAt: new Date() })
+        .where(eq(dnaProfilesTable.userId, userId));
+      return { kind: "success" as const, profile: updatedProfile };
+    });
+
+    if (outcome.kind === "error") {
+      res.status(outcome.status).json({ error: outcome.error });
+      return;
+    }
+    res.status(201).json({ data: outcome.profile });
+  } catch (err) {
+    console.error("HQ audience creation error:", err);
+    res.status(500).json({ error: "Failed to create audience" });
   }
 });
 

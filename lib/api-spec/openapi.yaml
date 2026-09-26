@@ -13,6 +13,8 @@ tags:
     description: Contact operations
   - name: companies
     description: Company operations
+  - name: hq
+    description: HQ profile operations
 
 paths:
   /healthz:
@@ -47,6 +49,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EnrichmentPreview"
+
+  /hq/profile/audiences:
+    post:
+      operationId: createHqAudience
+      tags: [hq]
+      summary: Create a Buying Center or Target Market without replacing the current HQ profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HqAudienceInput"
+      responses:
+        "201":
+          description: Audience created and appended to the current user's HQ profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HqAudienceResponse"
+        "400":
+          description: Invalid audience configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Audience ID already exists for this user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Stored profile is invalid or the request could not be completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /credits/enrich:
     post:
@@ -567,6 +612,109 @@ paths:
 
 components:
   schemas:
+    HqAudienceInput:
+      oneOf:
+        - $ref: "#/components/schemas/HqBuyingCenterAudienceInput"
+        - $ref: "#/components/schemas/HqTargetMarketAudienceInput"
+      discriminator:
+        propertyName: type
+        mapping:
+          buyingCenter: "#/components/schemas/HqBuyingCenterAudienceInput"
+          targetMarket: "#/components/schemas/HqTargetMarketAudienceInput"
+
+    HqBuyingCenterAudienceInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [buyingCenter]
+        audience:
+          $ref: "#/components/schemas/HqBuyingCenterConfig"
+      required:
+        - type
+        - audience
+
+    HqTargetMarketAudienceInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [targetMarket]
+        audience:
+          $ref: "#/components/schemas/HqTargetMarketConfig"
+      required:
+        - type
+        - audience
+
+    HqBuyingCenterConfig:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        seats:
+          type: array
+          items:
+            $ref: "#/components/schemas/HqBuyingCenterSeatConfig"
+      required:
+        - id
+        - name
+        - seats
+
+    HqBuyingCenterSeatConfig:
+      type: object
+      properties:
+        seat:
+          type: string
+        seniorities:
+          type: array
+          items:
+            type: string
+        departments:
+          type: array
+          items:
+            type: string
+      required:
+        - seat
+        - seniorities
+        - departments
+
+    HqTargetMarketConfig:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        industries:
+          type: array
+          items:
+            type: string
+        companySizes:
+          type: array
+          items:
+            type: string
+        locations:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - name
+        - industries
+        - companySizes
+        - locations
+
+    HqAudienceResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+      required:
+        - data
+
     HealthStatus:
       type: object
       properties:
@@ -874,12 +1022,20 @@ components:
           type: string
         bio:
           type: string
+        liveBuyingCenterName:
+          type: ["string", "null"]
+        liveBuyingCenterSeats:
+          type: array
+          items:
+            type: string
         company:
           $ref: "#/components/schemas/CompanySummary"
       required:
         - id
         - firstName
         - lastName
+        - liveBuyingCenterName
+        - liveBuyingCenterSeats
 
     CompanySummary:
       type: object
@@ -941,6 +1097,8 @@ components:
           type: integer
         linkedinUrl:
           type: string
+        liveTargetMarketName:
+          type: ["string", "null"]
         contacts:
           type: array
           items:
@@ -948,6 +1106,7 @@ components:
       required:
         - id
         - name
+        - liveTargetMarketName
 
     EnrichmentPreviewInput:
       type: object

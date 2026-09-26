@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { contactsTable, companiesTable, contactInsightsTable, contactMetaScoresTable, listsTable, rolesTable } from "@workspace/db/schema";
+import { contactsTable, companiesTable, contactInsightsTable, contactMetaScoresTable, listsTable, rolesTable, dnaProfilesTable } from "@workspace/db/schema";
 import { GetContactParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL, asc, desc } from "drizzle-orm";
+import { matchingBuyingCenterSeats, parseDnaProfile, selectedBuyingCenter } from "../lib/live-audience";
 
 const router: IRouter = Router();
 
@@ -222,6 +223,8 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const { id } = GetContactParams.parse(req.params);
+    const auth = getAuth(req);
+    const uid = (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId;
 
     const rows = await db
       .select({
@@ -248,9 +251,11 @@ router.get("/:id", async (req, res) => {
         companyDescription: companiesTable.description,
         companyEmployeeCount: companiesTable.employeeCount,
         companyFoundedYear: companiesTable.foundedYear,
+        roleName: rolesTable.name,
       })
       .from(contactsTable)
       .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
+      .leftJoin(rolesTable, eq(contactsTable.roleId, rolesTable.id))
       .where(eq(contactsTable.id, id))
       .limit(1);
 
@@ -260,6 +265,24 @@ router.get("/:id", async (req, res) => {
     }
 
     const row = rows[0];
+    let liveBuyingCenterName: string | null = null;
+    let liveBuyingCenterSeats: string[] = [];
+    if (uid) {
+      const [profileRow] = await db
+        .select({ data: dnaProfilesTable.data })
+        .from(dnaProfilesTable)
+        .where(eq(dnaProfilesTable.userId, uid))
+        .limit(1);
+      const buyingCenter = selectedBuyingCenter(profileRow ? parseDnaProfile(profileRow.data) : null);
+      if (buyingCenter) {
+        liveBuyingCenterName = typeof buyingCenter.name === "string" ? buyingCenter.name : null;
+        liveBuyingCenterSeats = matchingBuyingCenterSeats(buyingCenter, {
+          roleName: row.roleName,
+          department: row.department,
+          seniority: row.seniority,
+        });
+      }
+    }
     const contact = {
       id: row.id,
       firstName: row.firstName,
@@ -274,6 +297,8 @@ router.get("/:id", async (req, res) => {
       linkedinUrl: row.linkedinUrl,
       twitterHandle: row.twitterHandle,
       bio: row.bio,
+      liveBuyingCenterName,
+      liveBuyingCenterSeats,
       company: row.companyId
         ? {
             id: row.companyId,

@@ -5,6 +5,60 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+export type HqBuyingCenterAudienceInputType =
+  (typeof HqBuyingCenterAudienceInputType)[keyof typeof HqBuyingCenterAudienceInputType];
+
+export const HqBuyingCenterAudienceInputType = {
+  buyingCenter: "buyingCenter",
+} as const;
+
+export interface HqBuyingCenterSeatConfig {
+  seat: string;
+  seniorities: string[];
+  departments: string[];
+}
+
+export interface HqBuyingCenterConfig {
+  id: string;
+  name: string;
+  seats: HqBuyingCenterSeatConfig[];
+}
+
+export interface HqBuyingCenterAudienceInput {
+  type: HqBuyingCenterAudienceInputType;
+  audience: HqBuyingCenterConfig;
+}
+
+export type HqTargetMarketAudienceInputType =
+  (typeof HqTargetMarketAudienceInputType)[keyof typeof HqTargetMarketAudienceInputType];
+
+export const HqTargetMarketAudienceInputType = {
+  targetMarket: "targetMarket",
+} as const;
+
+export interface HqTargetMarketConfig {
+  id: string;
+  name: string;
+  industries: string[];
+  companySizes: string[];
+  locations: string[];
+}
+
+export interface HqTargetMarketAudienceInput {
+  type: HqTargetMarketAudienceInputType;
+  audience: HqTargetMarketConfig;
+}
+
+export type HqAudienceInput =
+  | HqBuyingCenterAudienceInput
+  | HqTargetMarketAudienceInput;
+
+export type HqAudienceResponseData = { [key: string]: unknown };
+
+export interface HqAudienceResponse {
+  data: HqAudienceResponseData;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -147,6 +201,9 @@ export interface ContactDetail {
   linkedinUrl?: string;
   twitterHandle?: string;
   bio?: string;
+  /** @nullable */
+  liveBuyingCenterName: string | null;
+  liveBuyingCenterSeats: string[];
   company?: CompanySummary;
 }
 
@@ -166,6 +223,8 @@ export interface CompanyDetail {
   employeeCount?: number;
   foundedYear?: number;
   linkedinUrl?: string;
+  /** @nullable */
+  liveTargetMarketName: string | null;
   contacts?: ContactSummary[];
 }
 

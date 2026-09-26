@@ -1,10 +1,11 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { contactsTable, companiesTable, listsTable, rolesTable } from "@workspace/db/schema";
+import { contactsTable, companiesTable, listsTable, rolesTable, dnaProfilesTable } from "@workspace/db/schema";
 import { GetCompanyParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL } from "drizzle-orm";
 import { companyInsightsTable } from "@workspace/db/schema";
+import { parseDnaProfile, selectedTargetMarket, targetMarketMatchesCompany } from "../lib/live-audience";
 
 const router: IRouter = Router();
 
@@ -167,6 +168,8 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const { id } = GetCompanyParams.parse(req.params);
+    const auth = getAuth(req);
+    const uid = (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId;
 
     const [company] = await db
       .select()
@@ -177,6 +180,19 @@ router.get("/:id", async (req, res) => {
     if (!company) {
       res.status(404).json({ error: "Company not found" });
       return;
+    }
+
+    let liveTargetMarketName: string | null = null;
+    if (uid) {
+      const [profileRow] = await db
+        .select({ data: dnaProfilesTable.data })
+        .from(dnaProfilesTable)
+        .where(eq(dnaProfilesTable.userId, uid))
+        .limit(1);
+      const market = selectedTargetMarket(profileRow ? parseDnaProfile(profileRow.data) : null);
+      if (market && targetMarketMatchesCompany(market, company)) {
+        liveTargetMarketName = market.name;
+      }
     }
 
     const contacts = await db
@@ -203,7 +219,7 @@ router.get("/:id", async (req, res) => {
       .leftJoin(rolesTable, eq(contactsTable.roleId, rolesTable.id))
       .where(eq(contactsTable.companyId, id));
 
-    res.json({ ...company, contacts });
+    res.json({ ...company, liveTargetMarketName, contacts });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });

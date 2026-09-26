@@ -34,6 +34,8 @@ import type {
   ErrorResponse,
   FilterOptions,
   HealthStatus,
+  HqAudienceInput,
+  HqAudienceResponse,
   IndustryInsight,
   ListCompaniesParams,
   ListContactsParams,
@@ -211,6 +213,92 @@ export const usePreviewEnrichment = <
   TContext
 > => {
   return useMutation(getPreviewEnrichmentMutationOptions(options));
+};
+
+/**
+ * @summary Create a Buying Center or Target Market without replacing the current HQ profile
+ */
+export const getCreateHqAudienceUrl = () => {
+  return `/api/hq/profile/audiences`;
+};
+
+export const createHqAudience = async (
+  hqAudienceInput: HqAudienceInput,
+  options?: RequestInit,
+): Promise<HqAudienceResponse> => {
+  return customFetch<HqAudienceResponse>(getCreateHqAudienceUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(hqAudienceInput),
+  });
+};
+
+export const getCreateHqAudienceMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHqAudience>>,
+    TError,
+    { data: BodyType<HqAudienceInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createHqAudience>>,
+  TError,
+  { data: BodyType<HqAudienceInput> },
+  TContext
+> => {
+  const mutationKey = ["createHqAudience"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createHqAudience>>,
+    { data: BodyType<HqAudienceInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createHqAudience(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateHqAudienceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createHqAudience>>
+>;
+export type CreateHqAudienceMutationBody = BodyType<HqAudienceInput>;
+export type CreateHqAudienceMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a Buying Center or Target Market without replacing the current HQ profile
+ */
+export const useCreateHqAudience = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHqAudience>>,
+    TError,
+    { data: BodyType<HqAudienceInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createHqAudience>>,
+  TError,
+  { data: BodyType<HqAudienceInput> },
+  TContext
+> => {
+  return useMutation(getCreateHqAudienceMutationOptions(options));
 };
 
 /**

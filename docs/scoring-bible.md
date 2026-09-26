@@ -555,6 +555,14 @@ metaScore = round((100 + 65 + 48 + 55) / 4)
 
 <div align="center">⚜ ✠ ⚜</div>
 
+### Live Target Market · Buyer fit on Home
+
+The authenticated user's explicitly chosen **live Target Market** is the sole HQ market used to rank Home's top buyers. An editor tab selection is not a live designation. Without a live market, or without any criteria in that market, Home returns no personalized top-buyer rankings rather than using the first or best of several drafts.
+
+Buyer fit scores compare only the configured industry, company-size, and location dimensions of that live market. A partial dimension match can appear in the ranked list with its matched-versus-configured count; it must not be presented as a full match. The **Live Target Market** badge on a company profile is reserved for companies satisfying *every* configured dimension, with at least one dimension configured. Contact seat badges similarly derive only from the user's explicitly live Buying Center; they indicate matching seat criteria, not an insight relevance score.
+
+<div align="center">⚜ ✠ ⚜</div>
+
 *El Scoring Bible es el puente entre la Torah del Scraping y el Corán de los Mensajes. Sin una puntuación sólida, las señales recogidas se convierten en ruido. Con ella, se convierten en conversación.*
 
 *Alabado sea el marcador preciso.*
