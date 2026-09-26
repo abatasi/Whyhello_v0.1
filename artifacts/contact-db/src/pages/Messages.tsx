@@ -26,12 +26,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; headerBg: string }> = {
-  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600 dark:text-blue-400",   bg: "bg-blue-50/70 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20",     headerBg: "hover:bg-blue-100/60 dark:hover:bg-blue-500/20" },
-  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50/70 dark:bg-violet-500/10 border-violet-100 dark:border-violet-500/20", headerBg: "hover:bg-violet-100/60 dark:hover:bg-violet-500/20" },
-  video:         { label: "Video",         icon: Tv2,       color: "text-red-600 dark:text-red-400",    bg: "bg-red-50/70 dark:bg-red-500/10 border-red-100 dark:border-red-500/20",       headerBg: "hover:bg-red-100/60 dark:hover:bg-red-500/20" },
-  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600 dark:text-green-400",  bg: "bg-green-50/70 dark:bg-green-500/10 border-green-100 dark:border-green-500/20",   headerBg: "hover:bg-green-100/60 dark:hover:bg-green-500/20" },
-  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600 dark:text-sky-400",    bg: "bg-sky-50/70 dark:bg-sky-500/10 border-sky-100 dark:border-sky-500/20",       headerBg: "hover:bg-sky-100/60 dark:hover:bg-sky-500/20" },
-  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600 dark:text-amber-400",  bg: "bg-amber-50/70 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20",   headerBg: "hover:bg-amber-100/60 dark:hover:bg-amber-500/20" },
+  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600 dark:text-blue-400",   bg: "bg-blue-50/70 dark:bg-background border-blue-100 dark:border-blue-500/30",     headerBg: "hover:bg-blue-100/60 dark:hover:bg-blue-500/20" },
+  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50/70 dark:bg-background border-violet-100 dark:border-violet-500/30", headerBg: "hover:bg-violet-100/60 dark:hover:bg-violet-500/20" },
+  video:         { label: "Video",         icon: Tv2,       color: "text-red-600 dark:text-red-400",    bg: "bg-red-50/70 dark:bg-background border-red-100 dark:border-red-500/30",       headerBg: "hover:bg-red-100/60 dark:hover:bg-red-500/20" },
+  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600 dark:text-green-400",  bg: "bg-green-50/70 dark:bg-background border-green-100 dark:border-green-500/30",   headerBg: "hover:bg-green-100/60 dark:hover:bg-green-500/20" },
+  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600 dark:text-sky-400",    bg: "bg-sky-50/70 dark:bg-background border-sky-100 dark:border-sky-500/30",       headerBg: "hover:bg-sky-100/60 dark:hover:bg-sky-500/20" },
+  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600 dark:text-amber-400",  bg: "bg-amber-50/70 dark:bg-background border-amber-100 dark:border-amber-500/30",   headerBg: "hover:bg-amber-100/60 dark:hover:bg-amber-500/20" },
 };
 
 function getMediaConfig(type: string) {
@@ -229,7 +229,7 @@ function ContactInsightsPanel({ contactId, contactName }: { contactId: number; c
   if (insights.length === 0) return null;
 
   return (
-    <div className="border border-border/60 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-50/40 to-primary/5 dark:from-indigo-500/10 dark:to-primary/5">
+    <div className="border border-border/60 dark:border-indigo-500/30 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-50/40 to-primary/5 dark:bg-none dark:bg-background">
       <button
         onClick={() => setExpanded((e) => !e)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
@@ -266,7 +266,7 @@ function CompanyInsightsPanel({ companyId, companyName }: { companyId: number; c
   if (insights.length === 0) return null;
 
   return (
-    <div className="border border-amber-100 dark:border-amber-500/20 rounded-xl overflow-hidden bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-500/10 dark:to-orange-500/10">
+    <div className="border border-amber-100 dark:border-amber-500/30 rounded-xl overflow-hidden bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:bg-none dark:bg-background">
       <button
         onClick={() => setExpanded((e) => !e)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
@@ -488,7 +488,7 @@ function ComposeForm({ draftMessage, onSaved, onCancel }: ComposeFormProps) {
         </div>
 
         {showDropdown && (
-          <div className="absolute z-50 top-full left-6 right-6 mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+          <div className="absolute z-50 top-full left-6 right-6 mt-1 bg-card dark:bg-background border border-border rounded-xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
             {contactsLoading ? (
               <div className="px-4 py-3 text-sm text-muted-foreground">Searching…</div>
             ) : displayedContacts.length === 0 ? (
@@ -782,7 +782,7 @@ export default function Messages() {
     <Shell>
       <div className="h-[calc(100vh-64px)] flex overflow-hidden">
         {/* ── Left Sidebar ──────────────────────────────────────── */}
-        <aside className="w-52 flex-shrink-0 border-r border-border/60 bg-card flex flex-col">
+        <aside className="w-52 flex-shrink-0 border-r border-border/60 bg-card dark:bg-background flex flex-col">
           <div className="p-4">
             <button
               onClick={openCompose}

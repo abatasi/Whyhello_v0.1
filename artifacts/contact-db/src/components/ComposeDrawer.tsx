@@ -11,18 +11,18 @@ import { useCreateMessage, useTrackInsightDrop } from "@workspace/api-client-rea
 import { useToast } from "@/hooks/use-toast";
 
 const MEDIA_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; headerBg: string }> = {
-  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600",   bg: "bg-blue-50/70 border-blue-100",   headerBg: "hover:bg-blue-100/60" },
-  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600", bg: "bg-violet-50/70 border-violet-100", headerBg: "hover:bg-violet-100/60" },
-  video:         { label: "Video",         icon: Tv2,       color: "text-red-600",    bg: "bg-red-50/70 border-red-100",     headerBg: "hover:bg-red-100/60" },
-  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600",  bg: "bg-green-50/70 border-green-100", headerBg: "hover:bg-green-100/60" },
-  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600",    bg: "bg-sky-50/70 border-sky-100",     headerBg: "hover:bg-sky-100/60" },
-  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600",  bg: "bg-amber-50/70 border-amber-100", headerBg: "hover:bg-amber-100/60" },
+  article:       { label: "Article",       icon: Newspaper, color: "text-blue-600",   bg: "bg-blue-50/70 border-blue-100 dark:bg-background dark:border-blue-500/40",   headerBg: "hover:bg-blue-100/60" },
+  blog_post:     { label: "Blog Post",     icon: FileText,  color: "text-violet-600", bg: "bg-violet-50/70 border-violet-100 dark:bg-background dark:border-violet-500/40", headerBg: "hover:bg-violet-100/60" },
+  video:         { label: "Video",         icon: Tv2,       color: "text-red-600",    bg: "bg-red-50/70 border-red-100 dark:bg-background dark:border-red-500/40",     headerBg: "hover:bg-red-100/60" },
+  podcast:       { label: "Podcast",       icon: Mic2,      color: "text-green-600",  bg: "bg-green-50/70 border-green-100 dark:bg-background dark:border-green-500/40", headerBg: "hover:bg-green-100/60" },
+  linkedin_post: { label: "LinkedIn Post", icon: Share2,    color: "text-sky-600",    bg: "bg-sky-50/70 border-sky-100 dark:bg-background dark:border-sky-500/40",     headerBg: "hover:bg-sky-100/60" },
+  press_release: { label: "Press Release", icon: Megaphone, color: "text-amber-600",  bg: "bg-amber-50/70 border-amber-100 dark:bg-background dark:border-amber-500/40", headerBg: "hover:bg-amber-100/60" },
 };
 
 function getMediaConfig(type: string) {
   return MEDIA_CONFIG[type] ?? {
     label: type, icon: ExternalLink,
-    color: "text-muted-foreground", bg: "bg-secondary border-border", headerBg: "hover:bg-secondary/60",
+    color: "text-muted-foreground", bg: "bg-secondary border-border dark:bg-background", headerBg: "hover:bg-secondary/60",
   };
 }
 
@@ -439,8 +439,8 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
                       insights={insights}
                       label={`Personal — ${contact.firstName} ${contact.lastName}`}
                       HeaderIcon={Mail}
-                      borderClass="border-indigo-100"
-                      gradientClass="bg-gradient-to-br from-indigo-50/60 to-primary/5"
+                      borderClass="border-indigo-100 dark:border-indigo-500/40"
+                      gradientClass="bg-gradient-to-br from-indigo-50/60 to-primary/5 dark:bg-none dark:bg-background"
                       iconBgClass="bg-primary/10"
                       iconColorClass="text-primary"
                     />
@@ -449,8 +449,8 @@ export function ComposeDrawer({ isOpen, onClose, contact, insights, companyInsig
                         insights={companyInsights}
                         label={`Company — ${contact.companyName}`}
                         HeaderIcon={Building}
-                        borderClass="border-amber-100"
-                        gradientClass="bg-gradient-to-br from-amber-50/60 to-orange-50/30"
+                        borderClass="border-amber-100 dark:border-amber-500/40"
+                        gradientClass="bg-gradient-to-br from-amber-50/60 to-orange-50/30 dark:bg-none dark:bg-background"
                         iconBgClass="bg-amber-100"
                         iconColorClass="text-amber-600"
                       />

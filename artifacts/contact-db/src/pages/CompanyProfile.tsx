@@ -187,10 +187,10 @@ export default function CompanyProfile() {
         </Link>
 
         {/* Company Header Card */}
-        <div className="bg-card rounded-3xl shadow-sm border border-border/60 overflow-hidden mb-8">
+        <div className="bg-card dark:bg-background rounded-3xl shadow-sm border border-border/60 overflow-hidden mb-8">
            {competitorIds.has(id)
-             ? <div className="h-24 bg-gradient-to-r from-rose-100 to-red-50 border-b border-rose-200/70" />
-             : <div className="h-24 bg-gradient-to-r from-slate-100 to-indigo-50 border-b border-border/50" />
+             ? <div className="h-24 bg-gradient-to-r from-rose-100 to-red-50 border-b border-rose-200/70 dark:bg-none dark:bg-background dark:border-rose-500/30" />
+             : <div className="h-24 bg-gradient-to-r from-slate-100 to-indigo-50 border-b border-border/50 dark:bg-none dark:bg-background" />
            }
            <div className="px-8 pb-8">
               <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -259,7 +259,7 @@ export default function CompanyProfile() {
               )}
 
               {/* ── Company Insights (credit-gated) ── */}
-              <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+              <section className="bg-card dark:bg-background rounded-2xl border border-border/60 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -365,7 +365,7 @@ export default function CompanyProfile() {
                   <Badge variant="outline">{company.contacts?.length || 0} employees found</Badge>
                 </div>
                 
-                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                <div className="bg-card dark:bg-background border border-border rounded-xl overflow-hidden shadow-sm">
                   {(!company.contacts || company.contacts.length === 0) ? (
                     <div className="p-8 text-center text-muted-foreground">No contacts found for this company.</div>
                   ) : (
@@ -398,7 +398,7 @@ export default function CompanyProfile() {
 
            {/* Right Col: Sidebar */}
            <div className="col-span-1">
-              <div className="bg-secondary/30 rounded-2xl p-6 border border-border/50 sticky top-24">
+              <div className="bg-secondary/30 dark:bg-background rounded-2xl p-6 border border-border/50 sticky top-24">
                 <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Similar Companies</h3>
                 <div className="text-sm text-muted-foreground text-center py-8">
                    Data enrichment required to view competitors.

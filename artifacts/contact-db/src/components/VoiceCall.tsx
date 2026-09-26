@@ -333,11 +333,11 @@ export function PostCallPanel({
               )}
             </div>
             {hasSummary ? (
-              <div className="rounded-xl bg-violet-50 border border-violet-100 px-4 py-3">
+              <div className="rounded-xl bg-violet-50 dark:bg-background border border-violet-100 dark:border-violet-500/40 px-4 py-3">
                 <pre className="text-[12px] leading-relaxed text-foreground whitespace-pre-wrap font-sans">{c.aiSummary}</pre>
               </div>
             ) : (
-              <div className="rounded-xl bg-secondary/30 border border-border/40 px-4 py-3 space-y-2">
+              <div className="rounded-xl bg-secondary/30 dark:bg-background border border-border/40 px-4 py-3 space-y-2">
                 {[80, 60, 70].map((w, i) => (
                   <div key={i} className={`h-3 rounded bg-muted animate-pulse`} style={{ width: `${w}%` }} />
                 ))}

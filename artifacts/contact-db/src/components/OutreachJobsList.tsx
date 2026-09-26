@@ -110,9 +110,9 @@ function BattlecardPreviewDialog({
           </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-auto bg-muted/30 p-5">
+        <div className="min-h-0 flex-1 overflow-auto bg-muted/30 dark:bg-background p-5">
           {previewError ? (
-            <div className="mx-auto max-w-lg rounded-lg border border-amber-200 bg-amber-50 p-5 text-center text-sm text-amber-900" data-testid={`status-battlecard-preview-error-${job.id}`}>
+            <div className="mx-auto max-w-lg rounded-lg border border-amber-200 dark:border-amber-500/40 bg-amber-50 dark:bg-background p-5 text-center text-sm text-amber-900" data-testid={`status-battlecard-preview-error-${job.id}`}>
               {previewError}
             </div>
           ) : slides.length === 0 ? (
@@ -166,8 +166,8 @@ const STRUCTURE_LAYERS: {
     sublabel: "Outside-in lead — 1 sentence",
     icon: Anchor,
     color: "text-sky-700",
-    bg: "bg-sky-50",
-    border: "border-sky-200",
+    bg: "bg-sky-50 dark:bg-background",
+    border: "border-sky-200 dark:border-sky-500/40",
     dot: "bg-sky-400",
   },
   {
@@ -176,8 +176,8 @@ const STRUCTURE_LAYERS: {
     sublabel: "Connect hook to the contact's implied priority",
     icon: ArrowRight,
     color: "text-amber-700",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
+    bg: "bg-amber-50 dark:bg-background",
+    border: "border-amber-200 dark:border-amber-500/40",
     dot: "bg-amber-400",
   },
   {
@@ -186,8 +186,8 @@ const STRUCTURE_LAYERS: {
     sublabel: "Inside-out: value wedge or activated pillar",
     icon: Sparkles,
     color: "text-violet-700",
-    bg: "bg-violet-50",
-    border: "border-violet-200",
+    bg: "bg-violet-50 dark:bg-background",
+    border: "border-violet-200 dark:border-violet-500/40",
     dot: "bg-violet-400",
   },
   {
@@ -196,8 +196,8 @@ const STRUCTURE_LAYERS: {
     sublabel: "EB sentence (gain or pain) + optional customer reference",
     icon: ShieldCheck,
     color: "text-emerald-700",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
+    bg: "bg-emerald-50 dark:bg-background",
+    border: "border-emerald-200 dark:border-emerald-500/40",
     dot: "bg-emerald-400",
   },
   {
@@ -206,8 +206,8 @@ const STRUCTURE_LAYERS: {
     sublabel: "Specific, low-friction ask",
     icon: MousePointerClick,
     color: "text-rose-700",
-    bg: "bg-rose-50",
-    border: "border-rose-200",
+    bg: "bg-rose-50 dark:bg-background",
+    border: "border-rose-200 dark:border-rose-500/40",
     dot: "bg-rose-400",
   },
 ];
@@ -506,7 +506,7 @@ function JobViewerModal({
 
         {/* ── Variant selector pill strip ── */}
         {variants.length > 0 && (
-          <div className="flex items-center gap-1.5 px-7 py-2.5 border-b border-border/60 flex-shrink-0 bg-secondary/20 overflow-x-auto">
+          <div className="flex items-center gap-1.5 px-7 py-2.5 border-b border-border/60 flex-shrink-0 bg-secondary/20 dark:bg-background overflow-x-auto">
             {allJobs.map((j, i) => {
               const isActive = activeIdx === i;
               const isGen = j.status === "generating";
@@ -588,7 +588,7 @@ function JobViewerModal({
               )}
               {tab === "structure" && <MessageStructureTab result={raw} />}
               {tab === "prompt" && (
-                <pre className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono bg-secondary/40 rounded-xl p-4">
+                <pre className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono bg-secondary/40 dark:bg-background rounded-xl p-4">
                   {activeJob.prompt ?? "Prompt not stored."}
                 </pre>
               )}
@@ -610,7 +610,7 @@ function JobViewerModal({
                         : score >= 50 ? "text-amber-700 bg-amber-50 border-amber-200"
                         : "text-muted-foreground bg-secondary border-border/60";
                       return (
-                        <div key={i} className="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-secondary/30 border border-border/40">
+                        <div key={i} className="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-secondary/30 dark:bg-background border border-border/40">
                           <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
@@ -729,9 +729,9 @@ function JobCard({ job, onDeleted, variants = [] }: { job: Job; onDeleted: () =>
         data-testid={`card-outreach-job-${job.id}`}
         className={cn(
           "rounded-xl border px-3.5 py-3 transition-all",
-          isGenerating && "border-blue-200/70 bg-gradient-to-r from-blue-50/40 to-indigo-50/20",
-          isFailed && "border-red-200/60 bg-red-50/20",
-          isCompleted && "bg-card border-border/60 hover:border-primary/40 hover:shadow-sm cursor-pointer"
+          isGenerating && "border-blue-200/70 dark:border-blue-500/40 bg-gradient-to-r from-blue-50/40 to-indigo-50/20 dark:bg-none dark:bg-background",
+          isFailed && "border-red-200/60 dark:border-red-500/40 bg-red-50/20 dark:bg-background",
+          isCompleted && "bg-card dark:bg-background border-border/60 hover:border-primary/40 hover:shadow-sm cursor-pointer"
         )}
       >
         {/* Two-row layout: title on top, subtitle + actions on bottom */}

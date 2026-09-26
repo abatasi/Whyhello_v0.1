@@ -326,7 +326,7 @@ function EBSummary({ parts, colorClass, iconClass }: {
   return (
     <div className={cn("rounded-lg px-3.5 py-2.5 flex items-start gap-2 border", colorClass)}>
       <CheckCircle2 className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", iconClass)} />
-      <p className={cn("text-xs leading-relaxed italic", colorClass.includes("rose") ? "text-rose-700" : "text-emerald-700")}>
+      <p className={cn("text-xs leading-relaxed italic", colorClass.includes("rose") ? "text-rose-700 dark:text-rose-300" : "text-emerald-700 dark:text-emerald-300")}>
         <span className="not-italic">{parts.subject} </span>
         <strong className="not-italic font-semibold">{parts.predicate}</strong>
         {hasAmount && parts.type === "gain" && <><span className="not-italic font-normal">, gaining </span>{quantifier}</>}
@@ -599,13 +599,13 @@ const COLOR_MAP: Record<string, {
   bg: string; border: string; iconBg: string; iconColor: string;
   chipBg: string; chipBorder: string; chipText: string;
 }> = {
-  violet:  { bg: "bg-violet-50",  border: "border-violet-200",  iconBg: "bg-violet-100",  iconColor: "text-violet-600",  chipBg: "bg-violet-100",  chipBorder: "border-violet-200",  chipText: "text-violet-700"  },
-  emerald: { bg: "bg-emerald-50", border: "border-emerald-200", iconBg: "bg-emerald-100", iconColor: "text-emerald-600", chipBg: "bg-emerald-100", chipBorder: "border-emerald-200", chipText: "text-emerald-700" },
-  blue:    { bg: "bg-blue-50",    border: "border-blue-200",    iconBg: "bg-blue-100",    iconColor: "text-blue-600",    chipBg: "bg-blue-100",    chipBorder: "border-blue-200",    chipText: "text-blue-700"    },
-  amber:   { bg: "bg-amber-50",   border: "border-amber-200",   iconBg: "bg-amber-100",   iconColor: "text-amber-600",   chipBg: "bg-amber-100",   chipBorder: "border-amber-200",   chipText: "text-amber-700"   },
-  slate:   { bg: "bg-slate-50 dark:bg-slate-500/10",   border: "border-slate-200 dark:border-slate-500/20",   iconBg: "bg-slate-100 dark:bg-slate-500/20",   iconColor: "text-slate-500 dark:text-slate-400",   chipBg: "bg-slate-100 dark:bg-slate-500/20",   chipBorder: "border-slate-200 dark:border-slate-500/20",   chipText: "text-slate-600 dark:text-slate-300"   },
-  sky:     { bg: "bg-sky-50",     border: "border-sky-200",     iconBg: "bg-sky-100",     iconColor: "text-sky-600",     chipBg: "bg-sky-100",     chipBorder: "border-sky-200",     chipText: "text-sky-700"     },
-  rose:    { bg: "bg-rose-50",    border: "border-rose-200",    iconBg: "bg-rose-100",    iconColor: "text-rose-600",    chipBg: "bg-rose-100",    chipBorder: "border-rose-200",    chipText: "text-rose-600"    },
+  violet:  { bg: "bg-violet-50 dark:bg-background",  border: "border-violet-200 dark:border-violet-500/30",  iconBg: "bg-violet-100",  iconColor: "text-violet-600",  chipBg: "bg-violet-100",  chipBorder: "border-violet-200",  chipText: "text-violet-700"  },
+  emerald: { bg: "bg-emerald-50 dark:bg-background", border: "border-emerald-200 dark:border-emerald-500/30", iconBg: "bg-emerald-100", iconColor: "text-emerald-600", chipBg: "bg-emerald-100", chipBorder: "border-emerald-200", chipText: "text-emerald-700" },
+  blue:    { bg: "bg-blue-50 dark:bg-background",    border: "border-blue-200 dark:border-blue-500/30",    iconBg: "bg-blue-100",    iconColor: "text-blue-600",    chipBg: "bg-blue-100",    chipBorder: "border-blue-200",    chipText: "text-blue-700"    },
+  amber:   { bg: "bg-amber-50 dark:bg-background",   border: "border-amber-200 dark:border-amber-500/30",   iconBg: "bg-amber-100",   iconColor: "text-amber-600",   chipBg: "bg-amber-100",   chipBorder: "border-amber-200",   chipText: "text-amber-700"   },
+  slate:   { bg: "bg-slate-50 dark:bg-background",   border: "border-slate-200 dark:border-slate-500/30",   iconBg: "bg-slate-100 dark:bg-slate-500/20",   iconColor: "text-slate-500 dark:text-slate-400",   chipBg: "bg-slate-100 dark:bg-slate-500/20",   chipBorder: "border-slate-200 dark:border-slate-500/20",   chipText: "text-slate-600 dark:text-slate-300"   },
+  sky:     { bg: "bg-sky-50 dark:bg-background",     border: "border-sky-200 dark:border-sky-500/30",     iconBg: "bg-sky-100",     iconColor: "text-sky-600",     chipBg: "bg-sky-100",     chipBorder: "border-sky-200",     chipText: "text-sky-700"     },
+  rose:    { bg: "bg-rose-50 dark:bg-background",    border: "border-rose-200 dark:border-rose-500/30",    iconBg: "bg-rose-100",    iconColor: "text-rose-600",    chipBg: "bg-rose-100",    chipBorder: "border-rose-200",    chipText: "text-rose-600"    },
 };
 
 // ── Auto-save hook ───────────────────────────────────────────────────────────
@@ -827,24 +827,24 @@ function VoiceProfileCard({
     <div className={cn(
       "rounded-xl border overflow-hidden transition-colors",
       isEditing
-        ? "border-violet-400 bg-violet-50/90"
+        ? "border-violet-400 bg-violet-50/90 dark:bg-background dark:border-violet-500/40"
         : textDirty && summary && !loading
-          ? "border-violet-300 bg-violet-50/80"
-          : "border-violet-200 bg-violet-50/60"
+          ? "border-violet-300 bg-violet-50/80 dark:bg-background dark:border-violet-500/30"
+          : "border-violet-200 bg-violet-50/60 dark:bg-background dark:border-violet-500/30"
     )}>
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-violet-200/60">
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-violet-200/60 dark:border-violet-500/30">
         <div className="h-6 w-6 rounded-full bg-violet-100 border border-violet-200 flex items-center justify-center flex-shrink-0">
           <Sparkles className="h-3.5 w-3.5 text-violet-600" />
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700 flex-1">Your Voice Profile</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700 dark:text-violet-300 flex-1">Your Voice Profile</span>
         {!isEditing && textDirty && summary && !loading && (
-          <span className="text-[10px] text-violet-500 mr-1">Text updated — save fields to refresh</span>
+          <span className="text-[10px] text-violet-500 dark:text-violet-300 mr-1">Text updated — save fields to refresh</span>
         )}
         {!isEditing && !loading && summary && (
           <button
             onClick={startEdit}
             title="Edit profile"
-            className="h-6 w-6 rounded-md flex items-center justify-center text-violet-400 hover:text-violet-700 hover:bg-violet-100 transition-colors"
+            className="h-6 w-6 rounded-md flex items-center justify-center text-violet-400 dark:text-violet-300 hover:text-violet-700 dark:hover:text-violet-200 hover:bg-violet-100 transition-colors"
           >
             <PenLine className="h-3 w-3" />
           </button>
@@ -854,7 +854,7 @@ function VoiceProfileCard({
             onClick={onRefresh}
             disabled={loading}
             title="Regenerate"
-            className="h-6 w-6 rounded-md flex items-center justify-center text-violet-500 hover:text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-40"
+            className="h-6 w-6 rounded-md flex items-center justify-center text-violet-500 dark:text-violet-300 hover:text-violet-700 dark:hover:text-violet-200 hover:bg-violet-100 transition-colors disabled:opacity-40"
           >
             <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
           </button>
@@ -880,7 +880,7 @@ function VoiceProfileCard({
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={cancelEdit}
-                className="px-3 py-1 rounded-lg text-xs font-semibold text-violet-500 hover:text-violet-700 hover:bg-violet-100 transition-colors"
+                className="px-3 py-1 rounded-lg text-xs font-semibold text-violet-500 dark:text-violet-300 hover:text-violet-700 dark:hover:text-violet-200 hover:bg-violet-100 transition-colors"
               >
                 Cancel
               </button>
@@ -975,7 +975,7 @@ function CustomerCard({
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-secondary/20 overflow-hidden">
+    <div className="rounded-xl border border-border/60 bg-secondary/20 dark:bg-background overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-card">
         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Customer {idx + 1}</span>
         <div className="flex-1" />
@@ -1028,7 +1028,7 @@ function CustomerCard({
         </div>
 
         {/* Structured fields */}
-        <div className="rounded-xl border border-sky-200 bg-sky-50/40 p-4 flex flex-col gap-3">
+        <div className="rounded-xl border border-sky-200 dark:border-sky-500/30 bg-sky-50/40 dark:bg-background p-4 flex flex-col gap-3">
           <div>
             <p className="text-xs font-bold text-foreground">Match company from your database</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -1103,7 +1103,7 @@ function CustomerCard({
         </Field>
 
         {/* Testimonial attribution permission */}
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 flex flex-col gap-3">
+        <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/40 dark:bg-background p-4 flex flex-col gap-3">
           <div>
             <p className="text-xs font-bold text-foreground">Testimonial attribution</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -1167,7 +1167,7 @@ function CustomerCard({
           )}
           <div className="flex flex-col gap-3">
             {(customer.economicBenefits ?? []).map(eb => (
-              <div key={eb.id} className={cn("rounded-xl border p-3.5 flex flex-col gap-3", eb.type === "pain" ? "border-rose-200 bg-rose-50/30" : "border-emerald-200 bg-emerald-50/30")}>
+              <div key={eb.id} className={cn("rounded-xl border p-3.5 flex flex-col gap-3", eb.type === "pain" ? "border-rose-200 dark:border-rose-500/30 bg-rose-50/30 dark:bg-background" : "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/30 dark:bg-background")}>
                 <div className="flex items-center gap-2">
                   <button onClick={() => onUpdateEB(eb.id, { type: "pain" })} className={cn("flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition-all", eb.type === "pain" ? "bg-rose-100 border-rose-300 text-rose-700" : "bg-card border-border/60 text-muted-foreground hover:border-rose-200 hover:text-rose-600")}>
                     <TrendingDown className="h-3 w-3" />Pain
@@ -1215,7 +1215,7 @@ function CustomerCard({
                   return parts ? (
                     <EBSummary
                       parts={parts}
-                      colorClass={eb.type === "pain" ? "bg-rose-50/60 border-rose-200/70" : "bg-emerald-50/60 border-emerald-200/70"}
+                      colorClass={eb.type === "pain" ? "bg-rose-50/60 dark:bg-background border-rose-200/70 dark:border-rose-500/30" : "bg-emerald-50/60 dark:bg-background border-emerald-200/70 dark:border-emerald-500/30"}
                       iconClass={eb.type === "pain" ? "text-rose-400" : "text-emerald-500"}
                     />
                   ) : null;
@@ -1370,7 +1370,7 @@ function CompetitorCard({
   onRemove: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-secondary/20 overflow-hidden">
+    <div className="rounded-xl border border-border/60 bg-secondary/20 dark:bg-background overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-card">
         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
           {competitor.name || `Competitor ${idx + 1}`}
@@ -1455,12 +1455,12 @@ function CompetitorCard({
         </Field>
 
         {/* Their strengths */}
-        <div className="rounded-xl border border-rose-200/70 bg-rose-50/20 p-4 flex flex-col gap-3">
+        <div className="rounded-xl border border-rose-200/70 dark:border-rose-500/30 bg-rose-50/20 dark:bg-background p-4 flex flex-col gap-3">
           <div className="flex items-center gap-2 mb-1">
             <div className="h-5 w-5 rounded-md bg-rose-100 border border-rose-200 flex items-center justify-center flex-shrink-0">
               <TrendingUp className="h-3 w-3 text-rose-500" />
             </div>
-            <p className="text-xs font-bold text-rose-700">Where they are stronger</p>
+            <p className="text-xs font-bold text-rose-700 dark:text-rose-300">Where they are stronger</p>
             <span className="text-[10px] text-muted-foreground">Be honest — this makes your positioning more credible</span>
           </div>
           <Field label="What do they do better than us?">
@@ -1478,12 +1478,12 @@ function CompetitorCard({
         </div>
 
         {/* Our strengths */}
-        <div className="rounded-xl border border-blue-200/70 bg-blue-50/20 p-4 flex flex-col gap-3">
+        <div className="rounded-xl border border-blue-200/70 dark:border-blue-500/30 bg-blue-50/20 dark:bg-background p-4 flex flex-col gap-3">
           <div className="flex items-center gap-2 mb-1">
             <div className="h-5 w-5 rounded-md bg-blue-100 border border-blue-200 flex items-center justify-center flex-shrink-0">
               <Shield className="h-3 w-3 text-blue-500" />
             </div>
-            <p className="text-xs font-bold text-blue-700">Where we are stronger</p>
+            <p className="text-xs font-bold text-blue-700 dark:text-blue-300">Where we are stronger</p>
           </div>
           <Field label="What do we do better than them?">
             <Textarea value={competitor.ourStrengths} onChange={v => onUpdate({ ourStrengths: v })} placeholder="e.g. Deeper relationship intelligence, faster time-to-value, AI that writes in the user's actual voice…" rows={2} />
@@ -2618,7 +2618,7 @@ export default function HQ() {
           </div>
 
           {/* Suppression / Do-not-use */}
-          <div className="flex flex-col gap-4 rounded-xl border border-rose-200/60 bg-rose-50/30 px-5 py-4">
+          <div className="flex flex-col gap-4 rounded-xl border border-rose-200/60 dark:border-rose-500/30 bg-rose-50/30 dark:bg-background px-5 py-4">
             <div className="flex items-center gap-2.5">
               <div className="h-6 w-6 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center flex-shrink-0">
                 <Ban className="h-3.5 w-3.5 text-rose-500" />
@@ -2779,8 +2779,8 @@ export default function HQ() {
                         className={cn(
                           "rounded-xl border p-3.5 flex flex-col gap-3",
                           eb.type === "pain"
-                            ? "border-rose-200 bg-rose-50/30"
-                            : "border-emerald-200 bg-emerald-50/30"
+                            ? "border-rose-200 dark:border-rose-500/30 bg-rose-50/30 dark:bg-background"
+                            : "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/30 dark:bg-background"
                         )}
                       >
                         {/* Type toggle + remove */}
@@ -2890,7 +2890,7 @@ export default function HQ() {
                           return parts ? (
                             <EBSummary
                               parts={parts}
-                              colorClass={eb.type === "pain" ? "bg-rose-50/60 border-rose-200/70" : "bg-emerald-50/60 border-emerald-200/70"}
+                              colorClass={eb.type === "pain" ? "bg-rose-50/60 dark:bg-background border-rose-200/70 dark:border-rose-500/30" : "bg-emerald-50/60 dark:bg-background border-emerald-200/70 dark:border-emerald-500/30"}
                               iconClass={eb.type === "pain" ? "text-rose-400" : "text-emerald-500"}
                             />
                           ) : null;
@@ -3300,7 +3300,7 @@ export default function HQ() {
                 )}
 
                 {(activeTm.industries.length > 0 || activeTm.companySizes.length > 0 || activeTm.locations.length > 0) && (
-                  <div className="rounded-xl bg-teal-50 border border-teal-200 dark:bg-teal-500/10 dark:border-teal-500/20 p-4 flex flex-col gap-2.5">
+                  <div className="rounded-xl bg-teal-50 border border-teal-200 dark:bg-background dark:border-teal-500/30 p-4 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <p className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wide">
                         ICP summary — {activeTm.name}
@@ -3358,7 +3358,7 @@ export default function HQ() {
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
                         {tmSampleCompanies.map(c => (
-                          <div key={c.id} className="flex flex-col gap-2 p-3 rounded-xl border border-border/40 bg-secondary/20 min-w-0">
+                          <div key={c.id} className="flex flex-col gap-2 p-3 rounded-xl border border-border/40 bg-secondary/20 dark:bg-background min-w-0">
                             <div className="h-7 w-7 rounded-lg bg-teal-100 border border-teal-200 flex items-center justify-center shrink-0">
                               <Building2 className="h-3.5 w-3.5 text-teal-600" />
                             </div>

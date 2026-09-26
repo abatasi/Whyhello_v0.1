@@ -103,13 +103,13 @@ const COLOR_MAP: Record<string, {
   bg: string; border: string; borderL: string; iconBg: string; iconColor: string;
   chipBg: string; chipText: string; activeBg: string;
 }> = {
-  violet:  { bg: "bg-violet-50 dark:bg-violet-500/10",  border: "border-violet-200 dark:border-violet-500/20",  borderL: "border-l-violet-400 dark:border-l-violet-500/50",  iconBg: "bg-violet-100 dark:bg-violet-500/20",  iconColor: "text-violet-600 dark:text-violet-400",  chipBg: "bg-violet-100 dark:bg-violet-500/20",  chipText: "text-violet-700 dark:text-violet-300",  activeBg: "bg-violet-50/80 dark:bg-violet-500/20"  },
-  emerald: { bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-200 dark:border-emerald-500/20", borderL: "border-l-emerald-400 dark:border-l-emerald-500/50", iconBg: "bg-emerald-100 dark:bg-emerald-500/20", iconColor: "text-emerald-600 dark:text-emerald-400", chipBg: "bg-emerald-100 dark:bg-emerald-500/20", chipText: "text-emerald-700 dark:text-emerald-300", activeBg: "bg-emerald-50/80 dark:bg-emerald-500/20" },
-  blue:    { bg: "bg-blue-50 dark:bg-blue-500/10",    border: "border-blue-200 dark:border-blue-500/20",    borderL: "border-l-blue-400 dark:border-l-blue-500/50",    iconBg: "bg-blue-100 dark:bg-blue-500/20",    iconColor: "text-blue-600 dark:text-blue-400",    chipBg: "bg-blue-100 dark:bg-blue-500/20",    chipText: "text-blue-700 dark:text-blue-300",    activeBg: "bg-blue-50/80 dark:bg-blue-500/20"    },
-  amber:   { bg: "bg-amber-50 dark:bg-amber-500/10",   border: "border-amber-200 dark:border-amber-500/20",   borderL: "border-l-amber-400 dark:border-l-amber-500/50",   iconBg: "bg-amber-100 dark:bg-amber-500/20",   iconColor: "text-amber-600 dark:text-amber-400",   chipBg: "bg-amber-100 dark:bg-amber-500/20",   chipText: "text-amber-700 dark:text-amber-300",   activeBg: "bg-amber-50/80 dark:bg-amber-500/20"   },
-  slate:   { bg: "bg-slate-50 dark:bg-slate-500/10",   border: "border-slate-200 dark:border-slate-500/20",   borderL: "border-l-slate-400 dark:border-l-slate-500/50",   iconBg: "bg-slate-100 dark:bg-slate-500/20",   iconColor: "text-slate-500 dark:text-slate-400",   chipBg: "bg-slate-100 dark:bg-slate-500/20",   chipText: "text-slate-600 dark:text-slate-300",   activeBg: "bg-slate-50/80 dark:bg-slate-500/20"   },
-  sky:     { bg: "bg-sky-50 dark:bg-sky-500/10",     border: "border-sky-200 dark:border-sky-500/20",     borderL: "border-l-sky-400 dark:border-l-sky-500/50",     iconBg: "bg-sky-100 dark:bg-sky-500/20",     iconColor: "text-sky-600 dark:text-sky-400",     chipBg: "bg-sky-100 dark:bg-sky-500/20",     chipText: "text-sky-700 dark:text-sky-300",     activeBg: "bg-sky-50/80 dark:bg-sky-500/20"     },
-  rose:    { bg: "bg-rose-50 dark:bg-rose-500/10",    border: "border-rose-200 dark:border-rose-500/20",    borderL: "border-l-rose-400 dark:border-l-rose-500/50",    iconBg: "bg-rose-100 dark:bg-rose-500/20",    iconColor: "text-rose-600 dark:text-rose-400",    chipBg: "bg-rose-100 dark:bg-rose-500/20",    chipText: "text-rose-600 dark:text-rose-400",    activeBg: "bg-rose-50/80 dark:bg-rose-500/20"    },
+  violet:  { bg: "bg-violet-50 dark:bg-background",  border: "border-violet-200 dark:border-violet-500/40",  borderL: "border-l-violet-400 dark:border-l-violet-500/50",  iconBg: "bg-violet-100 dark:bg-violet-500/20",  iconColor: "text-violet-600 dark:text-violet-400",  chipBg: "bg-violet-100 dark:bg-violet-500/20",  chipText: "text-violet-700 dark:text-violet-300",  activeBg: "bg-violet-50/80 dark:bg-background"  },
+  emerald: { bg: "bg-emerald-50 dark:bg-background", border: "border-emerald-200 dark:border-emerald-500/40", borderL: "border-l-emerald-400 dark:border-l-emerald-500/50", iconBg: "bg-emerald-100 dark:bg-emerald-500/20", iconColor: "text-emerald-600 dark:text-emerald-400", chipBg: "bg-emerald-100 dark:bg-emerald-500/20", chipText: "text-emerald-700 dark:text-emerald-300", activeBg: "bg-emerald-50/80 dark:bg-background" },
+  blue:    { bg: "bg-blue-50 dark:bg-background",    border: "border-blue-200 dark:border-blue-500/40",    borderL: "border-l-blue-400 dark:border-l-blue-500/50",    iconBg: "bg-blue-100 dark:bg-blue-500/20",    iconColor: "text-blue-600 dark:text-blue-400",    chipBg: "bg-blue-100 dark:bg-blue-500/20",    chipText: "text-blue-700 dark:text-blue-300",    activeBg: "bg-blue-50/80 dark:bg-background"    },
+  amber:   { bg: "bg-amber-50 dark:bg-background",   border: "border-amber-200 dark:border-amber-500/40",   borderL: "border-l-amber-400 dark:border-l-amber-500/50",   iconBg: "bg-amber-100 dark:bg-amber-500/20",   iconColor: "text-amber-600 dark:text-amber-400",   chipBg: "bg-amber-100 dark:bg-amber-500/20",   chipText: "text-amber-700 dark:text-amber-300",   activeBg: "bg-amber-50/80 dark:bg-background"   },
+  slate:   { bg: "bg-slate-50 dark:bg-background",   border: "border-slate-200 dark:border-slate-500/40",   borderL: "border-l-slate-400 dark:border-l-slate-500/50",   iconBg: "bg-slate-100 dark:bg-slate-500/20",   iconColor: "text-slate-500 dark:text-slate-400",   chipBg: "bg-slate-100 dark:bg-slate-500/20",   chipText: "text-slate-600 dark:text-slate-300",   activeBg: "bg-slate-50/80 dark:bg-background"   },
+  sky:     { bg: "bg-sky-50 dark:bg-background",     border: "border-sky-200 dark:border-sky-500/40",     borderL: "border-l-sky-400 dark:border-l-sky-500/50",     iconBg: "bg-sky-100 dark:bg-sky-500/20",     iconColor: "text-sky-600 dark:text-sky-400",     chipBg: "bg-sky-100 dark:bg-sky-500/20",     chipText: "text-sky-700 dark:text-sky-300",     activeBg: "bg-sky-50/80 dark:bg-background"     },
+  rose:    { bg: "bg-rose-50 dark:bg-background",    border: "border-rose-200 dark:border-rose-500/40",    borderL: "border-l-rose-400 dark:border-l-rose-500/50",    iconBg: "bg-rose-100 dark:bg-rose-500/20",    iconColor: "text-rose-600 dark:text-rose-400",    chipBg: "bg-rose-100 dark:bg-rose-500/20",    chipText: "text-rose-600 dark:text-rose-400",    activeBg: "bg-rose-50/80 dark:bg-background"    },
 };
 
 // ── Seniority ranking ─────────────────────────────────────────────────────────
@@ -678,7 +678,7 @@ function BuyingCenterSelector({
 
       {open && (
         <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-border bg-card shadow-xl z-50 overflow-hidden">
-          <div className="px-3 py-2 border-b border-border/50 bg-secondary/20">
+          <div className="px-3 py-2 border-b border-border/50 bg-secondary/20 dark:bg-background">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Buying center</p>
           </div>
           {buyingCenters.map(bc => {
@@ -759,7 +759,7 @@ function TargetMarketSelector({
 
       {open && (
         <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-border bg-card shadow-xl z-50 overflow-hidden">
-          <div className="px-3 py-2 border-b border-border/50 bg-secondary/20">
+          <div className="px-3 py-2 border-b border-border/50 bg-secondary/20 dark:bg-background">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Target market</p>
           </div>
           <button
@@ -840,7 +840,7 @@ function SwitchContactButton({
 
       {open && (
         <div className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-border bg-card shadow-xl z-50 overflow-hidden">
-          <div className="px-3 py-2 border-b border-border/60 bg-secondary/30">
+          <div className="px-3 py-2 border-b border-border/60 bg-secondary/30 dark:bg-background">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Switch contact for this seat</p>
           </div>
           <div className="max-h-64 overflow-y-auto">

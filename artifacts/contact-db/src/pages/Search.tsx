@@ -1271,7 +1271,7 @@ export default function Search({ directory }: { directory: Tab }) {
                                         isSelected && "bg-primary/5",
                                       )}>
                                         <div className="flex items-center gap-3">
-                                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border border-border flex items-center justify-center flex-shrink-0">
+                                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:bg-none dark:bg-background border border-border flex items-center justify-center flex-shrink-0">
                                             <Building2 className="h-4 w-4 text-slate-500" />
                                           </div>
                                           <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">

@@ -55,8 +55,8 @@ const items: RoadmapItem[] = [
     timeEstimate: "6–8 weeks",
     computeEstimate: "$0.02–0.06 / min of audio · ~$0.01 / GPT summary",
     accent: {
-      bg: "bg-amber-50 dark:bg-amber-950/20",
-      border: "border-amber-200 dark:border-amber-800/50",
+      bg: "bg-amber-50 dark:bg-background",
+      border: "border-amber-200 dark:border-amber-500/30",
       iconBg: "bg-amber-100 dark:bg-amber-900/40",
       iconText: "text-amber-600 dark:text-amber-400",
       badge: "bg-amber-100 dark:bg-amber-900/40",
@@ -82,8 +82,8 @@ const items: RoadmapItem[] = [
     timeEstimate: "10–14 weeks",
     computeEstimate: "~$15/mo incremental infra · no per-call overhead beyond existing Twilio costs",
     accent: {
-      bg: "bg-blue-50 dark:bg-blue-950/20",
-      border: "border-blue-200 dark:border-blue-800/50",
+      bg: "bg-blue-50 dark:bg-background",
+      border: "border-blue-200 dark:border-blue-500/30",
       iconBg: "bg-blue-100 dark:bg-blue-900/40",
       iconText: "text-blue-600 dark:text-blue-400",
       badge: "bg-blue-100 dark:bg-blue-900/40",
@@ -109,8 +109,8 @@ const items: RoadmapItem[] = [
     timeEstimate: "4–6 weeks",
     computeEstimate: "~$0.002 / enrichment lookup · negligible ongoing cost once contacts are indexed",
     accent: {
-      bg: "bg-violet-50 dark:bg-violet-950/20",
-      border: "border-violet-200 dark:border-violet-800/50",
+      bg: "bg-violet-50 dark:bg-background",
+      border: "border-violet-200 dark:border-violet-500/30",
       iconBg: "bg-violet-100 dark:bg-violet-900/40",
       iconText: "text-violet-600 dark:text-violet-400",
       badge: "bg-violet-100 dark:bg-violet-900/40",
@@ -136,8 +136,8 @@ const items: RoadmapItem[] = [
     timeEstimate: "3–5 weeks",
     computeEstimate: "Negligible — frontend-heavy feature, uses existing contact data and call infrastructure",
     accent: {
-      bg: "bg-emerald-50 dark:bg-emerald-950/20",
-      border: "border-emerald-200 dark:border-emerald-800/50",
+      bg: "bg-emerald-50 dark:bg-background",
+      border: "border-emerald-200 dark:border-emerald-500/30",
       iconBg: "bg-emerald-100 dark:bg-emerald-900/40",
       iconText: "text-emerald-600 dark:text-emerald-400",
       badge: "bg-emerald-100 dark:bg-emerald-900/40",
@@ -163,8 +163,8 @@ const items: RoadmapItem[] = [
     timeEstimate: "6–9 weeks",
     computeEstimate: "$0.02–0.06 / min of audio · ~$0.01 / GPT summary · ~$5/mo bot infrastructure",
     accent: {
-      bg: "bg-teal-50 dark:bg-teal-950/20",
-      border: "border-teal-200 dark:border-teal-800/50",
+      bg: "bg-teal-50 dark:bg-background",
+      border: "border-teal-200 dark:border-teal-500/30",
       iconBg: "bg-teal-100 dark:bg-teal-900/40",
       iconText: "text-teal-600 dark:text-teal-400",
       badge: "bg-teal-100 dark:bg-teal-900/40",
@@ -190,8 +190,8 @@ const items: RoadmapItem[] = [
     timeEstimate: "10–14 weeks",
     computeEstimate: "~$0.10–0.40 / min depending on participant count, real-time voice model, and transcript analysis",
     accent: {
-      bg: "bg-fuchsia-50 dark:bg-fuchsia-950/20",
-      border: "border-fuchsia-200 dark:border-fuchsia-800/50",
+      bg: "bg-fuchsia-50 dark:bg-background",
+      border: "border-fuchsia-200 dark:border-fuchsia-500/30",
       iconBg: "bg-fuchsia-100 dark:bg-fuchsia-900/40",
       iconText: "text-fuchsia-600 dark:text-fuchsia-400",
       badge: "bg-fuchsia-100 dark:bg-fuchsia-900/40",
@@ -270,11 +270,11 @@ function RoadmapCard({ item }: { item: RoadmapItem }) {
 
       {/* Footer chips */}
       <div className="flex flex-col gap-2 pt-1 border-t border-current/10 sm:flex-row sm:flex-wrap">
-        <div className="flex items-start gap-1.5 rounded-lg bg-background/60 dark:bg-black/20 border border-border px-3 py-1.5 text-xs text-foreground">
+        <div className="flex items-start gap-1.5 rounded-lg bg-background/60 dark:bg-background border border-border px-3 py-1.5 text-xs text-foreground">
           <Clock className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
           <span><span className="font-medium text-muted-foreground">Build time: </span>{item.timeEstimate}</span>
         </div>
-        <div className="flex items-start gap-1.5 rounded-lg bg-background/60 dark:bg-black/20 border border-border px-3 py-1.5 text-xs text-foreground">
+        <div className="flex items-start gap-1.5 rounded-lg bg-background/60 dark:bg-background border border-border px-3 py-1.5 text-xs text-foreground">
           <Cpu className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
           <span><span className="font-medium text-muted-foreground">Compute: </span>{item.computeEstimate}</span>
         </div>

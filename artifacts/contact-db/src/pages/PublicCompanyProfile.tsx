@@ -85,7 +85,7 @@ export default function PublicCompanyProfile() {
 
       {/* Sign-in card — fixed center of viewport below header */}
       <div className="fixed left-0 right-0 bottom-0 top-16 z-20 flex items-center justify-center px-4 pointer-events-none">
-        <div className="pointer-events-auto bg-card border border-border rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+        <div className="pointer-events-auto bg-card dark:bg-background border border-border rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
           <div className="h-14 w-14 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4 shadow-sm">
             <Building2 className="h-7 w-7 text-muted-foreground" />
           </div>
@@ -127,8 +127,8 @@ export default function PublicCompanyProfile() {
         </Link>
 
         {/* Company Hero Card */}
-        <div className="bg-card rounded-3xl shadow-sm border border-border/60 overflow-hidden mb-8">
-          <div className="h-24 bg-gradient-to-r from-slate-100 to-indigo-50 border-b border-border/50" />
+        <div className="bg-card dark:bg-background rounded-3xl shadow-sm border border-border/60 overflow-hidden mb-8">
+          <div className="h-24 bg-gradient-to-r from-slate-100 to-indigo-50 border-b border-border/50 dark:bg-none dark:bg-background" />
           <div className="px-8 pb-8">
             <div className="flex flex-col md:flex-row gap-6 items-start">
               <div className="-mt-12">
@@ -218,7 +218,7 @@ export default function PublicCompanyProfile() {
                 <h2 className="text-xl font-bold">Key Contacts</h2>
                 <Badge variant="outline">{company.contacts?.length || 0} employees found</Badge>
               </div>
-              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-card dark:bg-background border border-border rounded-xl overflow-hidden shadow-sm">
                 {(!company.contacts || company.contacts.length === 0) ? (
                   <div className="p-8 text-center text-muted-foreground">No contacts found for this company.</div>
                 ) : (
@@ -258,7 +258,7 @@ export default function PublicCompanyProfile() {
 
           {/* Right col: Similar Companies */}
           <div className="col-span-1">
-            <div className="bg-secondary/30 rounded-2xl p-6 border border-border/50 sticky top-24">
+            <div className="bg-secondary/30 dark:bg-background rounded-2xl p-6 border border-border/50 sticky top-24">
               <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Similar Companies</h3>
               <div className="text-sm text-muted-foreground text-center py-8">
                 Data enrichment required to view competitors.

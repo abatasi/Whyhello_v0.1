@@ -142,7 +142,7 @@ function ScoringBreakdownCard({ metaScore }: { metaScore: ContactMetaScore }) {
   ];
 
   return (
-    <div className="mt-5 rounded-lg border border-border/70 bg-background/60 p-3.5">
+    <div className="mt-5 rounded-lg border border-border/70 bg-background/60 dark:bg-background p-3.5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Scoring breakdown</p>
@@ -268,13 +268,13 @@ function IcebreakerCard({
       href={insight.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-3 transition-colors hover:bg-background md:grid-cols-[minmax(230px,0.9fr)_92px_minmax(0,1.8fr)]"
+      className="grid gap-3 rounded-lg border border-border/60 bg-background/50 dark:bg-background p-3 transition-colors hover:bg-background md:grid-cols-[minmax(230px,0.9fr)_92px_minmax(0,1.8fr)]"
       aria-label={`Open insight: ${insight.title}`}
     >
       {content}
     </a>
   ) : (
-    <div className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-3 md:grid-cols-[minmax(230px,0.9fr)_92px_minmax(0,1.8fr)]">
+    <div className="grid gap-3 rounded-lg border border-border/60 bg-background/50 dark:bg-background p-3 md:grid-cols-[minmax(230px,0.9fr)_92px_minmax(0,1.8fr)]">
       {content}
     </div>
   );
@@ -329,7 +329,7 @@ function ExpandedLeadContent({ lead }: { lead: TopLead }) {
     <div className="mx-[18px] mb-[18px] mt-2 rounded-[10px] border border-border bg-card shadow-sm overflow-hidden" data-testid={`expanded-lead-${lead.id}`}>
       <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border">
         {/* Left column: Rich contact view */}
-        <div className="p-5 md:w-1/3 flex flex-col justify-between bg-muted/10">
+        <div className="p-5 md:w-1/3 flex flex-col justify-between bg-muted/10 dark:bg-background">
           <div>
             <div className="flex items-center gap-3 mb-4">
               <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary/10 text-[13px] font-bold text-primary">
@@ -396,7 +396,7 @@ function ExpandedLeadContent({ lead }: { lead: TopLead }) {
                 ))}
               </div>
             ) : isError || triggerRelevance.isError ? (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-center text-sm text-red-500 dark:text-red-400">
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 dark:bg-background p-4 text-center text-sm text-red-500 dark:text-red-400">
                 Failed to load insights.
               </div>
             ) : topInsights.length > 0 ? (

@@ -82,14 +82,14 @@
   --destructive: 0 62% 30%;
   --destructive-foreground: 210 40% 98%;
   
-  --border: 217 22% 34%;
-  --input: 217 22% 34%;
+  --border: 217 22% 42%;
+  --input: 217 22% 42%;
   --ring: 226 70% 65%;
   
-  --card: 222 35% 15%;
+  --card: 222 47% 11%;
   --card-foreground: 210 40% 98%;
 
-  --popover: 222 35% 15%;
+  --popover: 222 47% 11%;
   --popover-foreground: 210 40% 98%;
 }
 

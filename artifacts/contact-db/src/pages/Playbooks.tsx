@@ -105,23 +105,23 @@ const CATEGORIES: Record<string, {
 }> = {
   "starting-point": {
     label: "Starting Points", bg: "bg-violet-50", border: "border-violet-200",
-    text: "text-violet-700", headerBg: "bg-violet-50/80", iconBg: "bg-violet-100",
-    iconText: "text-violet-600", handle: "!bg-violet-400", mini: "#a78bfa",
+    text: "text-violet-700 dark:text-violet-300", headerBg: "bg-violet-50/80 dark:bg-background", iconBg: "bg-violet-100",
+    iconText: "text-violet-600 dark:text-violet-400", handle: "!bg-violet-400", mini: "#a78bfa",
   },
   "touchpoint": {
     label: "Touchpoints", bg: "bg-blue-50", border: "border-blue-200",
-    text: "text-blue-700", headerBg: "bg-blue-50/80", iconBg: "bg-blue-100",
-    iconText: "text-blue-600", handle: "!bg-blue-400", mini: "#60a5fa",
+    text: "text-blue-700 dark:text-blue-300", headerBg: "bg-blue-50/80 dark:bg-background", iconBg: "bg-blue-100",
+    iconText: "text-blue-600 dark:text-blue-400", handle: "!bg-blue-400", mini: "#60a5fa",
   },
   "flow-control": {
     label: "Flow Controls", bg: "bg-amber-50", border: "border-amber-200",
-    text: "text-amber-700", headerBg: "bg-amber-50/80", iconBg: "bg-amber-100",
-    iconText: "text-amber-600", handle: "!bg-amber-400", mini: "#fbbf24",
+    text: "text-amber-700 dark:text-amber-300", headerBg: "bg-amber-50/80 dark:bg-background", iconBg: "bg-amber-100",
+    iconText: "text-amber-600 dark:text-amber-400", handle: "!bg-amber-400", mini: "#fbbf24",
   },
   "outcome": {
     label: "Outcomes", bg: "bg-green-50", border: "border-green-200",
-    text: "text-green-700", headerBg: "bg-green-50/80", iconBg: "bg-green-100",
-    iconText: "text-green-600", handle: "!bg-green-400", mini: "#4ade80",
+    text: "text-green-700 dark:text-green-300", headerBg: "bg-green-50/80 dark:bg-background", iconBg: "bg-green-100",
+    iconText: "text-green-600 dark:text-green-400", handle: "!bg-green-400", mini: "#4ade80",
   },
 };
 
@@ -1120,11 +1120,11 @@ function ContactSearch({ currentContactId, currentContactName, onSelect }: {
   return (
     <div className="relative" ref={wrapperRef}>
       {currentContactId && !query ? (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-violet-200 bg-violet-50">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-violet-200 dark:border-violet-500/40 bg-violet-50 dark:bg-background">
           <div className="h-6 w-6 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0">
             <span className="text-[9px] font-bold text-violet-700">{getInitials(currentContactName ?? "?")}</span>
           </div>
-          <span className="text-xs font-semibold text-violet-700 flex-1 min-w-0 truncate">{currentContactName}</span>
+          <span className="text-xs font-semibold text-violet-700 dark:text-violet-200 flex-1 min-w-0 truncate">{currentContactName}</span>
           <button onClick={clear} className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
             <X className="h-3 w-3" />
           </button>
@@ -1267,18 +1267,18 @@ function ConfigDrawer({
           <div className={cn(
             "flex items-start gap-2.5 px-3 py-2.5 rounded-xl border text-xs",
             data.cascadeOverridden
-              ? "bg-amber-50 border-amber-200"
-              : "bg-blue-50 border-blue-200",
+              ? "bg-amber-50 border-amber-200 dark:bg-background dark:border-amber-500/30"
+              : "bg-blue-50 border-blue-200 dark:bg-background dark:border-blue-500/30",
           )}>
             {data.cascadeOverridden
               ? <Link2Off className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
               : <Link2 className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
             }
             <div className="flex-1 min-w-0">
-              <p className={cn("font-semibold", data.cascadeOverridden ? "text-amber-700" : "text-blue-700")}>
+              <p className={cn("font-semibold", data.cascadeOverridden ? "text-amber-700 dark:text-amber-300" : "text-blue-700 dark:text-blue-300")}>
                 {data.cascadeOverridden ? "Customised for " + (thisProspect?.contactName ?? "this thread") : "Linked to Primary"}
               </p>
-              <p className={cn("mt-0.5 text-[10px]", data.cascadeOverridden ? "text-amber-600" : "text-blue-600")}>
+              <p className={cn("mt-0.5 text-[10px]", data.cascadeOverridden ? "text-amber-600 dark:text-amber-400" : "text-blue-600 dark:text-blue-400")}>
                 {data.cascadeOverridden
                   ? "Changes to Primary won't affect this step."
                   : "Changes to Primary's step will cascade here."}
@@ -1494,9 +1494,9 @@ function ConfigDrawer({
 
         {/* Cascade info for primary lane */}
         {showCascadeInfo && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 mt-1">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 dark:bg-background dark:border-blue-500/30 mt-1">
             <Link2 className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
-            <p className="text-[11px] text-blue-700">
+            <p className="text-[11px] text-blue-700 dark:text-blue-300">
               Cascades to <span className="font-semibold">{subLaneCount}</span> thread{subLaneCount !== 1 ? "s" : ""}
             </p>
           </div>
@@ -1756,9 +1756,9 @@ function SummaryPanel({ nodes, edges }: { nodes: Node<PlaybookNodeData>[]; edges
         {intensity} intensity
       </div>
       {incomplete.length > 0 && (
-        <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-red-50 border border-red-200">
+        <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-red-50 dark:bg-background border border-red-200 dark:border-red-500/30">
           <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-red-700">{incomplete.length} incomplete block{incomplete.length > 1 ? "s" : ""} need configuration before publishing.</p>
+          <p className="text-xs text-red-700 dark:text-red-300">{incomplete.length} incomplete block{incomplete.length > 1 ? "s" : ""} need configuration before publishing.</p>
         </div>
       )}
     </div>
@@ -2774,12 +2774,12 @@ function CanvasInner({
 
       {/* Suggestion banner */}
       {touchpointWarning && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-amber-50 border-b border-amber-200 flex-shrink-0">
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-amber-50 dark:bg-background border-b border-amber-200 dark:border-amber-500/30 flex-shrink-0">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-            <p className="text-xs text-amber-700">Consider adding a time delay between consecutive touchpoints.</p>
+            <p className="text-xs text-amber-700 dark:text-amber-300">Consider adding a time delay between consecutive touchpoints.</p>
           </div>
-          <button className="text-amber-600 hover:text-amber-800 text-xs font-semibold">Dismiss</button>
+          <button className="text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 text-xs font-semibold">Dismiss</button>
         </div>
       )}
 

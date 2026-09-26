@@ -67,13 +67,13 @@ import {
 // ── Buying Center seat context (used when embedded in Multi-threading) ────────
 
 const SEAT_COLOR_MAP: Record<string, { iconBg: string; iconColor: string; chipBg: string; chipText: string; border: string; bg: string }> = {
-  violet:  { bg: "bg-violet-50/60 dark:bg-violet-500/10",  iconBg: "bg-violet-100 dark:bg-violet-500/20",  iconColor: "text-violet-600 dark:text-violet-400",  chipBg: "bg-violet-100 dark:bg-violet-500/20",  chipText: "text-violet-700 dark:text-violet-300",  border: "border-violet-200 dark:border-violet-500/20"  },
-  emerald: { bg: "bg-emerald-50/60 dark:bg-emerald-500/10", iconBg: "bg-emerald-100 dark:bg-emerald-500/20", iconColor: "text-emerald-600 dark:text-emerald-400", chipBg: "bg-emerald-100 dark:bg-emerald-500/20", chipText: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-500/20" },
-  blue:    { bg: "bg-blue-50/60 dark:bg-blue-500/10",    iconBg: "bg-blue-100 dark:bg-blue-500/20",    iconColor: "text-blue-600 dark:text-blue-400",    chipBg: "bg-blue-100 dark:bg-blue-500/20",    chipText: "text-blue-700 dark:text-blue-300",    border: "border-blue-200 dark:border-blue-500/20"    },
-  amber:   { bg: "bg-amber-50/60 dark:bg-amber-500/10",   iconBg: "bg-amber-100 dark:bg-amber-500/20",   iconColor: "text-amber-600 dark:text-amber-400",   chipBg: "bg-amber-100 dark:bg-amber-500/20",   chipText: "text-amber-700 dark:text-amber-300",   border: "border-amber-200 dark:border-amber-500/20"   },
-  slate:   { bg: "bg-slate-50/60 dark:bg-slate-500/10",   iconBg: "bg-slate-100 dark:bg-slate-500/20",   iconColor: "text-slate-500 dark:text-slate-400",   chipBg: "bg-slate-100 dark:bg-slate-500/20",   chipText: "text-slate-600 dark:text-slate-300",   border: "border-slate-200 dark:border-slate-500/20"   },
-  sky:     { bg: "bg-sky-50/60 dark:bg-sky-500/10",     iconBg: "bg-sky-100 dark:bg-sky-500/20",     iconColor: "text-sky-600 dark:text-sky-400",     chipBg: "bg-sky-100 dark:bg-sky-500/20",     chipText: "text-sky-700 dark:text-sky-300",     border: "border-sky-200 dark:border-sky-500/20"     },
-  rose:    { bg: "bg-rose-50/60 dark:bg-rose-500/10",    iconBg: "bg-rose-100 dark:bg-rose-500/20",    iconColor: "text-rose-600 dark:text-rose-400",    chipBg: "bg-rose-100 dark:bg-rose-500/20",    chipText: "text-rose-600 dark:text-rose-400",    border: "border-rose-200 dark:border-rose-500/20"    },
+  violet:  { bg: "bg-violet-50/60 dark:bg-background",  iconBg: "bg-violet-100 dark:bg-violet-500/20",  iconColor: "text-violet-600 dark:text-violet-400",  chipBg: "bg-violet-100 dark:bg-violet-500/20",  chipText: "text-violet-700 dark:text-violet-300",  border: "border-violet-200 dark:border-violet-500/30"  },
+  emerald: { bg: "bg-emerald-50/60 dark:bg-background", iconBg: "bg-emerald-100 dark:bg-emerald-500/20", iconColor: "text-emerald-600 dark:text-emerald-400", chipBg: "bg-emerald-100 dark:bg-emerald-500/20", chipText: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-500/30" },
+  blue:    { bg: "bg-blue-50/60 dark:bg-background",    iconBg: "bg-blue-100 dark:bg-blue-500/20",    iconColor: "text-blue-600 dark:text-blue-400",    chipBg: "bg-blue-100 dark:bg-blue-500/20",    chipText: "text-blue-700 dark:text-blue-300",    border: "border-blue-200 dark:border-blue-500/30"    },
+  amber:   { bg: "bg-amber-50/60 dark:bg-background",   iconBg: "bg-amber-100 dark:bg-amber-500/20",   iconColor: "text-amber-600 dark:text-amber-400",   chipBg: "bg-amber-100 dark:bg-amber-500/20",   chipText: "text-amber-700 dark:text-amber-300",   border: "border-amber-200 dark:border-amber-500/30"   },
+  slate:   { bg: "bg-slate-50/60 dark:bg-background",   iconBg: "bg-slate-100 dark:bg-slate-500/20",   iconColor: "text-slate-500 dark:text-slate-400",   chipBg: "bg-slate-100 dark:bg-slate-500/20",   chipText: "text-slate-600 dark:text-slate-300",   border: "border-slate-200 dark:border-slate-500/30"   },
+  sky:     { bg: "bg-sky-50/60 dark:bg-background",     iconBg: "bg-sky-100 dark:bg-sky-500/20",     iconColor: "text-sky-600 dark:text-sky-400",     chipBg: "bg-sky-100 dark:bg-sky-500/20",     chipText: "text-sky-700 dark:text-sky-300",     border: "border-sky-200 dark:border-sky-500/30"     },
+  rose:    { bg: "bg-rose-50/60 dark:bg-background",    iconBg: "bg-rose-100 dark:bg-rose-500/20",    iconColor: "text-rose-600 dark:text-rose-400",    chipBg: "bg-rose-100 dark:bg-rose-500/20",    chipText: "text-rose-600 dark:text-rose-400",    border: "border-rose-200 dark:border-rose-500/30"    },
 };
 
 const SEAT_DESCRIPTIONS: Record<string, (firstName: string) => string> = {
@@ -159,7 +159,7 @@ function MetaScoreBadge({ metaScore }: { metaScore: ContactMetaScore }) {
       <TooltipContent
         side="bottom"
         sideOffset={4}
-        className="z-[300] max-w-[240px] border border-border/80 bg-card p-3 text-foreground shadow-xl ring-1 ring-black/5"
+        className="z-[300] max-w-[240px] border border-border/80 bg-card dark:bg-background p-3 text-foreground shadow-xl ring-1 ring-black/5"
       >
         <p className="text-[10px] font-bold text-foreground mb-2">Meta Score: {score}/100 — {tier}</p>
         <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">
@@ -494,7 +494,7 @@ function IntroEmailModal({
       <DialogContent className="p-0 gap-0 overflow-hidden" style={{ width: "75vw", maxWidth: "75vw", maxHeight: "85vh", display: "flex", flexDirection: "column" }}>
 
         {/* ── Header ── */}
-        <div className="flex items-center gap-4 px-7 py-5 border-b border-border/60 bg-gradient-to-r from-blue-50/60 to-background dark:from-blue-500/10">
+        <div className="flex items-center gap-4 px-7 py-5 border-b border-border/60 dark:border-blue-500/30 bg-gradient-to-r from-blue-50/60 to-background dark:bg-none dark:bg-background">
           <div className="h-11 w-11 rounded-xl flex items-center justify-center border flex-shrink-0 bg-blue-100 border-blue-200 shadow-sm dark:bg-blue-500/20 dark:border-blue-500/30">
             <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
@@ -681,9 +681,9 @@ function IntroEmailModal({
             </div>
 
             {showWarning && (
-              <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-[11px] text-amber-800 leading-snug">
+              <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-50 dark:bg-background border border-amber-200 dark:border-amber-500/30 rounded-xl">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-snug">
                   <span className="font-semibold">Heads up:</span> more than 2 insights risks diluting focus and reducing readability. Narrow to 1–2 most relevant.
                 </p>
               </div>
@@ -765,7 +765,7 @@ function BattlecardModal({ open, onClose, contactId, contactName, onGenerate }: 
               { label: "Industry insight", desc: "A relevant sector trend or publication" },
               { label: "Role insight",     desc: "Content relevant to their function" },
             ].map(({ label, desc }) => (
-              <div key={label} className="flex flex-col gap-0.5 rounded-lg border border-border/50 bg-secondary/30 px-3 py-2">
+              <div key={label} className="flex flex-col gap-0.5 rounded-lg border border-border/50 bg-secondary/30 dark:bg-background px-3 py-2">
                 <p className="text-xs font-semibold text-foreground leading-snug">{label}</p>
                 <p className="text-[10px] text-muted-foreground leading-snug">{desc}</p>
               </div>
@@ -1494,7 +1494,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
               </div>
 
               {/* ── Merged Identity + Contact Details card ── */}
-              <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden flex-shrink-0">
+              <div className="bg-card dark:bg-background rounded-2xl border border-border/60 shadow-sm overflow-hidden flex-shrink-0">
                 <div className="h-20 bg-slate-800 dark:bg-slate-700" />
                 <div className="px-4 sm:px-6 pb-5">
                   <div className="flex items-end gap-4 -mt-10 mb-3">
@@ -2099,7 +2099,7 @@ function QuotablesCarousel({
           {current && (
             <div
               className={cn(
-                 "rounded-xl bg-gradient-to-br from-violet-50 to-white dark:from-violet-950 dark:to-slate-900 border border-violet-100 dark:border-violet-700/60 overflow-hidden transition-all duration-200",
+                 "rounded-xl bg-gradient-to-br from-violet-50 to-white dark:bg-none dark:bg-background border border-violet-100 dark:border-violet-700/60 overflow-hidden transition-all duration-200",
                 expanded ? "px-4 pt-4 pb-4" : "px-4 pt-3 pb-3",
                  onInsightClick && current.signalId != null && "cursor-pointer hover:border-violet-300 dark:hover:border-violet-400 hover:shadow-sm hover:from-violet-100 dark:hover:from-violet-900 active:scale-[0.99]"
               )}
@@ -2189,7 +2189,7 @@ function LostFriendoCard({
 }) {
   return (
     <div
-      className="fixed bottom-5 right-5 z-50 w-[380px] rounded-2xl border border-border/60 bg-card shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300"
+      className="fixed bottom-5 right-5 z-50 w-[380px] rounded-2xl border border-border/60 bg-card dark:bg-background shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300"
       role="status"
       aria-live="polite"
     >
@@ -2437,7 +2437,7 @@ function InsightDetailView({
       <div className="flex flex-col gap-3 pt-1 pr-1 flex-shrink-0">
 
         {/* Meta card */}
-        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border/60 bg-card dark:bg-background shadow-sm overflow-hidden">
           <div className={cn("h-1 w-full", category.accentBg)} />
           <div className="p-4 flex flex-col gap-2.5">
             <div className="flex items-center gap-2 flex-wrap">
@@ -2531,7 +2531,7 @@ function InsightDetailView({
 
         {/* Relevance card — hidden while the browser expands into its space */}
         {!browserExpanded && (
-        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border/60 bg-card dark:bg-background shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-secondary/20">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">
@@ -2576,7 +2576,7 @@ function InsightDetailView({
             )}
             {/* ── Quotable power-up box ── */}
             {quote && (
-              <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-500/10 dark:to-yellow-500/5 p-3.5">
+              <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 to-yellow-50 dark:bg-none dark:bg-background p-3.5">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-300 flex-shrink-0" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-300">Quotable</span>
@@ -2596,7 +2596,7 @@ function InsightDetailView({
       </div>
 
       {/* ── Lite browser — grows to fill all remaining vertical space ── */}
-      <div className="flex-shrink-0 h-[min(42vh,560px)] min-h-[320px] flex flex-col mt-3 pr-1 rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+      <div className="flex-shrink-0 h-[min(42vh,560px)] min-h-[320px] flex flex-col mt-3 pr-1 rounded-xl border border-border/60 bg-card dark:bg-background shadow-sm overflow-hidden">
         {/* Browser chrome */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40 bg-secondary/30 flex-shrink-0">
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -2634,7 +2634,7 @@ function InsightDetailView({
         </div>
 
         {/* iframe — fills the remaining space of the browser card */}
-        <div className="relative flex-1 min-h-0 bg-card">
+        <div className="relative flex-1 min-h-0 bg-card dark:bg-background">
           {!iframeLoaded && !iframeError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
@@ -2854,7 +2854,7 @@ function InsightCardExpanded({
 
       {/* ── Colleague attribution ── */}
       {category.id === "colleague" && item.sourceContact && (
-        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-sky-50 border border-sky-200 dark:bg-sky-500/10 dark:border-sky-500/20">
+        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-sky-50 border border-sky-200 dark:bg-background dark:border-sky-500/30">
           <div className="h-5 w-5 rounded-full bg-sky-200 border border-sky-300 dark:bg-sky-500/20 dark:border-sky-500/30 flex items-center justify-center flex-shrink-0">
             <span className="text-[9px] font-bold text-sky-700 dark:text-sky-300 uppercase leading-none select-none">
               {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
@@ -2871,7 +2871,7 @@ function InsightCardExpanded({
 
       {/* ── Counterpart attribution ── */}
       {category.id === "counterpart" && item.sourceContact && (
-        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20">
+        <div className="mx-3 mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 dark:bg-background dark:border-rose-500/30">
           <div className="h-5 w-5 rounded-full bg-rose-200 border border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/30 flex items-center justify-center flex-shrink-0">
             <span className="text-[9px] font-bold text-rose-700 dark:text-rose-300 uppercase leading-none select-none">
               {item.sourceContact.name.split(" ").map(w => w[0]).slice(0, 2).join("")}
@@ -2901,7 +2901,7 @@ function InsightCardExpanded({
                 <p className="text-[10px] text-muted-foreground leading-snug flex-1 line-clamp-2">{relevance.description}</p>
               </div>
               {displayQuote && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10 px-2.5 py-2">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-background px-2.5 py-2">
                   <div className="flex items-center gap-1 mb-1">
                     <Zap className="h-2.5 w-2.5 text-amber-500 fill-amber-400 flex-shrink-0" />
                     <span className="text-[9px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-300">Quotable</span>
@@ -2997,7 +2997,7 @@ function InsightCategoryPanel({
 
   return (
     <div className={cn(
-      "rounded-xl border bg-card overflow-hidden transition-all flex-shrink-0",
+      "rounded-xl border bg-card dark:bg-background overflow-hidden transition-all flex-shrink-0",
       open ? "border-border/80 shadow-sm" : "border-border/40",
     )}>
       <div
@@ -3240,7 +3240,7 @@ function SandboxCard({
 }) {
   return (
     <div className={cn(
-      "rounded-xl border bg-card p-4 transition-all",
+      "rounded-xl border bg-card dark:bg-background p-4 transition-all",
       comingSoon || locked ? "opacity-70 border-border/40" : "border-border/70 shadow-sm",
     )}>
       <div className="flex items-start gap-3">
@@ -3570,7 +3570,7 @@ function ContactCenterHub({
   const [activeTab, setActiveTab] = useState<"assistant" | "activity">("assistant");
 
   return (
-    <div className="flex flex-col flex-none md:flex-1 min-h-[520px] md:min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden">
+    <div className="flex flex-col flex-none md:flex-1 min-h-[520px] md:min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card dark:bg-background overflow-hidden">
       {/* Tab toggle header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 flex-shrink-0">
         <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary border border-border/50">
@@ -3934,7 +3934,7 @@ function ContactChat({
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card dark:bg-background overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 flex-shrink-0">
         <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">

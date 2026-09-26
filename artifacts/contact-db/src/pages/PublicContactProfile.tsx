@@ -191,7 +191,7 @@ export default function PublicContactProfile() {
 
       {/* Sign-in card — fixed center of viewport below header */}
       <div className="fixed left-0 right-0 bottom-0 top-16 z-20 flex items-center justify-center px-4 pointer-events-none">
-        <div className="pointer-events-auto bg-card dark:bg-slate-900 border border-border dark:border-slate-600 rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+        <div className="pointer-events-auto bg-card dark:bg-background border border-border rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
           <div className="h-14 w-14 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-sm">
             {getInitials(fullName)}
           </div>
@@ -234,7 +234,7 @@ export default function PublicContactProfile() {
           </Link>
 
           {/* Hero Card */}
-          <div className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden mb-6">
+          <div className="bg-card dark:bg-background rounded-2xl shadow-sm border border-border/60 overflow-hidden mb-6">
             <div className="h-28 bg-slate-800 dark:bg-slate-700" />
             <div className="px-8 pb-7">
               <div className="flex flex-col sm:flex-row gap-6 items-start">
@@ -274,7 +274,7 @@ export default function PublicContactProfile() {
             <div className="space-y-6">
               {/* Contact Info — always locked on public page */}
               {hasContactInfo && (
-                <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+                <section className="bg-card dark:bg-background rounded-2xl border border-border/60 shadow-sm p-6">
                   <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-5">
                     Contact Info
                   </h2>
@@ -284,7 +284,7 @@ export default function PublicContactProfile() {
 
               {/* Current Company */}
               {contact.company && (
-                <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+                <section className="bg-card dark:bg-background rounded-2xl border border-border/60 shadow-sm p-6">
                   <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                     Current Company
                   </h2>
@@ -308,7 +308,7 @@ export default function PublicContactProfile() {
             <div className="lg:col-span-2 space-y-6">
               {/* About */}
               {contact.bio && (
-                <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+                <section className="bg-card dark:bg-background rounded-2xl border border-border/60 shadow-sm p-6">
                   <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                     About {contact.firstName}
                   </h2>
@@ -317,7 +317,7 @@ export default function PublicContactProfile() {
               )}
 
               {/* Personal Insights — always locked on public page */}
-              <section className="bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+              <section className="bg-card dark:bg-background rounded-2xl border border-border/60 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
