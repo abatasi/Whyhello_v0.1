@@ -6,7 +6,8 @@ import {
   Building2, Users, Search as SearchIcon, Filter,
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
   ExternalLink, Bookmark, Trash2, BookmarkPlus, ListPlus, Check, Plus, LayoutList, X,
-  Mail, Phone, Clock, Factory, BriefcaseBusiness, TrendingUp, MapPin, type LucideIcon,
+  Mail, Phone, Clock, Factory, BriefcaseBusiness, TrendingUp, MapPin,
+  Sparkles, ClipboardList, Download, type LucideIcon,
 } from "lucide-react";
 import {
   getRecentContactVisits,
@@ -715,6 +716,28 @@ export default function Search({ directory }: { directory: Tab }) {
               aria-label={activeTab === "contacts" ? "Search people" : "Search companies"}
             />
           </div>
+          {selectedIds.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2" aria-label="Selected records actions">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+                className="gap-1.5 whitespace-nowrap"
+              >
+                <X className="h-4 w-4" />
+                Clear {selectedIds.size} selected
+              </Button>
+              <Button variant="outline" size="sm" disabled title="Coming soon" className="gap-1.5">
+                <Sparkles className="h-4 w-4" /> Enrich
+              </Button>
+              <Button variant="outline" size="sm" disabled title="Coming soon" className="gap-1.5">
+                <ClipboardList className="h-4 w-4" /> Playbook
+              </Button>
+              <Button variant="outline" size="sm" disabled title="Coming soon" className="gap-1.5">
+                <Download className="h-4 w-4" /> Export
+              </Button>
+            </div>
+          )}
         </div>
         <div className="flex flex-1 min-h-0">
         {/* Left Sidebar Filters */}
@@ -1349,13 +1372,6 @@ export default function Search({ directory }: { directory: Tab }) {
               className="flex items-center gap-1.5 text-sm font-semibold text-primary bg-background rounded-lg px-3 py-1.5 hover:bg-primary hover:text-background transition-colors"
             >
               <ListPlus className="h-4 w-4" /> Add to List
-            </button>
-            <button
-              aria-label="Clear selection"
-              onClick={() => setSelectedIds(new Set())}
-              className="text-background/60 hover:text-background text-sm transition-colors ml-1"
-            >
-              ✕
             </button>
           </motion.div>
         )}
