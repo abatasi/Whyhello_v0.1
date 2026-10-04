@@ -713,7 +713,10 @@ function IntroEmailModal({
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-border/60 bg-secondary/20">
+        <div className="flex flex-wrap items-center justify-end gap-3 px-7 py-4 border-t border-border/60 bg-secondary/20">
+          <p className="mr-auto w-full text-xs text-muted-foreground sm:w-auto sm:flex-1">
+            AI-generated content may be inaccurate.
+          </p>
           <DialogClose asChild>
             <Button variant="outline" size="sm" className="h-9 px-5">Cancel</Button>
           </DialogClose>
