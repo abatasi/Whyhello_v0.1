@@ -3008,12 +3008,6 @@ function PlaybooksListPage() {
   return <Shell>
     <PlaybooksList
       onTemplates={() => setShowCanned(true)}
-      templates={CANNED_PLAYBOOKS.map(template => ({ id: template.id, name: template.name }))}
-      buildTemplate={id => {
-        const template = CANNED_PLAYBOOKS.find(candidate => candidate.id === id);
-        if (!template) throw new Error("This template is no longer available.");
-        return JSON.stringify(template.build());
-      }}
     />
     <CannedLibraryModal open={showCanned} onClose={() => setShowCanned(false)} onSelect={async template => {
       if (templateBusy.current) return;

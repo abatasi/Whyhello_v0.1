@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PlaybookDialog } from "./PlaybookDialog";
+import { PlaybookCreationChoice } from "./PlaybookCreationChoice";
 import { PlaybooksTable } from "./PlaybooksTable";
 import { PlaybooksToolbar } from "./PlaybooksToolbar";
 import { createPlaybookRecord, duplicatePlaybookRecord, playbookRequest } from "./list-api";
@@ -15,8 +16,8 @@ import { copyConfig, DEFAULT_VIEW, filterPlaybooks, type PlaybookRecord, type Vi
 import { usePlaybookViews, type SavedView } from "./use-playbook-views";
 import "./playbooks-list.css";
 
-export function PlaybooksList({ onTemplates, templates, buildTemplate }: {
-  onTemplates: () => void; templates: { id: string; name: string }[]; buildTemplate: (id: string) => string;
+export function PlaybooksList({ onTemplates }: {
+  onTemplates: () => void;
 }) {
   const { user } = useUser();
   const [, navigate] = useLocation();
@@ -34,10 +35,9 @@ export function PlaybooksList({ onTemplates, templates, buildTemplate }: {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [busy, setBusy] = useState(false);
-  const [dialog, setDialog] = useState<"" | "create" | "saveView" | "renameView" | "rename">("");
+  const [dialog, setDialog] = useState<"" | "chooseCreate" | "create" | "saveView" | "renameView" | "rename">("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [template, setTemplate] = useState("blank");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingView, setEditingView] = useState<SavedView | null>(null);
   const [pending, setPending] = useState<{ action: string; ids: number[] } | null>(null);
@@ -87,7 +87,8 @@ export function PlaybooksList({ onTemplates, templates, buildTemplate }: {
     setConfig(copyConfig(saved.views.find(view => view.id === id)?.config ?? DEFAULT_VIEW));
     setFiltersOpen(false); setSelected([]); setPage(1);
   });
-  const openCreate = () => { setName(""); setDescription(""); setTemplate("blank"); setFormError(""); setDialog("create"); };
+  const openCreate = () => { setFormError(""); setDialog("chooseCreate"); };
+  const openScratch = () => { setName(""); setDescription(""); setFormError(""); setDialog("create"); };
   const closeDialog = () => { if (!busy) { setDialog(""); setFormError(""); } };
   const rowAction = (action: string, row: PlaybookRecord) => {
     setFormError("");
@@ -114,8 +115,7 @@ export function PlaybooksList({ onTemplates, templates, buildTemplate }: {
         await qc.invalidateQueries({ queryKey: ["playbooks"] });
         setDialog(""); toast({ title: "Playbook renamed" });
       } else {
-        const canvas = template === "blank" ? description.trim() || undefined : buildTemplate(template);
-        const created = await createPlaybookRecord(name, canvas);
+        const created = await createPlaybookRecord(name, description.trim() || undefined);
         await qc.invalidateQueries({ queryKey: ["playbooks"] });
         navigate(`/playbooks/${created.id}`);
       }
@@ -206,11 +206,12 @@ export function PlaybooksList({ onTemplates, templates, buildTemplate }: {
       {rows.filter(row => row.status === "paused").map(row => <div className="pb-diagnostic" key={row.id}><ShieldAlert size={18} /><div><strong>{row.name}</strong><p>Playbook status is paused.</p></div><button className="pb-secondary-button" onClick={() => navigate(`/playbooks/${row.id}`)}>Review playbook</button></div>)}
       <div className="pb-diagnostic"><BarChart3 size={18} /><div><strong>Delivery and reply monitoring</strong><p>These outcomes are not recorded by the current playbook API. No health score is fabricated.</p></div></div>
     </section>}
-    {dialog && <PlaybookDialog title={dialog === "create" ? "Create playbook" : dialog === "rename" ? "Rename playbook" : dialog === "saveView" ? "Save as new view" : "Rename view"}
+    {dialog === "chooseCreate" && <PlaybookCreationChoice onClose={closeDialog} onScratch={openScratch} onTemplate={() => { setDialog(""); onTemplates(); }} />}
+    {dialog && dialog !== "chooseCreate" && <PlaybookDialog title={dialog === "create" ? "Build from scratch" : dialog === "rename" ? "Rename playbook" : dialog === "saveView" ? "Save as new view" : "Rename view"}
       description={dialog === "create" ? "Start as a draft, then build your outreach workflow." : dialog === "rename" ? "Change the name without changing its canvas or enrollments." : "Views save search, filters, sorting, columns and density. Private to your account in this browser."} onClose={closeDialog} busy={busy}>
       <form className="pb-form" onSubmit={event => { event.preventDefault(); void submitForm(); }}>
         <label>{dialog === "create" || dialog === "rename" ? "Playbook name" : "View name"}<input autoFocus required maxLength={255} value={name} onChange={event => setName(event.target.value)} disabled={busy} /></label>
-        {dialog === "create" && <><label>Starting template<select value={template} disabled={busy} onChange={event => setTemplate(event.target.value)}><option value="blank">Blank playbook</option>{templates.map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>{template === "blank" && <label>Optional description<textarea value={description} onChange={event => setDescription(event.target.value)} disabled={busy} rows={3} /><small>The canvas builder replaces this note with its saved workflow.</small></label>}</>}
+        {dialog === "create" && <label>Optional description<textarea value={description} onChange={event => setDescription(event.target.value)} disabled={busy} rows={3} /><small>The canvas builder replaces this note with its saved workflow.</small></label>}
         {formError && <div className="pb-error" role="alert">{formError}</div>}
         <div className="pb-dialog-actions"><button type="button" className="pb-secondary-button" disabled={busy} onClick={closeDialog}>Cancel</button><button className="pb-primary-button" disabled={!name.trim() || busy}>{busy && <Loader2 size={15} className="animate-spin" />}{dialog === "create" ? "Create playbook" : "Save"}</button></div>
       </form>

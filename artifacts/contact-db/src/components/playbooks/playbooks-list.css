@@ -158,6 +158,12 @@
 .pb-dialog-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid hsl(var(--border)); }
 .pb-dialog-header h2 { margin: 0; font: 600 16px/1.5 var(--font-sans, 'Inter', sans-serif); }
 .pb-dialog-description { padding: 16px 20px 0; color: hsl(var(--muted-foreground)); font-size: 13px; }
+.pb-creation-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 20px; }
+.pb-creation-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 24px 20px; text-align: left; border: 1px solid hsl(var(--border)); border-radius: 7px; background: hsl(var(--background)); color: hsl(var(--foreground)); }
+.pb-creation-choice:hover { border-color: hsl(var(--primary)); background: hsl(var(--primary) / .06); }
+.pb-creation-choice-icon { display: grid; place-items: center; width: 80px; height: 80px; margin-bottom: 4px; border: 1px solid hsl(var(--primary) / .2); border-radius: 12px; background: hsl(var(--primary) / .08); color: hsl(var(--primary)); }
+.pb-creation-choice-title { font-size: 16px; line-height: 1.4; font-weight: 600; }
+.pb-creation-choice-description { color: hsl(var(--muted-foreground)); font-size: 13px; line-height: 1.6; }
 .pb-form { display: grid; gap: 16px; padding: 20px; }
 .pb-form > label { display: grid; gap: 6px; font-size: 13px; color: hsl(var(--muted-foreground)); }
 .pb-form :is(input, textarea, select) { width: 100%; padding: 9px 10px; border: 1px solid hsl(var(--border)); border-radius: 5px; background: hsl(var(--background)); color: hsl(var(--foreground)); font-size: 14px; }
@@ -192,6 +198,11 @@
   .pb-stat-grid > div { border-bottom: 1px solid var(--pb-border); }
   .pb-analytics-list > div { grid-template-columns: minmax(120px, 1fr) repeat(3, 58px); gap: 5px; font-size: 12px; }
   .pb-diagnostic { flex-wrap: wrap; }
+}
+@media (max-width: 480px) {
+  .pb-creation-choices { grid-template-columns: 1fr; padding: 16px; }
+  .pb-creation-choice { padding: 20px; }
+  .pb-creation-choice-icon { width: 72px; height: 72px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .playbooks-operational *, .pb-dialog * { animation: none !important; transition: none !important; }
