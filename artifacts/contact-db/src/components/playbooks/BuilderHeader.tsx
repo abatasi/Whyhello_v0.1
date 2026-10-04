@@ -4,6 +4,8 @@ import { Activity, Archive, ArrowLeft, BarChart3, BookOpen, Check, ChevronDown, 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { BuilderEnrollmentData } from "./BuilderEnrollmentData";
 import { readManualEmailConfiguration, validateManualEmailConfiguration } from "./manual-email-model";
+import { readPhoneCallConfiguration, validatePhoneCallConfiguration } from "./phone-call-model";
+import { readLinkedInConnectionConfiguration, validateLinkedInConnectionConfiguration } from "./linkedin-connection-model";
 
 export type PlaybookTab = "editor" | "contacts" | "activity" | "health" | "report" | "settings";
 const tabs: { id: PlaybookTab; label: string; Icon: LucideIcon }[] = [
@@ -89,7 +91,7 @@ export function StructurePanel({ tab, playbookId, name, status, nodes, contactNa
   const steps = nodes.filter(node => !["placeholder", "prospect-added", "trigger-detected", "added-to-playbook"].includes(String(node.data.blockType)));
   const incomplete = steps.filter(node => {
     const type = String(node.data.blockType);
-    return type === "manual-email" ? !!validateManualEmailConfiguration(readManualEmailConfiguration(node.data.configuration)) : type === "send-email" ? !(node.data.subject || node.data.emailType) : type === "send-linkedin" ? !node.data.linkedinAction : type === "time-delay" ? !node.data.delayAmount : type === "split-path" ? !(node.data.condition && Array.isArray(node.data.branches) && node.data.branches.length >= 2) : false;
+    return type === "manual-email" ? !!validateManualEmailConfiguration(readManualEmailConfiguration(node.data.configuration)) : type === "phone-call" ? !!validatePhoneCallConfiguration(readPhoneCallConfiguration(node.data.configuration)) : type === "linkedin-connection-request" ? !!validateLinkedInConnectionConfiguration(readLinkedInConnectionConfiguration(node.data.configuration)) : type === "send-email" ? !(node.data.subject || node.data.emailType) : type === "send-linkedin" ? !node.data.linkedinAction : type === "time-delay" ? !node.data.delayAmount : type === "split-path" ? !(node.data.condition && Array.isArray(node.data.branches) && node.data.branches.length >= 2) : false;
   });
   const title = { contacts: "Enrolled contacts", activity: "Activity", health: "Playbook health", report: "Performance report", settings: "Playbook settings" }[tab];
   return <div className="min-h-0 flex-1 overflow-y-auto bg-background p-5 sm:p-8">

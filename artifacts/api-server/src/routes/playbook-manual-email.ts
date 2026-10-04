@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import { getAuth, clerkClient } from "@clerk/express";
 import { z } from "zod";
 import { db } from "@workspace/db";
@@ -12,7 +12,7 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts.js";
 import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evidence.js";
 
-const timing = z.object({
+export const timing = z.object({
   unit: z.enum(["immediately", "minutes", "hours", "days", "business-days", "specific"]),
   amount: z.number().int().min(1).max(525600), at: z.string().max(100),
 });
@@ -24,7 +24,7 @@ const previewSchema = z.object({
     id: z.string(), category: z.string(), title: z.string(), description: z.string(), url: z.string(),
   })).max(100),
 });
-const variantSchema = z.object({
+export const variantSchema = z.object({
   id: z.string().min(1).max(128), name: z.string().min(1).max(255),
   allocation: z.number().int().min(0).max(100), mode: z.enum(["assisted", "prompt", "template"]),
   emailType: z.enum(["Outreach", "Follow-up", "Last pitch"]),
@@ -61,7 +61,7 @@ export function manualEmailConfigurationError(value: unknown): string | null {
 }
 
 export const manualEmailRouter: IRouter = Router({ mergeParams: true });
-manualEmailRouter.use(async (req, res, next) => {
+export const requireOwnedPlaybook: RequestHandler = async (req, res, next) => {
   const auth = getAuth(req);
   const userId = (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId;
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
@@ -74,9 +74,10 @@ manualEmailRouter.use(async (req, res, next) => {
     res.locals.userId = userId;
     next();
   } catch { res.status(500).json({ error: "Playbook could not be loaded." }); }
-});
+};
+manualEmailRouter.use(requireOwnedPlaybook);
 
-async function hqContext(userId: string) {
+export async function hqContext(userId: string) {
   const [record] = await db.select().from(dnaProfilesTable).where(eq(dnaProfilesTable.userId, userId));
   const data = record ? JSON.parse(record.data) : {};
   const meaningful = (value: unknown): boolean => {
@@ -147,6 +148,37 @@ manualEmailRouter.get("/context", async (_req, res) => {
 });
 
 type Evidence = { id: string; category: string; title: string; description: string; url: string };
+export async function collectPlaybookEvidence(contact: typeof contactsTable.$inferSelect, company: typeof companiesTable.$inferSelect | undefined, sources: string[]): Promise<Evidence[]> {
+  const contactId = contact.id;
+  const evidence: Evidence[] = [];
+  const add = (category: string, rows: { id: number; title: string; description: string | null; url: string }[]) =>
+    rows.slice(0, 12).forEach(row => evidence.push({ id: `${category}:${row.id}`, category, title: row.title, description: row.description ?? "", url: row.url }));
+  const wanted = new Set(sources);
+  if (wanted.has("personal") || wanted.has("executive")) {
+    add("Personal / Executive Persona Research", await db.select().from(contactInsightsTable).where(eq(contactInsightsTable.contactId, contactId)).orderBy(desc(contactInsightsTable.id)).limit(12));
+  }
+  if (company && ["company-news", "job-postings", "strategic", "company", "competitors"].some(s => wanted.has(s))) {
+    const rows = await db.select().from(companyInsightsTable).where(eq(companyInsightsTable.companyId, company.id)).orderBy(desc(companyInsightsTable.id)).limit(40);
+    const jobs = (r: typeof rows[number]) => /hiring|vacanc|job posting|recruit|career/i.test(`${r.title} ${r.description}`);
+    if (wanted.has("job-postings")) add("Relevant Job Postings", rows.filter(jobs));
+    if (wanted.has("company-news") || wanted.has("strategic") || wanted.has("company")) add("Company / Strategic Company Research", rows.filter(r => !jobs(r)));
+    if (wanted.has("competitors")) add("Competitors", rows.filter(r => /competit|rival/i.test(`${r.title} ${r.description}`)));
+  }
+  if (wanted.has("role") && contact.roleId) add("Role", await db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId)).limit(12));
+  const industryId = contact.industryId ?? company?.industryId;
+  if (wanted.has("industry") && industryId) add("Industry", await db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, industryId)).limit(12));
+  for (const category of ["colleagues", "counterparts"]) {
+    if (!wanted.has(category)) continue;
+    const table = category === "colleagues" ? colleagueInsightsTable : counterpartInsightsTable;
+    const rows = await db.select({ id: table.id, title: table.title, description: table.description, url: table.url, firstName: contactsTable.firstName, lastName: contactsTable.lastName, companyId: contactsTable.companyId })
+      .from(table).innerJoin(contactInsightsTable, eq(table.url, contactInsightsTable.url))
+      .innerJoin(contactsTable, eq(contactInsightsTable.contactId, contactsTable.id))
+      .where(and(eq(table.contactId, contactId), ne(contactsTable.id, contactId))).limit(12);
+    const validRows = rows.filter(row => category !== "colleagues" || row.companyId === contact.companyId);
+    add(category, validRows.map(row => ({ ...row, description: `Source person: ${row.firstName} ${row.lastName}. ${row.description ?? ""}` })));
+  }
+  return evidence;
+}
 manualEmailRouter.post("/preview", async (req, res) => {
   const input = z.object({ variant: variantSchema, contactId: z.number().int().positive(), regeneration: z.string().max(1000).default("") }).safeParse(req.body);
   if (!input.success) { res.status(400).json({ error: "Check the email configuration and select a real preview contact." }); return; }
@@ -171,34 +203,7 @@ manualEmailRouter.post("/preview", async (req, res) => {
       res.json({ subject: render(v.templateSubject), body: render(v.templateBody), contactId,
         personalization: `Template populated using ${fields.fullName}'s actual contact details.`, cta: "", insightsUsed: [] }); return;
     }
-    const evidence: Evidence[] = [];
-    const add = (category: string, rows: { id: number; title: string; description: string | null; url: string }[]) =>
-      rows.slice(0, 12).forEach(row => evidence.push({ id: `${category}:${row.id}`, category, title: row.title, description: row.description ?? "", url: row.url }));
-    const wanted = new Set<string>(v.researchSources);
-    if (wanted.has("personal") || wanted.has("executive")) {
-      add("Personal / Executive Persona Research", await db.select().from(contactInsightsTable).where(eq(contactInsightsTable.contactId, contactId)).orderBy(desc(contactInsightsTable.id)).limit(12));
-    }
-    if (company && ["company-news", "job-postings", "strategic", "company", "competitors"].some(s => wanted.has(s))) {
-      const rows = await db.select().from(companyInsightsTable).where(eq(companyInsightsTable.companyId, company.id)).orderBy(desc(companyInsightsTable.id)).limit(40);
-      const jobs = (r: typeof rows[number]) => /hiring|vacanc|job posting|recruit|career/i.test(`${r.title} ${r.description}`);
-      if (wanted.has("job-postings")) add("Relevant Job Postings", rows.filter(jobs));
-      if (wanted.has("company-news") || wanted.has("strategic") || wanted.has("company")) add("Company / Strategic Company Research", rows.filter(r => !jobs(r)));
-      if (wanted.has("competitors")) add("Competitors", rows.filter(r => /competit|rival/i.test(`${r.title} ${r.description}`)));
-    }
-    if (wanted.has("role") && contact.roleId) add("Role", await db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId)).limit(12));
-    const industryId = contact.industryId ?? company?.industryId;
-    if (wanted.has("industry") && industryId) add("Industry", await db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, industryId)).limit(12));
-    for (const category of ["colleagues", "counterparts"]) {
-      if (!wanted.has(category)) continue;
-      const table = category === "colleagues" ? colleagueInsightsTable : counterpartInsightsTable;
-      // Resolve live source identity through the original contact insight URL; never attribute a peer's activity to the recipient.
-      const rows = await db.select({ id: table.id, title: table.title, description: table.description, url: table.url, firstName: contactsTable.firstName, lastName: contactsTable.lastName, companyId: contactsTable.companyId })
-        .from(table).innerJoin(contactInsightsTable, eq(table.url, contactInsightsTable.url))
-        .innerJoin(contactsTable, eq(contactInsightsTable.contactId, contactsTable.id))
-        .where(and(eq(table.contactId, contactId), ne(contactsTable.id, contactId))).limit(12);
-      const validRows = rows.filter(row => category !== "colleagues" || row.companyId === contact.companyId);
-      add(category, validRows.map(row => ({ ...row, description: `Source person: ${row.firstName} ${row.lastName}. ${row.description ?? ""}` })));
-    }
+    const evidence = await collectPlaybookEvidence(contact, company, v.researchSources);
     const hq = await hqContext(res.locals.userId);
     const selectedContext = new Set<string>(v.contextSources);
     const insideOut = hq.contextSources.filter(s => selectedContext.has(s.id) && s.content).map(s => ({ name: s.name, content: s.content }));

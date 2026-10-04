@@ -86,6 +86,54 @@ paths:
         "401": { description: Authentication or mailbox reauthorization required }
         "409": { description: User mailbox or recipient identity unavailable }
         "502": { description: Mail provider send failed }
+  /playbooks/{id}/phone-call/preview:
+    post:
+      operationId: generatePhoneCallPreview
+      tags: [Playbooks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PhoneCallPreviewInput" }
+      responses:
+        "200":
+          description: Seller-reviewed call script; never initiates dialing
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PhoneCallPreview" }
+        "400": { description: Invalid configuration or unavailable template field }
+        "401": { description: Authentication required }
+        "404": { description: Owned Playbook or preview contact not found }
+        "502": { description: Generation failed or evidence could not be verified }
+  /playbooks/{id}/linkedin-connection/preview:
+    post:
+      operationId: generateLinkedInConnectionPreview
+      tags: [Playbooks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LinkedInConnectionPreviewInput" }
+      responses:
+        "200":
+          description: Personalized connection note of at most 200 characters; never sends a request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LinkedInConnectionPreview" }
+        "400": { description: "Invalid configuration, unknown merge field, or resolved template above 200 characters" }
+        "401": { description: Authentication required }
+        "404": { description: Owned Playbook or contact not found }
+        "502": { description: "AI output failed generation, grounding, or length validation" }
   /playbooks/propose:
     post:
       operationId: proposePlaybook
@@ -705,6 +753,69 @@ paths:
 
 components:
   schemas:
+    LinkedInConnectionPreviewInput:
+      type: object
+      required: [variant, contactId]
+      properties:
+        variant:
+          type: object
+          additionalProperties: true
+          description: Versioned connection variant; all modes remain seller-reviewed.
+        contactId: { type: integer, minimum: 1 }
+        regeneration: { type: string, maxLength: 1000 }
+    LinkedInConnectionPreview:
+      type: object
+      required: [body, contactId, personalization, insightsUsed]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 200 }
+        contactId: { type: integer, minimum: 1 }
+        personalization: { type: string, maxLength: 4000 }
+        templateBody: { type: string, maxLength: 8000 }
+        insightsUsed:
+          type: array
+          maxItems: 100
+          items: { $ref: "#/components/schemas/ManualEmailEvidence" }
+    PhoneCallPreviewInput:
+      type: object
+      required: [variant, contactId]
+      properties:
+        variant:
+          type: object
+          additionalProperties: true
+          description: Versioned call variant validated by the editor and server.
+        contactId: { type: integer, minimum: 1 }
+        regeneration: { type: string, maxLength: 1000 }
+    PhoneCallObjection:
+      type: object
+      required: [objection, response]
+      properties:
+        objection: { type: string, maxLength: 8000 }
+        response: { type: string, maxLength: 8000 }
+    PhoneCallPreview:
+      type: object
+      required: [opener, talkingPoints, questions, objections, voicemail, closing, contactId, personalization, insightsUsed]
+      properties:
+        opener: { type: string, maxLength: 8000 }
+        talkingPoints:
+          type: array
+          maxItems: 20
+          items: { type: string, maxLength: 8000 }
+        questions:
+          type: array
+          maxItems: 20
+          items: { type: string, maxLength: 8000 }
+        objections:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/PhoneCallObjection" }
+        voicemail: { type: string, maxLength: 8000 }
+        closing: { type: string, maxLength: 8000 }
+        contactId: { type: integer, minimum: 1 }
+        personalization: { type: string, maxLength: 4000 }
+        insightsUsed:
+          type: array
+          maxItems: 100
+          items: { $ref: "#/components/schemas/ManualEmailEvidence" }
     ManualEmailPreviewInput:
       type: object
       required: [variant, contactId]

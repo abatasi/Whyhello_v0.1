@@ -6,6 +6,86 @@
  * OpenAPI spec version: 0.1.0
  */
 /**
+ * Versioned connection variant; all modes remain seller-reviewed.
+ */
+export type LinkedInConnectionPreviewInputVariant = { [key: string]: unknown };
+
+export interface LinkedInConnectionPreviewInput {
+  /** Versioned connection variant; all modes remain seller-reviewed. */
+  variant: LinkedInConnectionPreviewInputVariant;
+  /** @minimum 1 */
+  contactId: number;
+  /** @maxLength 1000 */
+  regeneration?: string;
+}
+
+export interface ManualEmailEvidence {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  url: string;
+}
+
+export interface LinkedInConnectionPreview {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  body: string;
+  /** @minimum 1 */
+  contactId: number;
+  /** @maxLength 4000 */
+  personalization: string;
+  /** @maxLength 8000 */
+  templateBody?: string;
+  /** @maxItems 100 */
+  insightsUsed: ManualEmailEvidence[];
+}
+
+/**
+ * Versioned call variant validated by the editor and server.
+ */
+export type PhoneCallPreviewInputVariant = { [key: string]: unknown };
+
+export interface PhoneCallPreviewInput {
+  /** Versioned call variant validated by the editor and server. */
+  variant: PhoneCallPreviewInputVariant;
+  /** @minimum 1 */
+  contactId: number;
+  /** @maxLength 1000 */
+  regeneration?: string;
+}
+
+export interface PhoneCallObjection {
+  /** @maxLength 8000 */
+  objection: string;
+  /** @maxLength 8000 */
+  response: string;
+}
+
+export interface PhoneCallPreview {
+  /** @maxLength 8000 */
+  opener: string;
+  /** @maxItems 20 */
+  talkingPoints: string[];
+  /** @maxItems 20 */
+  questions: string[];
+  /** @maxItems 20 */
+  objections: PhoneCallObjection[];
+  /** @maxLength 8000 */
+  voicemail: string;
+  /** @maxLength 8000 */
+  closing: string;
+  /** @minimum 1 */
+  contactId: number;
+  /** @maxLength 4000 */
+  personalization: string;
+  /** @maxItems 100 */
+  insightsUsed: ManualEmailEvidence[];
+}
+
+/**
  * Versioned step variant validated by the editor and server; preserves fields across modes.
  */
 export type ManualEmailPreviewInputVariant = { [key: string]: unknown };
@@ -32,14 +112,6 @@ export interface ManualEmailTestInput {
   body: string;
   /** @minimum 1 */
   accountId: number;
-}
-
-export interface ManualEmailEvidence {
-  id: string;
-  category: string;
-  title: string;
-  description: string;
-  url: string;
 }
 
 export interface ManualEmailPreview {

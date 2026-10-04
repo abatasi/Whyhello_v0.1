@@ -5,6 +5,10 @@ import { getStepDefinition, type StepDefinition } from "./step-definitions";
 import { ManualEmailStep } from "./manual-email/ManualEmailStep";
 import { readManualEmailConfiguration, timingSummary, validateManualEmailConfiguration } from "./manual-email-model";
 import type { ManualEmailConfiguration } from "./manual-email-model";
+import { PhoneCallStep } from "./phone-call/PhoneCallStep";
+import type { PhoneCallConfiguration } from "./phone-call-model";
+import { LinkedInConnectionStep } from "./linkedin-connection/LinkedInConnectionStep";
+import type { LinkedInConnectionConfiguration } from "./linkedin-connection-model";
 
 export type ConfiguredStep = { id: string; data: Record<string, unknown> };
 export type ConfiguredPlaybookStepsProps = {
@@ -12,7 +16,7 @@ export type ConfiguredPlaybookStepsProps = {
   steps: ConfiguredStep[];
   selectedStepId: string | null;
   onSelect: (id: string | null) => void;
-  onConfigure: (id: string, config: ManualEmailConfiguration) => void;
+  onConfigure: (id: string, config: ManualEmailConfiguration | PhoneCallConfiguration | LinkedInConnectionConfiguration) => void;
   onInsert: (afterId: string | null, definition: StepDefinition) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
@@ -52,7 +56,7 @@ function StepSummary({ id, number, step, selected, onSelect, onDuplicate, onDele
       <button type="button" aria-label={selected ? "Collapse step" : "Expand step"} className="rounded p-1.5 text-muted-foreground hover:bg-muted" onClick={onSelect}>{selected ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
     </header>
     {selected && <div className="border-t border-border/70 p-4 text-xs text-muted-foreground">
-      <p>{title} is shown as a summary because this focused editor only configures Manual Email steps.</p>
+      <p>{title} is preserved as a legacy action. This editor configures Manual Email, Phone Call and LinkedIn connection-request steps.</p>
       <button type="button" className="mt-3 rounded-md border border-border px-2.5 py-1.5 hover:bg-muted" onClick={onInsert}>Insert a Manual Email before this step</button>
     </div>}
   </article>;
@@ -87,13 +91,13 @@ export function ConfiguredPlaybookSteps(props: ConfiguredPlaybookStepsProps) {
   }, [dirty, saving]);
   const selected = (id: string) => selectedStepId === id && !collapseAll;
   const choose = (id: string) => onSelect(selectedStepId === id && !collapseAll ? null : id);
-  const insertBefore = (index: number) => {
+  const insertBefore = (index: number, type = "manual-email") => {
     const predecessor = index > 0 ? steps[index - 1].id : null;
-    const definition = getStepDefinition("manual-email");
+    const definition = getStepDefinition(type);
     if (definition) onInsert(predecessor, definition);
   };
-  const insertAfter = (id: string) => {
-    const definition = getStepDefinition("manual-email");
+  const insertAfter = (id: string, type = "manual-email") => {
+    const definition = getStepDefinition(type);
     if (definition) onInsert(id, definition);
   };
   const reorderBy = (id: string, direction: -1 | 1) => {
@@ -134,24 +138,27 @@ export function ConfiguredPlaybookSteps(props: ConfiguredPlaybookStepsProps) {
       <div className="flex flex-col items-center pb-2 pt-1"><span className="rounded-full border border-border bg-muted/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Start</span><span className="h-6 w-px bg-border" /></div>
       {steps.map((step, index) => {
         const manual = step.data.blockType === "manual-email";
+        const phone = step.data.blockType === "phone-call";
+        const connection = step.data.blockType === "linkedin-connection-request";
+        const Editor = connection ? LinkedInConnectionStep : phone ? PhoneCallStep : ManualEmailStep;
         return <div key={`${step.id}-${index}`} className="relative" onDragOver={e => { if (draggedId) e.preventDefault(); }} onDrop={e => { e.preventDefault(); onDrop(step.id); }}>
           <div className="mb-3 flex justify-center">
             {index > 0 && <span className="-mt-2 mb-1 h-5 w-px bg-border" />}
           </div>
           <div className={`${draggedId === step.id ? "opacity-60" : ""}`} onDragStart={() => setDraggedId(step.id)} onDragEnd={() => setDraggedId(null)}>
-            {manual ? <ManualEmailStep
+            {manual || phone || connection ? <Editor
               playbookId={playbookId}
               stepId={step.id}
               stepNumber={index + 1}
               config={step.data.configuration}
               selected={selected(step.id)}
               onSelect={() => choose(step.id)}
-              onConfigure={config => onConfigure(step.id, config)}
+              onConfigure={(config: ManualEmailConfiguration | PhoneCallConfiguration | LinkedInConnectionConfiguration) => onConfigure(step.id, config)}
               readOnly={readOnly}
               onDuplicate={() => onDuplicate(step.id)}
               onDelete={() => onDelete(step.id)}
-              onInsertBefore={() => insertBefore(index)}
-              onInsertAfter={() => insertAfter(step.id)}
+              onInsertBefore={() => insertBefore(index, String(step.data.blockType))}
+              onInsertAfter={() => insertAfter(step.id, String(step.data.blockType))}
               onMoveUp={() => reorderBy(step.id, -1)}
               onMoveDown={() => reorderBy(step.id, 1)}
               canMoveUp={index > 0}
@@ -164,7 +171,10 @@ export function ConfiguredPlaybookSteps(props: ConfiguredPlaybookStepsProps) {
       <div className="flex justify-center"><span className="h-4 w-px bg-border" /></div>
       <div className="flex justify-center"><span className="rounded-full border border-border bg-muted/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Next</span></div>
     </div>}
-    {steps.some(step => step.id === "manual-email" && readManualEmailConfiguration(step.data.configuration).enabled && validateManualEmailConfiguration(readManualEmailConfiguration(step.data.configuration))) && <p className="mt-4 flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground"><AlertCircle size={14} />Resolve enabled step validation issues before activating this Playbook.</p>}
+    {steps.some(step => {
+      const definition = getStepDefinition(String(step.data.blockType));
+      return definition?.enabled && (step.data.configuration as { enabled?: boolean } | undefined)?.enabled !== false && definition.validation((step.data.configuration ?? {}) as Record<string, unknown>);
+    }) && <p className="mt-4 flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground"><AlertCircle size={14} />Resolve enabled step validation issues before activating this Playbook.</p>}
   </section>;
 }
 

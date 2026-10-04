@@ -1202,6 +1202,28 @@ Regeneration changes the preview only, not the generation settings. Replacing an
 
 Activation checks each enabled variant's mode, timing, traffic allocation, and required content. Activation changes Playbook status only; this editor does not claim scheduled task execution or automatically deliver previews to enrolled prospects.
 
+#### 11.3 Seller-reviewed LinkedIn connection-request notes
+
+The configured LinkedIn connection-request step prepares a personalized note for a seller to review and copy; it does not send a request, authenticate to LinkedIn, or automate LinkedIn activity. It is distinct from LinkedIn direct messages and legacy LinkedIn blocks. It follows the inline Playbook editor, explicit saving, separate task creation/due timing, and up to six named variants with traffic totaling 100%.
+
+Apply the user's stated **200-character maximum** to the complete connection note in every mode. Count greetings, spaces, punctuation, and line breaks. The editor/API use the same conservative string-length budget (surrogate-pair emoji consume two units). Never silently truncate notes. Editable oversized drafts may be saved for revision, but cannot be copied as ready notes or activated. Assisted and Prompt output must pass the limit before replacing a saved preview; even Detailed generation cannot exceed it.
+
+Templates support actual `firstName`, `lastName`, `fullName`, `company`, and `jobTitle` fields. Validate the resulting personalized text after merging—not just the raw template length. Unknown or unavailable fields fail explicitly. Every enabled, nonzero-traffic variant, including Template, requires a saved real-contact preview. Changing template text invalidates its prior verified merge snapshot and blocks copying the stale note; server activation rechecks the current template against the preview contact. Valid notes remain copyable in read-only views, since copying never edits or sends anything. Runtime seller-task execution remains separate and must enforce the same limit for each eventual recipient.
+
+AI uses only selected seller HQ/live audience context and selected research, shares the existing named-source evidence/citation checks, and never invents familiarity, prior conversations, shared connections, quotes, or claims. Prefer one grounded observation and a low-pressure invitation to connect, not a sales pitch or meeting request. Reconnect does not imply a known prior relationship unless supplied. Missing sender identity is omitted; Whyhello is not assumed to be the seller's company. Model instructions and final validation outrank user requests to exceed the character limit.
+
+Generation preserves configuration edits made while pending, locks only preview editing during replacement, and never auto-enrolls contacts. Directory samples are labeled as non-enrolled. Activation checks mode requirements, length, content, timing, and allocation on the client and owned API. Activation changes status only; scheduling and LinkedIn execution are not connected by this editor.
+
+#### 11.2 Seller-controlled Playbook Phone Call configuration
+
+Phone Call is a manual seller action, distinct from legacy call blocks. Its inline configuration supports Assisted, Prompt, and Template modes, call objectives (First conversation, Follow-up, Reconnect), separate task-creation/due timing, and up to six script variants with traffic allocations totaling 100%. Explicit saving persists scripts and configuration; generation must preserve edits made while a request is pending. Loading saved workflows must not add scaffolding or mark unchanged steps dirty.
+
+The preview includes a spoken opener, talking points, discovery questions, objection/response pairs, voicemail, closing question, personalization rationale, and inspectable supporting research. Contact previews use actual enrolled contacts or clearly labeled, non-enrolled Directory samples. Templates resolve actual contact fields, failing explicitly on unknown or unavailable fields. Generating a preview does not enroll anyone or place a call.
+
+AI uses only selected HQ inputs (including the user's explicitly live Target Market/Buying Center) and selected contact research. It must not invent the seller's identity, callback number, prior conversations, quotes, or claims; missing sender identity and callback numbers are omitted. Whyhello is the software platform, not assumed seller positioning. Colleague/counterpart evidence retains dynamically resolved named source identity and distinct, non-pressuring segue behavior, using the same evidence collection and citation checks as Manual Email. Unsupported citations and unfilled placeholders fail rather than silently losing attribution.
+
+Enabled Phone Call variants require an opener, at least one talking point, and closing; Assisted/Prompt variants require a saved preview, and Prompt requires instructions. Frontend and owned server activation guards validate timing, modes, content, and total allocation. Disabled steps do not satisfy the at-least-one-enabled-step requirement. Activation changes status only: automated task scheduling, dialing, recording, and call outcome tracking are not invoked by this editor. Sellers review the script before any actual call.
+
 - **EB logic lives in:** `artifacts/contact-db/src/pages/HQ.tsx` — `VERB_FORMS`, `descriptionToVerbPhrase()`, `frequencyPhrase()`, `buildProductEBParts()`, `buildCustomerEBParts()`, `EBSummary`
 - **Voice data lives in:** `DNAData.voice` — stored in `dna_profiles` table, retrieved via API
 - **Contact/insight data lives in:** `ContactProfile.tsx` — `InsightItem`, `InsightCategory`

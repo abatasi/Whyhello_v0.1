@@ -37,6 +37,8 @@ import type {
   HqAudienceInput,
   HqAudienceResponse,
   IndustryInsight,
+  LinkedInConnectionPreview,
+  LinkedInConnectionPreviewInput,
   ListCompaniesParams,
   ListContactsParams,
   ManualEmailEditorContext,
@@ -44,6 +46,8 @@ import type {
   ManualEmailPreviewInput,
   ManualEmailTestInput,
   OutreachJob,
+  PhoneCallPreview,
+  PhoneCallPreviewInput,
   PlaybookProposal,
   PlaybookProposalInput,
   RoleInsight,
@@ -310,6 +314,175 @@ export const useSendManualEmailPreviewTest = <
   TContext
 > => {
   return useMutation(getSendManualEmailPreviewTestMutationOptions(options));
+};
+
+export const getGeneratePhoneCallPreviewUrl = (id: number) => {
+  return `/api/playbooks/${id}/phone-call/preview`;
+};
+
+export const generatePhoneCallPreview = async (
+  id: number,
+  phoneCallPreviewInput: PhoneCallPreviewInput,
+  options?: RequestInit,
+): Promise<PhoneCallPreview> => {
+  return customFetch<PhoneCallPreview>(getGeneratePhoneCallPreviewUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(phoneCallPreviewInput),
+  });
+};
+
+export const getGeneratePhoneCallPreviewMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generatePhoneCallPreview>>,
+    TError,
+    { id: number; data: BodyType<PhoneCallPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generatePhoneCallPreview>>,
+  TError,
+  { id: number; data: BodyType<PhoneCallPreviewInput> },
+  TContext
+> => {
+  const mutationKey = ["generatePhoneCallPreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generatePhoneCallPreview>>,
+    { id: number; data: BodyType<PhoneCallPreviewInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generatePhoneCallPreview(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GeneratePhoneCallPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generatePhoneCallPreview>>
+>;
+export type GeneratePhoneCallPreviewMutationBody =
+  BodyType<PhoneCallPreviewInput>;
+export type GeneratePhoneCallPreviewMutationError = ErrorType<void>;
+
+export const useGeneratePhoneCallPreview = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generatePhoneCallPreview>>,
+    TError,
+    { id: number; data: BodyType<PhoneCallPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generatePhoneCallPreview>>,
+  TError,
+  { id: number; data: BodyType<PhoneCallPreviewInput> },
+  TContext
+> => {
+  return useMutation(getGeneratePhoneCallPreviewMutationOptions(options));
+};
+
+export const getGenerateLinkedInConnectionPreviewUrl = (id: number) => {
+  return `/api/playbooks/${id}/linkedin-connection/preview`;
+};
+
+export const generateLinkedInConnectionPreview = async (
+  id: number,
+  linkedInConnectionPreviewInput: LinkedInConnectionPreviewInput,
+  options?: RequestInit,
+): Promise<LinkedInConnectionPreview> => {
+  return customFetch<LinkedInConnectionPreview>(
+    getGenerateLinkedInConnectionPreviewUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(linkedInConnectionPreviewInput),
+    },
+  );
+};
+
+export const getGenerateLinkedInConnectionPreviewMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateLinkedInConnectionPreview>>,
+    TError,
+    { id: number; data: BodyType<LinkedInConnectionPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateLinkedInConnectionPreview>>,
+  TError,
+  { id: number; data: BodyType<LinkedInConnectionPreviewInput> },
+  TContext
+> => {
+  const mutationKey = ["generateLinkedInConnectionPreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateLinkedInConnectionPreview>>,
+    { id: number; data: BodyType<LinkedInConnectionPreviewInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateLinkedInConnectionPreview(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateLinkedInConnectionPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateLinkedInConnectionPreview>>
+>;
+export type GenerateLinkedInConnectionPreviewMutationBody =
+  BodyType<LinkedInConnectionPreviewInput>;
+export type GenerateLinkedInConnectionPreviewMutationError = ErrorType<void>;
+
+export const useGenerateLinkedInConnectionPreview = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateLinkedInConnectionPreview>>,
+    TError,
+    { id: number; data: BodyType<LinkedInConnectionPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateLinkedInConnectionPreview>>,
+  TError,
+  { id: number; data: BodyType<LinkedInConnectionPreviewInput> },
+  TContext
+> => {
+  return useMutation(
+    getGenerateLinkedInConnectionPreviewMutationOptions(options),
+  );
 };
 
 /**

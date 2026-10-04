@@ -31,6 +31,8 @@ import { ConfiguredPlaybookSteps } from "@/components/playbooks/ConfiguredPlaybo
 import { readStoredWorkflow } from "@/components/playbooks/playbook-workflow-storage";
 import { AddStepMenu } from "@/components/playbooks/AddStepMenu";
 import { createManualEmailConfiguration, readManualEmailConfiguration, validateManualEmailConfiguration, type ManualEmailConfiguration } from "@/components/playbooks/manual-email-model";
+import { createPhoneCallConfiguration, readPhoneCallConfiguration, validatePhoneCallConfiguration, type PhoneCallConfiguration } from "@/components/playbooks/phone-call-model";
+import { createLinkedInConnectionConfiguration, readLinkedInConnectionConfiguration, validateLinkedInConnectionConfiguration, type LinkedInConnectionConfiguration } from "@/components/playbooks/linkedin-connection-model";
 import { getStepDefinition, type StepDefinition } from "@/components/playbooks/step-definitions";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -406,6 +408,8 @@ function delayLabel(d: PlaybookNodeData): string {
 function nodeComplete(data: PlaybookNodeData): boolean {
   switch (data.blockType) {
     case "manual-email": return validateManualEmailConfiguration(readManualEmailConfiguration(data.configuration)) === null;
+    case "phone-call": return validatePhoneCallConfiguration(readPhoneCallConfiguration(data.configuration)) === null;
+    case "linkedin-connection-request": return validateLinkedInConnectionConfiguration(readLinkedInConnectionConfiguration(data.configuration)) === null;
     case "send-email": return !!(data.subject || data.emailType);
     case "send-linkedin": return !!(data.linkedinAction);
     case "make-call": return true;
@@ -2237,14 +2241,14 @@ function CanvasInner({
   const [showCanned, setShowCanned] = useState(false);
   const [showAddProspect, setShowAddProspect] = useState(false);
   const [activeTab, setActiveTab] = useState<PlaybookTab>("editor");
-  const [manualEmailStepId, setManualEmailStepId] = useState<string | null>(() => initialState.nodes.find(node => node.data.blockType === "manual-email")?.id ?? null);
+  const [manualEmailStepId, setManualEmailStepId] = useState<string | null>(() => initialState.nodes.find(node => ["manual-email", "phone-call", "linkedin-connection-request"].includes(node.data.blockType))?.id ?? null);
   const [showContactEnroll, setShowContactEnroll] = useState(false);
   const [showOptimize, setShowOptimize] = useState(false);
   const [shareLink, setShareLink] = useState("");
   const [pendingRecordAction, setPendingRecordAction] = useState<"archive" | "delete" | null>(null);
   const [recordActionBusy, setRecordActionBusy] = useState(false);
   const stepNodes = useMemo(() => nodes.filter(n => !["placeholder", "prospect-added", "trigger-detected", "added-to-playbook"].includes((n.data as PlaybookNodeData).blockType)), [nodes]);
-  const enabledSteps = stepNodes.filter(n => n.data.blockType !== "manual-email" || readManualEmailConfiguration(n.data.configuration).enabled);
+  const enabledSteps = stepNodes.filter(n => n.data.blockType === "manual-email" ? readManualEmailConfiguration(n.data.configuration).enabled : n.data.blockType === "phone-call" ? readPhoneCallConfiguration(n.data.configuration).enabled : n.data.blockType === "linkedin-connection-request" ? readLinkedInConnectionConfiguration(n.data.configuration).enabled : true);
   const [savedSnapshot, setSavedSnapshot] = useState(() => {
     try {
       return JSON.stringify(readStoredWorkflow<Node<PlaybookNodeData>, Edge, ProspectEntry>(initialCanvas ?? ""));
@@ -2593,14 +2597,14 @@ function CanvasInner({
   }
 
   function addManualStep(definition: StepDefinition, afterId: string | null = stepNodes.at(-1)?.id ?? null) {
-    if (!definition.enabled || definition.id !== "manual-email" || saving || ["active", "archived", "completed"].includes(playbookStatus)) return;
+    if (!definition.enabled || !["manual-email", "phone-call", "linkedin-connection-request"].includes(definition.id) || saving || ["active", "archived", "completed"].includes(playbookStatus)) return;
     const step = makeNode(definition.id, { x: 0, y: stepNodes.length * 140 }, {
       label: definition.name,
       laneId: PRIMARY_LANE_ID,
       stepType: definition.type,
       category: definition.category,
       executionMode: definition.executionMode,
-      configuration: createManualEmailConfiguration(),
+      configuration: definition.id === "linkedin-connection-request" ? createLinkedInConnectionConfiguration() : definition.id === "phone-call" ? createPhoneCallConfiguration() : createManualEmailConfiguration(),
     });
     const next = [...nodes];
     next.splice(afterId ? next.findIndex(node => node.id === afterId) + 1 : 0, 0, step);
@@ -2613,7 +2617,7 @@ function CanvasInner({
     // New steps, like their configuration, remain unsaved until Save Changes.
   }
 
-  function changeManualConfiguration(id: string, configuration: ManualEmailConfiguration) {
+  function changeManualConfiguration(id: string, configuration: ManualEmailConfiguration | PhoneCallConfiguration | LinkedInConnectionConfiguration) {
     if (readOnlySteps) return;
     const current = nodesRef.current;
     if (!current.some(node => node.id === id)) return;
@@ -2631,6 +2635,16 @@ function CanvasInner({
       config.variants = config.variants.map(v => ({ ...v, id: crypto.randomUUID() }));
       copy.data.configuration = config;
     }
+    if (copy.data.blockType === "phone-call") {
+      const config = readPhoneCallConfiguration(copy.data.configuration);
+      config.variants = config.variants.map(v => ({ ...v, id: crypto.randomUUID() }));
+      copy.data.configuration = config;
+    }
+    if (copy.data.blockType === "linkedin-connection-request") {
+      const config = readLinkedInConnectionConfiguration(copy.data.configuration);
+      config.variants = config.variants.map(v => ({ ...v, id: crypto.randomUUID() }));
+      copy.data.configuration = config;
+    }
     const next = [...nodes]; next.splice(index + 1, 0, copy);
     setNodes(next); commitToHistory(next, edges, prospects); setManualEmailStepId(copy.id);
   }
@@ -2638,9 +2652,13 @@ function CanvasInner({
     if (readOnlySteps) return;
     const step = nodes.find(node => node.id === id);
     const config = step?.data.blockType === "manual-email" ? readManualEmailConfiguration(step.data.configuration) : null;
+    const call = step?.data.blockType === "phone-call" ? readPhoneCallConfiguration(step.data.configuration) : null;
+    const connection = step?.data.blockType === "linkedin-connection-request" ? readLinkedInConnectionConfiguration(step.data.configuration) : null;
     const substantial = config?.variants.some(v => v.preview || v.prompt.trim() || v.templateSubject.trim() || v.templateBody.trim() || v.userContext.trim() || v.guidelines.length || v.customTone.trim())
+      || call?.variants.some(v => v.preview || v.prompt.trim() || v.userContext.trim() || v.guidelines.length || v.customTone.trim() || v.template.opener.trim() || v.template.closing.trim() || v.template.voicemail.trim() || v.template.talkingPoints.length || v.template.questions.length || v.template.objections.length)
+      || connection?.variants.some(v => v.preview || v.prompt.trim() || v.templateBody.trim() || v.userContext.trim() || v.guidelines.length || v.customTone.trim())
       || !!(step?.data.emailBody || step?.data.subject || step?.data.linkedinBody || step?.data.callObjective);
-    if (substantial && !window.confirm("Delete this step and its configured email content?")) return;
+    if (substantial && !window.confirm(connection ? "Delete this step and its configured LinkedIn connection note?" : call ? "Delete this step and its configured call content?" : "Delete this step and its configured email content?")) return;
     const next = nodes.filter(node => node.id !== id);
     const nextEdges = edges.filter(edge => edge.source !== id && edge.target !== id);
     setNodes(next); setEdges(nextEdges); commitToHistory(next, nextEdges, prospects);

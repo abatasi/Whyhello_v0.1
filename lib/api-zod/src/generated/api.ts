@@ -100,6 +100,141 @@ export const SendManualEmailPreviewTestResponse = zod.object({
   success: zod.boolean(),
 });
 
+export const GeneratePhoneCallPreviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const generatePhoneCallPreviewBodyRegenerationMax = 1000;
+
+export const GeneratePhoneCallPreviewBody = zod.object({
+  variant: zod
+    .record(zod.string(), zod.unknown())
+    .describe("Versioned call variant validated by the editor and server."),
+  contactId: zod.number().min(1),
+  regeneration: zod
+    .string()
+    .max(generatePhoneCallPreviewBodyRegenerationMax)
+    .optional(),
+});
+
+export const generatePhoneCallPreviewResponseOpenerMax = 8000;
+
+export const generatePhoneCallPreviewResponseTalkingPointsItemMax = 8000;
+
+export const generatePhoneCallPreviewResponseTalkingPointsMax = 20;
+
+export const generatePhoneCallPreviewResponseQuestionsItemMax = 8000;
+
+export const generatePhoneCallPreviewResponseQuestionsMax = 20;
+
+export const generatePhoneCallPreviewResponseObjectionsItemObjectionMax = 8000;
+
+export const generatePhoneCallPreviewResponseObjectionsItemResponseMax = 8000;
+
+export const generatePhoneCallPreviewResponseObjectionsMax = 20;
+
+export const generatePhoneCallPreviewResponseVoicemailMax = 8000;
+
+export const generatePhoneCallPreviewResponseClosingMax = 8000;
+
+export const generatePhoneCallPreviewResponsePersonalizationMax = 4000;
+
+export const generatePhoneCallPreviewResponseInsightsUsedMax = 100;
+
+export const GeneratePhoneCallPreviewResponse = zod.object({
+  opener: zod.string().max(generatePhoneCallPreviewResponseOpenerMax),
+  talkingPoints: zod
+    .array(
+      zod.string().max(generatePhoneCallPreviewResponseTalkingPointsItemMax),
+    )
+    .max(generatePhoneCallPreviewResponseTalkingPointsMax),
+  questions: zod
+    .array(zod.string().max(generatePhoneCallPreviewResponseQuestionsItemMax))
+    .max(generatePhoneCallPreviewResponseQuestionsMax),
+  objections: zod
+    .array(
+      zod.object({
+        objection: zod
+          .string()
+          .max(generatePhoneCallPreviewResponseObjectionsItemObjectionMax),
+        response: zod
+          .string()
+          .max(generatePhoneCallPreviewResponseObjectionsItemResponseMax),
+      }),
+    )
+    .max(generatePhoneCallPreviewResponseObjectionsMax),
+  voicemail: zod.string().max(generatePhoneCallPreviewResponseVoicemailMax),
+  closing: zod.string().max(generatePhoneCallPreviewResponseClosingMax),
+  contactId: zod.number().min(1),
+  personalization: zod
+    .string()
+    .max(generatePhoneCallPreviewResponsePersonalizationMax),
+  insightsUsed: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        category: zod.string(),
+        title: zod.string(),
+        description: zod.string(),
+        url: zod.string(),
+      }),
+    )
+    .max(generatePhoneCallPreviewResponseInsightsUsedMax),
+});
+
+export const GenerateLinkedInConnectionPreviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const generateLinkedInConnectionPreviewBodyRegenerationMax = 1000;
+
+export const GenerateLinkedInConnectionPreviewBody = zod.object({
+  variant: zod
+    .record(zod.string(), zod.unknown())
+    .describe(
+      "Versioned connection variant; all modes remain seller-reviewed.",
+    ),
+  contactId: zod.number().min(1),
+  regeneration: zod
+    .string()
+    .max(generateLinkedInConnectionPreviewBodyRegenerationMax)
+    .optional(),
+});
+
+export const generateLinkedInConnectionPreviewResponseBodyMax = 200;
+
+export const generateLinkedInConnectionPreviewResponsePersonalizationMax = 4000;
+
+export const generateLinkedInConnectionPreviewResponseTemplateBodyMax = 8000;
+
+export const generateLinkedInConnectionPreviewResponseInsightsUsedMax = 100;
+
+export const GenerateLinkedInConnectionPreviewResponse = zod.object({
+  body: zod
+    .string()
+    .min(1)
+    .max(generateLinkedInConnectionPreviewResponseBodyMax),
+  contactId: zod.number().min(1),
+  personalization: zod
+    .string()
+    .max(generateLinkedInConnectionPreviewResponsePersonalizationMax),
+  templateBody: zod
+    .string()
+    .max(generateLinkedInConnectionPreviewResponseTemplateBodyMax)
+    .optional(),
+  insightsUsed: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        category: zod.string(),
+        title: zod.string(),
+        description: zod.string(),
+        url: zod.string(),
+      }),
+    )
+    .max(generateLinkedInConnectionPreviewResponseInsightsUsedMax),
+});
+
 /**
  * @summary Propose a draft playbook structure for review without saving or activating it
  */

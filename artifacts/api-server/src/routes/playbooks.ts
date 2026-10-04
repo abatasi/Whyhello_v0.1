@@ -23,9 +23,13 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts.js";
 import crypto from "node:crypto";
 import { manualEmailRouter, manualEmailConfigurationError } from "./playbook-manual-email.js";
+import { phoneCallRouter, phoneCallConfigurationError } from "./playbook-phone-call.js";
+import { linkedInConnectionRouter, linkedInConnectionActivationError } from "./playbook-linkedin-connection.js";
 
 export const playbooksRouter: IRouter = Router();
 playbooksRouter.use("/:id/manual-email", manualEmailRouter);
+playbooksRouter.use("/:id/phone-call", phoneCallRouter);
+playbooksRouter.use("/:id/linkedin-connection", linkedInConnectionRouter);
 
 function getUserId(req: Request): string | null {
   const auth = getAuth(req);
@@ -165,10 +169,18 @@ playbooksRouter.patch("/:id", async (req: Request, res: Response) => {
         catch { res.status(400).json({ error: "Save a valid playbook workflow before activating." }); return; }
         if (Array.isArray(canvas.nodes)) {
           const structural = new Set(["placeholder", "prospect-added", "trigger-detected", "added-to-playbook", "company-added", "list-entry", "manual-enrollment"]);
-          const steps = canvas.nodes.filter(node => typeof node.data?.blockType === "string" && !structural.has(node.data.blockType) && (node.data.blockType !== "manual-email" || (node.data.configuration as { enabled?: boolean } | undefined)?.enabled !== false));
+          const steps = canvas.nodes.filter(node => typeof node.data?.blockType === "string" && !structural.has(node.data.blockType) && (!["manual-email", "phone-call", "linkedin-connection-request"].includes(node.data.blockType) || (node.data.configuration as { enabled?: boolean } | undefined)?.enabled !== false));
           if (!steps.length) { res.status(400).json({ error: "Add and save at least one step before activating this playbook." }); return; }
           for (const node of steps.filter(node => node.data?.blockType === "manual-email")) {
             const error = manualEmailConfigurationError(node.data?.configuration);
+            if (error) { res.status(400).json({ error }); return; }
+          }
+          for (const node of steps.filter(node => node.data?.blockType === "phone-call")) {
+            const error = phoneCallConfigurationError(node.data?.configuration);
+            if (error) { res.status(400).json({ error }); return; }
+          }
+          for (const node of steps.filter(node => node.data?.blockType === "linkedin-connection-request")) {
+            const error = await linkedInConnectionActivationError(node.data?.configuration);
             if (error) { res.status(400).json({ error }); return; }
           }
           if (steps.some(node => node.data?.blockType === "split-path" && !String(node.data.condition ?? "").trim())) {

@@ -3,6 +3,8 @@ import {
   ThumbsUp, UserPlus, type LucideIcon,
 } from "lucide-react";
 import { createManualEmailConfiguration, readManualEmailConfiguration, validateManualEmailConfiguration } from "./manual-email-model";
+import { createPhoneCallConfiguration, readPhoneCallConfiguration, validatePhoneCallConfiguration } from "./phone-call-model";
+import { createLinkedInConnectionConfiguration, readLinkedInConnectionConfiguration, validateLinkedInConnectionConfiguration } from "./linkedin-connection-model";
 
 export type StepCategory = "communication" | "linkedin" | "seller-actions" | "rules";
 export interface StepDefinition {
@@ -29,8 +31,9 @@ const action = (
   executionMode: StepDefinition["executionMode"] = "manual",
 ): StepDefinition => ({
   id, type: "action", category, name, icon, executionMode,
-  enabled: id === "manual-email", configuration: id === "manual-email" ? { ...createManualEmailConfiguration() } : {},
-  validation: id === "manual-email" ? value => validateManualEmailConfiguration(readManualEmailConfiguration(value)) : notConfigured,
+  enabled: ["manual-email", "phone-call", "linkedin-connection-request"].includes(id),
+  configuration: id === "manual-email" ? { ...createManualEmailConfiguration() } : id === "phone-call" ? { ...createPhoneCallConfiguration() } : id === "linkedin-connection-request" ? { ...createLinkedInConnectionConfiguration() } : {},
+  validation: id === "manual-email" ? value => validateManualEmailConfiguration(readManualEmailConfiguration(value)) : id === "phone-call" ? value => validatePhoneCallConfiguration(readPhoneCallConfiguration(value)) : id === "linkedin-connection-request" ? value => validateLinkedInConnectionConfiguration(readLinkedInConnectionConfiguration(value)) : notConfigured,
 });
 
 export const STEP_DEFINITIONS: StepDefinition[] = [
