@@ -7,6 +7,16 @@
  */
 import * as zod from "zod";
 
+export const GeneratePhoneCallAudioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const generatePhoneCallAudioBodyTextMax = 6000;
+
+export const GeneratePhoneCallAudioBody = zod.object({
+  text: zod.string().min(1).max(generatePhoneCallAudioBodyTextMax),
+});
+
 export const GetManualEmailEditorContextParams = zod.object({
   id: zod.coerce.number(),
 });

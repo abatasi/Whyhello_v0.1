@@ -62,6 +62,7 @@ export * from "./manualEmailSavedTemplate";
 export * from "./manualEmailTestInput";
 export * from "./outreachJob";
 export * from "./outreachJobParams";
+export * from "./phoneCallAudioInput";
 export * from "./phoneCallObjection";
 export * from "./phoneCallPreview";
 export * from "./phoneCallPreviewInput";

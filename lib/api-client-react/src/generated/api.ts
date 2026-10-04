@@ -46,6 +46,7 @@ import type {
   ManualEmailPreviewInput,
   ManualEmailTestInput,
   OutreachJob,
+  PhoneCallAudioInput,
   PhoneCallPreview,
   PhoneCallPreviewInput,
   PlaybookProposal,
@@ -63,6 +64,87 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+export const getGeneratePhoneCallAudioUrl = (id: number) => {
+  return `/api/playbooks/${id}/phone-call/audio`;
+};
+
+export const generatePhoneCallAudio = async (
+  id: number,
+  phoneCallAudioInput: PhoneCallAudioInput,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getGeneratePhoneCallAudioUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(phoneCallAudioInput),
+  });
+};
+
+export const getGeneratePhoneCallAudioMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generatePhoneCallAudio>>,
+    TError,
+    { id: number; data: BodyType<PhoneCallAudioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generatePhoneCallAudio>>,
+  TError,
+  { id: number; data: BodyType<PhoneCallAudioInput> },
+  TContext
+> => {
+  const mutationKey = ["generatePhoneCallAudio"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generatePhoneCallAudio>>,
+    { id: number; data: BodyType<PhoneCallAudioInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generatePhoneCallAudio(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GeneratePhoneCallAudioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generatePhoneCallAudio>>
+>;
+export type GeneratePhoneCallAudioMutationBody = BodyType<PhoneCallAudioInput>;
+export type GeneratePhoneCallAudioMutationError = ErrorType<void>;
+
+export const useGeneratePhoneCallAudio = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generatePhoneCallAudio>>,
+    TError,
+    { id: number; data: BodyType<PhoneCallAudioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generatePhoneCallAudio>>,
+  TError,
+  { id: number; data: BodyType<PhoneCallAudioInput> },
+  TContext
+> => {
+  return useMutation(getGeneratePhoneCallAudioMutationOptions(options));
+};
 
 export const getGetManualEmailEditorContextUrl = (id: number) => {
   return `/api/playbooks/${id}/manual-email/context`;

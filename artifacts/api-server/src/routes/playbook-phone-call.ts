@@ -4,7 +4,8 @@ import { db } from "@workspace/db";
 import { contactsTable, companiesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { GeneratePhoneCallPreviewBody, GeneratePhoneCallPreviewResponse } from "@workspace/api-zod";
+import { GeneratePhoneCallPreviewBody, GeneratePhoneCallPreviewResponse, GeneratePhoneCallAudioBody } from "@workspace/api-zod";
+import { synthesizeCallAudio } from "../lib/phone-call-audio.js";
 import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evidence.js";
 import { renderCallText } from "../lib/call-template.js";
 import { collectPlaybookEvidence, hqContext, requireOwnedPlaybook, timing, variantSchema } from "./playbook-manual-email.js";
@@ -52,6 +53,26 @@ export function phoneCallConfigurationError(value: unknown): string | null {
 
 export const phoneCallRouter: IRouter = Router({ mergeParams: true });
 phoneCallRouter.use(requireOwnedPlaybook);
+phoneCallRouter.post("/audio", async (req, res) => {
+  const parsed = GeneratePhoneCallAudioBody.safeParse(req.body);
+  if (!parsed.success || !parsed.data.text.trim()) {
+    res.status(400).json({ error: "Choose a non-empty script section of 6000 characters or fewer to listen to." });
+    return;
+  }
+  const controller = new AbortController();
+  const disconnect = () => { if (!res.writableEnded) controller.abort(); };
+  res.once("close", disconnect);
+  try {
+    const audio = await synthesizeCallAudio(parsed.data.text, controller.signal);
+    if (controller.signal.aborted) return;
+    res.setHeader("Cache-Control", "private, no-store");
+    res.type("audio/mpeg").send(audio);
+  } catch {
+    if (!controller.signal.aborted) res.status(502).json({ error: "Audio preview could not be generated. Your script is unchanged; try again." });
+  } finally {
+    res.off("close", disconnect);
+  }
+});
 phoneCallRouter.post("/preview", async (req, res) => {
   const contract = GeneratePhoneCallPreviewBody.safeParse(req.body);
   const input = z.object({ variant: callVariantSchema, contactId: z.number().int().positive(), regeneration: z.string().max(1000).default("") }).safeParse(req.body);

@@ -17,6 +17,30 @@ tags:
     description: HQ profile operations
 
 paths:
+  /playbooks/{id}/phone-call/audio:
+    post:
+      operationId: generatePhoneCallAudio
+      tags: [playbooks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PhoneCallAudioInput" }
+      responses:
+        "200":
+          description: Transient AI-spoken rehearsal of the supplied current script; never places a call
+          content:
+            audio/mpeg:
+              schema: { type: string, format: binary }
+        "400": { description: Script must contain 1 to 6000 characters }
+        "401": { description: Authentication required }
+        "404": { description: Owned Playbook not found }
+        "502": { description: Audio generation unavailable or failed }
   /playbooks/{id}/manual-email/context:
     get:
       operationId: getManualEmailEditorContext
@@ -753,6 +777,11 @@ paths:
 
 components:
   schemas:
+    PhoneCallAudioInput:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, minLength: 1, maxLength: 6000 }
     LinkedInConnectionPreviewInput:
       type: object
       required: [variant, contactId]

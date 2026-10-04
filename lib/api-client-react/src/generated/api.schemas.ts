@@ -5,6 +5,14 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+export interface PhoneCallAudioInput {
+  /**
+   * @minLength 1
+   * @maxLength 6000
+   */
+  text: string;
+}
+
 /**
  * Versioned connection variant; all modes remain seller-reviewed.
  */
