@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Shell } from "@/components/layout/Shell";
+import { PlaybooksList } from "@/components/playbooks/PlaybooksList";
+import { createPlaybookRecord } from "@/components/playbooks/list-api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1840,7 +1842,7 @@ function TestPanel({ nodes, onClose }: { nodes: Node<PlaybookNodeData>[]; onClos
 function CannedLibraryModal({ open, onClose, onSelect }: { open: boolean; onClose: () => void; onSelect: (p: CannedPlaybook) => void }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[190] flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="bg-card rounded-2xl border border-border shadow-2xl w-[640px] max-h-[80vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border/60">
           <div className="flex items-center gap-3">
@@ -2215,10 +2217,10 @@ interface HistoryEntry {
 }
 
 function CanvasInner({
-  playbookId, playbookName, playbookStatus,
+  playbookId, playbookName, playbookStatus, initialCanvas,
   onNameChange, onBack, onSave: externalSave, saving,
 }: {
-  playbookId: number; playbookName: string; playbookStatus: string;
+  playbookId: number; playbookName: string; playbookStatus: string; initialCanvas?: string | null;
   onNameChange: (n: string) => void; onBack: () => void;
   onSave: (nodes: Node<PlaybookNodeData>[], edges: Edge[], prospects: ProspectEntry[]) => void; saving: boolean;
 }) {
@@ -2232,9 +2234,11 @@ function CanvasInner({
     try {
       // Try v3 first; if absent, try legacy key and promote to v3
       const legacyKey = `playbook_canvas_${playbookId}`;
-      let raw = localStorage.getItem(storageKey);
+      let raw: string | null = null;
+      try { raw = localStorage.getItem(storageKey); } catch { /* Saved server canvas remains available without browser storage. */ }
       if (!raw) {
-        const legacyRaw = localStorage.getItem(legacyKey);
+        let legacyRaw: string | null = null;
+        try { legacyRaw = localStorage.getItem(legacyKey); } catch { /* Use the server canvas below. */ }
         if (legacyRaw) {
           // Promote to v3 and clean up legacy
           localStorage.setItem(storageKey, legacyRaw);
@@ -2242,6 +2246,9 @@ function CanvasInner({
           raw = legacyRaw;
         }
       }
+      // Preserve unsaved local work; otherwise restore the saved canvas from
+      // the API, including newly created templates and draft duplicates.
+      if (!raw && initialCanvas?.trim().startsWith("{")) raw = initialCanvas;
       if (raw) {
         const parsed = JSON.parse(raw) as CanvasState;
         // Sanitize edges: strip null sourceHandle so React Flow doesn't warn
@@ -2306,7 +2313,7 @@ function CanvasInner({
       }
     } catch {}
     return buildStarterCanvas();
-  }, [storageKey]);
+  }, [storageKey, initialCanvas]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<PlaybookNodeData>>(initialState.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
@@ -2975,11 +2982,12 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
   }
 
   return (
-    <ReactFlowProvider>
+    <ReactFlowProvider key={playbookId}>
       <CanvasInner
         playbookId={playbookId}
         playbookName={seq.name}
         playbookStatus={seq.status}
+        initialCanvas={seq.description}
         onNameChange={handleNameChange}
         onBack={() => navigate("/playbooks")}
         onSave={handleSave}
@@ -2989,211 +2997,36 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
   );
 }
 
-// ── Playbooks list view ───────────────────────────────────────────────────────
-
-function PlaybooksList() {
-  const [, navigate] = useLocation();
-  const qc = useQueryClient();
-  const { toast } = useToast();
-  const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [showNew, setShowNew] = useState(false);
-  const [showCanned, setShowCanned] = useState(false);
-
-  const { data: playbooks = [], isLoading } = useQuery<PlaybookMeta[]>({
-    queryKey: ["playbooks"],
-    queryFn: () => apiFetch("/api/playbooks").then(r => r.json()),
-  });
-
-  async function createPlaybook(name: string) {
-    setCreating(true);
-    try {
-      const res = await apiFetch("/api/playbooks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name || "Untitled Playbook" }),
-      });
-      const seq: PlaybookMeta = await res.json();
-      qc.invalidateQueries({ queryKey: ["playbooks"] });
-      navigate(`/playbooks/${seq.id}`);
-    } catch {
-      toast({ title: "Failed to create playbook", variant: "destructive" });
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  async function deletePlaybook(id: number) {
-    await apiFetch(`/api/playbooks/${id}`, { method: "DELETE" });
-    qc.invalidateQueries({ queryKey: ["playbooks"] });
-    localStorage.removeItem(`playbook_canvas_${id}`);
-    localStorage.removeItem(`playbook_canvas_v3_${id}`);
-    toast({ title: "Deleted" });
-  }
-
-  const CATEGORY_COLORS: Record<string, string> = {
-    draft: "bg-secondary text-muted-foreground border-border/60",
-    active: "bg-green-50 text-green-700 border-green-200",
-    paused: "bg-amber-50 text-amber-700 border-amber-200",
-  };
-
-  return (
-    <div className="flex flex-col h-full min-h-0">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border/60 flex-shrink-0">
-        <div>
-          <h1 className="text-lg font-bold text-foreground">Playbooks</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Build and manage your multi-touch outreach sequences</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowCanned(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-semibold text-muted-foreground hover:bg-secondary/40 transition-colors"
-          >
-            <BookOpen className="h-3.5 w-3.5" />
-            Templates
-          </button>
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            New Playbook
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-5">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20 gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading playbooks…
-          </div>
-        ) : playbooks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <div className="h-14 w-14 rounded-2xl bg-secondary/60 border border-border/60 flex items-center justify-center">
-              <GitBranch className="h-7 w-7 text-muted-foreground/60" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">No playbooks yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Start from scratch or choose a proven template.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowNew(true)} className="px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-secondary/40 transition-colors">Start from Scratch</button>
-              <button onClick={() => setShowCanned(true)} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">Choose a Template</button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 max-w-4xl">
-            {playbooks.map(pb => {
-              const storageKey = `playbook_canvas_v3_${pb.id}`;
-              let blockCount = 0;
-              let prospectCount = 0;
-              try {
-                const raw = localStorage.getItem(storageKey);
-                if (raw) {
-                  const cs = JSON.parse(raw) as CanvasState;
-                  blockCount = cs.nodes.filter(n => (n.data as PlaybookNodeData).blockType !== "placeholder").length;
-                  prospectCount = (cs.prospects ?? []).filter(p => p.contactId).length;
-                }
-              } catch {}
-              return (
-                <div
-                  key={pb.id}
-                  className="flex items-center gap-4 p-4 rounded-xl border border-border/60 bg-card hover:shadow-sm transition-all cursor-pointer group"
-                  onClick={() => navigate(`/playbooks/${pb.id}`)}
-                >
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                    <GitBranch className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">{pb.name}</p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-[11px] text-muted-foreground">Updated {formatRelative(pb.updatedAt)}</span>
-                      {blockCount > 0 && <span className="text-[11px] text-muted-foreground">{blockCount} block{blockCount !== 1 ? "s" : ""}</span>}
-                      {prospectCount > 0 && (
-                        <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
-                          <Users className="h-2.5 w-2.5" /> {prospectCount} thread{prospectCount !== 1 ? "s" : ""}
-                        </span>
-                      )}
-                      {pb.enrollmentCount > 0 && <span className="text-[11px] text-muted-foreground">{pb.enrollmentCount} enrolled</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border", CATEGORY_COLORS[pb.status] ?? CATEGORY_COLORS.draft)}>
-                      {pb.status ?? "draft"}
-                    </span>
-                    <button
-                      onClick={e => { e.stopPropagation(); deletePlaybook(pb.id); }}
-                      className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* New playbook inline form */}
-      {showNew && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-card rounded-2xl border border-border shadow-2xl w-96 p-5 flex flex-col gap-4">
-            <p className="text-sm font-bold">New Playbook</p>
-            <input
-              autoFocus
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") createPlaybook(newName); if (e.key === "Escape") setShowNew(false); }}
-              placeholder="Playbook name…"
-              className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            />
-            <div className="flex items-center justify-end gap-2">
-              <button onClick={() => setShowNew(false)} className="px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-secondary/40">Cancel</button>
-              <button
-                onClick={() => createPlaybook(newName)}
-                disabled={creating}
-                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <CannedLibraryModal
-        open={showCanned}
-        onClose={() => setShowCanned(false)}
-        onSelect={async (canned) => {
-          setCreating(true);
-          try {
-            const res = await apiFetch("/api/playbooks", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name: canned.name }),
-            });
-            const seq: PlaybookMeta = await res.json();
-            const state = canned.build();
-            localStorage.setItem(`playbook_canvas_v3_${seq.id}`, JSON.stringify(state));
-            qc.invalidateQueries({ queryKey: ["playbooks"] });
-            navigate(`/playbooks/${seq.id}`);
-          } finally {
-            setCreating(false);
-          }
-        }}
-      />
-    </div>
-  );
-}
-
 // ── Shell wrapper for list view ───────────────────────────────────────────────
 
 function PlaybooksListPage() {
-  return <Shell><PlaybooksList /></Shell>;
+  const [showCanned, setShowCanned] = useState(false);
+  const templateBusy = useRef(false);
+  const [, navigate] = useLocation();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return <Shell>
+    <PlaybooksList
+      onTemplates={() => setShowCanned(true)}
+      templates={CANNED_PLAYBOOKS.map(template => ({ id: template.id, name: template.name }))}
+      buildTemplate={id => {
+        const template = CANNED_PLAYBOOKS.find(candidate => candidate.id === id);
+        if (!template) throw new Error("This template is no longer available.");
+        return JSON.stringify(template.build());
+      }}
+    />
+    <CannedLibraryModal open={showCanned} onClose={() => setShowCanned(false)} onSelect={async template => {
+      if (templateBusy.current) return;
+      templateBusy.current = true;
+      try {
+        const playbook = await createPlaybookRecord(template.name, JSON.stringify(template.build()));
+        await qc.invalidateQueries({ queryKey: ["playbooks"] });
+        navigate(`/playbooks/${playbook.id}`);
+      } catch (error) {
+        toast({ title: "Template could not be created", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+      } finally { templateBusy.current = false; }
+    }} />
+  </Shell>;
 }
 
 // ── Route dispatch ────────────────────────────────────────────────────────────

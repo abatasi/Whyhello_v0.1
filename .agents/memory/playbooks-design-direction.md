@@ -26,3 +26,9 @@ The rest of the platform's table styling supersedes the original Playbooks brief
 **Why:** The user explicitly requested platform consistency for table styling and approved the resulting design with the existing dark-mode primary accent and master navigation shell.
 
 **How to apply:** Use the existing Directory/shared table conventions and theme tokens rather than introducing bespoke typography or text palettes for Playbooks. Preserve its table controls and behavior.
+
+Graduating the approved interface must preserve real records and the multi-threaded builder, not introduce the prototype's example people, playbooks or performance figures.
+
+**Why:** The approval was for integration into the existing Whyhello product. The prototype demonstrated controls with local example data; that data is not production content.
+
+**How to apply:** Keep builder workflows and existing templates intact. Use actual enrollment and sent-message counts; do not infer delivery or replies from a successful send. Label unrecorded outcomes unavailable. Create new workflows and duplicates as drafts; duplicates should not enroll or attach existing contacts automatically.

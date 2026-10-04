@@ -76,6 +76,9 @@ playbooksRouter.get("/", async (req: Request, res: Response) => {
         updatedAt: sequencesTable.updatedAt,
         stepCount: sql<number>`(SELECT COUNT(*) FROM sequence_steps WHERE sequence_id = sequences.id)::int`,
         enrollmentCount: sql<number>`(SELECT COUNT(*) FROM sequence_enrollments WHERE sequence_id = sequences.id AND status = 'active')::int`,
+        pausedCount: sql<number>`(SELECT COUNT(*) FROM sequence_enrollments WHERE sequence_id = sequences.id AND status = 'paused')::int`,
+        finishedCount: sql<number>`(SELECT COUNT(*) FROM sequence_enrollments WHERE sequence_id = sequences.id AND status = 'completed')::int`,
+        sentCount: sql<number>`(SELECT COUNT(*) FROM messages WHERE sequence_id = sequences.id AND status = 'sent')::int`,
         dueCount: sql<number>`(
           SELECT COUNT(*) FROM sequence_enrollments se
           JOIN sequence_steps ss ON ss.sequence_id = se.sequence_id AND ss.position = se.current_step
@@ -109,12 +112,16 @@ playbooksRouter.post("/", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   try {
-    const { name, description } = req.body as { name: string; description?: string };
+    const { name, description, status } = req.body as { name: string; description?: string; status?: string };
     if (!name?.trim()) { res.status(400).json({ error: "name is required" }); return; }
+    if (status !== undefined && status !== "draft" && status !== "active") {
+      res.status(400).json({ error: "New playbooks must be draft or active" }); return;
+    }
     const [seq] = await db.insert(sequencesTable).values({
       userId,
       name: name.trim(),
       description: description?.trim() ?? null,
+      status: status ?? "active",
     }).returning();
     res.status(201).json(seq);
   } catch (err) {
