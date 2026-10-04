@@ -1010,7 +1010,8 @@ export default function Search({ directory }: { directory: Tab }) {
                   ) : !contactsData?.data.length ? (
                     <EmptyState />
                   ) : (
-                    <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                    <div className="isolate flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                      {/* Keep frozen-column z-indices below the global search overlay. */}
                       <div className="min-h-0 flex-1 overflow-auto">
                          <table className="directory-table table-fixed min-w-full border-separate border-spacing-0 text-[13px] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: contactTableWidth }}>
                           <colgroup>
@@ -1228,7 +1229,8 @@ export default function Search({ directory }: { directory: Tab }) {
                   ) : !companiesData?.data.length ? (
                     <EmptyState />
                   ) : (
-                    <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                    <div className="isolate flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                      {/* Keep frozen-column z-indices below the global search overlay. */}
                       <div className="min-h-0 flex-1 overflow-auto">
                          <table className="directory-table table-fixed min-w-full border-separate border-spacing-0 text-[13px] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap" style={{ width: companyTableWidth }}>
                           <colgroup>
