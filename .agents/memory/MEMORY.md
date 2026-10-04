@@ -10,4 +10,4 @@
 - [Drizzle correlated SQL qualifiers](drizzle-correlated-sql.md) — table-column interpolation in aggregate SELECT fragments may lose its table qualifier
 - [Buying Center Role identity](buying-center-role-identity.md) — seat criteria use Role names in saved HQ profiles; renaming a Role requires migrating those saved selections
 - [Live audience semantics](live-audience-semantics.md) — only explicit per-user live selections power badges and rankings; editor/view tabs never activate drafts
-- [Button hover style](interaction-style.md) — buttons stay in place on hover; use subtle visual feedback rather than movement
+- [Interaction feedback](interaction-style.md) — stationary, subtle button hovers; hand cursors on enabled clickable elements

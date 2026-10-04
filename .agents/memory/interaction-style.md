@@ -1,6 +1,6 @@
 ---
-name: Button hover style
-description: Project preference for subtle, stationary button hover feedback
+name: Interaction feedback
+description: Project preferences for stationary button hover feedback and hand cursors on clickable elements
 ---
 
 Buttons should stay in place on hover rather than lifting. Use subtle visual feedback instead of movement.
@@ -8,3 +8,9 @@ Buttons should stay in place on hover rather than lifting. Use subtle visual fee
 **Why:** The user requested stationary buttons with a more subtle hover effect.
 
 **How to apply:** When adding or restyling buttons in this app, use restrained color, border, or shadow changes rather than hover translation or scaling.
+
+Clickable elements should show the standard hand cursor on hover.
+
+**Why:** The user requested consistent hand cursors for clickable elements.
+
+**How to apply:** Use the hand cursor for enabled actions; keep text-entry, disabled, dragging, and resizing cursor feedback appropriate to those interactions.
