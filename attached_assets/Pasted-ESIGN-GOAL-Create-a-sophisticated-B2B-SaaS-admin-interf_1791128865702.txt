@@ -1,0 +1,880 @@
+ESIGN GOAL
+
+Create a sophisticated B2B SaaS admin interface that feels like a mature sales-intelligence, CRM, operations, or workflow platform.
+
+The interface should feel:
+- Dense but highly organized
+- Professional rather than decorative
+- Fast and operational
+- Data-first
+- Modern enterprise SaaS
+- Suitable for users spending several hours per day inside the application
+
+Think Apollo / Linear / Attio / modern CRM admin tooling.
+
+The primary desktop experience should be optimized for 1440px–1920px screens while remaining responsive.
+
+--------------------------------------------------
+1. GLOBAL APPLICATION SHELL
+--------------------------------------------------
+
+Use a near-black dark theme.
+
+Main background:
+#151613 or similar warm near-black.
+
+Secondary surfaces:
+#1B1C18
+#20211D
+#292A24
+
+Borders:
+Subtle 1px borders approximately #30312C.
+
+Primary text:
+#F3F3EF
+
+Secondary text:
+#B7B7B0
+
+Muted text:
+#85867F
+
+Accent:
+Use a high-visibility lime/yellow accent approximately:
+#F4FA52
+
+Accent should be used sparingly for:
+- Primary CTA buttons
+- Selected states where appropriate
+- Important indicators
+- Active controls
+
+Do not flood the interface with the accent color.
+
+Use semantic colors for:
+- Success
+- Warning
+- Error
+- Informational states
+
+Keep these colors slightly muted so they fit the dark enterprise aesthetic.
+
+--------------------------------------------------
+2. TYPOGRAPHY
+--------------------------------------------------
+
+Use a clean modern sans-serif such as Inter.
+
+Typography should be compact.
+
+Suggested hierarchy:
+
+Page title:
+24–28px
+500–600 weight
+
+Section/navigation labels:
+14–16px
+500 weight
+
+Body/interface text:
+14–15px
+
+Table headers:
+11–12px
+500 weight
+uppercase or subtly letter-spaced
+
+Table body:
+13–14px
+
+Helper text:
+12–13px
+
+Avoid oversized headings.
+
+This is an operational application, not a marketing website.
+
+--------------------------------------------------
+3. PAGE STRUCTURE
+--------------------------------------------------
+
+Create the page using this vertical hierarchy:
+
+A. Page header
+B. Section tabs
+C. Optional system notification banners
+D. Toolbar / controls
+E. Data table
+F. Contextual actions / menus
+
+The content should use almost the entire available browser width.
+
+Outer horizontal padding:
+approximately 8–16px.
+
+Avoid large empty margins.
+
+--------------------------------------------------
+4. PAGE HEADER
+--------------------------------------------------
+
+At the top-left:
+
+Page title:
+"Sequences"
+
+At the top-right:
+
+Primary CTA:
+"Create sequence"
+
+CTA styling:
+- Bright lime/yellow background
+- Near-black text
+- Medium border radius, approximately 8px
+- Approximately 42–46px tall
+- Strong but not oversized
+- Comfortable horizontal padding
+
+Keep the page header approximately 65–75px tall.
+
+--------------------------------------------------
+5. SECONDARY TAB NAVIGATION
+--------------------------------------------------
+
+Directly below or integrated into the header area, create tabs:
+
+All Sequences
+Analytics
+Diagnostics
+
+Selected tab:
+- Bright text
+- 2px light underline
+- Slightly heavier font weight
+
+Inactive tabs:
+- Muted gray text
+- No filled background
+
+Provide approximately 28–36px horizontal spacing between tabs.
+
+The tab bar should have a subtle bottom border running across the page.
+
+Tabs must be interactive.
+
+--------------------------------------------------
+6. SYSTEM NOTIFICATION BANNERS
+--------------------------------------------------
+
+Support stacked system banners between navigation and the primary content area.
+
+Example informational banner:
+
+Icon
+"Bounce Guard is now on"
+
+Supporting text:
+"Apollo will automatically pause sequences with unusually high bounce rates. You can adjust or turn it off anytime in Settings > Email setup and health > Sending policies."
+
+Style:
+- Dark olive/gray surface
+- Rounded corners
+- Approximately 80–90px high
+- Information icon on left
+- Dismiss X on right
+- Inline links underlined
+
+Example warning banner:
+
+Warning triangle icon
+
+"You have no mailboxes linked. Please connect your email account to start managing and sending emails."
+
+Inline action:
+"Link mailbox"
+
+Style:
+- Full-width muted burnt-orange/brown background
+- Approximately 58–62px high
+- Light text
+- No excessive rounding
+
+Make banners dismissible.
+
+--------------------------------------------------
+7. TABLE TOOLBAR
+--------------------------------------------------
+
+Immediately above the table create a horizontal control bar.
+
+LEFT SIDE:
+
+View selector:
+[table icon] All Sequences [chevron]
+
+Filter:
+[filter icon] Show Filters
+
+Search field:
+[search icon] Search sequences...
+
+Search field approximately:
+260–320px wide
+40–44px tall
+
+Use subtle dark surface and thin border.
+
+RIGHT SIDE:
+
+"Save as new view" outlined button
+
+Divider
+
+"Sort" with sort icon + dropdown chevron
+
+"View options" with settings/gear icon
+
+The toolbar should remain visually lightweight.
+
+Do not turn every control into a large button.
+
+--------------------------------------------------
+8. DATA TABLE
+--------------------------------------------------
+
+Create a high-density enterprise data table.
+
+Columns:
+
+[checkbox]
+ACTIVATE
+NAME
+OPTIMIZATIONS
+CREATED BY
+ACTIVE
+PAUSED
+NOT SENT
+BOUNCED
+SPAM BLOCKED
+FINISHED
+SCHEDULED
+DELIVERED
+REPLIES
+ACTIONS
+
+Allow horizontal scrolling if necessary rather than excessively compressing columns.
+
+Header:
+approximately 54px tall.
+
+Rows:
+approximately 70–76px tall.
+
+Use:
+- Thin horizontal dividers
+- Select vertical dividers only where structurally helpful
+- No zebra striping
+- No card around every row
+
+Example rows:
+
+Row 1:
+Activate: OFF
+Name: Test
+Optimizations: -
+Created by: LC avatar
+Active: 0
+Paused: 0
+Not Sent: 0
+Bounced: 0
+Spam Blocked: 0
+Finished: 0
+Scheduled: 0
+Delivered: 0
+Replies: 0
+Actions: ...
+
+Row 2:
+Activate: OFF
+Name: At-risk customers
+Optimizations: -
+Created by: LC avatar
+All metrics: 0
+Actions: ...
+
+--------------------------------------------------
+9. TABLE COLUMN BEHAVIOR
+--------------------------------------------------
+
+Checkbox column:
+Approximately 40–50px.
+
+Activate:
+Approximately 110–130px.
+
+Name:
+Approximately 250–300px.
+
+Created By:
+Approximately 140–170px.
+
+Metric columns:
+Approximately 110–130px.
+
+Actions:
+Approximately 60–80px.
+
+NAME should be one of the visually strongest columns.
+
+Numeric metrics should be centered or consistently aligned.
+
+Header labels should be subdued relative to row content.
+
+If a heading is too long:
+truncate elegantly using ellipsis.
+
+Example:
+SPAM BLOCK...
+
+Show full label on hover using a tooltip.
+
+--------------------------------------------------
+10. TOGGLE COMPONENT
+--------------------------------------------------
+
+Create compact activation toggles.
+
+OFF:
+Dark gray track
+Small dark circular thumb
+Optional subtle X indicator
+
+ON:
+Accent-colored track
+Dark thumb/check indicator
+
+Toggling should update the UI state.
+
+Use approximately:
+44px × 26px
+
+Do not use oversized mobile-style switches.
+
+--------------------------------------------------
+11. AVATAR
+--------------------------------------------------
+
+Created-by users should display as compact circular avatars.
+
+Example:
+
+LC
+
+Approximately 30px diameter.
+
+Dark gray/olive surface.
+Muted border.
+Light initials.
+
+Hovering should reveal a tooltip such as:
+"Created by Laura Chen"
+
+--------------------------------------------------
+12. ROW ACTION MENU
+--------------------------------------------------
+
+At the far right of each row show:
+
+...
+
+Clicking opens a compact context menu.
+
+Example actions:
+- Edit sequence
+- Duplicate
+- View analytics
+- Pause
+- Archive
+- Delete
+
+Use separators between destructive and non-destructive actions.
+
+Delete should use semantic error styling.
+
+Menu:
+- Dark floating surface
+- Border
+- Shadow
+- 8px radius
+- Approximately 190–220px wide
+
+--------------------------------------------------
+13. FILTER SYSTEM
+--------------------------------------------------
+
+Clicking "Show Filters" should expose a filter interface.
+
+Prefer either:
+A. expandable horizontal filter bar
+or
+B. compact side panel
+
+Support filters such as:
+
+Status
+Creator
+Created date
+Sequence state
+Performance
+Bounce rate
+Reply rate
+
+Filters should support multiple selections.
+
+When filters are active show compact filter chips.
+
+Example:
+
+Status: Active ×
+Creator: Me ×
+
+Include:
+"Clear all"
+
+--------------------------------------------------
+14. SORT SYSTEM
+--------------------------------------------------
+
+Sort menu should support:
+
+Name
+Created date
+Active contacts
+Delivered
+Replies
+Bounce rate
+Performance
+
+Allow:
+Ascending
+Descending
+
+Show the currently selected sort.
+
+--------------------------------------------------
+15. VIEW OPTIONS
+--------------------------------------------------
+
+Clicking "View options" should open a panel/dropdown allowing users to:
+
+Show/hide columns
+Reorder columns
+Adjust row density
+
+Density options:
+
+Compact
+Comfortable
+Spacious
+
+Allow users to reset to defaults.
+
+--------------------------------------------------
+16. SAVED VIEWS
+--------------------------------------------------
+
+The "All Sequences" control should support saved views.
+
+Example menu:
+
+Default
+- All Sequences
+
+My Views
+- Active Campaigns
+- High Reply Rate
+- Needs Attention
+- Recently Created
+
+Allow:
+Rename view
+Duplicate view
+Delete view
+
+"Save as new view" should open a modal requesting:
+
+View name
+Visibility:
+- Private
+- Team
+
+Then:
+Cancel
+Save View
+
+--------------------------------------------------
+17. SEARCH EXPERIENCE
+--------------------------------------------------
+
+Search should filter table rows in real time.
+
+Search across:
+- Sequence name
+- Creator
+- Status
+
+Include:
+- Clear X
+- Keyboard focus state
+- Empty results state
+
+Empty search result:
+
+"No sequences match your search."
+
+Supporting copy:
+"Try changing your search or filters."
+
+--------------------------------------------------
+18. EMPTY STATES
+--------------------------------------------------
+
+Create polished empty states.
+
+If there are no sequences:
+
+"No sequences yet"
+
+"Create a sequence to automate your outreach workflow."
+
+[Create sequence]
+
+Avoid giant illustrations.
+
+Keep empty states professional and compact.
+
+--------------------------------------------------
+19. LOADING STATES
+--------------------------------------------------
+
+Include skeleton loading states for:
+
+Table rows
+Metrics
+Search
+Views
+
+Skeletons should use subtle dark-gray animated surfaces.
+
+Avoid large spinners except for isolated actions.
+
+--------------------------------------------------
+20. TABLE SELECTION
+--------------------------------------------------
+
+Checkboxes should support:
+
+Select row
+Select all visible rows
+Indeterminate state
+
+When one or more rows are selected, transform the toolbar into a contextual bulk-action toolbar.
+
+Example:
+
+"3 selected"
+
+Pause
+Activate
+Duplicate
+Archive
+Delete
+
+Clear selection
+
+--------------------------------------------------
+21. HOVER AND INTERACTION STATES
+--------------------------------------------------
+
+Every interactive element needs:
+
+Default
+Hover
+Active
+Focus
+Disabled
+
+Table rows should receive an extremely subtle background change on hover.
+
+Buttons:
+small luminance shift.
+
+Links:
+underline or brightness change.
+
+Do not use dramatic animations.
+
+Transitions:
+approximately 120–180ms ease.
+
+--------------------------------------------------
+22. CREATE SEQUENCE MODAL
+--------------------------------------------------
+
+Clicking "Create sequence" should open a polished modal.
+
+Title:
+"Create sequence"
+
+Fields:
+
+Sequence name
+
+Optional description
+
+Starting template:
+- Blank sequence
+- Outbound prospecting
+- Follow-up
+- Event outreach
+- Re-engagement
+
+Actions:
+
+Cancel
+Create sequence
+
+The primary action should use the lime/yellow accent.
+
+Modal approximately:
+520–620px wide.
+
+Use a dark overlay behind it.
+
+--------------------------------------------------
+23. RESPONSIVE BEHAVIOR
+--------------------------------------------------
+
+Desktop is the priority.
+
+At widths above 1440px:
+Show full table and toolbar.
+
+At 1024–1440px:
+Allow table horizontal scrolling.
+Compress toolbar spacing.
+
+Below approximately 1024px:
+Move secondary toolbar controls into an overflow menu.
+
+Never destroy the data table by trying to force every column onto a narrow screen.
+
+Sticky table header is encouraged.
+
+The first important columns can optionally remain sticky:
+
+Checkbox
+Activate
+Name
+
+--------------------------------------------------
+24. COMPONENT ARCHITECTURE
+--------------------------------------------------
+
+Build reusable components rather than hardcoding the page.
+
+Suggested components:
+
+AdminPage
+PageHeader
+TabNavigation
+SystemBanner
+Toolbar
+ViewSelector
+SearchInput
+FilterPanel
+FilterChip
+SortMenu
+ViewOptionsMenu
+DataTable
+TableHeader
+TableRow
+Toggle
+Avatar
+MetricCell
+ActionMenu
+BulkActionBar
+Modal
+Tooltip
+Dropdown
+EmptyState
+SkeletonRow
+
+Components should be reusable across other admin sections.
+
+--------------------------------------------------
+25. DESIGN TOKENS
+--------------------------------------------------
+
+Create reusable tokens for:
+
+background
+surface
+surfaceHover
+surfaceRaised
+border
+borderStrong
+textPrimary
+textSecondary
+textMuted
+accent
+success
+warning
+error
+
+Also create standardized:
+
+spacing
+border radius
+font sizes
+shadows
+control heights
+table row heights
+transition durations
+
+Do not scatter arbitrary values throughout the codebase.
+
+--------------------------------------------------
+26. ACCESSIBILITY
+--------------------------------------------------
+
+Ensure:
+
+WCAG-conscious contrast
+Visible keyboard focus states
+Keyboard-accessible menus
+ARIA labels
+Proper table semantics
+Accessible tooltips
+Escape closes dialogs/dropdowns
+Enter/Space activates appropriate controls
+Tab navigation works logically
+
+Do not rely solely on color to communicate status.
+
+--------------------------------------------------
+27. UX PRINCIPLES
+--------------------------------------------------
+
+Follow these principles throughout the build:
+
+1. DATA FIRST
+The table is the dominant element.
+
+2. HIGH INFORMATION DENSITY
+Users should see substantial information without excessive scrolling.
+
+3. QUIET CHROME
+Navigation and controls should not compete with the data.
+
+4. CLEAR HIERARCHY
+Page title → tabs → system state → controls → data.
+
+5. PROGRESSIVE DISCLOSURE
+Advanced actions belong inside menus, dropdowns, and contextual panels.
+
+6. CONSISTENCY
+Buttons, dropdowns, filters, menus and tables should behave consistently throughout the application.
+
+7. PROFESSIONAL OVER PLAYFUL
+Avoid gradients, glassmorphism, excessive shadows, huge rounded cards, oversized icons, or consumer-app styling.
+
+--------------------------------------------------
+28. VISUAL DETAILS TO AVOID
+--------------------------------------------------
+
+DO NOT:
+
+- Use giant cards
+- Put the entire table inside a rounded floating card
+- Use excessive border radius
+- Use gradients
+- Use glassmorphism
+- Use excessive shadows
+- Use huge typography
+- Add decorative illustrations
+- Make every control a pill
+- Create excessive whitespace
+- Use bright accent colors everywhere
+- Make the page resemble a marketing dashboard
+
+This should look like an application built for serious daily operational work.
+
+--------------------------------------------------
+29. DEMO DATA
+--------------------------------------------------
+
+Populate the interface with enough realistic demo data to properly demonstrate the UI.
+
+Create approximately 10–15 sequence rows.
+
+Example names:
+
+Enterprise Prospecting
+At-Risk Customers
+Product Demo Follow-Up
+Inbound Leads
+Conference Outreach
+Strategic Accounts
+Q4 Re-Engagement
+Partner Recruitment
+High Intent Prospects
+Trial Conversion
+Closed Lost Revival
+Executive Outreach
+
+Generate realistic metrics for:
+
+Active
+Paused
+Not Sent
+Bounced
+Spam Blocked
+Finished
+Scheduled
+Delivered
+Replies
+
+Use multiple creators and avatars.
+
+Include a mix of:
+Active
+Paused
+Draft
+Completed
+
+states.
+
+--------------------------------------------------
+30. FINAL QUALITY BAR
+--------------------------------------------------
+
+The finished product should feel like a real enterprise SaaS application rather than a generated dashboard mockup.
+
+Prioritize:
+- Pixel-level alignment
+- Consistent spacing
+- Strong table UX
+- Excellent information hierarchy
+- Restrained use of color
+- Fast interactions
+- Reusable components
+- Realistic states and data
+- Thoughtful hover/focus behavior
+
+Use the attached screenshot as the primary visual reference for density, proportions, table hierarchy, toolbar arrangement, dark-mode palette, and overall operational feel.
+
+The result should look immediately familiar to users of sophisticated sales-tech and CRM platforms while establishing a reusable visual system for the rest of the application's admin experience.
