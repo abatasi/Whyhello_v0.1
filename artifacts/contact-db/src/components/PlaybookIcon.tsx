@@ -2,7 +2,7 @@ import { forwardRef, type SVGProps } from "react";
 
 type PlaybookIconProps = SVGProps<SVGSVGElement> & { size?: number | string };
 
-/** A strategy clipboard, using the same sizing and color conventions as our UI icons. */
+/** Monochrome navigation version of the uploaded strategy-clipboard artwork. */
 export const PlaybookIcon = forwardRef<SVGSVGElement, PlaybookIconProps>(
   ({ size = 24, strokeWidth = 1.6, ...props }, ref) => (
     <svg
@@ -10,7 +10,7 @@ export const PlaybookIcon = forwardRef<SVGSVGElement, PlaybookIconProps>(
       xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}
-      viewBox="0 0 24 26"
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={strokeWidth}
@@ -20,14 +20,13 @@ export const PlaybookIcon = forwardRef<SVGSVGElement, PlaybookIconProps>(
       focusable="false"
       {...props}
     >
-      <path d="M8 5H3.5v18h17V5H16" />
-      <path d="M8 7H6v13.5h12V7h-2" />
-      <path d="M9.5 4a2.5 2.5 0 0 1 5 0H16v3.5H8V4h1.5Z" />
-      <path d="m8.5 10.5 2 2m0-2-2 2M7.5 15l2 2m0-2-2 2m7 1.5 2 2m0-2-2 2" />
-      <circle cx="15.5" cy="10.5" r="1.25" />
-      <circle cx="9" cy="19.5" r="1.25" />
-      <path d="M10.5 18c3.5-.8 5-2.2 5-4.3" />
-      <path d="m15.5 12.8-1.2 2h2.4Z" fill="currentColor" stroke="none" />
+      <path d="M7.5 4.5H4.8a1.3 1.3 0 0 0-1.3 1.3v15.4a1.3 1.3 0 0 0 1.3 1.3h14.4a1.3 1.3 0 0 0 1.3-1.3V5.8a1.3 1.3 0 0 0-1.3-1.3h-2.7" />
+      <path d="M10 3V2.3A1.3 1.3 0 0 1 11.3 1h1.4A1.3 1.3 0 0 1 14 2.3V3" />
+      <rect x="7.5" y="3" width="9" height="4" rx="1.2" />
+      <path d="m7.3 10.2 2.4 2.4m0-2.4-2.4 2.4m4.4 4 2.4 2.4m0-2.4-2.4 2.4" />
+      <circle cx="15.5" cy="11.4" r="1.5" />
+      <circle cx="8.5" cy="17.8" r="1.5" />
+      <path d="m11.4 14.3 1.2-1.2" />
     </svg>
   ),
 );

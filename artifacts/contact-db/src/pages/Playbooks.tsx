@@ -28,7 +28,6 @@ import type { PlaybookRecord } from "@/components/playbooks/list-model";
 import { BuilderHeader, StructurePanel, type PlaybookTab } from "@/components/playbooks/BuilderHeader";
 import { AiProposalDialog, ContactEnrollDialog, StepPicker, type Proposal } from "@/components/playbooks/BuilderDialogs";
 import { PlaybookStepList } from "@/components/playbooks/PlaybookStepList";
-import { PlaybookIcon } from "@/components/PlaybookIcon";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1801,7 +1800,7 @@ function EmptyEditor({ onAddStep, onTemplate, onAI }: { onAddStep: () => void; o
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center p-5">
       <div className="flex max-w-sm flex-col items-center text-center">
-        <PlaybookIcon size={96} className="mb-6 shrink-0 text-muted-foreground" />
+        <img src={`${import.meta.env.BASE_URL}images/playbook-illustration.png`} alt="" aria-hidden="true" width={128} height={128} className="mb-6 size-32 shrink-0 object-contain" />
         <h2 className="text-base font-bold text-foreground">Your playbook is empty</h2>
         <p className="mt-1 text-sm text-muted-foreground">Add steps to build your playbook.</p>
         <button type="button" data-testid="button-empty-add-step" onClick={onAddStep} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"><Plus size={16} />Add a step</button>
