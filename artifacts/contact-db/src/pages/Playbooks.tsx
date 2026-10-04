@@ -104,23 +104,23 @@ const CATEGORIES: Record<string, {
   headerBg: string; iconBg: string; iconText: string; handle: string; mini: string;
 }> = {
   "starting-point": {
-    label: "Starting Points", bg: "bg-violet-50", border: "border-violet-200",
-    text: "text-violet-700 dark:text-violet-300", headerBg: "bg-violet-50/80 dark:bg-background", iconBg: "bg-violet-100",
+    label: "Starting Points", bg: "bg-violet-50 dark:bg-background", border: "border-violet-200 dark:border-violet-400/60",
+    text: "text-violet-700 dark:text-violet-300", headerBg: "bg-violet-50/80 dark:bg-background", iconBg: "bg-violet-100 dark:bg-violet-400/15",
     iconText: "text-violet-600 dark:text-violet-400", handle: "!bg-violet-400", mini: "#a78bfa",
   },
   "touchpoint": {
-    label: "Touchpoints", bg: "bg-blue-50", border: "border-blue-200",
-    text: "text-blue-700 dark:text-blue-300", headerBg: "bg-blue-50/80 dark:bg-background", iconBg: "bg-blue-100",
+    label: "Touchpoints", bg: "bg-blue-50 dark:bg-background", border: "border-blue-200 dark:border-blue-400/60",
+    text: "text-blue-700 dark:text-blue-300", headerBg: "bg-blue-50/80 dark:bg-background", iconBg: "bg-blue-100 dark:bg-blue-400/15",
     iconText: "text-blue-600 dark:text-blue-400", handle: "!bg-blue-400", mini: "#60a5fa",
   },
   "flow-control": {
-    label: "Flow Controls", bg: "bg-amber-50", border: "border-amber-200",
-    text: "text-amber-700 dark:text-amber-300", headerBg: "bg-amber-50/80 dark:bg-background", iconBg: "bg-amber-100",
+    label: "Flow Controls", bg: "bg-amber-50 dark:bg-background", border: "border-amber-200 dark:border-amber-400/60",
+    text: "text-amber-700 dark:text-amber-300", headerBg: "bg-amber-50/80 dark:bg-background", iconBg: "bg-amber-100 dark:bg-amber-400/15",
     iconText: "text-amber-600 dark:text-amber-400", handle: "!bg-amber-400", mini: "#fbbf24",
   },
   "outcome": {
-    label: "Outcomes", bg: "bg-green-50", border: "border-green-200",
-    text: "text-green-700 dark:text-green-300", headerBg: "bg-green-50/80 dark:bg-background", iconBg: "bg-green-100",
+    label: "Outcomes", bg: "bg-green-50 dark:bg-background", border: "border-green-200 dark:border-green-400/60",
+    text: "text-green-700 dark:text-green-300", headerBg: "bg-green-50/80 dark:bg-background", iconBg: "bg-green-100 dark:bg-green-400/15",
     iconText: "text-green-600 dark:text-green-400", handle: "!bg-green-400", mini: "#4ade80",
   },
 };
@@ -1131,7 +1131,7 @@ function ContactSearch({ currentContactId, currentContactName, onSelect }: {
         </div>
       ) : (
         <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-          <Search className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
+          <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           <input
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
@@ -1557,9 +1557,9 @@ function BlockPanel({ collapsed, onToggle }: { collapsed: boolean; onToggle: () 
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search blocks…"
-            className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/40"
+            className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
           />
-          {search && <button onClick={() => setSearch("")}><X className="h-3 w-3 text-muted-foreground/50" /></button>}
+          {search && <button onClick={() => setSearch("")}><X className="h-3 w-3 text-muted-foreground" /></button>}
         </div>
       </div>
 
@@ -1584,7 +1584,7 @@ function BlockPanel({ collapsed, onToggle }: { collapsed: boolean; onToggle: () 
                         cat.bg, cat.border,
                       )}
                     >
-                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 flex-shrink-0" />
+                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 dark:text-muted-foreground flex-shrink-0" />
                       <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border", cat.iconBg, cat.border)}>
                         <Icon className={cn("h-3.5 w-3.5", cat.iconText)} />
                       </div>
