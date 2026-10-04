@@ -11,4 +11,5 @@
 - [Buying Center Role identity](buying-center-role-identity.md) — seat criteria use Role names in saved HQ profiles; renaming a Role requires migrating those saved selections
 - [Live audience semantics](live-audience-semantics.md) — only explicit per-user live selections power badges and rankings; editor/view tabs never activate drafts
 - [Interaction feedback](interaction-style.md) — stationary, subtle button hovers; hand cursors on enabled clickable elements
-- [Playbooks design direction](playbooks-design-direction.md) — dense operational tables, warm near-black surfaces, existing dark-mode primary accents; preserve module identity and scope
+- [Playbooks design direction](playbooks-design-direction.md) — dense operational tables, shared theme surfaces and accents; replace scratch creation without changing saved workflows.
+- [Clerk browser test claims](clerk-testing-claims.md) — use normal programmatic login; do not require unsupported custom claim overrides when standard identity resolves ownership.

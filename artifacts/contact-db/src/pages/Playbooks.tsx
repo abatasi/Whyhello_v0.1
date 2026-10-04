@@ -2,14 +2,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ReactFlow, Background, BackgroundVariant, MiniMap,
   addEdge, applyNodeChanges, applyEdgeChanges,
   type Node, type Edge, type Connection, type NodeChange, type EdgeChange,
-  Handle, Position, useReactFlow, ReactFlowProvider,
+  Handle, Position,
   MarkerType, BaseEdge, getBezierPath, EdgeLabelRenderer,
   useNodesState, useEdgesState, type NodeProps, type EdgeProps,
 } from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
 import { apiFetch } from "@/lib/apiFetch";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +23,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Shell } from "@/components/layout/Shell";
 import { PlaybooksList } from "@/components/playbooks/PlaybooksList";
-import { createPlaybookRecord } from "@/components/playbooks/list-api";
+import { createPlaybookRecord, duplicatePlaybookRecord, playbookRequest } from "@/components/playbooks/list-api";
+import type { PlaybookRecord } from "@/components/playbooks/list-model";
+import { BuilderHeader, StructurePanel, type PlaybookTab } from "@/components/playbooks/BuilderHeader";
+import { AiProposalDialog, ContactEnrollDialog, StepPicker, type Proposal } from "@/components/playbooks/BuilderDialogs";
+import { PlaybookStepList } from "@/components/playbooks/PlaybookStepList";
+import { PlaybookIcon } from "@/components/PlaybookIcon";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -402,7 +405,7 @@ function nodeComplete(data: PlaybookNodeData): boolean {
     case "send-email": return !!(data.subject || data.emailType);
     case "send-linkedin": return !!(data.linkedinAction);
     case "make-call": return true;
-    case "time-delay": return !!(data.delayAmount);
+    case "time-delay": return (data.delayAmount ?? 0) > 0;
     case "split-path": return !!(data.condition) && (data.branches?.length ?? 0) >= 2;
     default: return true;
   }
@@ -1511,101 +1514,6 @@ function ConfigDrawer({
 
 // ── Left panel ────────────────────────────────────────────────────────────────
 
-function BlockPanel({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
-  const [search, setSearch] = useState("");
-  const filtered = useMemo(() =>
-    BLOCKS.filter(b => !search || b.label.toLowerCase().includes(search.toLowerCase()) || b.description.toLowerCase().includes(search.toLowerCase())),
-    [search]
-  );
-  const grouped = useMemo(() => {
-    const g: Record<string, BlockDef[]> = {};
-    for (const b of filtered) { (g[b.category] ??= []).push(b); }
-    return g;
-  }, [filtered]);
-
-  function onDragStart(e: React.DragEvent, blockId: string) {
-    e.dataTransfer.setData("application/playbook-block", blockId);
-    e.dataTransfer.effectAllowed = "move";
-  }
-
-  if (collapsed) {
-    return (
-      <div className="w-10 flex flex-col items-center pt-3 border-r border-border/60 bg-card flex-shrink-0">
-        <button onClick={onToggle} className="p-2 rounded-lg hover:bg-secondary/50 text-muted-foreground" title="Expand panel">
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-72 flex flex-col border-r border-border/60 bg-card flex-shrink-0 overflow-hidden">
-      {/* Panel header */}
-      <div className="flex items-center justify-between px-3 py-3 border-b border-border/40 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <LayoutGrid className="h-4 w-4 text-muted-foreground" />
-          <p className="text-xs font-bold text-foreground">Building Blocks</p>
-        </div>
-        <button onClick={onToggle} className="p-1 rounded hover:bg-secondary/40 text-muted-foreground">
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="px-3 py-2 flex-shrink-0">
-        <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/30 px-2.5 py-1.5">
-          <Search className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search blocks…"
-            className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
-          />
-          {search && <button onClick={() => setSearch("")}><X className="h-3 w-3 text-muted-foreground" /></button>}
-        </div>
-      </div>
-
-      {/* Block list */}
-      <div className="flex-1 overflow-y-auto px-3 pb-4 flex flex-col gap-3">
-        {Object.entries(grouped).map(([catId, blocks]) => {
-          const cat = CATEGORIES[catId];
-          return (
-            <div key={catId}>
-              <p className={cn("text-[10px] font-bold uppercase tracking-widest mb-1.5 mt-1", cat.text)}>{cat.label}</p>
-              <div className="flex flex-col gap-1">
-                {blocks.map(b => {
-                  const Icon = b.Icon as React.ComponentType<{ className?: string }>;
-                  return (
-                    <div
-                      key={b.id}
-                      draggable
-                      onDragStart={e => onDragStart(e, b.id)}
-                      className={cn(
-                        "flex items-center gap-2.5 p-2.5 rounded-xl border cursor-grab active:cursor-grabbing transition-all select-none",
-                        "hover:shadow-sm",
-                        cat.bg, cat.border,
-                      )}
-                    >
-                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 dark:text-muted-foreground flex-shrink-0" />
-                      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border", cat.iconBg, cat.border)}>
-                        <Icon className={cn("h-3.5 w-3.5", cat.iconText)} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-[11px] font-semibold leading-tight", cat.text)}>{b.label}</p>
-                        <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 line-clamp-1">{b.description}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 // ── Playbook top bar ──────────────────────────────────────────────────────────
 
 function PlaybookTopbar({
@@ -1851,12 +1759,17 @@ function CannedLibraryModal({ open, onClose, onSelect }: { open: boolean; onClos
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground"><X className="h-4 w-4" /></button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4 grid grid-cols-2 gap-3">
-          {CANNED_PLAYBOOKS.map(p => (
-            <button
+        <div className="flex-1 overflow-y-auto px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {CANNED_PLAYBOOKS.map(p => {
+            const preview = p.build();
+            const workflowSteps = preview.nodes.filter(n => !["placeholder", "prospect-added", "trigger-detected", "added-to-playbook"].includes((n.data as PlaybookNodeData).blockType));
+            const channels = [...new Set(workflowSteps.map(n => (n.data as PlaybookNodeData).blockType).filter(type => ["send-email", "send-linkedin", "make-call"].includes(type)).map(type => type === "send-email" ? "Email" : type === "send-linkedin" ? "LinkedIn" : "Call"))];
+            const duration = workflowSteps.filter(n => (n.data as PlaybookNodeData).blockType === "time-delay").reduce((sum, n) => sum + Number((n.data as PlaybookNodeData).delayAmount ?? 0), 0);
+            return <button
               key={p.id}
+              data-testid={`template-${p.id}`}
               onClick={() => { onSelect(p); onClose(); }}
-              className="flex flex-col gap-2 p-4 rounded-xl border border-border/60 bg-card hover:bg-secondary/30 hover:shadow-md text-left transition-all group"
+              className="flex flex-col gap-2 rounded-xl border border-border/60 bg-card p-4 text-left transition-all hover:bg-secondary/30 hover:shadow-md group"
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{p.name}</p>
@@ -1870,11 +1783,12 @@ function CannedLibraryModal({ open, onClose, onSelect }: { open: boolean; onClos
               </div>
               <p className="text-xs text-muted-foreground">{p.description}</p>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-[10px] text-muted-foreground">{p.touchpoints} touchpoints</span>
-                <span className="text-[10px] text-muted-foreground">{p.duration}</span>
+                <span className="text-[10px] text-muted-foreground">{workflowSteps.length} steps</span>
+                <span className="text-[10px] text-muted-foreground">{channels.length ? channels.join(" · ") : "No channels"}</span>
+                <span className="text-[10px] text-muted-foreground">{duration ? `~${duration} days` : p.duration}</span>
               </div>
-            </button>
-          ))}
+            </button>;
+          })}
         </div>
       </div>
     </div>
@@ -1883,59 +1797,20 @@ function CannedLibraryModal({ open, onClose, onSelect }: { open: boolean; onClos
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
-function EmptyCanvas({ onScratch, onTemplate }: { onScratch: () => void; onTemplate: () => void }) {
+function EmptyEditor({ onAddStep, onTemplate, onAI }: { onAddStep: () => void; onTemplate: () => void; onAI: () => void }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 pointer-events-none z-10">
-      <div className="flex flex-col items-center gap-3 pointer-events-auto text-center">
-        <div className="h-14 w-14 rounded-2xl bg-secondary/60 border border-border/60 flex items-center justify-center">
-          <GitBranch className="h-7 w-7 text-muted-foreground/60" />
-        </div>
-        <div>
-          <p className="text-base font-bold text-foreground">Build your playbook</p>
-          <p className="text-sm text-muted-foreground mt-1 max-w-xs">Drag a starting point onto the canvas or begin with a proven Whyhello template.</p>
-        </div>
-        <div className="flex items-center gap-2 mt-1">
-          <button onClick={onScratch} className="px-4 py-2 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-secondary/40 transition-colors">
-            Start from Scratch
-          </button>
-          <button onClick={onTemplate} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-            Choose a Template
-          </button>
+    <div className="absolute inset-0 z-10 flex items-center justify-center p-5">
+      <div className="flex max-w-sm flex-col items-center text-center">
+        <PlaybookIcon size={96} className="mb-6 shrink-0 text-muted-foreground" />
+        <h2 className="text-base font-bold text-foreground">Your playbook is empty</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Add steps to build your playbook.</p>
+        <button type="button" data-testid="button-empty-add-step" onClick={onAddStep} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"><Plus size={16} />Add a step</button>
+        <span className="my-3 text-xs text-muted-foreground">Or start with</span>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button type="button" data-testid="button-empty-template" onClick={onTemplate} className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:bg-secondary/50">Select a template</button>
+          <button type="button" data-testid="button-empty-ai" onClick={onAI} className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:bg-secondary/50"><Wand2 size={13} className="mr-1 inline" />AI-assisted playbook</button>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ── Zoom controls ─────────────────────────────────────────────────────────────
-
-function ZoomControls({ showMinimap, onToggleMinimap }: { showMinimap: boolean; onToggleMinimap: () => void }) {
-  const { zoomIn, zoomOut, fitView, getZoom } = useReactFlow();
-  const [zoom, setZoom] = useState(100);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setZoom(Math.round(getZoom() * 100));
-    }, 200);
-    return () => clearInterval(interval);
-  }, [getZoom]);
-
-  return (
-    <div className="absolute bottom-4 right-4 flex items-center gap-1 bg-card border border-border/60 rounded-xl shadow-sm p-1 z-10">
-      <button onClick={() => zoomOut()} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground" title="Zoom out">
-        <Minus className="h-3.5 w-3.5" />
-      </button>
-      <span className="text-[11px] font-semibold text-muted-foreground w-10 text-center">{zoom}%</span>
-      <button onClick={() => zoomIn()} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground" title="Zoom in">
-        <Plus className="h-3.5 w-3.5" />
-      </button>
-      <div className="w-px h-4 bg-border/60" />
-      <button onClick={() => fitView({ padding: 0.15, duration: 400 })} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground" title="Fit to screen">
-        <Maximize2 className="h-3.5 w-3.5" />
-      </button>
-      <button onClick={onToggleMinimap} className={cn("p-1.5 rounded-lg text-muted-foreground transition-colors", showMinimap ? "bg-secondary/60" : "hover:bg-secondary/40")} title="Toggle minimap">
-        <Map className="h-3.5 w-3.5" />
-      </button>
     </div>
   );
 }
@@ -2208,7 +2083,7 @@ function AddProspectModal({
 const nodeTypes = { playbook: PlaybookNodeComponent, placeholder: PlaceholderNode };
 const edgeTypes = { playbook: PlaybookEdge };
 
-// ── Canvas inner (must be inside ReactFlowProvider) ───────────────────────────
+// ── Playbook editor (saved workflow data remains compatible) ──────────────────
 
 interface HistoryEntry {
   nodes: Node<PlaybookNodeData>[];
@@ -2218,14 +2093,49 @@ interface HistoryEntry {
 
 function CanvasInner({
   playbookId, playbookName, playbookStatus, initialCanvas,
-  onNameChange, onBack, onSave: externalSave, saving,
+  enrollmentCount, onBack, onSave: externalSave, saving,
 }: {
   playbookId: number; playbookName: string; playbookStatus: string; initialCanvas?: string | null;
-  onNameChange: (n: string) => void; onBack: () => void;
+  enrollmentCount?: number;
+  onBack: () => void;
   onSave: (nodes: Node<PlaybookNodeData>[], edges: Edge[], prospects: ProspectEntry[]) => void; saving: boolean;
 }) {
-  const { screenToFlowPosition, fitView } = useReactFlow();
   const { toast } = useToast();
+  const qc = useQueryClient();
+  const [showAiBuilder, setShowAiBuilder] = useState(false);
+  const emailAccounts = useQuery<unknown[]>({
+    queryKey: ["playbook-email-accounts"],
+    queryFn: async () => {
+      const response = await apiFetch("/api/email-accounts");
+      if (!response.ok) throw new Error(`Mailbox status unavailable (${response.status})`);
+      const rows = await response.json();
+      if (!Array.isArray(rows)) throw new Error("Mailbox response could not be read.");
+      return rows;
+    },
+    staleTime: 30_000,
+  });
+  const liveHq = useQuery<{
+    data?: {
+      liveBuyingCenterId?: string | null;
+      liveTargetMarketId?: string | null;
+      buyingCenters?: { id: string; name: string; seats?: { seat: string }[] }[];
+      targetMarkets?: { id: string; name: string; industries?: string[]; companySizes?: string[]; locations?: string[] }[];
+    } | null;
+  }>({
+    queryKey: ["playbook-live-hq-context"],
+    enabled: showAiBuilder,
+    queryFn: async () => {
+      const response = await apiFetch("/api/hq/profile");
+      if (!response.ok) throw new Error(`HQ context unavailable (${response.status})`);
+      return response.json();
+    },
+    staleTime: 60_000,
+  });
+  const hqData = liveHq.data?.data;
+  const liveBuyingCenter = hqData?.buyingCenters?.find(center => center.id === hqData.liveBuyingCenterId);
+  const liveTargetMarket = hqData?.targetMarkets?.find(market => market.id === hqData.liveTargetMarketId);
+  const liveBuyingCenterText = liveBuyingCenter ? [liveBuyingCenter.name, ...(liveBuyingCenter.seats ?? []).map(seat => seat.seat)].filter(Boolean).join(" · ") : "";
+  const liveTargetMarketText = liveTargetMarket ? [liveTargetMarket.name, ...(liveTargetMarket.industries ?? []), ...(liveTargetMarket.companySizes ?? []), ...(liveTargetMarket.locations ?? [])].filter(Boolean).join(" · ") : "";
 
   const storageKey = `playbook_canvas_v3_${playbookId}`;
 
@@ -2312,18 +2222,21 @@ function CanvasInner({
         return parsed;
       }
     } catch {}
+    // A scratch record is deliberately empty even if the list response omits
+    // its description field. Its blank v3 cache is then restored normally.
+    if (!initialCanvas && playbookName === "Untitled playbook") return { nodes: [], edges: [], prospects: [] };
     return buildStarterCanvas();
-  }, [storageKey, initialCanvas]);
+  }, [storageKey, initialCanvas, playbookName]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<PlaybookNodeData>>(initialState.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
-  const [prospects, setProspects] = useState<ProspectEntry[]>(initialState.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }]);
+  const [prospects, setProspects] = useState<ProspectEntry[]>(initialState.prospects ?? []);
 
   // History for undo/redo
   const historyRef = useRef<HistoryEntry[]>([{
     nodes: initialState.nodes,
     edges: initialState.edges,
-    prospects: initialState.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }],
+    prospects: initialState.prospects ?? [],
   }]);
   const historyIndexRef = useRef(0);
 
@@ -2376,12 +2289,25 @@ function CanvasInner({
   const selectedNode = useMemo(() => nodes.find(n => n.id === selectedNodeId) ?? null, [nodes, selectedNodeId]);
 
   // Panels
-  const [panelCollapsed, setPanelCollapsed] = useState(false);
-  const [showSummary, setShowSummary] = useState(false);
-  const [showTest, setShowTest] = useState(false);
-  const [showMinimap, setShowMinimap] = useState(false);
   const [showCanned, setShowCanned] = useState(false);
   const [showAddProspect, setShowAddProspect] = useState(false);
+  const [activeTab, setActiveTab] = useState<PlaybookTab>("editor");
+  const [showStepPicker, setShowStepPicker] = useState(false);
+  const [showContactEnroll, setShowContactEnroll] = useState(false);
+  const [showOptimize, setShowOptimize] = useState(false);
+  const [shareLink, setShareLink] = useState("");
+  const [pendingRecordAction, setPendingRecordAction] = useState<"archive" | "delete" | null>(null);
+  const [recordActionBusy, setRecordActionBusy] = useState(false);
+  const stepNodes = useMemo(() => nodes.filter(n => !["placeholder", "prospect-added", "trigger-detected", "added-to-playbook"].includes((n.data as PlaybookNodeData).blockType)), [nodes]);
+  const activationReason = !stepNodes.length
+    ? "Add at least one workflow step before activating this playbook."
+    : ["archived", "completed"].includes(playbookStatus)
+      ? `${playbookStatus[0].toUpperCase()}${playbookStatus.slice(1)} playbooks cannot be activated.`
+    : stepNodes.some(n => (n.data as PlaybookNodeData).blockType === "send-email") && emailAccounts.isSuccess && emailAccounts.data.length === 0
+      ? "Link an email mailbox before activating an email workflow."
+    : stepNodes.some(n => !nodeComplete(n.data as PlaybookNodeData))
+      ? "Complete the required configuration on every step before activating."
+      : undefined;
 
   // Insert block menu
   const [insertMenu, setInsertMenu] = useState<{ edgeId: string; x: number; y: number } | null>(null);
@@ -2410,30 +2336,6 @@ function CanvasInner({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
-
-  // Fit on mount
-  useEffect(() => {
-    setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 100);
-  }, [fitView]);
-
-  // DnD
-  const onDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }, []);
-
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const blockType = e.dataTransfer.getData("application/playbook-block");
-    if (!blockType) return;
-    const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-    const newNode = makeNode(blockType, position, { laneId: PRIMARY_LANE_ID });
-    setNodes(prev => {
-      const next = [...prev, newNode];
-      commitToHistory(next, edgesRef.current, prospectsRef.current);
-      return next;
-    });
-  }, [screenToFlowPosition, setNodes]);
 
   // Connect
   const onConnect = useCallback((params: Connection) => {
@@ -2671,7 +2573,6 @@ function CanvasInner({
     setEdges(allEdges);
     setProspects(newProspects);
     commitToHistory(allNodes, allEdges, newProspects);
-    setTimeout(() => fitView({ padding: 0.15, duration: 500 }), 100);
     toast({ title: `${contactName} added`, description: "A new lane has been created, linked to the Primary sequence." });
   }
 
@@ -2709,7 +2610,6 @@ function CanvasInner({
     setEdges(state.edges);
     setProspects(state.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }]);
     commitToHistory(state.nodes, state.edges, state.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }]);
-    setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 100);
   }
 
   // Save
@@ -2717,9 +2617,153 @@ function CanvasInner({
     externalSave(nodes, edges, prospects);
   }
 
-  // Publish
-  function publish() {
-    toast({ title: "Publishing…", description: "Playbook published and ready to enroll prospects." });
+  function addFirstStep(blockType: string) {
+    const data = { laneId: PRIMARY_LANE_ID };
+    const position = { x: 0, y: 0 };
+    const first = makeNode(blockType, position, data);
+    const hasTerminalOutcome = isOutcomeBlock(blockType);
+    const next = hasTerminalOutcome
+      ? [first]
+      : [first, makePlaceholder({ x: position.x, y: position.y + 140 }, { laneId: PRIMARY_LANE_ID })];
+    const nextEdges = hasTerminalOutcome ? [] : [makeEdge(first.id, next[1].id)];
+    setNodes(next);
+    setEdges(nextEdges);
+    commitToHistory(next, nextEdges, prospectsRef.current);
+    setShowStepPicker(false);
+    setActiveTab("editor");
+  }
+
+  function insertProposal(proposal: Proposal) {
+    const built = proposal.steps.map((step, index) => {
+      const blockType = step.blockType;
+      const extra: Partial<PlaybookNodeData> = { label: step.title, description: step.description, laneId: PRIMARY_LANE_ID };
+      if (blockType === "send-email") Object.assign(extra, { emailType: step.title || "Initial Email", subject: step.title, emailBody: step.description });
+      if (blockType === "send-linkedin") Object.assign(extra, { linkedinAction: "Send Message", linkedinBody: step.description });
+      if (blockType === "make-call") Object.assign(extra, { callObjective: step.title, opener: step.description });
+      if (blockType === "time-delay") Object.assign(extra, { delayAmount: Math.min(365, Math.max(1, Math.round(step.delayDays ?? 1))), delayUnit: "calendar days", isBusinessDays: false });
+      return makeNode(blockType, { x: 360, y: 80 + index * 140 }, extra);
+    });
+    if (!built.length) return;
+    const alreadyFinal = isOutcomeBlock((built[built.length - 1].data as PlaybookNodeData).blockType);
+    const placeholder = alreadyFinal ? null : makePlaceholder({ x: 360, y: 80 + built.length * 140 }, { laneId: PRIMARY_LANE_ID });
+    const next = placeholder ? [...built, placeholder] : built;
+    const nextEdges = next.slice(0, -1).map((node, index) => makeEdge(node.id, next[index + 1].id));
+    setNodes(next); setEdges(nextEdges);
+    commitToHistory(next, nextEdges, prospectsRef.current);
+    setShowAiBuilder(false); setActiveTab("editor");
+  }
+
+  async function changeStatus(nextStatus: "active" | "paused") {
+    try {
+      const response = await apiFetch(`/api/playbooks/${playbookId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || `Status update failed (${response.status})`);
+      }
+      await qc.invalidateQueries({ queryKey: ["playbooks"] });
+      toast({ title: nextStatus === "active" ? "Playbook activated" : "Playbook paused", description: "Status updated. This does not send messages." });
+    } catch (error) {
+      toast({ title: "Status could not be updated", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+    }
+  }
+
+  async function renameRecord(newName: string) {
+    try {
+      const response = await apiFetch(`/api/playbooks/${playbookId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || `Rename failed (${response.status})`);
+      }
+      await qc.invalidateQueries({ queryKey: ["playbooks"] });
+      toast({ title: "Playbook renamed" });
+    } catch (error) {
+      toast({ title: "Rename failed", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+      throw error;
+    }
+  }
+
+  async function duplicateRecord() {
+    try {
+      let records = qc.getQueryData<PlaybookRecord[]>(["playbooks"]);
+      if (!records) records = await playbookRequest<PlaybookRecord[]>("/api/playbooks");
+      const record = records.find(item => item.id === playbookId);
+      if (!record) throw new Error("Playbook record could not be found.");
+      const copy = await duplicatePlaybookRecord(record);
+      await qc.invalidateQueries({ queryKey: ["playbooks"] });
+      toast({ title: "Draft duplicate created", description: `${copy.name} is ready to edit.` });
+    } catch (error) {
+      toast({ title: "Duplicate failed", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+    }
+  }
+
+  async function performRecordAction() {
+    if (!pendingRecordAction || recordActionBusy) return;
+    setRecordActionBusy(true);
+    try {
+      if (pendingRecordAction === "archive") {
+        const response = await apiFetch(`/api/playbooks/${playbookId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "archived" }),
+        });
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({}));
+          throw new Error(result.error || `Archive failed (${response.status})`);
+        }
+        toast({ title: "Playbook archived" });
+      } else {
+        const response = await apiFetch(`/api/playbooks/${playbookId}`, { method: "DELETE" });
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({}));
+          throw new Error(result.error || `Delete failed (${response.status})`);
+        }
+        try {
+          localStorage.removeItem(`playbook_canvas_${playbookId}`);
+          localStorage.removeItem(`playbook_canvas_v3_${playbookId}`);
+        } catch { /* Server deletion still succeeded; browser cache may remain unavailable. */ }
+        await qc.invalidateQueries({ queryKey: ["playbooks"] });
+        toast({ title: "Playbook deleted" });
+        onBack();
+      }
+      await qc.invalidateQueries({ queryKey: ["playbooks"] });
+      setPendingRecordAction(null);
+    } catch (error) {
+      toast({ title: `Could not ${pendingRecordAction} playbook`, description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+    } finally { setRecordActionBusy(false); }
+  }
+
+  async function shareCurrentPlaybook() {
+    const link = new URL(window.location.href);
+    link.pathname = link.pathname.replace(/\/playbooks\/[^/]+\/?$/, `/playbooks/${playbookId}`);
+    link.search = "";
+    link.hash = "";
+    const url = link.href;
+    setShareLink(url);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard access is unavailable.");
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Playbook link copied", description: "Anyone opening it still needs access to your Whyhello account." });
+    } catch {
+      toast({ title: "Share link ready", description: "Copy the link shown below. Team permissions are not managed by the playbook API." });
+    }
+  }
+
+  async function copyShareLink() {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard access is unavailable.");
+      await navigator.clipboard.writeText(shareLink);
+      toast({ title: "Link copied" });
+    } catch {
+      toast({ title: "Copy unavailable", description: "Select and copy the link manually.", variant: "destructive" });
+    }
   }
 
   // Check for adjacent touchpoints (suggestion)
@@ -2759,171 +2803,78 @@ function CanvasInner({
     new Set(prospects.filter(p => p.contactId).map(p => p.contactId!)),
     [prospects]
   );
+  const linkedContactNames = useMemo(() =>
+    [...new Set(prospects.map(prospect => prospect.contactName).filter((name): name is string => !!name))],
+    [prospects]
+  );
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background">
-      {/* Topbar */}
-      <PlaybookTopbar
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      <BuilderHeader
         playbookId={playbookId}
         name={playbookName}
         status={playbookStatus}
-        onNameChange={onNameChange}
-        onBack={onBack}
-        onSave={save}
-        onTest={() => { setShowTest(v => !v); setShowSummary(false); }}
-        onPublish={publish}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onUndo={undo}
-        onRedo={redo}
+        activeTab={activeTab}
+        steps={stepNodes.length}
         saving={saving}
+        activationReason={playbookStatus === "active" ? undefined : activationReason}
+        onTab={setActiveTab}
+        onRename={renameRecord}
+        onSave={save}
+        onShare={() => void shareCurrentPlaybook()}
+        onOptimize={() => { setActiveTab("editor"); setShowOptimize(true); }}
+        onWorkflows={() => setActiveTab("settings")}
+        onContacts={() => setShowContactEnroll(true)}
+        onActivate={() => void changeStatus(playbookStatus === "active" ? "paused" : "active")}
+        onDuplicate={() => void duplicateRecord()}
+        onArchive={() => setPendingRecordAction("archive")}
+        onDelete={() => setPendingRecordAction("delete")}
       />
-
-      {/* Suggestion banner */}
-      {touchpointWarning && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-amber-50 dark:bg-background border-b border-amber-200 dark:border-amber-500/30 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-            <p className="text-xs text-amber-700 dark:text-amber-300">Consider adding a time delay between consecutive touchpoints.</p>
-          </div>
-          <button className="text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 text-xs font-semibold">Dismiss</button>
-        </div>
-      )}
-
-      {/* Thread Roster */}
-      <ProspectRoster
-        prospects={prospects}
-        onToggleCascade={toggleProspectCascade}
-        onRemove={removeProspectLane}
-        onAddProspect={() => setShowAddProspect(true)}
-      />
-
-      {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Block panel */}
-        <BlockPanel collapsed={panelCollapsed} onToggle={() => setPanelCollapsed(v => !v)} />
-
-        {/* Canvas */}
-        <div className="flex-1 relative overflow-hidden" onDragOver={onDragOver} onDrop={onDrop}>
-          <ReactFlow
-            nodes={nodesWithCallbacks}
-            edges={edgesWithInsert}
-            onNodesChange={onNodesChangeWithHistory}
-            onEdgesChange={onEdgesChangeWithHistory}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            onPaneClick={onPaneClick}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            deleteKeyCode="Delete"
-            multiSelectionKeyCode="Shift"
-            selectionKeyCode="Shift"
-            fitView
-            fitViewOptions={{ padding: 0.15 }}
-            defaultViewport={{ x: 60, y: 40, zoom: 0.9 }}
-            minZoom={0.2}
-            maxZoom={2}
-            proOptions={{ hideAttribution: true }}
-            className="bg-background"
-          >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} className="dark:opacity-20" color="#d1d5db" />
-            {showMinimap && (
-              <MiniMap
-                nodeColor={(node) => {
-                  const d = node.data as PlaybookNodeData;
-                  const def = BLOCK_BY_ID[d?.blockType];
-                  return def ? CATEGORIES[def.category].mini : "#e2e8f0";
-                }}
-                maskColor="rgba(0,0,0,0.04)"
-                className="rounded-xl border border-border/60 shadow-sm !bottom-14 !right-4"
-                style={{ width: 160, height: 100 }}
-              />
-            )}
-          </ReactFlow>
-
-          {/* Zoom controls */}
-          <ZoomControls showMinimap={showMinimap} onToggleMinimap={() => setShowMinimap(v => !v)} />
-
-          {/* Summary toggle */}
-          <button
-            onClick={() => { setShowSummary(v => !v); setShowTest(false); }}
-            className={cn("absolute bottom-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-sm z-10", showSummary ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/40")}
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Summary
-          </button>
-
-          {/* Insert block menu */}
-          {insertMenu && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-              <div className="pointer-events-auto bg-card border border-border rounded-xl shadow-2xl w-64 overflow-hidden">
-                <div className="px-3 py-2 border-b border-border/40">
-                  <p className="text-xs font-bold text-foreground mb-1.5">Insert block</p>
-                  <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/30 px-2 py-1.5">
-                    <Search className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
-                    <input autoFocus value={insertSearch} onChange={e => setInsertSearch(e.target.value)} placeholder="Search…" className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/40" />
-                  </div>
-                </div>
-                <div className="max-h-60 overflow-y-auto">
-                  {filteredInsertBlocks.map(b => {
-                    const cat = CATEGORIES[b.category];
-                    const Icon = b.Icon as React.ComponentType<{ className?: string }>;
-                    return (
-                      <button
-                        key={b.id}
-                        onClick={() => insertBlock(b.id)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-secondary/40 text-left transition-colors border-b border-border/30 last:border-0"
-                      >
-                        <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center flex-shrink-0 border", cat.iconBg, cat.border)}>
-                          <Icon className={cn("h-3 w-3", cat.iconText)} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-foreground">{b.label}</p>
-                          <p className={cn("text-[10px]", cat.text)}>{cat.label}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="px-3 py-2 border-t border-border/40">
-                  <button onClick={() => setInsertMenu(null)} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Summary panel */}
-        {showSummary && (
-          <div className="w-64 border-l border-border/60 bg-card flex flex-col flex-shrink-0 overflow-y-auto">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 flex-shrink-0">
-              <p className="text-xs font-bold">Summary</p>
-              <button onClick={() => setShowSummary(false)} className="p-1 rounded hover:bg-secondary/40 text-muted-foreground"><X className="h-3.5 w-3.5" /></button>
-            </div>
-            <SummaryPanel nodes={nodes as Node<PlaybookNodeData>[]} edges={edges} />
-          </div>
-        )}
-
-        {/* Test panel */}
-        {showTest && <TestPanel nodes={nodes as Node<PlaybookNodeData>[]} onClose={() => setShowTest(false)} />}
-
-        {/* Config drawer */}
-        {selectedNode && (
-          <div className="w-80 border-l border-border/60 bg-card flex flex-col flex-shrink-0 overflow-hidden">
-            <ConfigDrawer
-              node={selectedNode as Node<PlaybookNodeData>}
-              onClose={() => setSelectedNodeId(null)}
-              onUpdate={updateNode}
-              onDelete={deleteNode}
-              onDuplicate={duplicateNode}
-              prospects={prospects}
-              allNodes={nodes as Node<PlaybookNodeData>[]}
-            />
-          </div>
-        )}
-      </div>
+      {activeTab === "editor" ? <div data-testid="playbook-editor-workspace" className="relative min-h-0 flex-1 overflow-auto bg-background">
+        {stepNodes.length === 0
+          ? <EmptyEditor onAddStep={() => setShowStepPicker(true)} onTemplate={() => setShowCanned(true)} onAI={() => setShowAiBuilder(true)} />
+          : <PlaybookStepList steps={stepNodes as Node<PlaybookNodeData>[]} />}
+      </div> : <StructurePanel
+        tab={activeTab}
+        playbookId={playbookId}
+        name={playbookName}
+        status={playbookStatus}
+        enrollmentCount={enrollmentCount}
+        nodes={nodes as Node<PlaybookNodeData>[]}
+        contactNames={linkedContactNames}
+        onEdit={() => setActiveTab("editor")}
+        onActivate={() => void changeStatus("active")}
+      />}
 
       <CannedLibraryModal open={showCanned} onClose={() => setShowCanned(false)} onSelect={applyCanned} />
+      {showStepPicker && <StepPicker onClose={() => setShowStepPicker(false)} onSelect={addFirstStep} />}
+      {showAiBuilder && <AiProposalDialog onClose={() => setShowAiBuilder(false)} onInsert={insertProposal} liveBuyingCenter={liveBuyingCenterText} liveTargetMarket={liveTargetMarketText} />}
+      {showContactEnroll && <ContactEnrollDialog playbookId={playbookId} onClose={() => setShowContactEnroll(false)} onEnrolled={() => { toast({ title: "Contacts enrolled", description: "Enrollment was submitted to the playbook API." }); void qc.invalidateQueries({ queryKey: ["playbooks"] }); void qc.invalidateQueries({ queryKey: ["playbook-enrollments", playbookId] }); }} />}
+      {showOptimize && <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setShowOptimize(false); }}>
+        <section className="w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="optimize-title">
+          <header className="flex items-center justify-between border-b border-border/60 px-5 py-4"><div className="flex items-center gap-2"><Wand2 size={17} className="text-primary" /><h2 id="optimize-title" className="text-base font-bold">Structure review</h2></div><button type="button" data-testid="close-optimization" aria-label="Close structure review" onClick={() => setShowOptimize(false)} className="rounded-md p-2 text-muted-foreground hover:bg-secondary"><X size={16} /></button></header>
+          <div className="space-y-3 p-5">
+            {!stepNodes.length && <p className="rounded-lg border border-amber-300/60 bg-amber-50/50 p-3 text-sm text-amber-900">No workflow steps yet. Add an action before activating.</p>}
+            {stepNodes.filter(node => !nodeComplete(node.data as PlaybookNodeData)).map(node => <p key={node.id} className="rounded-lg border border-amber-300/60 bg-amber-50/50 p-3 text-sm text-amber-900">{(node.data as PlaybookNodeData).label} needs required configuration.</p>)}
+            {touchpointWarning && <p className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">Adjacent communication steps have no time delay between them.</p>}
+            {stepNodes.length && !stepNodes.some(node => !nodeComplete(node.data as PlaybookNodeData)) && !touchpointWarning && <p className="rounded-lg border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">No configuration warnings found in the current canvas structure.</p>}
+            <p className="text-xs text-muted-foreground">Recommendations are based only on saved canvas structure and block configuration; no delivery or reply data is available.</p>
+            <div className="flex justify-end gap-2"><button type="button" className="rounded-md border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary/50" onClick={() => setShowOptimize(false)}>Close</button><button type="button" data-testid="button-review-workflow" className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground" onClick={() => { setShowOptimize(false); setActiveTab("editor"); }}>Review workflow</button></div>
+          </div>
+        </section>
+      </div>}
+      {shareLink && <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setShareLink(""); }}>
+        <section className="w-full max-w-md rounded-xl border border-border bg-card shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="share-playbook-title">
+          <header className="flex items-center justify-between border-b border-border/60 px-5 py-4"><h2 id="share-playbook-title" className="text-base font-bold">Share playbook link</h2><button type="button" data-testid="close-share-dialog" aria-label="Close" onClick={() => setShareLink("")} className="rounded-md p-2 text-muted-foreground hover:bg-secondary"><X size={16} /></button></header>
+          <div className="space-y-3 p-5"><p className="text-sm text-muted-foreground">This copies a link to the current playbook. The link does not grant access; viewers must already have access to your Whyhello account.</p><input data-testid="input-share-link" readOnly value={shareLink} onFocus={event => event.currentTarget.select()} className="w-full rounded-md border border-border bg-secondary/30 px-3 py-2 text-xs" /><div className="flex justify-end gap-2"><button type="button" className="rounded-md border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary/50" onClick={() => setShareLink("")}>Close</button><button type="button" data-testid="button-copy-share-link" className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground" onClick={() => void copyShareLink()}>Copy link</button></div></div>
+        </section>
+      </div>}
+      {pendingRecordAction && <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm" role="presentation">
+        <section className="w-full max-w-md rounded-xl border border-border bg-card shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="record-action-title">
+          <header className="border-b border-border/60 px-5 py-4"><h2 id="record-action-title" className="text-base font-bold">{pendingRecordAction === "archive" ? "Archive this playbook?" : "Delete this playbook?"}</h2></header>
+          <div className="p-5"><p className="text-sm text-muted-foreground">{pendingRecordAction === "archive" ? "The playbook status will change to archived. You can find it later in the list." : "This permanently deletes the saved playbook. This action cannot be undone."}</p><div className="mt-5 flex justify-end gap-2"><button type="button" data-testid="cancel-record-action" disabled={recordActionBusy} onClick={() => setPendingRecordAction(null)} className="rounded-md border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary/50">Cancel</button><button type="button" data-testid="confirm-record-action" disabled={recordActionBusy} onClick={() => void performRecordAction()} className={`rounded-md px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50 ${pendingRecordAction === "delete" ? "bg-destructive" : "bg-primary"}`}>{recordActionBusy ? "Working…" : pendingRecordAction === "delete" ? "Delete" : "Archive"}</button></div></div>
+        </section>
+      </div>}
 
       <AddProspectModal
         open={showAddProspect}
@@ -2943,57 +2894,62 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
 
-  const { data: seqList } = useQuery<PlaybookMeta[]>({ queryKey: ["playbooks"], queryFn: () => apiFetch("/api/playbooks").then(r => r.json()) });
+  const playbooksQuery = useQuery<PlaybookMeta[]>({
+    queryKey: ["playbooks"],
+    queryFn: async () => {
+      const response = await apiFetch("/api/playbooks");
+      if (!response.ok) throw new Error(`Playbooks could not be loaded (${response.status})`);
+      const rows = await response.json();
+      if (!Array.isArray(rows)) throw new Error("The playbooks response could not be read.");
+      return rows;
+    },
+  });
+  const { data: seqList } = playbooksQuery;
   const seq = seqList?.find(s => s.id === playbookId);
 
   async function handleSave(nodes: Node<PlaybookNodeData>[], edges: Edge[], prospects: ProspectEntry[]) {
     setSaving(true);
     try {
       const canvas = JSON.stringify({ nodes, edges, prospects });
-      await apiFetch(`/api/playbooks/${playbookId}`, {
+      const response = await apiFetch(`/api/playbooks/${playbookId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: canvas }),
       });
-      qc.invalidateQueries({ queryKey: ["playbooks"] });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Save failed (${response.status})`);
+      await qc.invalidateQueries({ queryKey: ["playbooks"] });
       toast({ title: "Saved", description: "Playbook canvas saved." });
-    } catch {
-      toast({ title: "Save failed", variant: "destructive" });
+    } catch (error) {
+      toast({ title: "Save failed", description: error instanceof Error ? error.message : "The canvas could not be saved.", variant: "destructive" });
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleNameChange(name: string) {
-    await apiFetch(`/api/playbooks/${playbookId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    qc.invalidateQueries({ queryKey: ["playbooks"] });
+  if (playbooksQuery.isError) {
+    return <Shell><div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 text-center"><p className="text-sm text-destructive">{playbooksQuery.error instanceof Error ? playbooksQuery.error.message : "Playbook could not be loaded."}</p><div className="flex gap-2"><button type="button" data-testid="button-retry-playbook" className="rounded-md border border-border px-3 py-2 text-xs font-semibold" onClick={() => void playbooksQuery.refetch()}>Retry</button><button type="button" data-testid="button-back-playbooks" className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground" onClick={() => navigate("/playbooks")}>Back to playbooks</button></div></div></Shell>;
   }
-
   if (!seq) {
     return (
-      <div className="flex items-center justify-center h-screen text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading playbook…
-      </div>
+      <Shell><div className="flex h-full min-h-0 items-center justify-center text-muted-foreground"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Loading playbook…</div></Shell>
     );
   }
 
   return (
-    <ReactFlowProvider key={playbookId}>
-      <CanvasInner
-        playbookId={playbookId}
-        playbookName={seq.name}
-        playbookStatus={seq.status}
-        initialCanvas={seq.description}
-        onNameChange={handleNameChange}
-        onBack={() => navigate("/playbooks")}
-        onSave={handleSave}
-        saving={saving}
-      />
-    </ReactFlowProvider>
+    <Shell>
+        <CanvasInner
+          key={playbookId}
+          playbookId={playbookId}
+          playbookName={seq.name}
+          playbookStatus={seq.status}
+          initialCanvas={seq.description}
+          enrollmentCount={seq.enrollmentCount}
+          onBack={() => navigate("/playbooks")}
+          onSave={handleSave}
+          saving={saving}
+        />
+    </Shell>
   );
 }
 

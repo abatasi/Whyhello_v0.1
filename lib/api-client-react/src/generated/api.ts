@@ -40,6 +40,8 @@ import type {
   ListCompaniesParams,
   ListContactsParams,
   OutreachJob,
+  PlaybookProposal,
+  PlaybookProposalInput,
   RoleInsight,
   UpdateOutreachJobRequest,
 } from "./api.schemas";
@@ -52,6 +54,92 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary Propose a draft playbook structure for review without saving or activating it
+ */
+export const getProposePlaybookUrl = () => {
+  return `/api/playbooks/propose`;
+};
+
+export const proposePlaybook = async (
+  playbookProposalInput: PlaybookProposalInput,
+  options?: RequestInit,
+): Promise<PlaybookProposal> => {
+  return customFetch<PlaybookProposal>(getProposePlaybookUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(playbookProposalInput),
+  });
+};
+
+export const getProposePlaybookMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof proposePlaybook>>,
+    TError,
+    { data: BodyType<PlaybookProposalInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof proposePlaybook>>,
+  TError,
+  { data: BodyType<PlaybookProposalInput> },
+  TContext
+> => {
+  const mutationKey = ["proposePlaybook"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof proposePlaybook>>,
+    { data: BodyType<PlaybookProposalInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return proposePlaybook(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ProposePlaybookMutationResult = NonNullable<
+  Awaited<ReturnType<typeof proposePlaybook>>
+>;
+export type ProposePlaybookMutationBody = BodyType<PlaybookProposalInput>;
+export type ProposePlaybookMutationError = ErrorType<void>;
+
+/**
+ * @summary Propose a draft playbook structure for review without saving or activating it
+ */
+export const useProposePlaybook = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof proposePlaybook>>,
+    TError,
+    { data: BodyType<PlaybookProposalInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof proposePlaybook>>,
+  TError,
+  { data: BodyType<PlaybookProposalInput> },
+  TContext
+> => {
+  return useMutation(getProposePlaybookMutationOptions(options));
+};
 
 /**
  * Returns server health status

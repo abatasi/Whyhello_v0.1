@@ -6,10 +6,11 @@ import {
   Search, Bell, LogOut, Download, Users, Building2, Zap, X, Loader2,
   Settings, ShieldCheck, Flame, ChevronDown, Clock,
   Factory, Briefcase, Upload, Gauge, List, Milestone, Menu,
-  MessageSquare, ClipboardList, Layers3, House, Sun, Moon, Monitor
+  MessageSquare, Layers3, House, Sun, Moon, Monitor
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
 import { darkLogoUrl, lightLogoUrl } from "@/components/BrandLogo";
+import { PlaybookIcon } from "@/components/PlaybookIcon";
 import { cn, getInitials } from "@/lib/utils";
 import { OverallScorePill } from "@/components/OverallScorePill";
 import {
@@ -935,7 +936,7 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
     { label: "Home", href: "/", icon: House },
     { label: "Directory", href: "/directory", icon: Users },
     { label: "Message Center", href: "/messages", icon: MessageSquare },
-    { label: "Playbooks", href: "/playbooks", icon: ClipboardList },
+    { label: "Playbooks", href: "/playbooks", icon: PlaybookIcon },
     { label: "Multi-threading", href: "/multithreading", icon: Layers3 },
   ];
 
@@ -1117,7 +1118,7 @@ export function Navbar() {
     { label: "Home",            href: "/",               icon: House    },
     { label: "Directory",       href: "/directory",      icon: Users    },
     { label: "Message Center",  href: "/messages",       icon: Bell     },
-    { label: "Playbooks",       href: "/playbooks",      icon: List     },
+    { label: "Playbooks",       href: "/playbooks",      icon: PlaybookIcon },
     { label: "Multi-threading", href: "/multithreading", icon: Zap      },
   ];
 

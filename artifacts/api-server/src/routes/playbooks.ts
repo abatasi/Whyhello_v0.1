@@ -152,6 +152,33 @@ playbooksRouter.patch("/:id", async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id));
   try {
     const { name, description, status } = req.body as { name?: string; description?: string; status?: string };
+    if (status === "active") {
+      const [current] = await db.select().from(sequencesTable)
+        .where(and(eq(sequencesTable.id, id), eq(sequencesTable.userId, userId)));
+      if (!current) { res.status(404).json({ error: "Sequence not found" }); return; }
+      const canvasText = description ?? current.description;
+      if (canvasText?.trim().startsWith("{")) {
+        let canvas: { nodes?: { data?: Record<string, unknown> }[] };
+        try { canvas = JSON.parse(canvasText); }
+        catch { res.status(400).json({ error: "Save a valid playbook workflow before activating." }); return; }
+        if (Array.isArray(canvas.nodes)) {
+          const structural = new Set(["placeholder", "prospect-added", "trigger-detected", "added-to-playbook", "company-added", "list-entry", "manual-enrollment"]);
+          const steps = canvas.nodes.filter(node => typeof node.data?.blockType === "string" && !structural.has(node.data.blockType));
+          if (!steps.length) { res.status(400).json({ error: "Add and save at least one step before activating this playbook." }); return; }
+          if (steps.some(node => node.data?.blockType === "split-path" && !String(node.data.condition ?? "").trim())) {
+            res.status(400).json({ error: "Configure every split-path condition before activating." }); return;
+          }
+          if (steps.some(node => node.data?.blockType === "time-delay" && !(Number(node.data.delayAmount) > 0))) {
+            res.status(400).json({ error: "Set a positive duration for every time delay before activating." }); return;
+          }
+          if (steps.some(node => node.data?.blockType === "send-email")) {
+            const [mailbox] = await db.select({ id: userEmailAccountsTable.id }).from(userEmailAccountsTable)
+              .where(eq(userEmailAccountsTable.userId, userId)).limit(1);
+            if (!mailbox) { res.status(400).json({ error: "Connect a mailbox before activating an email playbook." }); return; }
+          }
+        }
+      }
+    }
     const updates: Partial<typeof sequencesTable.$inferInsert> = { updatedAt: new Date() };
     if (name !== undefined) updates.name = name.trim();
     if (description !== undefined) updates.description = description.trim() || null;

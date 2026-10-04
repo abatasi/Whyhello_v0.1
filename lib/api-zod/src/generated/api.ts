@@ -8,6 +8,83 @@
 import * as zod from "zod";
 
 /**
+ * @summary Propose a draft playbook structure for review without saving or activating it
+ */
+export const proposePlaybookBodyObjectiveMax = 2000;
+
+export const proposePlaybookBodyBuyingCenterMax = 2000;
+
+export const proposePlaybookBodyTargetMarketMax = 2000;
+
+export const proposePlaybookBodyDesiredOutcomeMax = 2000;
+
+export const proposePlaybookBodyChannelsMax = 3;
+
+export const proposePlaybookBodyCadenceMax = 1000;
+
+export const proposePlaybookBodyDurationDaysMax = 365;
+
+export const ProposePlaybookBody = zod.object({
+  objective: zod.string().min(1).max(proposePlaybookBodyObjectiveMax),
+  buyingCenter: zod.string().max(proposePlaybookBodyBuyingCenterMax).optional(),
+  targetMarket: zod.string().max(proposePlaybookBodyTargetMarketMax).optional(),
+  desiredOutcome: zod.string().min(1).max(proposePlaybookBodyDesiredOutcomeMax),
+  channels: zod
+    .array(zod.enum(["email", "linkedin", "phone"]))
+    .min(1)
+    .max(proposePlaybookBodyChannelsMax),
+  cadence: zod.string().min(1).max(proposePlaybookBodyCadenceMax),
+  durationDays: zod.number().min(1).max(proposePlaybookBodyDurationDaysMax),
+});
+
+export const proposePlaybookResponseNameMax = 255;
+
+export const proposePlaybookResponseSummaryMax = 4000;
+
+export const proposePlaybookResponseStepsItemTitleMax = 255;
+
+export const proposePlaybookResponseStepsItemDescriptionMax = 2000;
+
+export const proposePlaybookResponseStepsItemDelayDaysMax = 365;
+
+export const proposePlaybookResponseStepsMax = 30;
+
+export const ProposePlaybookResponse = zod.object({
+  name: zod.string().min(1).max(proposePlaybookResponseNameMax),
+  summary: zod.string().min(1).max(proposePlaybookResponseSummaryMax),
+  steps: zod
+    .array(
+      zod.object({
+        blockType: zod.enum([
+          "send-email",
+          "send-linkedin",
+          "make-call",
+          "time-delay",
+          "sequence-complete",
+          "meeting-booked",
+          "reply-received",
+          "exit-playbook",
+        ]),
+        title: zod
+          .string()
+          .min(1)
+          .max(proposePlaybookResponseStepsItemTitleMax),
+        description: zod
+          .string()
+          .min(1)
+          .max(proposePlaybookResponseStepsItemDescriptionMax),
+        delayDays: zod
+          .number()
+          .min(1)
+          .max(proposePlaybookResponseStepsItemDelayDaysMax)
+          .optional(),
+      }),
+    )
+    .min(1)
+    .max(proposePlaybookResponseStepsMax),
+});
+
+/**
  * Returns server health status
  * @summary Health check
  */

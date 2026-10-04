@@ -1,0 +1,253 @@
+Build the EMPTY STATE for the Playbook Builder.
+
+IMPORTANT:
+The application's visual design system has already been established elsewhere.
+
+Do NOT define or modify:
+- Background colors
+- Text colors
+- Accent colors
+- Fonts
+- Global button styling
+- Global border styling
+- Overall application theme
+
+Use the existing application design system and components.
+
+This prompt defines PAGE STRUCTURE, INFORMATION ARCHITECTURE, COMPONENTS, STATES, and INTERACTIONS only.
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Create the initial editor experience shown immediately after a user creates a new Playbook.
+
+A Playbook is a configurable multi-step engagement workflow consisting of actions, communication steps, timing rules, and potentially branching logic.
+
+The empty state should make the next action extremely obvious without overwhelming the user.
+
+--------------------------------------------------
+1. PAGE HEADER
+--------------------------------------------------
+
+Create a compact Playbook header.
+
+Top-left:
+
+Breadcrumb:
+
+Playbooks > [Playbook Name]
+
+Below the breadcrumb display the editable Playbook name.
+
+Example:
+
+Enterprise Account Outreach
+
+Provide a small icon beside the name for secondary Playbook controls or settings.
+
+The Playbook name should support inline editing.
+
+--------------------------------------------------
+2. PLAYBOOK NAVIGATION
+--------------------------------------------------
+
+Below the Playbook name provide horizontal navigation:
+
+Editor
+Contacts
+Activity
+Health
+Report
+Settings
+
+Editor is selected by default.
+
+Each tab should navigate to its respective Playbook workspace without navigating away from the Playbook itself.
+
+EDITOR
+Build and configure the Playbook.
+
+CONTACTS
+View contacts/accounts enrolled in the Playbook.
+
+ACTIVITY
+Chronological execution/activity history.
+
+HEALTH
+Operational warnings, failures, deliverability, and execution health.
+
+REPORT
+Performance and conversion analytics.
+
+SETTINGS
+Playbook-level configuration.
+
+--------------------------------------------------
+3. HEADER ACTIONS
+--------------------------------------------------
+
+Right-align the primary Playbook controls.
+
+Include:
+
+Optimize
+Share
+Workflows
+Add Contacts
+Activate
+More (...)
+
+OPTIMIZE
+Opens Playbook optimization tools/recommendations.
+
+SHARE
+Allows the Playbook to be shared with other users/team members.
+
+WORKFLOWS
+Opens associated automation/workflow configuration.
+
+ADD CONTACTS
+Primary enrollment action with dropdown support.
+
+ACTIVATE
+Toggle/control for changing the Playbook between inactive and active states.
+
+MORE
+Overflow menu for secondary actions such as:
+- Duplicate
+- Rename
+- Move
+- Archive
+- Delete
+
+The Playbook should not be activatable if required configuration is incomplete.
+
+Provide an explanatory tooltip when activation is unavailable.
+
+--------------------------------------------------
+4. STEP COUNT BAR
+--------------------------------------------------
+
+Directly below the header/navigation area create a compact editor utility bar.
+
+Left:
+
+[workflow/steps icon] 0 steps
+
+The step count should update dynamically as steps are added.
+
+Clicking the step count can optionally provide a compact overview of the Playbook structure.
+
+--------------------------------------------------
+5. EMPTY EDITOR CANVAS
+--------------------------------------------------
+
+The majority of the page should be a large Playbook-building canvas.
+
+When there are zero steps, show a centered empty state.
+
+Include a small workflow/outreach illustration or existing product icon.
+
+Headline:
+
+Your playbook is empty
+
+Supporting copy:
+
+Add steps to build your playbook.
+
+Primary action:
+
++ Add a step
+
+Below:
+
+Or
+
+Secondary actions:
+
+Select a template
+AI-Assisted Playbook
+
+Keep this empty state compact and centered rather than creating a large card.
+
+--------------------------------------------------
+6. SELECT A TEMPLATE
+--------------------------------------------------
+
+Clicking "Select a template" should open a template browser.
+
+Example templates:
+
+Outbound Prospecting
+Strategic Account Outreach
+Event Follow-Up
+Inbound Lead Follow-Up
+Re-Engagement
+Executive Outreach
+Partner Recruitment
+
+Each template should preview:
+
+Template name
+Purpose
+Number of steps
+Channels used
+Approximate duration
+
+Selecting a template should populate the Playbook editor with those steps.
+
+--------------------------------------------------
+7. AI-ASSISTED PLAYBOOK
+--------------------------------------------------
+
+Clicking "AI-Assisted Playbook" should launch an assisted creation flow.
+
+Ask for relevant information such as:
+
+Objective
+Target Buying Center
+Target Market
+Desired outcome
+Channels to use
+Desired cadence
+Approximate duration
+
+Where appropriate, reuse existing Whyhello information rather than asking the user to enter information the system already knows.
+
+Generate a proposed Playbook structure that the user can review before inserting it.
+
+Never activate an AI-generated Playbook automatically.
+
+--------------------------------------------------
+8. EMPTY STATE BEHAVIOR
+--------------------------------------------------
+
+The empty state exists ONLY when there are zero steps.
+
+Once the first step is created:
+
+- Remove the empty-state messaging
+- Transition to the Playbook canvas
+- Display the created step
+- Change "0 steps" to "1 step"
+- Expose Save Changes where appropriate
+
+Preserve the user's position in the editor during the transition.
+
+--------------------------------------------------
+9. UX REQUIREMENTS
+--------------------------------------------------
+
+The empty state should communicate one primary decision:
+
+"How do I want to start building this Playbook?"
+
+Users should have three obvious paths:
+
+1. Build manually
+2. Start from a template
+3. Let AI propose the structure
+
+Do not introduce unnecessary configuration before the user chooses one of these paths.

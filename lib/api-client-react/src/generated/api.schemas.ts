@@ -344,6 +344,98 @@ export interface CreateChatMessageRequest {
   content: string;
 }
 
+export type PlaybookProposalInputChannelsItem =
+  (typeof PlaybookProposalInputChannelsItem)[keyof typeof PlaybookProposalInputChannelsItem];
+
+export const PlaybookProposalInputChannelsItem = {
+  email: "email",
+  linkedin: "linkedin",
+  phone: "phone",
+} as const;
+
+export interface PlaybookProposalInput {
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  objective: string;
+  /** @maxLength 2000 */
+  buyingCenter?: string;
+  /** @maxLength 2000 */
+  targetMarket?: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  desiredOutcome: string;
+  /**
+   * @minItems 1
+   * @maxItems 3
+   */
+  channels: PlaybookProposalInputChannelsItem[];
+  /**
+   * @minLength 1
+   * @maxLength 1000
+   */
+  cadence: string;
+  /**
+   * @minimum 1
+   * @maximum 365
+   */
+  durationDays: number;
+}
+
+export type PlaybookProposedStepBlockType =
+  (typeof PlaybookProposedStepBlockType)[keyof typeof PlaybookProposedStepBlockType];
+
+export const PlaybookProposedStepBlockType = {
+  "send-email": "send-email",
+  "send-linkedin": "send-linkedin",
+  "make-call": "make-call",
+  "time-delay": "time-delay",
+  "sequence-complete": "sequence-complete",
+  "meeting-booked": "meeting-booked",
+  "reply-received": "reply-received",
+  "exit-playbook": "exit-playbook",
+} as const;
+
+export interface PlaybookProposedStep {
+  blockType: PlaybookProposedStepBlockType;
+  /**
+   * @minLength 1
+   * @maxLength 255
+   */
+  title: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  description: string;
+  /**
+   * @minimum 1
+   * @maximum 365
+   */
+  delayDays?: number;
+}
+
+export interface PlaybookProposal {
+  /**
+   * @minLength 1
+   * @maxLength 255
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 4000
+   */
+  summary: string;
+  /**
+   * @minItems 1
+   * @maxItems 30
+   */
+  steps: PlaybookProposedStep[];
+}
+
 export type ListContactsParams = {
   segment?: ListContactsSegment;
   search?: string;

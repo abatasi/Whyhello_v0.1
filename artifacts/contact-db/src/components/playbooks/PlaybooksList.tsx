@@ -88,7 +88,19 @@ export function PlaybooksList({ onTemplates }: {
     setFiltersOpen(false); setSelected([]); setPage(1);
   });
   const openCreate = () => { setFormError(""); setDialog("chooseCreate"); };
-  const openScratch = () => { setName(""); setDescription(""); setFormError(""); setDialog("create"); };
+  const openScratch = async () => {
+    if (busy) return;
+    setBusy(true); setFormError("");
+    try {
+      const created = await createPlaybookRecord("Untitled playbook", JSON.stringify({ nodes: [], edges: [], prospects: [] }));
+      await qc.invalidateQueries({ queryKey: ["playbooks"] });
+      setDialog("");
+      navigate(`/playbooks/${created.id}`);
+    } catch (error) {
+      setFormError(errorMessage(error));
+      toast({ title: "Could not create a blank playbook", description: errorMessage(error), variant: "destructive" });
+    } finally { setBusy(false); }
+  };
   const closeDialog = () => { if (!busy) { setDialog(""); setFormError(""); } };
   const rowAction = (action: string, row: PlaybookRecord) => {
     setFormError("");

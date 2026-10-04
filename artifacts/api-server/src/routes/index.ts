@@ -33,6 +33,7 @@ import metaRouter from "./meta";
 import trackRouter from "./track";
 import { contactMessagesRouter } from "./messages";
 import { playbooksRouter } from "./playbooks";
+import { playbookProposalRouter } from "./playbook-proposal";
 import { callsRouter, contactCallsRouter } from "./calls";
 import homeRouter from "./home";
 
@@ -81,6 +82,7 @@ router.use("/home", requireAuth, homeRouter);
 router.use("/industries", requireAuth, industriesRouter);
 router.use("/roles", requireAuth, rolesRouter);
 router.use("/contacts/:contactId/sent-messages", requireAuth, contactMessagesRouter);
+router.use("/playbooks/propose", requireAuth, playbookProposalRouter);
 router.use("/playbooks", requireAuth, playbooksRouter);
 
 // ── Calls — single mount at /calls; public webhooks validate Twilio HMAC

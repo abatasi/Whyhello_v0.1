@@ -33,8 +33,20 @@ The rest of the platform's table styling supersedes the original Playbooks brief
 
 **How to apply:** Use the existing Directory/shared table conventions and theme tokens rather than introducing bespoke typography or text palettes for Playbooks. Preserve its table controls and behavior.
 
-Graduating the approved interface must preserve real records and the multi-threaded builder, not introduce the prototype's example people, playbooks or performance figures.
+Graduating the approved interface must preserve real records, not introduce the prototype's example people, playbooks or performance figures.
 
 **Why:** The approval was for integration into the existing Whyhello product. The prototype demonstrated controls with local example data; that data is not production content.
 
-**How to apply:** Keep builder workflows and existing templates intact. Use actual enrollment and sent-message counts; do not infer delivery or replies from a successful send. Label unrecorded outcomes unavailable. Create new workflows and duplicates as drafts; duplicates should not enroll or attach existing contacts automatically.
+**How to apply:** Keep existing saved workflows and templates intact. The user subsequently requested redefining and replacing the Build from Scratch process; that authorizes a new creation experience, not overwriting existing records. Use actual enrollment and sent-message counts; do not infer delivery or replies from a successful send. Label unrecorded outcomes unavailable. Create new workflows and duplicates as drafts; duplicates should not enroll or attach existing contacts automatically.
+
+Builder creation-flow briefs define page structure, states, and interactions, not a new visual design system. Do not redefine background/text/accent colors, fonts, global button or border styling, or the overall theme.
+
+**Why:** The user's empty-state brief explicitly says the application's visual design system is already established and must be reused.
+
+**How to apply:** Implement subsequent builder flow changes with existing application components and theme tokens. Keep scratch creation separate from preserving saved workflows and template records.
+
+Do not restore the previous building-blocks panel or mind-map presentation. The empty editor should begin directly after the step-count / “Draft changes are saved to this playbook” bar, with its empty-state component centered in the remaining workspace.
+
+**Why:** The user reiterated that the previous playbook creation flow is being replaced and explicitly removed the building-blocks panel, dotted background, zoom functionality, and related canvas controls.
+
+**How to apply:** Subsequent builder work must use a flat, non-mind-map workspace without the legacy palette, graph connectors, minimap, zoom, or extra canvas toolbars. Preserve existing saved data; do not treat earlier instructions to preserve the builder UI as current.

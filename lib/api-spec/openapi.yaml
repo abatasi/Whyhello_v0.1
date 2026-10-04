@@ -17,6 +17,30 @@ tags:
     description: HQ profile operations
 
 paths:
+  /playbooks/propose:
+    post:
+      operationId: proposePlaybook
+      tags: [playbooks]
+      summary: Propose a draft playbook structure for review without saving or activating it
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaybookProposalInput"
+      responses:
+        "200":
+          description: Proposed workflow for explicit user review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaybookProposal"
+        "400":
+          description: Invalid workflow requirements
+        "401":
+          description: Authentication required
+        "502":
+          description: Unable to generate a valid proposal
   /healthz:
     get:
       operationId: healthCheck
@@ -1372,3 +1396,77 @@ components:
       required:
         - role
         - content
+
+    PlaybookProposalInput:
+      type: object
+      required: [objective, desiredOutcome, channels, cadence, durationDays]
+      properties:
+        objective:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        buyingCenter:
+          type: string
+          maxLength: 2000
+        targetMarket:
+          type: string
+          maxLength: 2000
+        desiredOutcome:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        channels:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: string
+            enum: [email, linkedin, phone]
+        cadence:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        durationDays:
+          type: integer
+          minimum: 1
+          maximum: 365
+
+    PlaybookProposal:
+      type: object
+      required: [name, summary, steps]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        steps:
+          type: array
+          minItems: 1
+          maxItems: 30
+          items:
+            $ref: "#/components/schemas/PlaybookProposedStep"
+
+    PlaybookProposedStep:
+      type: object
+      required: [blockType, title, description]
+      properties:
+        blockType:
+          type: string
+          enum: [send-email, send-linkedin, make-call, time-delay, sequence-complete, meeting-booked, reply-received, exit-playbook]
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        delayDays:
+          type: integer
+          minimum: 1
+          maximum: 365
