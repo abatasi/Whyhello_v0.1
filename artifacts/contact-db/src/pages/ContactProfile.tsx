@@ -45,6 +45,8 @@ import {
   StickyNote, Globe, ChevronRight, ChevronLeft,
   Layers, Shield, Theater, HelpCircle, Wand2, X, Maximize2, Minimize2, Loader2, BookOpen, RefreshCw, ChevronUp, ArrowUpDown, Quote,
   Activity, Clock, Eye, MousePointerClick, CheckCheck, ListChecks, Volume2, Check,
+  Wallet, Vote, Crown, Cpu, ShieldCheck, ShoppingCart, Scale, Calculator,
+  Wrench, MessageCircle, Ban, GraduationCap, type LucideIcon,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -74,6 +76,24 @@ const SEAT_COLOR_MAP: Record<string, { iconBg: string; iconColor: string; chipBg
   slate:   { bg: "bg-slate-50/60 dark:bg-background",   iconBg: "bg-slate-100 dark:bg-slate-500/20",   iconColor: "text-slate-500 dark:text-slate-400",   chipBg: "bg-slate-100 dark:bg-slate-500/20",   chipText: "text-slate-600 dark:text-slate-300",   border: "border-slate-200 dark:border-slate-500/30"   },
   sky:     { bg: "bg-sky-50/60 dark:bg-background",     iconBg: "bg-sky-100 dark:bg-sky-500/20",     iconColor: "text-sky-600 dark:text-sky-400",     chipBg: "bg-sky-100 dark:bg-sky-500/20",     chipText: "text-sky-700 dark:text-sky-300",     border: "border-sky-200 dark:border-sky-500/30"     },
   rose:    { bg: "bg-rose-50/60 dark:bg-background",    iconBg: "bg-rose-100 dark:bg-rose-500/20",    iconColor: "text-rose-600 dark:text-rose-400",    chipBg: "bg-rose-100 dark:bg-rose-500/20",    chipText: "text-rose-600 dark:text-rose-400",    border: "border-rose-200 dark:border-rose-500/30"    },
+};
+
+const SEAT_ICONS: Record<string, LucideIcon> = {
+  "Business Champion": Megaphone,
+  "Economic Buyer": Wallet,
+  "Decision Maker": Vote,
+  "Executive Sponsor": Crown,
+  "Business Owner": Briefcase,
+  "Technical Buyer": Cpu,
+  "Security or Compliance Reviewer": ShieldCheck,
+  "Procurement": ShoppingCart,
+  "Legal": Scale,
+  "Finance": Calculator,
+  "End User": User,
+  "Implementer": Wrench,
+  "Influencer": MessageCircle,
+  "Blocker": Ban,
+  "Coach": GraduationCap,
 };
 
 const SEAT_DESCRIPTIONS: Record<string, (firstName: string) => string> = {
@@ -1517,16 +1537,20 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                         {contact.seniority && (
                           <Badge variant="success" className="text-xs">{contact.seniority}</Badge>
                         )}
-                        {contact.liveBuyingCenterSeats?.map(seat => (
+                        {contact.liveBuyingCenterSeats?.map(seat => {
+                          const SeatIcon = SEAT_ICONS[seat] ?? Users;
+                          return (
                           <Badge
                             key={seat}
                             variant="outline"
-                            className="border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-background dark:text-indigo-300"
+                            className="gap-1 border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-background dark:text-indigo-300"
                             title={`Matches ${seat} in your live Buying Center${contact.liveBuyingCenterName ? `, ${contact.liveBuyingCenterName}` : ""}`}
                           >
-                            Live seat · {seat}
+                            <SeatIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+                            {seat}
                           </Badge>
-                        ))}
+                          );
+                        })}
                         {metaScore != null && (
                           <MetaScoreBadge metaScore={metaScore} />
                         )}
