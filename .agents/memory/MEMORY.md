@@ -13,3 +13,4 @@
 - [Interaction feedback](interaction-style.md) — stationary, subtle button hovers; hand cursors on enabled clickable elements
 - [Playbooks design direction](playbooks-design-direction.md) — dense operational tables, shared theme surfaces and accents; replace scratch creation without changing saved workflows.
 - [Clerk browser test claims](clerk-testing-claims.md) — use normal programmatic login; do not require unsupported custom claim overrides when standard identity resolves ownership.
+- [Playbook step modes](playbook-step-modes.md) — Manual Email is a seller-reviewed task, not an automatic send; keep Actions and Rules distinct.

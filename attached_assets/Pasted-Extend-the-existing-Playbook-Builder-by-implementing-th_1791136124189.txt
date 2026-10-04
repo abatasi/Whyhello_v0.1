@@ -1,0 +1,212 @@
+Extend the existing Playbook Builder by implementing the ADD STEP interaction.
+
+IMPORTANT:
+Inherit the application's existing design system.
+
+Do NOT specify or modify colors, typography, global styling, or theme.
+
+Focus on behavior, hierarchy, component structure, interaction, and UX.
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+When the user clicks "+ Add a step", display a compact action menu allowing them to choose what should happen at this point in the Playbook.
+
+A step represents either:
+
+ACTION:
+Something the seller/system does.
+
+RULE:
+Logic controlling when, whether, or how the next action occurs.
+
+Design the architecture so additional step types can be introduced later.
+
+--------------------------------------------------
+1. ADD STEP MENU
+--------------------------------------------------
+
+Clicking "+ Add a step" opens a dropdown anchored to the button.
+
+The menu should remain compact and scannable.
+
+Organize available actions logically.
+
+COMMUNICATION
+
+Automatic Email
+Manual Email
+Phone Call
+
+LINKEDIN
+
+Send Connection Request
+Send Message
+View Profile
+Interact With Post
+
+SELLER ACTIONS
+
+Action Item
+
+Each item should include:
+- Icon
+- Action name
+
+Do not include descriptions unless needed to disambiguate actions.
+
+--------------------------------------------------
+2. ACTION DEFINITIONS
+--------------------------------------------------
+
+AUTOMATIC EMAIL
+
+Creates an email generated/prepared by the Playbook and automatically sent according to the configured schedule and conditions.
+
+MANUAL EMAIL
+
+Creates an email task for the seller. AI can prepare the content, but the seller reviews and sends it.
+
+PHONE CALL
+
+Creates a scheduled call task for the seller.
+
+ACTION ITEM
+
+Creates a customizable seller task.
+
+Examples:
+
+Research account
+Review opportunity
+Contact champion
+Prepare proposal
+Follow up internally
+
+LINKEDIN — CONNECTION REQUEST
+
+Creates a LinkedIn connection-request action.
+
+LINKEDIN — SEND MESSAGE
+
+Creates a LinkedIn messaging action.
+
+LINKEDIN — VIEW PROFILE
+
+Creates a LinkedIn profile-view action.
+
+LINKEDIN — INTERACT WITH POST
+
+Creates an engagement task/action associated with the contact's LinkedIn activity.
+
+--------------------------------------------------
+3. RULE ARCHITECTURE
+--------------------------------------------------
+
+Ensure the underlying Playbook architecture can also support RULES.
+
+At minimum prepare the system for:
+
+Time Delay
+Split Path
+
+TIME DELAY
+
+Wait for a specified period before executing the next step.
+
+Examples:
+
+Wait 2 hours
+Wait 1 day
+Wait 3 business days
+Wait until Monday at 9:00 AM
+
+SPLIT PATH
+
+Create conditional branches.
+
+Examples:
+
+If email opened → Path A
+If no reply → Path B
+
+If Buying Center role = Decision Maker → Path A
+Otherwise → Path B
+
+If relevance score ≥ threshold → Path A
+Otherwise → Path B
+
+Rules may be surfaced separately from Actions in a later iteration, so keep the component architecture extensible.
+
+--------------------------------------------------
+4. STEP CREATION
+--------------------------------------------------
+
+Selecting an item should:
+
+1. Close the menu.
+2. Create the corresponding step.
+3. Replace the empty state with the Playbook canvas.
+4. Increment the step count.
+5. Automatically open the configuration interface for the new step.
+
+Do not require an additional confirmation dialog.
+
+Example:
+
+User selects:
+
+Manual Email
+
+Result:
+
+1 step
+
+Step 1: Manual Email
+
+The Manual Email configuration interface opens immediately.
+
+--------------------------------------------------
+5. KEYBOARD INTERACTION
+--------------------------------------------------
+
+Support:
+
+Arrow keys → navigate menu
+Enter → select
+Escape → close
+Typing → optionally search actions
+
+Focus should return to the appropriate editor element when the menu closes.
+
+--------------------------------------------------
+6. FUTURE EXTENSIBILITY
+--------------------------------------------------
+
+Build step types from a reusable schema rather than hardcoding each menu item.
+
+Each step definition should be capable of containing:
+
+id
+type
+category
+name
+icon
+configuration
+validation
+executionMode
+
+This allows Whyhello to introduce additional actions later without redesigning the builder.
+
+Potential future actions include:
+
+SMS
+Meeting Request
+Video Message
+CRM Update
+Research Contact
+Research Account
+Generate Document
+Webhook
+Custom Integration Action

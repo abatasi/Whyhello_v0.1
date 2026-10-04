@@ -5,6 +5,87 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+/**
+ * Versioned step variant validated by the editor and server; preserves fields across modes.
+ */
+export type ManualEmailPreviewInputVariant = { [key: string]: unknown };
+
+export interface ManualEmailPreviewInput {
+  /** Versioned step variant validated by the editor and server; preserves fields across modes. */
+  variant: ManualEmailPreviewInputVariant;
+  /** @minimum 1 */
+  contactId: number;
+  /** @maxLength 1000 */
+  regeneration?: string;
+}
+
+export interface ManualEmailTestInput {
+  /**
+   * @minLength 1
+   * @maxLength 255
+   */
+  subject: string;
+  /**
+   * @minLength 1
+   * @maxLength 20000
+   */
+  body: string;
+  /** @minimum 1 */
+  accountId: number;
+}
+
+export interface ManualEmailEvidence {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  url: string;
+}
+
+export interface ManualEmailPreview {
+  subject: string;
+  body: string;
+  personalization: string;
+  cta: string;
+  contactId: number;
+  insightsUsed: ManualEmailEvidence[];
+}
+
+export interface ManualEmailContact {
+  id: number;
+  name: string;
+  company: string;
+  enrolled: boolean;
+}
+
+export interface ManualEmailContextSource {
+  id: string;
+  name: string;
+  content: string;
+}
+
+export interface ManualEmailMailbox {
+  id: number;
+  email: string;
+  provider: string;
+}
+
+export interface ManualEmailSavedTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+}
+
+export interface ManualEmailEditorContext {
+  contacts: ManualEmailContact[];
+  contextSources: ManualEmailContextSource[];
+  voice: string;
+  aiAvailable: boolean;
+  mailboxes: ManualEmailMailbox[];
+  templates: ManualEmailSavedTemplate[];
+}
+
 export type HqBuyingCenterAudienceInputType =
   (typeof HqBuyingCenterAudienceInputType)[keyof typeof HqBuyingCenterAudienceInputType];
 
@@ -435,6 +516,10 @@ export interface PlaybookProposal {
    */
   steps: PlaybookProposedStep[];
 }
+
+export type SendManualEmailPreviewTest200 = {
+  success: boolean;
+};
 
 export type ListContactsParams = {
   segment?: ListContactsSegment;

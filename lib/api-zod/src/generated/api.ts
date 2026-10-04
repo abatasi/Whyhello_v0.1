@@ -7,6 +7,99 @@
  */
 import * as zod from "zod";
 
+export const GetManualEmailEditorContextParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetManualEmailEditorContextResponse = zod.object({
+  contacts: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      company: zod.string(),
+      enrolled: zod.boolean(),
+    }),
+  ),
+  contextSources: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      content: zod.string(),
+    }),
+  ),
+  voice: zod.string(),
+  aiAvailable: zod.boolean(),
+  mailboxes: zod.array(
+    zod.object({
+      id: zod.number(),
+      email: zod.string(),
+      provider: zod.string(),
+    }),
+  ),
+  templates: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      subject: zod.string(),
+      body: zod.string(),
+    }),
+  ),
+});
+
+export const GenerateManualEmailPreviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const generateManualEmailPreviewBodyRegenerationMax = 1000;
+
+export const GenerateManualEmailPreviewBody = zod.object({
+  variant: zod
+    .record(zod.string(), zod.unknown())
+    .describe(
+      "Versioned step variant validated by the editor and server; preserves fields across modes.",
+    ),
+  contactId: zod.number().min(1),
+  regeneration: zod
+    .string()
+    .max(generateManualEmailPreviewBodyRegenerationMax)
+    .optional(),
+});
+
+export const GenerateManualEmailPreviewResponse = zod.object({
+  subject: zod.string(),
+  body: zod.string(),
+  personalization: zod.string(),
+  cta: zod.string(),
+  contactId: zod.number(),
+  insightsUsed: zod.array(
+    zod.object({
+      id: zod.string(),
+      category: zod.string(),
+      title: zod.string(),
+      description: zod.string(),
+      url: zod.string(),
+    }),
+  ),
+});
+
+export const SendManualEmailPreviewTestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const sendManualEmailPreviewTestBodySubjectMax = 255;
+
+export const sendManualEmailPreviewTestBodyBodyMax = 20000;
+
+export const SendManualEmailPreviewTestBody = zod.object({
+  subject: zod.string().min(1).max(sendManualEmailPreviewTestBodySubjectMax),
+  body: zod.string().min(1).max(sendManualEmailPreviewTestBodyBodyMax),
+  accountId: zod.number().min(1),
+});
+
+export const SendManualEmailPreviewTestResponse = zod.object({
+  success: zod.boolean(),
+});
+
 /**
  * @summary Propose a draft playbook structure for review without saving or activating it
  */

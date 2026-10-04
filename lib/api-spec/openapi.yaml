@@ -17,6 +17,75 @@ tags:
     description: HQ profile operations
 
 paths:
+  /playbooks/{id}/manual-email/context:
+    get:
+      operationId: getManualEmailEditorContext
+      tags: [playbooks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: User-owned HQ, actual contacts, mailboxes, and saved templates
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManualEmailEditorContext" }
+        "401": { description: Authentication required }
+        "404": { description: Playbook not found }
+  /playbooks/{id}/manual-email/preview:
+    post:
+      operationId: generateManualEmailPreview
+      tags: [playbooks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManualEmailPreviewInput" }
+      responses:
+        "200":
+          description: Read-only real-contact preview with attributable research
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManualEmailPreview" }
+        "400": { description: Invalid variant or unavailable template fields }
+        "401": { description: Authentication required }
+        "404": { description: Contact or Playbook not found }
+        "502": { description: Generation failed without changing saved content }
+  /playbooks/{id}/manual-email/test:
+    post:
+      operationId: sendManualEmailPreviewTest
+      tags: [playbooks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManualEmailTestInput" }
+      responses:
+        "200":
+          description: Current preview sent only to the signed-in user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean }
+        "400": { description: Missing preview or unsupported mailbox provider }
+        "401": { description: Authentication or mailbox reauthorization required }
+        "409": { description: User mailbox or recipient identity unavailable }
+        "502": { description: Mail provider send failed }
   /playbooks/propose:
     post:
       operationId: proposePlaybook
@@ -636,6 +705,92 @@ paths:
 
 components:
   schemas:
+    ManualEmailPreviewInput:
+      type: object
+      required: [variant, contactId]
+      properties:
+        variant:
+          type: object
+          description: Versioned step variant validated by the editor and server; preserves fields across modes.
+          additionalProperties: true
+        contactId: { type: integer, minimum: 1 }
+        regeneration: { type: string, maxLength: 1000 }
+    ManualEmailTestInput:
+      type: object
+      required: [subject, body, accountId]
+      properties:
+        subject: { type: string, minLength: 1, maxLength: 255 }
+        body: { type: string, minLength: 1, maxLength: 20000 }
+        accountId: { type: integer, minimum: 1 }
+    ManualEmailEvidence:
+      type: object
+      required: [id, category, title, description, url]
+      properties:
+        id: { type: string }
+        category: { type: string }
+        title: { type: string }
+        description: { type: string }
+        url: { type: string }
+    ManualEmailPreview:
+      type: object
+      required: [subject, body, personalization, cta, contactId, insightsUsed]
+      properties:
+        subject: { type: string }
+        body: { type: string }
+        personalization: { type: string }
+        cta: { type: string }
+        contactId: { type: integer }
+        insightsUsed:
+          type: array
+          items: { $ref: "#/components/schemas/ManualEmailEvidence" }
+    ManualEmailContact:
+      type: object
+      required: [id, name, company, enrolled]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        company: { type: string }
+        enrolled: { type: boolean }
+    ManualEmailContextSource:
+      type: object
+      required: [id, name, content]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        content: { type: string }
+    ManualEmailMailbox:
+      type: object
+      required: [id, email, provider]
+      properties:
+        id: { type: integer }
+        email: { type: string }
+        provider: { type: string }
+    ManualEmailSavedTemplate:
+      type: object
+      required: [id, name, subject, body]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        subject: { type: string }
+        body: { type: string }
+    ManualEmailEditorContext:
+      type: object
+      required: [contacts, contextSources, voice, aiAvailable, mailboxes, templates]
+      properties:
+        contacts:
+          type: array
+          items: { $ref: "#/components/schemas/ManualEmailContact" }
+        contextSources:
+          type: array
+          items: { $ref: "#/components/schemas/ManualEmailContextSource" }
+        voice: { type: string }
+        aiAvailable: { type: boolean }
+        mailboxes:
+          type: array
+          items: { $ref: "#/components/schemas/ManualEmailMailbox" }
+        templates:
+          type: array
+          items: { $ref: "#/components/schemas/ManualEmailSavedTemplate" }
     HqAudienceInput:
       oneOf:
         - $ref: "#/components/schemas/HqBuyingCenterAudienceInput"

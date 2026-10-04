@@ -39,10 +39,15 @@ import type {
   IndustryInsight,
   ListCompaniesParams,
   ListContactsParams,
+  ManualEmailEditorContext,
+  ManualEmailPreview,
+  ManualEmailPreviewInput,
+  ManualEmailTestInput,
   OutreachJob,
   PlaybookProposal,
   PlaybookProposalInput,
   RoleInsight,
+  SendManualEmailPreviewTest200,
   UpdateOutreachJobRequest,
 } from "./api.schemas";
 
@@ -54,6 +59,258 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+export const getGetManualEmailEditorContextUrl = (id: number) => {
+  return `/api/playbooks/${id}/manual-email/context`;
+};
+
+export const getManualEmailEditorContext = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ManualEmailEditorContext> => {
+  return customFetch<ManualEmailEditorContext>(
+    getGetManualEmailEditorContextUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetManualEmailEditorContextQueryKey = (id: number) => {
+  return [`/api/playbooks/${id}/manual-email/context`] as const;
+};
+
+export const getGetManualEmailEditorContextQueryOptions = <
+  TData = Awaited<ReturnType<typeof getManualEmailEditorContext>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getManualEmailEditorContext>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetManualEmailEditorContextQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getManualEmailEditorContext>>
+  > = ({ signal }) =>
+    getManualEmailEditorContext(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getManualEmailEditorContext>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetManualEmailEditorContextQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getManualEmailEditorContext>>
+>;
+export type GetManualEmailEditorContextQueryError = ErrorType<void>;
+
+export function useGetManualEmailEditorContext<
+  TData = Awaited<ReturnType<typeof getManualEmailEditorContext>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getManualEmailEditorContext>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetManualEmailEditorContextQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getGenerateManualEmailPreviewUrl = (id: number) => {
+  return `/api/playbooks/${id}/manual-email/preview`;
+};
+
+export const generateManualEmailPreview = async (
+  id: number,
+  manualEmailPreviewInput: ManualEmailPreviewInput,
+  options?: RequestInit,
+): Promise<ManualEmailPreview> => {
+  return customFetch<ManualEmailPreview>(getGenerateManualEmailPreviewUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(manualEmailPreviewInput),
+  });
+};
+
+export const getGenerateManualEmailPreviewMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateManualEmailPreview>>,
+    TError,
+    { id: number; data: BodyType<ManualEmailPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateManualEmailPreview>>,
+  TError,
+  { id: number; data: BodyType<ManualEmailPreviewInput> },
+  TContext
+> => {
+  const mutationKey = ["generateManualEmailPreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateManualEmailPreview>>,
+    { id: number; data: BodyType<ManualEmailPreviewInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateManualEmailPreview(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateManualEmailPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateManualEmailPreview>>
+>;
+export type GenerateManualEmailPreviewMutationBody =
+  BodyType<ManualEmailPreviewInput>;
+export type GenerateManualEmailPreviewMutationError = ErrorType<void>;
+
+export const useGenerateManualEmailPreview = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateManualEmailPreview>>,
+    TError,
+    { id: number; data: BodyType<ManualEmailPreviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateManualEmailPreview>>,
+  TError,
+  { id: number; data: BodyType<ManualEmailPreviewInput> },
+  TContext
+> => {
+  return useMutation(getGenerateManualEmailPreviewMutationOptions(options));
+};
+
+export const getSendManualEmailPreviewTestUrl = (id: number) => {
+  return `/api/playbooks/${id}/manual-email/test`;
+};
+
+export const sendManualEmailPreviewTest = async (
+  id: number,
+  manualEmailTestInput: ManualEmailTestInput,
+  options?: RequestInit,
+): Promise<SendManualEmailPreviewTest200> => {
+  return customFetch<SendManualEmailPreviewTest200>(
+    getSendManualEmailPreviewTestUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(manualEmailTestInput),
+    },
+  );
+};
+
+export const getSendManualEmailPreviewTestMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendManualEmailPreviewTest>>,
+    TError,
+    { id: number; data: BodyType<ManualEmailTestInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendManualEmailPreviewTest>>,
+  TError,
+  { id: number; data: BodyType<ManualEmailTestInput> },
+  TContext
+> => {
+  const mutationKey = ["sendManualEmailPreviewTest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendManualEmailPreviewTest>>,
+    { id: number; data: BodyType<ManualEmailTestInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return sendManualEmailPreviewTest(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendManualEmailPreviewTestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendManualEmailPreviewTest>>
+>;
+export type SendManualEmailPreviewTestMutationBody =
+  BodyType<ManualEmailTestInput>;
+export type SendManualEmailPreviewTestMutationError = ErrorType<void>;
+
+export const useSendManualEmailPreviewTest = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendManualEmailPreviewTest>>,
+    TError,
+    { id: number; data: BodyType<ManualEmailTestInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendManualEmailPreviewTest>>,
+  TError,
+  { id: number; data: BodyType<ManualEmailTestInput> },
+  TContext
+> => {
+  return useMutation(getSendManualEmailPreviewTestMutationOptions(options));
+};
 
 /**
  * @summary Propose a draft playbook structure for review without saving or activating it

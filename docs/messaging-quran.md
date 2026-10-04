@@ -473,6 +473,8 @@ Some personal LinkedIn records point to a post authored by someone else that the
 
 ### 3.6 Colleague Insights
 
+Configured Manual Email previews resolve a colleague's current identity through the original contact-insight URL and confirm that the source still belongs to the recipient's company. If the named source cannot be resolved, omit that peer evidence instead of producing anonymous or recipient-attributed personalization.
+
 **Definition:** Public activity from someone inside the contact's organization — posts, interviews, podcasts, presentations, statements, awards, or announced initiatives.
 
 **Assumed awareness:** Low assumed awareness of the particular content, high recognition of the person or function. The contact may not have seen the activity, but the colleague's name and organizational connection should create immediate relevance.
@@ -520,6 +522,12 @@ Some personal LinkedIn records point to a post authored by someone else that the
 ---
 
 ### 3.7 Counterpart Insights
+
+Configured Manual Email previews likewise resolve the named source person dynamically before using counterpart evidence. Their CTA asks whether a broader industry observation resonates; it must not imply that the recipient knows the source person or has already discussed the observation.
+
+Every generated preview citation must resolve to supplied evidence before the preview is returned. A shortened numeric citation may be accepted only if it uniquely identifies one supplied source, and is then rewritten to that source's canonical ID. Unknown or ambiguous citations fail generation instead of silently hiding used evidence.
+
+The platform name is not the seller's identity. Use only a supplied seller identity, omit an unknown sender's named signature, and reject unfilled sender/contact placeholders in AI output. Research summaries may be paraphrased but are not verified verbatim quotations.
 
 **Definition:** Public activity from someone performing a similar role in the same industry at another organization.
 
@@ -1181,6 +1189,18 @@ When signals conflict, apply this precedence:
 
 ## Surah 11 · Al-Tatbiq — The Implementation
 ### *Implementation Notes*
+
+#### 11.1 Seller-reviewed Playbook email configuration
+
+Manual Email remains a seller task, never an automatic send. Its inline step editor saves task creation/due timing separately, enabled state, and named A/B variants with integer traffic allocations totaling 100%. Disabled steps are excluded from activation readiness. Configuration changes remain unsaved until Save Changes; previews are not implicitly sent or activated.
+
+Assisted, Prompt, and Template modes preserve compatible fields when switching. Assisted generation respects the selected email type, research sources, tone or HQ voice, inspected HQ context, and ordered guidelines. Only the signed-in user's explicitly live Target Market and Buying Center are included when selected; drafts and editor tabs do not activate audience context. Template previews resolve supported placeholders from the actual selected contact and fail explicitly for unavailable fields.
+
+Preview generation is read-only against an owned Playbook and uses actual contacts, their selected research categories, and selected seller HQ inputs. Directory contacts may be used as clearly labeled samples without enrolling them. Outputs include subject, plain-text body, CTA, personalization rationale, and inspectable evidence actually cited by the model. Evidence IDs are checked against supplied research; invented insights are not displayed. Colleague/counterpart attribution is dynamically resolved through the original contact insight URL to a named source person; unresolved peer identity is omitted, not attributed to the recipient.
+
+Regeneration changes the preview only, not the generation settings. Replacing an existing preview requires explicit confirmation. Generating does not block other editor controls. The explicit test-email action sends the current preview only to the signed-in user's server-resolved email address through that user's connected Gmail/Outlook mailbox. The client cannot choose an external test recipient. Missing preview, mailbox, identity, or provider authorization must fail explicitly without a send.
+
+Activation checks each enabled variant's mode, timing, traffic allocation, and required content. Activation changes Playbook status only; this editor does not claim scheduled task execution or automatically deliver previews to enrolled prospects.
 
 - **EB logic lives in:** `artifacts/contact-db/src/pages/HQ.tsx` — `VERB_FORMS`, `descriptionToVerbPhrase()`, `frequencyPhrase()`, `buildProductEBParts()`, `buildCustomerEBParts()`, `EBSummary`
 - **Voice data lives in:** `DNAData.voice` — stored in `dna_profiles` table, retrieved via API

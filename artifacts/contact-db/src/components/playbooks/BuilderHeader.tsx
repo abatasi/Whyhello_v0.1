@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Activity, Archive, ArrowLeft, BarChart3, BookOpen, Check, ChevronDown, Copy, Ellipsis, HeartPulse, MoreHorizontal, Pencil, Settings2, Share2, Sparkles, Users, Workflow, X, Zap, type LucideIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { BuilderEnrollmentData } from "./BuilderEnrollmentData";
+import { readManualEmailConfiguration, validateManualEmailConfiguration } from "./manual-email-model";
 
 export type PlaybookTab = "editor" | "contacts" | "activity" | "health" | "report" | "settings";
 const tabs: { id: PlaybookTab; label: string; Icon: LucideIcon }[] = [
@@ -15,12 +16,13 @@ const tabs: { id: PlaybookTab; label: string; Icon: LucideIcon }[] = [
 ];
 
 export function BuilderHeader({
-  playbookId, name, status, activeTab, steps, saving, activationReason,
+  playbookId, name, status, activeTab, steps, saving, activationReason, dirty = false, onBeforeLeave,
   onTab, onRename, onSave, onShare, onOptimize, onWorkflows, onContacts,
   onActivate, onDuplicate, onArchive, onDelete,
 }: {
   playbookId: number; name: string; status: string; activeTab: PlaybookTab;
   steps: number; saving: boolean; activationReason?: string;
+  dirty?: boolean; onBeforeLeave?: () => boolean;
   onTab: (tab: PlaybookTab) => void; onRename: (name: string) => Promise<void>;
   onSave: () => void; onShare: () => void; onOptimize: () => void;
   onWorkflows: () => void; onContacts: () => void; onActivate: () => void;
@@ -43,7 +45,7 @@ export function BuilderHeader({
   return <div className="z-20 shrink-0 border-b border-border/60 bg-card">
     <div className="flex flex-wrap items-center gap-2 px-4 py-3">
       <div className="flex basis-full items-center gap-2 text-xs text-muted-foreground">
-        <button type="button" data-testid="link-playbooks-breadcrumb" onClick={() => navigate("/playbooks")} className="flex items-center gap-1.5 font-medium hover:text-foreground"><ArrowLeft size={14} />Playbooks</button>
+        <button type="button" data-testid="link-playbooks-breadcrumb" onClick={() => { if (!onBeforeLeave || onBeforeLeave()) navigate("/playbooks"); }} className="flex items-center gap-1.5 font-medium hover:text-foreground"><ArrowLeft size={14} />Playbooks</button>
         <span>/</span><span className="truncate">{name}</span>
       </div>
       {editing ? <input data-testid="input-playbook-name" autoFocus value={draft} maxLength={255} onChange={e => setDraft(e.target.value)} onBlur={() => void commitName()} onKeyDown={e => { if (e.key === "Enter") void commitName(); if (e.key === "Escape") { setDraft(name); setEditing(false); } }} className="min-w-32 max-w-xs border-b border-primary bg-transparent px-1 py-1 text-sm font-semibold outline-none" /> : <button type="button" data-testid={`text-playbook-name-${playbookId}`} onClick={() => { setDraft(name); setEditing(true); }} className="inline-flex items-center gap-1.5 rounded px-1 py-1 text-sm font-semibold text-foreground hover:bg-secondary/50"><span className="max-w-[260px] truncate">{name}</span><Pencil size={12} className="text-muted-foreground" /><Settings2 size={13} className="text-muted-foreground" /></button>}
@@ -55,7 +57,7 @@ export function BuilderHeader({
         <DropdownMenu><DropdownMenuTrigger asChild><button type="button" data-testid="button-add-contacts-playbook" className={actionClass}><Users size={14} />Add Contacts<ChevronDown size={12} /></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end"><DropdownMenuItem onSelect={onContacts}>Select contacts to enroll</DropdownMenuItem><DropdownMenuItem onSelect={() => onTab("contacts")}>View enrolled contacts</DropdownMenuItem></DropdownMenuContent>
         </DropdownMenu>
-        <button type="button" data-testid="button-save-playbook" className={actionClass} disabled={saving} onClick={onSave}><Check size={14} />{saving ? "Saving…" : "Save Changes"}</button>
+        <button type="button" data-testid="button-save-playbook" className={actionClass} disabled={saving || !dirty} onClick={onSave}><Check size={14} />{saving ? "Saving…" : "Save Changes"}</button>
         <span className="hidden h-5 w-px bg-border sm:block" />
         <span className="relative" title={activationReason || "Activate playbook"}>
           <button type="button" data-testid="button-activate-playbook" className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-45" disabled={!!activationReason} onClick={onActivate}><Zap size={14} />{status === "active" ? "Pause" : "Activate"}</button>
@@ -75,7 +77,7 @@ export function BuilderHeader({
     <nav className="flex min-h-10 items-end gap-1 overflow-x-auto px-4" aria-label="Playbook workspace">
       {tabs.map(({ id, label, Icon }) => <button type="button" key={id} data-testid={`tab-playbook-${id}`} aria-current={activeTab === id ? "page" : undefined} onClick={() => onTab(id)} className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-xs font-semibold transition-colors ${activeTab === id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}><Icon size={14} />{label}</button>)}
     </nav>
-    {activeTab === "editor" && <div className="flex h-9 items-center gap-2 border-t border-border/40 bg-background/50 px-4 text-xs text-muted-foreground"><Workflow size={14} /><span data-testid="text-playbook-step-count"><b className="text-foreground">{steps}</b> {steps === 1 ? "step" : "steps"}</span><span className="mx-1 h-3 w-px bg-border" /><span>Draft changes are saved to this playbook</span></div>}
+    {activeTab === "editor" && <div className="flex h-9 items-center gap-2 border-t border-border/40 bg-background/50 px-4 text-xs text-muted-foreground"><Workflow size={14} /><span data-testid="text-playbook-step-count"><b className="text-foreground">{steps}</b> {steps === 1 ? "step" : "steps"}</span><span className="mx-1 h-3 w-px bg-border" /><span>{dirty ? "Unsaved changes" : "Draft changes are saved to this playbook"}</span></div>}
   </div>;
 }
 
@@ -87,7 +89,7 @@ export function StructurePanel({ tab, playbookId, name, status, nodes, contactNa
   const steps = nodes.filter(node => !["placeholder", "prospect-added", "trigger-detected", "added-to-playbook"].includes(String(node.data.blockType)));
   const incomplete = steps.filter(node => {
     const type = String(node.data.blockType);
-    return type === "send-email" ? !(node.data.subject || node.data.emailType) : type === "send-linkedin" ? !node.data.linkedinAction : type === "time-delay" ? !node.data.delayAmount : type === "split-path" ? !(node.data.condition && Array.isArray(node.data.branches) && node.data.branches.length >= 2) : false;
+    return type === "manual-email" ? !!validateManualEmailConfiguration(readManualEmailConfiguration(node.data.configuration)) : type === "send-email" ? !(node.data.subject || node.data.emailType) : type === "send-linkedin" ? !node.data.linkedinAction : type === "time-delay" ? !node.data.delayAmount : type === "split-path" ? !(node.data.condition && Array.isArray(node.data.branches) && node.data.branches.length >= 2) : false;
   });
   const title = { contacts: "Enrolled contacts", activity: "Activity", health: "Playbook health", report: "Performance report", settings: "Playbook settings" }[tab];
   return <div className="min-h-0 flex-1 overflow-y-auto bg-background p-5 sm:p-8">

@@ -1,0 +1,596 @@
+Build the CONFIGURED STEP STATE of the Playbook Builder.
+
+This state appears after the user adds a step.
+
+IMPORTANT:
+Use the application's existing design system.
+
+Do NOT define:
+- Colors
+- Backgrounds
+- Fonts
+- Global button appearance
+- Global border appearance
+- Application theme
+
+Focus entirely on layout, hierarchy, functionality, interactions, and state management.
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Create the primary working interface where users configure individual Playbook steps and preview the resulting seller/customer experience.
+
+Use a large workflow canvas with individual step containers arranged vertically.
+
+The example state should contain:
+
+Step 1: Manual Email
+
+--------------------------------------------------
+1. PLAYBOOK CANVAS
+--------------------------------------------------
+
+Once at least one step exists, replace the empty state with a vertical workflow canvas.
+
+Each step should be represented by a large configurable step container.
+
+Steps are connected vertically to communicate execution order.
+
+Example:
+
+START
+  |
+STEP 1
+  |
++ Add a step
+  |
+STEP 2
+  |
++ Add a step
+
+The architecture must support many steps.
+
+--------------------------------------------------
+2. STEP COUNT
+--------------------------------------------------
+
+Update the editor utility bar:
+
+1 step
+
+For multiple steps:
+
+2 steps
+3 steps
+etc.
+
+Provide:
+
+Collapse steps
+
+Save changes
+
+Collapse Steps should reduce each step to a compact summary.
+
+--------------------------------------------------
+3. TIMING BETWEEN STEPS
+--------------------------------------------------
+
+Above each step provide timing/execution information.
+
+Example:
+
+Executes immediately
+
+or:
+
+Wait 1 business day
+
+or:
+
+Schedules task immediately with due date in 30 minutes
+
+Clicking the timing control should allow users to configure execution timing.
+
+Support:
+
+Immediately
+Minutes
+Hours
+Days
+Business days
+Specific day/time
+
+For task-based actions distinguish between:
+
+When the task is created
+
+and
+
+When the task is due
+
+Example:
+
+Create task immediately
+Due in 30 minutes
+
+--------------------------------------------------
+4. STEP HEADER
+--------------------------------------------------
+
+Each step header should contain:
+
+Enable/disable control
+
+Step number
+
+Action icon
+
+Action type
+
+Variant/test name
+
+Example:
+
+Step 1: Manual Email / Test A
+
+Right side:
+
+Timing summary
+More (...)
+Collapse/expand
+
+The step can be disabled without deleting it.
+
+--------------------------------------------------
+5. A/B TESTING
+--------------------------------------------------
+
+Support multiple variants inside applicable steps.
+
+Example:
+
+Test A — Active
++ Add test
+
+Adding another variant creates:
+
+Test A
+Test B
+
+Allow traffic allocation between variants.
+
+Example:
+
+A: 50%
+B: 50%
+
+Only one variant needs to exist by default.
+
+--------------------------------------------------
+6. STEP WORKSPACE
+--------------------------------------------------
+
+For content-oriented actions such as Manual Email, divide the step workspace into two major panels:
+
+LEFT:
+Configuration
+
+RIGHT:
+Preview
+
+Aim for approximately equal width initially.
+
+The layout should be resizable in the future if needed.
+
+--------------------------------------------------
+7. EMAIL CONFIGURATION MODES
+--------------------------------------------------
+
+Provide three modes:
+
+Assisted
+Prompt
+Template
+
+ASSISTED
+
+Structured UI allowing the user to configure AI generation without writing a complex prompt.
+
+PROMPT
+
+Advanced mode allowing users to directly instruct the AI.
+
+TEMPLATE
+
+Use a predefined or saved email template.
+
+Switching modes should preserve compatible information wherever possible.
+
+--------------------------------------------------
+8. ASSISTED MODE — EMAIL TYPE
+--------------------------------------------------
+
+Section:
+
+Choose the email type
+
+Options:
+
+Outreach
+Follow-up
+Last pitch
+
+These options influence AI generation.
+
+Only one email type can be active.
+
+--------------------------------------------------
+9. PERSONALIZE WITH AI RESEARCH
+--------------------------------------------------
+
+Section:
+
+Personalize with AI Research
+
+Allow the user to select insight categories Whyhello should use when creating the message.
+
+Examples:
+
+Recent Company News
+Relevant Job Postings
+Executive Persona Research
+Strategic Company Research
+
++ Add
+
+Extend this using Whyhello's research architecture.
+
+Potential insight categories should include:
+
+Personal
+Company
+Colleagues
+Industry
+Competitors
+Role
+Counterparts
+
+Selections should function as chips/toggles.
+
+Multiple research sources can be active simultaneously.
+
+--------------------------------------------------
+10. SET YOUR TONE
+--------------------------------------------------
+
+Section:
+
+Set your tone
+
+Provide:
+
+Default
+Direct
+Formal
+Casual
+Creative
+Custom
+
+Only one primary tone should be selected.
+
+CUSTOM
+
+Allows users to define their own tone instructions.
+
+If the user's/company's preferred tone already exists in Whyhello HQ, provide an option to inherit it rather than recreating it.
+
+--------------------------------------------------
+11. AI CONTEXT
+--------------------------------------------------
+
+Section:
+
+Set your AI context
+
+Provide a Context selector.
+
+This determines what organizational knowledge AI can use.
+
+Potential sources include:
+
+Company
+Products
+Solutions
+Customers
+Competition
+Value propositions
+Target Market
+Buying Center
+User-defined context
+
+Prefer pulling this information from Whyhello HQ where available.
+
+Users should be able to inspect which context sources are active.
+
+--------------------------------------------------
+12. GUIDELINES
+--------------------------------------------------
+
+Section:
+
+Set your guidelines
+
+Action:
+
++ Add guidelines
+
+Guidelines are specific generation constraints.
+
+Examples:
+
+Keep under 100 words
+Do not use buzzwords
+Mention only one value proposition
+End with a question
+Avoid generic introductions
+Do not mention competitor names
+
+Users can add multiple guidelines.
+
+Allow:
+
+Edit
+Delete
+Reorder
+
+--------------------------------------------------
+13. GENERATION CONTROLS
+--------------------------------------------------
+
+At the bottom of the configuration panel provide generation controls.
+
+Include an output/generation mode selector.
+
+Example:
+
+Standard
+
+Potential future options:
+
+Concise
+Detailed
+Experimental
+
+Then provide:
+
+Generate Preview
+
+Generating should NOT overwrite existing saved content without confirmation where relevant.
+
+--------------------------------------------------
+14. PREVIEW PANEL
+--------------------------------------------------
+
+The right-hand panel should provide:
+
+Generate preview for contact
+
+Contact selector
+
+Example:
+
+Cynthia Melchior
+
+Allow users to select a real or sample contact enrolled in the Playbook.
+
+The generated preview should use that contact's actual Whyhello insights and context.
+
+Provide:
+
+Contact dropdown
+Filter/search
+Refresh
+Desktop preview
+Mobile preview
+
+--------------------------------------------------
+15. PREVIEW EMPTY/GENERATING STATE
+--------------------------------------------------
+
+Before generation, provide an appropriate empty preview state.
+
+While generating, show an active generation state.
+
+Example message:
+
+Translating insight into outreach...
+
+The generation experience should communicate progress without blocking the rest of the editor.
+
+--------------------------------------------------
+16. GENERATED EMAIL PREVIEW
+--------------------------------------------------
+
+Once generated, replace the empty state with an email preview.
+
+Display:
+
+Subject
+
+Email body
+
+Relevant personalization
+
+CTA
+
+Optionally provide an expandable:
+
+"Insights used"
+
+section.
+
+This is important for Whyhello.
+
+Users should be able to understand WHY the AI produced the personalization.
+
+Example:
+
+Insights used:
+
+Recent Company News
+Executive Persona Research
+Relevant Job Posting
+
+Allow users to inspect the underlying insight without cluttering the default preview.
+
+--------------------------------------------------
+17. REGENERATE
+--------------------------------------------------
+
+After generation provide:
+
+Regenerate
+
+Allow optional regeneration controls such as:
+
+Shorter
+More direct
+More personalized
+Different angle
+Change CTA
+
+Regeneration should not modify the underlying Playbook configuration unless the user explicitly changes it.
+
+--------------------------------------------------
+18. TEST EMAIL
+--------------------------------------------------
+
+Provide:
+
+Send me a test email
+
+This should send the currently generated version to the logged-in user for inspection.
+
+If no preview exists, require generation first.
+
+--------------------------------------------------
+19. SAVE BEHAVIOR
+--------------------------------------------------
+
+Track unsaved changes.
+
+When changes exist:
+
+Enable Save Changes.
+
+After save:
+
+Show a subtle confirmation state.
+
+Do not force users to save after every individual control change.
+
+Warn before navigating away if meaningful unsaved changes exist.
+
+--------------------------------------------------
+20. ADDING THE NEXT STEP
+--------------------------------------------------
+
+Below each configured step provide:
+
++ Add a step
+
+Clicking this opens the same Action/Rule menu defined elsewhere.
+
+The new step should be inserted directly after the current step.
+
+Also support inserting a step BETWEEN existing steps.
+
+--------------------------------------------------
+21. COLLAPSED STEP STATE
+--------------------------------------------------
+
+When collapsed, each step should display only essential information.
+
+Example:
+
+Step 1
+Manual Email
+Outreach
+Executes immediately
+Enabled
+
+Provide quick actions:
+
+Edit
+Duplicate
+Disable
+Delete
+
+Collapsed mode should make long Playbooks easy to scan.
+
+--------------------------------------------------
+22. STEP MANAGEMENT
+--------------------------------------------------
+
+Support:
+
+Drag to reorder
+Duplicate
+Disable
+Delete
+Insert before
+Insert after
+
+Reordering should update step numbers automatically.
+
+Deleting a step should require confirmation if the step contains substantial configuration.
+
+--------------------------------------------------
+23. VALIDATION
+--------------------------------------------------
+
+Each step should know whether it is:
+
+Complete
+Incomplete
+Warning
+Error
+
+Example:
+
+Manual Email
+
+Incomplete:
+No generation method configured.
+
+Warning:
+No sample contact available for preview.
+
+Error:
+Required integration unavailable.
+
+Prevent Playbook activation if execution-critical errors exist.
+
+Provide a clear path to resolve each error.
+
+--------------------------------------------------
+24. CORE UX PRINCIPLE
+--------------------------------------------------
+
+The Playbook Builder should visually communicate:
+
+WHAT happens
+↓
+WHEN it happens
+↓
+WHY it happens
+↓
+WHAT happens next
+
+The user should be able to understand the entire engagement strategy by scanning the Playbook vertically.
+
+Avoid turning the experience into a collection of disconnected configuration forms.
+
+It should feel like constructing an executable sales strategy.

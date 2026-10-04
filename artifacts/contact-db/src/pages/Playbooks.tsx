@@ -26,8 +26,12 @@ import { PlaybooksList } from "@/components/playbooks/PlaybooksList";
 import { createPlaybookRecord, duplicatePlaybookRecord, playbookRequest } from "@/components/playbooks/list-api";
 import type { PlaybookRecord } from "@/components/playbooks/list-model";
 import { BuilderHeader, StructurePanel, type PlaybookTab } from "@/components/playbooks/BuilderHeader";
-import { AiProposalDialog, ContactEnrollDialog, StepPicker, type Proposal } from "@/components/playbooks/BuilderDialogs";
-import { PlaybookStepList } from "@/components/playbooks/PlaybookStepList";
+import { AiProposalDialog, ContactEnrollDialog, type Proposal } from "@/components/playbooks/BuilderDialogs";
+import { ConfiguredPlaybookSteps } from "@/components/playbooks/ConfiguredPlaybookSteps";
+import { readStoredWorkflow } from "@/components/playbooks/playbook-workflow-storage";
+import { AddStepMenu } from "@/components/playbooks/AddStepMenu";
+import { createManualEmailConfiguration, readManualEmailConfiguration, validateManualEmailConfiguration, type ManualEmailConfiguration } from "@/components/playbooks/manual-email-model";
+import { getStepDefinition, type StepDefinition } from "@/components/playbooks/step-definitions";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -401,6 +405,7 @@ function delayLabel(d: PlaybookNodeData): string {
 
 function nodeComplete(data: PlaybookNodeData): boolean {
   switch (data.blockType) {
+    case "manual-email": return validateManualEmailConfiguration(readManualEmailConfiguration(data.configuration)) === null;
     case "send-email": return !!(data.subject || data.emailType);
     case "send-linkedin": return !!(data.linkedinAction);
     case "make-call": return true;
@@ -1796,14 +1801,14 @@ function CannedLibraryModal({ open, onClose, onSelect }: { open: boolean; onClos
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
-function EmptyEditor({ onAddStep, onTemplate, onAI }: { onAddStep: () => void; onTemplate: () => void; onAI: () => void }) {
+function EmptyEditor({ onAddStep, addingDisabled, onTemplate, onAI }: { onAddStep: (definition: StepDefinition) => void; addingDisabled: boolean; onTemplate: () => void; onAI: () => void }) {
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center p-5">
       <div className="flex max-w-sm flex-col items-center text-center">
         <img src={`${import.meta.env.BASE_URL}images/playbook-illustration.png`} alt="" aria-hidden="true" width={128} height={128} className="mb-6 size-32 shrink-0 object-contain" />
         <h2 className="text-base font-bold text-foreground">Your playbook is empty</h2>
         <p className="mt-1 text-sm text-muted-foreground">Add steps to build your playbook.</p>
-        <button type="button" data-testid="button-empty-add-step" onClick={onAddStep} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"><Plus size={16} />Add a step</button>
+        <div className="mt-5"><AddStepMenu testId="button-empty-add-step" onSelect={onAddStep} disabled={addingDisabled} /></div>
         <span className="my-3 text-xs text-muted-foreground">Or start with</span>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <button type="button" data-testid="button-empty-template" onClick={onTemplate} className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:bg-secondary/50">Select a template</button>
@@ -2097,7 +2102,7 @@ function CanvasInner({
   playbookId: number; playbookName: string; playbookStatus: string; initialCanvas?: string | null;
   enrollmentCount?: number;
   onBack: () => void;
-  onSave: (nodes: Node<PlaybookNodeData>[], edges: Edge[], prospects: ProspectEntry[]) => void; saving: boolean;
+  onSave: (nodes: Node<PlaybookNodeData>[], edges: Edge[], prospects: ProspectEntry[]) => Promise<boolean>; saving: boolean;
 }) {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -2159,66 +2164,7 @@ function CanvasInner({
       // the API, including newly created templates and draft duplicates.
       if (!raw && initialCanvas?.trim().startsWith("{")) raw = initialCanvas;
       if (raw) {
-        const parsed = JSON.parse(raw) as CanvasState;
-        // Sanitize edges: strip null sourceHandle so React Flow doesn't warn
-        parsed.edges = (parsed.edges ?? []).map(e => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { sourceHandle, ...rest } = e as any;
-          return (sourceHandle !== null && sourceHandle !== undefined) ? { ...rest, sourceHandle } : rest;
-        });
-        // Migrate: strip any placeholder that was incorrectly placed after an outcome node
-        {
-          const phIds = new Set(parsed.nodes.filter(n => (n.data as PlaybookNodeData).blockType === "placeholder").map(n => n.id));
-          const outcomeIds = new Set(parsed.nodes.filter(n => isOutcomeBlock((n.data as PlaybookNodeData).blockType as string)).map(n => n.id));
-          const spuriousPhIds = new Set(parsed.edges.filter(e => outcomeIds.has(e.source) && phIds.has(e.target)).map(e => e.target));
-          if (spuriousPhIds.size > 0) {
-            parsed.nodes = parsed.nodes.filter(n => !spuriousPhIds.has(n.id));
-            parsed.edges = parsed.edges.filter(e => !spuriousPhIds.has(e.target) && !spuriousPhIds.has(e.source));
-          }
-        }
-        // Migrate: ensure a placeholder exists at the end (if terminal is not an outcome) for single-lane canvases
-        const primaryNodes = parsed.nodes.filter(n => {
-          const nd = n.data as PlaybookNodeData;
-          return !nd.laneId || nd.laneId === PRIMARY_LANE_ID;
-        });
-        const hasPlaceholder = primaryNodes.some(n => (n.data as PlaybookNodeData).blockType === "placeholder");
-        if (!hasPlaceholder) {
-          const hasOutgoing = new Set(parsed.edges.map(e => e.source));
-          const terminal = primaryNodes.find(n => !hasOutgoing.has(n.id));
-          if (terminal && !isOutcomeBlock((terminal.data as PlaybookNodeData).blockType as string)) {
-            const ph = makePlaceholder({ x: terminal.position.x, y: terminal.position.y + 140 }, { laneId: PRIMARY_LANE_ID });
-            parsed.nodes.push(ph);
-            parsed.edges.push(makeEdge(terminal.id, ph.id));
-          }
-        }
-        // Migrate: add prospects array if missing
-        if (!parsed.prospects) {
-          const primaryProspectNode = parsed.nodes.find(n => (n.data as PlaybookNodeData).blockType === "prospect-added");
-          const pnd = primaryProspectNode?.data as PlaybookNodeData | undefined;
-          parsed.prospects = [{
-            laneId: PRIMARY_LANE_ID,
-            contactId: pnd?.contactId,
-            contactName: pnd?.contactName,
-            isPrimary: true,
-            cascadeEnabled: true,
-          }];
-          // Assign laneId to nodes that don't have one
-          parsed.nodes = parsed.nodes.map(n => {
-            const nd = n.data as PlaybookNodeData;
-            if (!nd.laneId) {
-              return {
-                ...n,
-                data: {
-                  ...nd,
-                  laneId: PRIMARY_LANE_ID,
-                  ...(nd.blockType === "prospect-added" ? { isPrimary: true } : {}),
-                },
-              };
-            }
-            return n;
-          });
-        }
-        return parsed;
+        return readStoredWorkflow<Node<PlaybookNodeData>, Edge, ProspectEntry>(raw);
       }
     } catch {}
     // A scratch record is deliberately empty even if the list response omits
@@ -2291,22 +2237,46 @@ function CanvasInner({
   const [showCanned, setShowCanned] = useState(false);
   const [showAddProspect, setShowAddProspect] = useState(false);
   const [activeTab, setActiveTab] = useState<PlaybookTab>("editor");
-  const [showStepPicker, setShowStepPicker] = useState(false);
+  const [manualEmailStepId, setManualEmailStepId] = useState<string | null>(() => initialState.nodes.find(node => node.data.blockType === "manual-email")?.id ?? null);
   const [showContactEnroll, setShowContactEnroll] = useState(false);
   const [showOptimize, setShowOptimize] = useState(false);
   const [shareLink, setShareLink] = useState("");
   const [pendingRecordAction, setPendingRecordAction] = useState<"archive" | "delete" | null>(null);
   const [recordActionBusy, setRecordActionBusy] = useState(false);
   const stepNodes = useMemo(() => nodes.filter(n => !["placeholder", "prospect-added", "trigger-detected", "added-to-playbook"].includes((n.data as PlaybookNodeData).blockType)), [nodes]);
-  const activationReason = !stepNodes.length
+  const enabledSteps = stepNodes.filter(n => n.data.blockType !== "manual-email" || readManualEmailConfiguration(n.data.configuration).enabled);
+  const [savedSnapshot, setSavedSnapshot] = useState(() => {
+    try {
+      return JSON.stringify(readStoredWorkflow<Node<PlaybookNodeData>, Edge, ProspectEntry>(initialCanvas ?? ""));
+    } catch { /* Legacy descriptions have no editable workflow snapshot. */ }
+    return JSON.stringify({ nodes: initialState.nodes, edges: initialState.edges, prospects: initialState.prospects });
+  });
+  const hasUnsavedChanges = JSON.stringify({ nodes, edges, prospects }) !== savedSnapshot;
+  const readOnlySteps = ["active", "archived", "completed"].includes(playbookStatus);
+  const activationReason = !enabledSteps.length
     ? "Add at least one workflow step before activating this playbook."
+    : hasUnsavedChanges ? "Save changes before activating this playbook."
     : ["archived", "completed"].includes(playbookStatus)
       ? `${playbookStatus[0].toUpperCase()}${playbookStatus.slice(1)} playbooks cannot be activated.`
     : stepNodes.some(n => (n.data as PlaybookNodeData).blockType === "send-email") && emailAccounts.isSuccess && emailAccounts.data.length === 0
       ? "Link an email mailbox before activating an email workflow."
-    : stepNodes.some(n => !nodeComplete(n.data as PlaybookNodeData))
+    : enabledSteps.some(n => !nodeComplete(n.data as PlaybookNodeData))
       ? "Complete the required configuration on every step before activating."
       : undefined;
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const unload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    const navigate = (event: MouseEvent) => {
+      const anchor = event.target instanceof Element ? event.target.closest("a") : null;
+      if (!anchor || anchor.target === "_blank" || !anchor.href || new URL(anchor.href).pathname === window.location.pathname) return;
+      if (!window.confirm("You have unsaved Playbook changes. Leave without saving?")) {
+        event.preventDefault(); event.stopImmediatePropagation();
+      }
+    };
+    window.addEventListener("beforeunload", unload);
+    document.addEventListener("click", navigate, true);
+    return () => { window.removeEventListener("beforeunload", unload); document.removeEventListener("click", navigate, true); };
+  }, [hasUnsavedChanges]);
 
   // Insert block menu
   const [insertMenu, setInsertMenu] = useState<{ edgeId: string; x: number; y: number } | null>(null);
@@ -2328,6 +2298,7 @@ function CanvasInner({
   // Keyboard shortcuts
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLElement && e.target.closest("input, textarea, [contenteditable=true]")) return;
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
       if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); redo(); }
       if (e.key === "Escape") { setSelectedNodeId(null); setInsertMenu(null); }
@@ -2612,26 +2583,77 @@ function CanvasInner({
   }
 
   // Save
+  async function persistCanvas(nextNodes: Node<PlaybookNodeData>[], nextEdges: Edge[], nextProspects: ProspectEntry[]) {
+    const success = await externalSave(nextNodes, nextEdges, nextProspects);
+    if (success) setSavedSnapshot(JSON.stringify({ nodes: nextNodes, edges: nextEdges, prospects: nextProspects }));
+    return success;
+  }
   function save() {
-    externalSave(nodes, edges, prospects);
+    void persistCanvas(nodes, edges, prospects);
   }
 
-  function addFirstStep(blockType: string) {
-    const data = { laneId: PRIMARY_LANE_ID };
-    const position = { x: 0, y: 0 };
-    const first = makeNode(blockType, position, data);
-    const hasTerminalOutcome = isOutcomeBlock(blockType);
-    const next = hasTerminalOutcome
-      ? [first]
-      : [first, makePlaceholder({ x: position.x, y: position.y + 140 }, { laneId: PRIMARY_LANE_ID })];
-    const nextEdges = hasTerminalOutcome ? [] : [makeEdge(first.id, next[1].id)];
+  function addManualStep(definition: StepDefinition, afterId: string | null = stepNodes.at(-1)?.id ?? null) {
+    if (!definition.enabled || definition.id !== "manual-email" || saving || ["active", "archived", "completed"].includes(playbookStatus)) return;
+    const step = makeNode(definition.id, { x: 0, y: stepNodes.length * 140 }, {
+      label: definition.name,
+      laneId: PRIMARY_LANE_ID,
+      stepType: definition.type,
+      category: definition.category,
+      executionMode: definition.executionMode,
+      configuration: createManualEmailConfiguration(),
+    });
+    const next = [...nodes];
+    next.splice(afterId ? next.findIndex(node => node.id === afterId) + 1 : 0, 0, step);
+    const nextEdges = edges;
     setNodes(next);
     setEdges(nextEdges);
     commitToHistory(next, nextEdges, prospectsRef.current);
-    setShowStepPicker(false);
+    setManualEmailStepId(step.id);
     setActiveTab("editor");
+    // New steps, like their configuration, remain unsaved until Save Changes.
   }
 
+  function changeManualConfiguration(id: string, configuration: ManualEmailConfiguration) {
+    if (readOnlySteps) return;
+    const current = nodesRef.current;
+    if (!current.some(node => node.id === id)) return;
+    const next = current.map(node => node.id === id ? { ...node, data: { ...node.data, configuration } } : node);
+    setNodes(next); commitToHistory(next, edgesRef.current, prospectsRef.current);
+  }
+  function duplicateConfiguredStep(id: string) {
+    if (readOnlySteps) return;
+    const index = nodes.findIndex(node => node.id === id);
+    if (index < 0) return;
+    const copy = JSON.parse(JSON.stringify(nodes[index])) as Node<PlaybookNodeData>;
+    copy.id = uid();
+    if (copy.data.blockType === "manual-email") {
+      const config = readManualEmailConfiguration(copy.data.configuration);
+      config.variants = config.variants.map(v => ({ ...v, id: crypto.randomUUID() }));
+      copy.data.configuration = config;
+    }
+    const next = [...nodes]; next.splice(index + 1, 0, copy);
+    setNodes(next); commitToHistory(next, edges, prospects); setManualEmailStepId(copy.id);
+  }
+  function deleteConfiguredStep(id: string) {
+    if (readOnlySteps) return;
+    const step = nodes.find(node => node.id === id);
+    const config = step?.data.blockType === "manual-email" ? readManualEmailConfiguration(step.data.configuration) : null;
+    const substantial = config?.variants.some(v => v.preview || v.prompt.trim() || v.templateSubject.trim() || v.templateBody.trim() || v.userContext.trim() || v.guidelines.length || v.customTone.trim())
+      || !!(step?.data.emailBody || step?.data.subject || step?.data.linkedinBody || step?.data.callObjective);
+    if (substantial && !window.confirm("Delete this step and its configured email content?")) return;
+    const next = nodes.filter(node => node.id !== id);
+    const nextEdges = edges.filter(edge => edge.source !== id && edge.target !== id);
+    setNodes(next); setEdges(nextEdges); commitToHistory(next, nextEdges, prospects);
+    if (manualEmailStepId === id) setManualEmailStepId(null);
+  }
+  function reorderConfiguredSteps(ids: string[]) {
+    if (readOnlySteps || ids.length !== stepNodes.length || new Set(ids).size !== ids.length) return;
+    const byId = new globalThis.Map(stepNodes.map(step => [step.id, step]));
+    if (ids.some(id => !byId.has(id))) return;
+    const next = nodes.filter(node => !byId.has(node.id));
+    next.push(...ids.map(id => byId.get(id)!));
+    setNodes(next); commitToHistory(next, edges, prospects);
+  }
   function insertProposal(proposal: Proposal) {
     const built = proposal.steps.map((step, index) => {
       const blockType = step.blockType;
@@ -2816,6 +2838,8 @@ function CanvasInner({
         activeTab={activeTab}
         steps={stepNodes.length}
         saving={saving}
+        dirty={hasUnsavedChanges}
+        onBeforeLeave={() => !hasUnsavedChanges || window.confirm("You have unsaved Playbook changes. Leave without saving?")}
         activationReason={playbookStatus === "active" ? undefined : activationReason}
         onTab={setActiveTab}
         onRename={renameRecord}
@@ -2831,8 +2855,12 @@ function CanvasInner({
       />
       {activeTab === "editor" ? <div data-testid="playbook-editor-workspace" className="relative min-h-0 flex-1 overflow-auto bg-background">
         {stepNodes.length === 0
-          ? <EmptyEditor onAddStep={() => setShowStepPicker(true)} onTemplate={() => setShowCanned(true)} onAI={() => setShowAiBuilder(true)} />
-          : <PlaybookStepList steps={stepNodes as Node<PlaybookNodeData>[]} />}
+          ? <EmptyEditor onAddStep={addManualStep} addingDisabled={saving || ["active", "archived", "completed"].includes(playbookStatus)} onTemplate={() => setShowCanned(true)} onAI={() => setShowAiBuilder(true)} />
+          : <div className="h-full overflow-y-auto py-5"><ConfiguredPlaybookSteps playbookId={playbookId} steps={stepNodes as Node<PlaybookNodeData>[]}
+              selectedStepId={manualEmailStepId} onSelect={setManualEmailStepId}
+              onConfigure={changeManualConfiguration} onInsert={(afterId, definition) => addManualStep(definition, afterId)}
+              onDuplicate={duplicateConfiguredStep} onDelete={deleteConfiguredStep} onReorder={reorderConfiguredSteps}
+              onSave={save} dirty={hasUnsavedChanges} saving={saving} readOnly={readOnlySteps} /></div>}
       </div> : <StructurePanel
         tab={activeTab}
         playbookId={playbookId}
@@ -2846,7 +2874,6 @@ function CanvasInner({
       />}
 
       <CannedLibraryModal open={showCanned} onClose={() => setShowCanned(false)} onSelect={applyCanned} />
-      {showStepPicker && <StepPicker onClose={() => setShowStepPicker(false)} onSelect={addFirstStep} />}
       {showAiBuilder && <AiProposalDialog onClose={() => setShowAiBuilder(false)} onInsert={insertProposal} liveBuyingCenter={liveBuyingCenterText} liveTargetMarket={liveTargetMarketText} />}
       {showContactEnroll && <ContactEnrollDialog playbookId={playbookId} onClose={() => setShowContactEnroll(false)} onEnrolled={() => { toast({ title: "Contacts enrolled", description: "Enrollment was submitted to the playbook API." }); void qc.invalidateQueries({ queryKey: ["playbooks"] }); void qc.invalidateQueries({ queryKey: ["playbook-enrollments", playbookId] }); }} />}
       {showOptimize && <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setShowOptimize(false); }}>
@@ -2918,9 +2945,11 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || `Save failed (${response.status})`);
       await qc.invalidateQueries({ queryKey: ["playbooks"] });
-      toast({ title: "Saved", description: "Playbook canvas saved." });
+      toast({ title: "Saved", description: "Playbook saved." });
+      return true;
     } catch (error) {
       toast({ title: "Save failed", description: error instanceof Error ? error.message : "The canvas could not be saved.", variant: "destructive" });
+      return false;
     } finally {
       setSaving(false);
     }

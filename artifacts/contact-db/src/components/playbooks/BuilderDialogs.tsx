@@ -19,29 +19,6 @@ const inputClass = "w-full rounded-lg border border-border bg-card px-3 py-2 tex
 const buttonClass = "inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-50";
 const primaryClass = "inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50";
 
-export function StepPicker({ onSelect, onClose }: { onSelect: (blockType: string) => void; onClose: () => void }) {
-  const blocks = [
-    { type: "send-email", label: "Send an email", detail: "A personalized email touch", Icon: Mail },
-    { type: "send-linkedin", label: "LinkedIn message", detail: "Connect or send a direct message", Icon: Linkedin },
-    { type: "make-call", label: "Make a call", detail: "Create a call task", Icon: Phone },
-    { type: "time-delay", label: "Wait", detail: "Add timing between actions", Icon: Clock },
-  ];
-  return <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-    <section className="w-full max-w-md overflow-hidden rounded-xl border border-border bg-card shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="step-picker-title">
-      <header className="flex items-center justify-between border-b border-border/60 px-5 py-4">
-        <div><h2 id="step-picker-title" className="text-base font-bold">Add a step</h2><p className="mt-1 text-xs text-muted-foreground">Choose the first action in this playbook.</p></div>
-        <button type="button" data-testid="close-step-picker" aria-label="Close step picker" className="rounded-md p-2 text-muted-foreground hover:bg-secondary" onClick={onClose}><X size={16} /></button>
-      </header>
-      <div className="p-3">
-        {blocks.map(({ type, label, detail, Icon }) => <button type="button" data-testid={`add-step-${type}`} key={type} onClick={() => onSelect(type)} className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-secondary/60">
-          <span className="flex size-9 items-center justify-center rounded-lg border border-border bg-background text-primary"><Icon size={17} /></span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-foreground">{label}</span><span className="block text-xs text-muted-foreground">{detail}</span></span>
-        </button>)}
-      </div>
-    </section>
-  </div>;
-}
-
 const CHANNELS = [
   { value: "email", label: "Email" },
   { value: "linkedin", label: "LinkedIn" },

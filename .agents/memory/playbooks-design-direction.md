@@ -50,3 +50,15 @@ Do not restore the previous building-blocks panel or mind-map presentation. The 
 **Why:** The user reiterated that the previous playbook creation flow is being replaced and explicitly removed the building-blocks panel, dotted background, zoom functionality, and related canvas controls.
 
 **How to apply:** Subsequent builder work must use a flat, non-mind-map workspace without the legacy palette, graph connectors, minimap, zoom, or extra canvas toolbars. Preserve existing saved data; do not treat earlier instructions to preserve the builder UI as current.
+
+Configured steps belong inline in a vertically connected workflow, with configuration and preview side by side. Do not bring back the temporary Manual Email setup sheet or a separate configuration drawer.
+
+**Why:** The user's configured-step brief defines this as the primary working interface after adding a step, not another intermediate setup flow.
+
+**How to apply:** Extend subsequent step types within that inline workflow while retaining the established visual design system.
+
+Loading a saved inline workflow must not invent graph scaffolding or modify its semantic content.
+
+**Why:** Retired graph hydration inserted a new placeholder on reload and made a saved, unchanged Manual Email workflow appear dirty.
+
+**How to apply:** Apply identical non-mutating restoration to saved and working snapshots; preserve existing records without graph-specific migrations.
