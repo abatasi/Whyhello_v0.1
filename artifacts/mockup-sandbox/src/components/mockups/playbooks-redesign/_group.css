@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
 :root {
   --background: 210 33% 99%;
   --foreground: 222 47% 11%;
@@ -61,3 +63,32 @@
 
 .playbooks-current { font-family: 'Inter', sans-serif; --font-display: 'Plus Jakarta Sans', sans-serif; }
 .playbooks-current h1 { font-family: var(--font-display); }
+
+.playbooks-integrated-shell {
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  color-scheme: light;
+}
+.playbooks-integrated-shell.dark {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  --primary: 226 70% 65%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 217 28% 22%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217 28% 22%;
+  --muted-foreground: 215 22% 75%;
+  --accent: 217 28% 22%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217 22% 42%;
+  --input: 217 22% 42%;
+  --ring: 226 70% 65%;
+  --card: 222 47% 11%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 98%;
+  color-scheme: dark;
+}

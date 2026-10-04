@@ -1,5 +1,6 @@
 import './_group.css';
 import './_operational.css';
+import { MasterAppShell } from './_MasterShell';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -385,9 +386,10 @@ export function Operational() {
   };
 
   return (
+    <MasterAppShell>
     <main className="playbooks-operational op-shell">
       <header className="op-header">
-        <div className="op-heading"><div className="op-brandline"><span className="op-brandmark">whyhello</span></div><div className="op-title-line"><h1>Playbooks</h1><span className="op-demo-badge"><span />Demo workspace</span></div><p>Build and manage insight-led, multi-touch outreach.</p></div>
+        <div className="op-heading"><div className="op-title-line"><h1>Playbooks</h1><span className="op-demo-badge"><span />Demo workspace</span></div><p>Build and manage insight-led, multi-touch outreach.</p></div>
         <div className="op-header-actions"><button className="op-secondary-btn" onClick={() => { setEditingId(null); setFormTemplate('Outbound prospecting'); setFormName(''); setFormDescription(''); setDialog('create'); }}><BookOpen size={15} /> Templates</button><button className="op-primary-btn" onClick={() => { setEditingId(null); setFormName(''); setFormDescription(''); setFormTemplate(templates[0]); setDialog('create'); }}><Plus size={16} /> Create playbook</button></div>
       </header>
       <nav className="op-tabs" aria-label="Playbook sections">
@@ -477,5 +479,6 @@ export function Operational() {
       {dialog === 'renameView' && <Modal title="Rename saved view" onClose={() => { setDialog(''); setRenameViewId(null); }}><div className="op-form"><label>View name<input autoFocus value={formName} onChange={e => setFormName(e.target.value)} /></label><div className="op-modal-actions"><button className="op-secondary-btn" onClick={() => { setDialog(''); setRenameViewId(null); }}>Cancel</button><button className="op-primary-btn" disabled={!formName.trim()} onClick={() => { if (!renameViewId) return; setSavedViews(old => old.map(v => v.id === renameViewId ? { ...v, name: formName.trim() } : v)); setDialog(''); setRenameViewId(null); notify('Saved view renamed.'); }}>Save changes</button></div></div></Modal>}
       {dialog === 'confirm' && pending && <Modal title={`Confirm ${pending.action.toLowerCase()}`} onClose={() => { setDialog(''); setPending(null); }}><div className="op-confirm"><div className="op-confirm-icon"><AlertTriangle size={18} /></div><p>{pending.action === 'Delete' ? `Delete ${pending.ids.length === 1 ? 'this playbook' : `${pending.ids.length} playbooks`}? This removes ${pending.ids.length === 1 ? 'it' : 'them'} from the local demo list.` : `Archive ${pending.ids.length === 1 ? 'this playbook' : `${pending.ids.length} playbooks`}? The records remain available in the demo list.`}</p><span>This action does not affect live workspace records.</span><div className="op-modal-actions"><button className="op-secondary-btn" onClick={() => { setDialog(''); setPending(null); }}>Cancel</button><button className={pending.action === 'Delete' ? 'op-danger-btn' : 'op-primary-btn'} onClick={() => perform(pending.action, pending.ids)}>{pending.action} {pending.ids.length > 1 ? `${pending.ids.length} playbooks` : 'playbook'}</button></div></div></Modal>}
     </main>
+    </MasterAppShell>
   );
 }

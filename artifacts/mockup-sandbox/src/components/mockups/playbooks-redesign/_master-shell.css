@@ -1,0 +1,63 @@
+.playbooks-integrated-shell {
+  position: relative;
+  min-height: 100dvh;
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+.master-navbar {
+  min-height: 44px;
+  background-color: hsl(var(--background) / .95);
+}
+
+.master-page-offset {
+  width: calc(100% - 42px);
+  min-width: 0;
+  min-height: calc(100dvh - 44px);
+  margin-left: 42px;
+  background: hsl(var(--background));
+}
+
+.master-page-offset > .op-shell {
+  min-height: calc(100dvh - 44px);
+}
+
+.master-shell-notice {
+  position: fixed;
+  z-index: 220;
+  right: 18px;
+  bottom: 18px;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 9px;
+  color: hsl(var(--foreground));
+  background: hsl(var(--card));
+  box-shadow: 0 12px 32px rgb(0 0 0 / .26);
+  font: 12px/1.4 var(--font-sans, 'Inter', sans-serif);
+}
+
+.master-sidebar :where(button, a):focus-visible,
+.master-navbar :where(button, a, input):focus-visible {
+  outline-color: hsl(var(--primary));
+}
+
+@media (max-width: 767px) {
+  .master-navbar { min-height: 56px; }
+  .master-page-offset {
+    width: 100%;
+    min-height: calc(100dvh - 56px);
+    margin-left: 0;
+  }
+  .master-page-offset > .op-shell { min-height: calc(100dvh - 56px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playbooks-integrated-shell *,
+  .playbooks-integrated-shell *::before,
+  .playbooks-integrated-shell *::after {
+    scroll-behavior: auto !important;
+  }
+}
