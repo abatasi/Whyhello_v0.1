@@ -1,0 +1,63 @@
+:root {
+  --background: 210 33% 99%;
+  --foreground: 222 47% 11%;
+  
+  --primary: 226 70% 55%;
+  --primary-foreground: 210 40% 98%;
+  
+  --secondary: 214 32% 91%;
+  --secondary-foreground: 222 47% 11%;
+  
+  --muted: 214 32% 95%;
+  --muted-foreground: 215 16% 47%;
+  
+  --accent: 214 32% 91%;
+  --accent-foreground: 222 47% 11%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 226 70% 55%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+}
+
+.dark {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  
+  --primary: 226 70% 65%;
+  --primary-foreground: 222 47% 11%;
+  
+  --secondary: 217 28% 22%;
+  --secondary-foreground: 210 40% 98%;
+  
+  --muted: 217 28% 22%;
+  --muted-foreground: 215 22% 75%;
+  
+  --accent: 217 28% 22%;
+  --accent-foreground: 210 40% 98%;
+  
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 217 22% 42%;
+  --input: 217 22% 42%;
+  --ring: 226 70% 65%;
+  
+  --card: 222 47% 11%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 98%;
+}
+
+
+.playbooks-current { font-family: 'Inter', sans-serif; --font-display: 'Plus Jakarta Sans', sans-serif; }
+.playbooks-current h1 { font-family: var(--font-display); }

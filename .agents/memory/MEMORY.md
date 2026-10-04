@@ -11,3 +11,4 @@
 - [Buying Center Role identity](buying-center-role-identity.md) — seat criteria use Role names in saved HQ profiles; renaming a Role requires migrating those saved selections
 - [Live audience semantics](live-audience-semantics.md) — only explicit per-user live selections power badges and rankings; editor/view tabs never activate drafts
 - [Interaction feedback](interaction-style.md) — stationary, subtle button hovers; hand cursors on enabled clickable elements
+- [Playbooks design direction](playbooks-design-direction.md) — dense operational tables, warm near-black surfaces, restrained lime accents; preserve the module’s identity and scope
