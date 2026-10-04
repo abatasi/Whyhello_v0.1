@@ -1,0 +1,105 @@
+/* Platform table presentation supersedes the original brief's table theme.
+ * Match the Directory tables and shared table primitives: Inter, 13px cells,
+ * 12px muted headers, and the existing dark foreground/surface tokens.
+ * Keep column widths, sticky positioning, density choices and controls intact.
+ */
+.playbooks-operational .op-table {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 13px;
+  line-height: 1.5;
+  color: hsl(var(--foreground));
+  background: hsl(var(--card));
+}
+
+.playbooks-operational .op-table :is(th, td) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.playbooks-operational .op-table thead,
+.playbooks-operational .op-table th,
+.playbooks-operational .op-table thead :is(.op-col-select, .op-col-activate, .op-col-name, .op-col-actions) {
+  background: hsl(var(--muted));
+}
+
+.playbooks-operational .op-table :is(th, th.metric-head) {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .025em;
+  color: hsl(var(--muted-foreground));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.playbooks-operational .op-table td {
+  font-weight: 400;
+  color: hsl(var(--foreground));
+  background: hsl(var(--card));
+  border-bottom: 1px solid hsl(var(--border) / .5);
+}
+
+.playbooks-operational .op-table tbody :is(.op-col-select, .op-col-activate, .op-col-name, .op-col-actions) {
+  background: hsl(var(--card));
+}
+
+.playbooks-operational .op-table tbody tr:hover td,
+.playbooks-operational .op-table tbody tr.row-selected td {
+  background: color-mix(in srgb, hsl(var(--primary)) 5%, hsl(var(--card)));
+}
+
+.playbooks-operational .op-table td.metric-cell {
+  font-family: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--muted-foreground));
+}
+
+.playbooks-operational .op-table .op-name {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: hsl(var(--foreground));
+}
+
+.playbooks-operational .op-table .op-name:hover {
+  color: hsl(var(--foreground) / .82);
+}
+
+.playbooks-operational .op-table .op-row-description {
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+
+.playbooks-operational .op-table :is(.op-creator, .op-status, .op-optimization, .op-muted) {
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+
+.playbooks-operational .op-table .op-optimization svg,
+.playbooks-operational .op-table .op-row-menu-trigger {
+  color: hsl(var(--muted-foreground));
+}
+
+.playbooks-operational .op-table .op-avatar {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  color: hsl(var(--secondary-foreground));
+  background: hsl(var(--secondary));
+  border-color: hsl(var(--border));
+}
+
+.playbooks-operational .op-table-scroll {
+  border-color: hsl(var(--border));
+}
+
+.playbooks-operational .op-table-foot {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}

@@ -20,3 +20,9 @@ Wrap the Playbooks module in the existing master sidebar and master topbar, rath
 **Why:** The user explicitly requested that the module be wrapped around the master sidebar and master topbar.
 
 **How to apply:** Reuse the actual master navigation components and their responsive behavior in Playbooks previews and integrations; do not invent a replacement application shell.
+
+The rest of the platform's table styling supersedes the original Playbooks brief's table-specific fonts, sizes, text colors, and related presentation.
+
+**Why:** The user explicitly requested platform consistency for table styling.
+
+**How to apply:** Use the existing Directory/shared table conventions and theme tokens rather than introducing bespoke typography or text palettes for Playbooks. Preserve its table controls and behavior.

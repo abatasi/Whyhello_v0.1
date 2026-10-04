@@ -1,5 +1,6 @@
 import './_group.css';
 import './_operational.css';
+import './_platform-table.css';
 import { MasterAppShell } from './_MasterShell';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
