@@ -30,9 +30,8 @@ export function ConnectionFields({ variant, context, onUpdate, readOnly, busy, o
       })}</div></section>
       <section><label className={labelClass}>Set your tone</label><div className="flex flex-wrap gap-2">{["Default", "Direct", "Formal", "Casual", "Creative", "Custom"].map(tone =>
         <button key={tone} type="button" disabled={readOnly} onClick={() => set({ tone })} className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs ${variant.tone === tone ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>{tone}</button>)}</div>
-        <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={variant.inheritHqTone} disabled={readOnly || !context?.voice} onChange={e => set({ inheritHqTone: e.target.checked })} />Inherit Whyhello HQ voice{!context?.voice && <span>(not available)</span>}</label>
+        <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={variant.inheritHqTone} disabled={readOnly || !context?.voice} onChange={e => set({ inheritHqTone: e.target.checked })} />HQ voice{!context?.voice && <span>(not available)</span>}</label>
         {variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}
-        {variant.inheritHqTone && context?.voice && <p className="mt-2 rounded-md bg-muted/70 p-2 text-xs text-muted-foreground"><span className="font-semibold text-foreground">HQ voice:</span> {context.voice}</p>}
       </section>
     </>}
     {variant.mode === "prompt" && <section><label className={labelClass}>Instructions for this connection</label><textarea aria-label="Generation instructions" className={fieldClass + " min-h-32 resize-y"} value={variant.prompt} disabled={readOnly} onChange={e => set({ prompt: e.target.value })} placeholder="What makes this connection relevant, and how should the note sound?" /><p className="mt-1 text-xs text-muted-foreground">Selected research and workspace context are included.</p></section>}
@@ -44,7 +43,7 @@ export function ConnectionFields({ variant, context, onUpdate, readOnly, busy, o
         return <div key={source.id} className="rounded-md border border-border/70 p-2.5"><label className="flex cursor-pointer items-start gap-2 text-xs font-medium"><input type="checkbox" checked={active} disabled={readOnly} onChange={e => set({ contextSources: e.target.checked ? [...variant.contextSources, source.id] : variant.contextSources.filter(id => id !== source.id) })} />{source.name}</label>{active && <p className="ml-5 mt-1.5 whitespace-pre-wrap text-xs leading-5 text-muted-foreground">{source.content || "No source content is available."}</p>}</div>;
       })}
         {!context?.contextSources.length && <p className="text-xs text-muted-foreground">HQ context is currently unavailable.</p>}
-        {context?.voice && <div className="rounded-md border border-border/70 p-2.5"><p className="text-xs font-semibold">Whyhello HQ voice</p><p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-muted-foreground">{context.voice}</p></div>}
+        {context?.voice && <div className="rounded-md border border-border/70 p-2.5"><p className="text-xs font-semibold">HQ voice</p></div>}
         <label className="block text-xs font-medium">Additional context<textarea aria-label="Additional AI context" className={fieldClass + " mt-1.5 min-h-16 resize-y"} value={variant.userContext} disabled={readOnly} onChange={e => set({ userContext: e.target.value, contextSources: e.target.value.trim() ? [...new Set([...variant.contextSources, "custom"])] : variant.contextSources.filter(id => id !== "custom") })} placeholder="Add information specific to this playbook step" /></label>
       </div>
     </details>

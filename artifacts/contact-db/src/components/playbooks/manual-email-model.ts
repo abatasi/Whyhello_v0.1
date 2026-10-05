@@ -4,11 +4,15 @@ export interface EmailTiming { unit: TimingUnit; amount: number; at: string }
 export interface EmailPreview {
   subject: string; body: string; personalization: string; cta: string; contactId: number;
   insightsUsed: { id: string; category: string; title: string; description: string; url: string }[];
+  anatomy?: { hook: string; bridge: string; value: string; proof: string; cta: string };
 }
+export type EmailLength = "short" | "medium" | "long";
+export type InsightCategory = "personal" | "company" | "industry" | "role" | "colleagues" | "counterparts";
 export interface EmailVariant {
   id: string; name: string; allocation: number; mode: EmailMode;
   emailType: "Outreach" | "Follow-up" | "Last pitch";
   researchSources: string[]; tone: string; customTone: string; inheritHqTone: boolean;
+  length?: EmailLength; insightCategory?: InsightCategory;
   contextSources: string[]; userContext: string;
   guidelines: { id: string; text: string }[];
   generationMode: string; prompt: string; templateId: string;
@@ -46,11 +50,15 @@ export function createEmailVariant(name = "Test A"): EmailVariant {
   };
 }
 export function createManualEmailConfiguration(): ManualEmailConfiguration {
+  const first = createEmailVariant();
+  first.length = "medium";
+  first.insightCategory = "personal";
+  first.tone = "Professional";
   return {
     version: 1, enabled: true,
     createTiming: { unit: "immediately", amount: 1, at: "" },
     dueTiming: { unit: "minutes", amount: 30, at: "" },
-    variants: [createEmailVariant()],
+    variants: [first],
   };
 }
 export function readManualEmailConfiguration(value: unknown): ManualEmailConfiguration {
@@ -63,6 +71,18 @@ export function readManualEmailConfiguration(value: unknown): ManualEmailConfigu
     variants: Array.isArray(config.variants) && config.variants.length
       ? config.variants.map(v => {
           const merged = { ...createEmailVariant(v.name), ...v };
+          const legacyLength = merged.generationMode === "Concise" ? "short"
+            : merged.generationMode === "Detailed" ? "long" : "medium";
+          merged.length = merged.length === "short" || merged.length === "long" || merged.length === "medium"
+            ? merged.length : legacyLength;
+          const canonicalCategory = (value: string): InsightCategory | undefined => {
+            if (value === "personal" || value === "executive") return "personal";
+            if (["company", "company-news", "job-postings", "strategic", "competitors"].includes(value)) return "company";
+            if (value === "industry" || value === "role" || value === "colleagues" || value === "counterparts") return value;
+            return undefined;
+          };
+          const fromLegacy = merged.researchSources.map(canonicalCategory).find(Boolean);
+          merged.insightCategory = canonicalCategory(merged.insightCategory ?? "") ?? fromLegacy ?? "personal";
           if (merged.userContext.trim() && !merged.contextSources.includes("custom")) merged.contextSources = [...merged.contextSources, "custom"];
           return merged;
         }) : defaults.variants,

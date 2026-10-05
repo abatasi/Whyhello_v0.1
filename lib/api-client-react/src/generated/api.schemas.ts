@@ -94,9 +94,42 @@ export interface PhoneCallPreview {
 }
 
 /**
+ * Single Message visible-body length; legacy variants derive this from generationMode.
+ */
+export type ManualEmailPreviewInputVariantLength =
+  (typeof ManualEmailPreviewInputVariantLength)[keyof typeof ManualEmailPreviewInputVariantLength];
+
+export const ManualEmailPreviewInputVariantLength = {
+  short: "short",
+  medium: "medium",
+  long: "long",
+} as const;
+
+/**
+ * One per-contact research category; never individual insight IDs.
+ */
+export type ManualEmailPreviewInputVariantInsightCategory =
+  (typeof ManualEmailPreviewInputVariantInsightCategory)[keyof typeof ManualEmailPreviewInputVariantInsightCategory];
+
+export const ManualEmailPreviewInputVariantInsightCategory = {
+  personal: "personal",
+  company: "company",
+  industry: "industry",
+  role: "role",
+  colleagues: "colleagues",
+  counterparts: "counterparts",
+} as const;
+
+/**
  * Versioned step variant validated by the editor and server; preserves fields across modes.
  */
-export type ManualEmailPreviewInputVariant = { [key: string]: unknown };
+export type ManualEmailPreviewInputVariant = {
+  /** Single Message visible-body length; legacy variants derive this from generationMode. */
+  length?: ManualEmailPreviewInputVariantLength;
+  /** One per-contact research category; never individual insight IDs. */
+  insightCategory?: ManualEmailPreviewInputVariantInsightCategory;
+  [key: string]: unknown;
+};
 
 export interface ManualEmailPreviewInput {
   /** Versioned step variant validated by the editor and server; preserves fields across modes. */
@@ -122,12 +155,21 @@ export interface ManualEmailTestInput {
   accountId: number;
 }
 
+export interface ManualEmailAnatomy {
+  hook: string;
+  bridge: string;
+  value: string;
+  proof: string;
+  cta: string;
+}
+
 export interface ManualEmailPreview {
   subject: string;
   body: string;
   personalization: string;
   cta: string;
   contactId: number;
+  anatomy?: ManualEmailAnatomy;
   insightsUsed: ManualEmailEvidence[];
 }
 

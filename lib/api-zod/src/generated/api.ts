@@ -64,7 +64,27 @@ export const generateManualEmailPreviewBodyRegenerationMax = 1000;
 
 export const GenerateManualEmailPreviewBody = zod.object({
   variant: zod
-    .record(zod.string(), zod.unknown())
+    .object({
+      length: zod
+        .enum(["short", "medium", "long"])
+        .optional()
+        .describe(
+          "Single Message visible-body length; legacy variants derive this from generationMode.",
+        ),
+      insightCategory: zod
+        .enum([
+          "personal",
+          "company",
+          "industry",
+          "role",
+          "colleagues",
+          "counterparts",
+        ])
+        .optional()
+        .describe(
+          "One per-contact research category; never individual insight IDs.",
+        ),
+    })
     .describe(
       "Versioned step variant validated by the editor and server; preserves fields across modes.",
     ),
@@ -81,6 +101,15 @@ export const GenerateManualEmailPreviewResponse = zod.object({
   personalization: zod.string(),
   cta: zod.string(),
   contactId: zod.number(),
+  anatomy: zod
+    .object({
+      hook: zod.string(),
+      bridge: zod.string(),
+      value: zod.string(),
+      proof: zod.string(),
+      cta: zod.string(),
+    })
+    .optional(),
   insightsUsed: zod.array(
     zod.object({
       id: zod.string(),

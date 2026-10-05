@@ -5,8 +5,16 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+import type { ManualEmailPreviewInputVariantInsightCategory } from "./manualEmailPreviewInputVariantInsightCategory";
+import type { ManualEmailPreviewInputVariantLength } from "./manualEmailPreviewInputVariantLength";
 
 /**
  * Versioned step variant validated by the editor and server; preserves fields across modes.
  */
-export type ManualEmailPreviewInputVariant = { [key: string]: unknown };
+export type ManualEmailPreviewInputVariant = {
+  /** Single Message visible-body length; legacy variants derive this from generationMode. */
+  length?: ManualEmailPreviewInputVariantLength;
+  /** One per-contact research category; never individual insight IDs. */
+  insightCategory?: ManualEmailPreviewInputVariantInsightCategory;
+  [key: string]: unknown;
+};

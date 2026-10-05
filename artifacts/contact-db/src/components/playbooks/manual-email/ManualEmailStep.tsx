@@ -10,10 +10,10 @@ import {
   createEmailVariant, readManualEmailConfiguration, timingSummary,
   validateManualEmailConfiguration,
   type EmailPreview, type EmailTiming, type EmailVariant, type ManualEmailConfiguration,
-  type ManualEmailContext, type TimingUnit,
-  RESEARCH_SOURCES,
+  type ManualEmailContext, type TimingUnit, type InsightCategory,
 } from "../manual-email-model";
 import { getManualEmailContext, generateManualEmailPreview, sendManualEmailTest } from "../manual-email-api";
+import { emailMarkdownToHtml } from "./email-markdown";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
 const smallButton = "inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50";
@@ -55,6 +55,39 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
       {(["assisted", "prompt", "template"] as const).map(mode => <button key={mode} type="button" role="tab" aria-selected={variant.mode === mode} data-testid={`button-mode-${mode}`} disabled={readOnly} onClick={() => set({ mode })} className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize ${variant.mode === mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{mode}</button>)}
     </div>
 
+    {variant.mode !== "template" && <>
+      <section>
+        <label className={labelClass}>Length</label>
+        <p className="mb-2 text-xs leading-5 text-muted-foreground">Visible body characters only; subject and signature are excluded.</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {([
+            ["short", "Short", "350–550 chars", "Punchy and highly skimmable"],
+            ["medium", "Medium", "600–900 chars", "Conversational, with room to develop"],
+            ["long", "Long", "950–1,300 chars", "Insight-rich with meaningful proof"],
+          ] as const).map(([id, title, range, description]) => <button key={id} type="button" data-testid={`button-email-length-${id}`} aria-pressed={variant.length === id} disabled={readOnly} onClick={() => set({ length: id })} className={`rounded-lg border p-3 text-left transition-colors ${variant.length === id ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:bg-muted"}`}>
+            <span className="block text-xs font-semibold">{title}</span><span className="mt-1 block text-[11px]">{range}</span><span className="mt-1 block text-[10px] leading-4 opacity-80">{description}</span>
+          </button>)}
+        </div>
+      </section>
+      <section>
+        <label className={labelClass} htmlFor={`insight-category-${variant.id}`}>Insight category</label>
+        <select id={`insight-category-${variant.id}`} data-testid="select-insight-category" aria-label="Insight category" className={fieldClass} value={variant.insightCategory ?? "personal"} disabled={readOnly} onChange={e => set({ insightCategory: e.target.value as InsightCategory })}>
+          <option value="personal">Personal</option><option value="company">Company</option><option value="industry">Industry</option><option value="role">Role</option><option value="colleagues">Colleagues</option><option value="counterparts">Counterparts</option>
+        </select>
+        <p className="mt-1.5 text-xs leading-5 text-muted-foreground">For each contact, evidence is resolved from available contact and company intelligence in this category. If no usable evidence is found, generation returns an error instead of inventing a signal.</p>
+      </section>
+      <details className="rounded-md border border-border/70 bg-muted/20">
+        <summary className="cursor-pointer px-3 py-2.5 text-xs font-semibold">Five-layer email anatomy</summary>
+        <ol className="space-y-2 border-t border-border/70 px-4 py-3 text-xs leading-5 text-muted-foreground">
+          <li><strong className="text-foreground">Hook</strong> — frame the contact-specific signal and establish posture.</li>
+          <li><strong className="text-foreground">Bridge</strong> — interpret why the signal matters, then connect it to a buyer implication.</li>
+          <li><strong className="text-foreground">Value</strong> — introduce the relevant outcome as the natural resolution.</li>
+          <li><strong className="text-foreground">Proof</strong> — support the claim with verified evidence or grounded context.</li>
+          <li><strong className="text-foreground">CTA</strong> — make a specific, low-friction ask connected to the message.</li>
+        </ol>
+      </details>
+    </>}
+
     {variant.mode === "assisted" && <>
       <section>
         <label className={labelClass}>Choose the email type</label>
@@ -63,25 +96,23 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
         </div>
       </section>
       <section>
-        <label className={labelClass}>Personalize with AI research</label>
-        <div className="flex flex-wrap gap-2">{RESEARCH_SOURCES.map(source => {
-          const active = variant.researchSources.includes(source.id);
-          return <button key={source.id} type="button" aria-pressed={active} data-testid={`button-research-${source.id}`} disabled={readOnly} onClick={() => set({ researchSources: active ? variant.researchSources.filter(id => id !== source.id) : [...variant.researchSources, source.id] })} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs ${active ? "border-primary/50 bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:bg-muted"}`}>{active && <Check size={12} />}{source.name}</button>;
-        })}</div>
-      </section>
-      <section>
         <label className={labelClass}>Set your tone</label>
-        <div className="flex flex-wrap gap-2">{["Default", "Direct", "Formal", "Casual", "Creative", "Custom"].map(tone => <button key={tone} type="button" data-testid={`button-tone-${tone.toLowerCase()}`} disabled={readOnly} onClick={() => set({ tone })} className={`rounded-full border px-3 py-1.5 text-xs ${variant.tone === tone ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>{tone}</button>)}</div>
-        <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={variant.inheritHqTone} disabled={readOnly || !context?.voice} onChange={e => set({ inheritHqTone: e.target.checked })} />Inherit Whyhello HQ voice{!context?.voice && <span>(not available)</span>}</label>
+        <div className="flex flex-wrap gap-2">{["Professional", "Friendly", "Direct", "Warm", "Authoritative", "Custom"].map(tone => <button key={tone} type="button" data-testid={`button-tone-${tone.toLowerCase()}`} disabled={readOnly} onClick={() => set({ tone })} className={`rounded-full border px-3 py-1.5 text-xs ${variant.tone === tone ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>{tone}</button>)}</div>
+        <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={variant.inheritHqTone} disabled={readOnly || !context?.voice} onChange={e => set({ inheritHqTone: e.target.checked })} />HQ voice{!context?.voice && <span>(not available)</span>}</label>
         {variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}
-        {variant.inheritHqTone && context?.voice && <p className="mt-2 rounded-md bg-muted/70 p-2 text-xs text-muted-foreground"><span className="font-semibold text-foreground">HQ voice:</span> {context.voice}</p>}
       </section>
     </>}
 
     {variant.mode === "prompt" && <section>
       <label className={labelClass}>Instructions for this email</label>
       <textarea data-testid="input-email-prompt" aria-label="Generation instructions" className={fieldClass + " min-h-36 resize-y"} value={variant.prompt} disabled={readOnly} onChange={e => set({ prompt: e.target.value })} placeholder="Tell Whyhello what this email should achieve, and how it should sound." />
-      <p className="mt-1 text-xs text-muted-foreground">Available context and research selections remain part of generation.</p>
+      <p className="mt-1 text-xs text-muted-foreground">The selected insight category and available workspace context are resolved for the preview contact.</p>
+      <section className="mt-4">
+        <label className={labelClass}>Set your tone</label>
+        <div className="flex flex-wrap gap-2">{["Professional", "Friendly", "Direct", "Warm", "Authoritative", "Custom"].map(tone => <button key={tone} type="button" data-testid={`button-tone-${tone.toLowerCase()}`} disabled={readOnly} onClick={() => set({ tone })} className={`rounded-full border px-3 py-1.5 text-xs ${variant.tone === tone ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>{tone}</button>)}</div>
+        <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={variant.inheritHqTone} disabled={readOnly || !context?.voice} onChange={e => set({ inheritHqTone: e.target.checked })} />HQ voice{!context?.voice && <span>(not available)</span>}</label>
+        {variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}
+      </section>
     </section>}
 
     {variant.mode === "template" && <section className="space-y-3">
@@ -125,11 +156,7 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
       {!variant.guidelines.length && <p className="text-xs text-muted-foreground">No extra constraints. Add guidelines to keep generated emails on brief.</p>}
     </section>
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-      <label className="flex items-center gap-2 text-xs font-medium">Generation
-        <select aria-label="Generation mode" className="rounded-md border border-input bg-background px-2 py-1.5" value={variant.generationMode} disabled={readOnly} onChange={e => set({ generationMode: e.target.value })}>
-          {["Standard", "Concise", "Detailed", "Experimental"].map(item => <option key={item}>{item}</option>)}
-        </select>
-      </label>
+      {variant.mode === "template" && <span className="text-xs text-muted-foreground">Templates keep their authored subject and body.</span>}
       {validation && !variant.preview && <span className="text-xs text-muted-foreground">Complete required fields to generate.</span>}
       <button type="button" data-testid="button-generate-preview" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50" disabled={readOnly || busy || !(context && (context.aiAvailable || variant.mode === "template"))} onClick={onPreview}>
         <Sparkles size={14} />{busy ? "Generating…" : variant.preview ? "Generate new preview" : "Generate preview"}
@@ -239,8 +266,13 @@ function PreviewPanel({ playbookId, variant, contactOptions, selectedContactId, 
         {preview.contactId !== selectedContactId && <p role="status" className="mb-3 text-xs text-muted-foreground">This preview is for a different contact. Generate again to use the selected contact.</p>}
         <p className="text-xs text-muted-foreground">Subject</p><p className="mb-4 mt-1 text-sm font-semibold">{preview.subject}</p>
         {preview.personalization && <div className="mb-4 rounded-md bg-primary/5 p-3"><p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-primary">Personalization</p><p className="text-xs leading-5">{preview.personalization}</p></div>}
-        <div className="whitespace-pre-wrap text-sm leading-6">{preview.body}</div>
-        {preview.cta && <p className="mt-4 rounded-md border-l-2 border-primary pl-3 text-sm font-medium">{preview.cta}</p>}
+        <div className="text-sm leading-6 [&_p:last-child]:mb-0" dangerouslySetInnerHTML={{ __html: emailMarkdownToHtml(preview.body) }} />
+        {preview.anatomy ? <details className="mt-4 rounded-md border border-border/70">
+          <summary className="cursor-pointer px-3 py-2 text-xs font-semibold">Preview anatomy</summary>
+          <div className="space-y-3 border-t border-border/70 p-3">
+            {([["hook", "Hook"], ["bridge", "Bridge"], ["value", "Value"], ["proof", "Proof"], ["cta", "CTA"]] as const).map(([key, label]) => <section key={key}><h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</h4><div className="text-xs leading-5" dangerouslySetInnerHTML={{ __html: emailMarkdownToHtml(preview.anatomy?.[key] ?? "") }} /></section>)}
+          </div>
+        </details> : <p className="mt-3 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">This saved preview has no anatomy data. Regenerate it to see the five-layer breakdown.</p>}
         <button type="button" data-testid="button-insights-used" className="mt-5 flex w-full items-center justify-between border-t border-border pt-3 text-left text-xs font-semibold" onClick={() => setShowInsights(!showInsights)}>Insights used {preview.insightsUsed.length ? `(${preview.insightsUsed.length})` : "(none listed)"}{showInsights ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</button>
         {showInsights && <div className="mt-2 space-y-2">{preview.insightsUsed.map(insight => <article key={insight.id} className="rounded-md bg-muted/60 p-2.5">
           <p className="text-xs font-semibold">{insight.title}</p><p className="mt-1 text-xs text-muted-foreground">{insight.category} · {insight.description}</p>
@@ -316,6 +348,9 @@ export function ManualEmailStep({ playbookId, stepId, stepNumber, config: rawCon
   const addVariant = () => {
     if (config.variants.length >= 6) return;
     const next = createEmailVariant(`Test ${String.fromCharCode(65 + config.variants.length)}`);
+    next.length = "medium";
+    next.insightCategory = "personal";
+    next.tone = "Professional";
     const newEach = Math.floor(100 / (config.variants.length + 1));
     const allocations = config.variants.map((item, index) => ({ ...item, allocation: index === config.variants.length - 1 ? 100 - newEach * config.variants.length : newEach }));
     next.allocation = newEach;

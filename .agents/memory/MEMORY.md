@@ -17,3 +17,4 @@
 - [Generated API declarations](generated-api-declarations.md) — missing generated exports can mean stale declarations when an unrelated library blocks the full build.
 - [LinkedIn connection-note limit](linkedin-connection-limit.md) — the user specified a 200-character connection-request note budget as the product assumption.
 - [Spoken phone messaging](spoken-phone-messaging.md) — phone scripts need a separate conversational library; retain natural pronouns rather than written-outreach fragments.
+- [Reusable email configuration](reusable-email-configuration.md) — Manual Email mirrors Single Message and the Messaging Quran; reusable variants choose an insight category, not individual insights.

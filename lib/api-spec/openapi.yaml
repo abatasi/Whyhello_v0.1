@@ -853,6 +853,15 @@ components:
           type: object
           description: Versioned step variant validated by the editor and server; preserves fields across modes.
           additionalProperties: true
+          properties:
+            length:
+              type: string
+              enum: [short, medium, long]
+              description: Single Message visible-body length; legacy variants derive this from generationMode.
+            insightCategory:
+              type: string
+              enum: [personal, company, industry, role, colleagues, counterparts]
+              description: One per-contact research category; never individual insight IDs.
         contactId: { type: integer, minimum: 1 }
         regeneration: { type: string, maxLength: 1000 }
     ManualEmailTestInput:
@@ -880,9 +889,20 @@ components:
         personalization: { type: string }
         cta: { type: string }
         contactId: { type: integer }
+        anatomy:
+          $ref: "#/components/schemas/ManualEmailAnatomy"
         insightsUsed:
           type: array
           items: { $ref: "#/components/schemas/ManualEmailEvidence" }
+    ManualEmailAnatomy:
+      type: object
+      required: [hook, bridge, value, proof, cta]
+      properties:
+        hook: { type: string }
+        bridge: { type: string }
+        value: { type: string }
+        proof: { type: string }
+        cta: { type: string }
     ManualEmailContact:
       type: object
       required: [id, name, company, enrolled]

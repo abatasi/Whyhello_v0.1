@@ -5,6 +5,7 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+import type { ManualEmailAnatomy } from "./manualEmailAnatomy";
 import type { ManualEmailEvidence } from "./manualEmailEvidence";
 
 export interface ManualEmailPreview {
@@ -13,5 +14,6 @@ export interface ManualEmailPreview {
   personalization: string;
   cta: string;
   contactId: number;
+  anatomy?: ManualEmailAnatomy;
   insightsUsed: ManualEmailEvidence[];
 }
