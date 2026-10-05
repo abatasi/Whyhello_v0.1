@@ -1159,9 +1159,16 @@ export function Navbar() {
       {/* ── Mobile bar (< md) ── */}
       <div className="md:hidden flex items-center px-4 h-14 gap-2">
         {/* W logo mark */}
-        <div className="overflow-hidden flex-shrink-0" style={{ width: 36, height: 24 }}>
-          <img src={darkTheme ? darkLogoUrl : lightLogoUrl} alt="Whyhello" className="h-6 w-auto max-w-none" />
-        </div>
+        <Link
+          href="/"
+          aria-label="Go to Home"
+          onClick={() => setMobileOpen(false)}
+          className="-ml-1 flex size-11 flex-shrink-0 cursor-pointer items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div className="overflow-hidden" style={{ width: 36, height: 24 }}>
+            <img src={darkTheme ? darkLogoUrl : lightLogoUrl} alt="Whyhello" className="h-6 w-auto max-w-none" />
+          </div>
+        </Link>
 
         <div className="flex-1" />
 

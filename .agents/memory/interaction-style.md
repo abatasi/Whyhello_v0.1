@@ -14,3 +14,9 @@ Clickable elements should show the standard hand cursor on hover.
 **Why:** The user requested consistent hand cursors for clickable elements.
 
 **How to apply:** Use the hand cursor for enabled actions; keep text-entry, disabled, dragging, and resizing cursor feedback appropriate to those interactions.
+
+The top-left logo on mobile must be tappable and navigate to Home.
+
+**Why:** The user explicitly requested this mobile navigation behavior.
+
+**How to apply:** Preserve the Home link when changing the mobile header; use an accessible touch target and close any open navigation drawer on activation.
