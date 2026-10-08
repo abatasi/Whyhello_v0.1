@@ -2633,7 +2633,10 @@ function InsightDetailView({
       </div>
 
       {/* ── Lite browser — grows to fill all remaining vertical space ── */}
-      <div className="flex-shrink-0 h-[min(42vh,560px)] min-h-[320px] flex flex-col mt-3 pr-1 rounded-xl border border-border/60 bg-card dark:bg-background shadow-sm overflow-hidden">
+      <div className={cn(
+        "flex flex-col mt-3 pr-1 rounded-xl border border-border/60 bg-card dark:bg-background shadow-sm overflow-hidden",
+        browserExpanded ? "flex-1 min-h-[320px] md:min-h-0" : "flex-shrink-0 h-[min(42vh,560px)] min-h-[320px]",
+      )}>
         {/* Browser chrome */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40 bg-secondary/30 flex-shrink-0">
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -2654,6 +2657,8 @@ function InsightDetailView({
           </button>
           <button
             title={browserExpanded ? "Collapse browser" : "Expand browser"}
+            aria-label={browserExpanded ? "Collapse browser" : "Expand browser"}
+            aria-expanded={browserExpanded}
             onClick={() => setBrowserExpanded(e => !e)}
             className="h-6 w-6 flex items-center justify-center rounded border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors flex-shrink-0"
           >
