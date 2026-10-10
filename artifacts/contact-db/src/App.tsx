@@ -25,6 +25,7 @@ import AuthPhotoRotation from "@/components/AuthPhotoRotation";
 import Search from "@/pages/Search";
 import Home from "@/pages/Home";
 import Landing from "@/pages/Landing";
+import ThinkingPreview from "@/pages/ThinkingPreview";
 import ContactProfile from "@/pages/ContactProfile";
 import CompanyProfile from "@/pages/CompanyProfile";
 import PublicContactProfile from "@/pages/PublicContactProfile";
@@ -264,6 +265,7 @@ function Router() {
       {/* REQUIRED — copy "/sign-in/*?" and "/sign-up/*?" verbatim */}
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/thinking-preview" component={ThinkingPreview} />
       <Route path="/" component={HomeRoute} />
       <Route path="/directory/people" component={() => <ProtectedRoute component={() => <Search directory="contacts" />} />} />
       <Route path="/directory/companies" component={() => <ProtectedRoute component={() => <Search directory="companies" />} />} />
