@@ -9,7 +9,8 @@ import {
   MessageSquare, Layers3, House, Sun, Moon, Monitor
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
-import { darkLogoUrl, lightLogoUrl, staticMarkLogoUrl } from "@/components/BrandLogo";
+import { darkLogoUrl, lightLogoUrl } from "@/components/BrandLogo";
+import { SidebarBrandLogo } from "./SidebarBrandLogo";
 import { PlaybookIcon } from "@/components/PlaybookIcon";
 import { cn, getInitials } from "@/lib/utils";
 import { OverallScorePill } from "@/components/OverallScorePill";
@@ -963,19 +964,7 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
     >
       <div className="master-sidebar-inner">
         <div className="master-brand-row">
-          <div className="sidebar-logo-menu relative flex shrink-0 items-center">
-            <div
-              className={cn(
-                "sidebar-logo-trigger",
-                wartime ? "bg-transparent" : "bg-background",
-              )}
-              aria-label="Whyhello"
-            >
-              <div className={cn("sidebar-logo-crop", expanded && "sidebar-logo-crop-expanded")}>
-                <img src={staticMarkLogoUrl} alt="Whyhello" className="sidebar-static-mark" />
-              </div>
-            </div>
-          </div>
+          <SidebarBrandLogo expanded={expanded} darkTheme={darkTheme} wartime={wartime} />
         </div>
 
         <nav className="master-route-nav" aria-label="Primary">

@@ -14,3 +14,9 @@ Use the breathing-pulse mark with all segments simultaneously at full opacity an
 **Why:** The user approved the animation and explicitly chose its richest, all-colors-at-maximum appearance for the sidebar's fixed logo.
 
 **How to apply:** Preserve this static-versus-animated distinction in future branding changes. A random frame of the staggered animation has dimmed segments and is not the approved fixed appearance.
+
+On master-sidebar expansion, pair the current peak-color W with the original Whyhello text graphic as one continuous logo. Keep the collapsed rail and W size unchanged.
+
+**Why:** The user asked for the existing text graphic beside the W when hovering to expand, not a typeset replacement or a return to the older W.
+
+**How to apply:** Use transparent, theme-appropriate wordmark artwork, aligned beside the mark with a small gap. Reveal it with the sidebar's expansion, including keyboard-focus expansion.

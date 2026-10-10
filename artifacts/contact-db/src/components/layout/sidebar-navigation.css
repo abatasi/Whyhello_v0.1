@@ -109,6 +109,34 @@
   object-fit: contain;
 }
 
+/* Reveal the original wordmark beside the peak-color W, keeping the rail fixed. */
+.sidebar-wordmark {
+  display: flex;
+  align-items: center;
+  flex: none;
+  width: 0;
+  height: 26px;
+  margin-left: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: width 180ms ease, margin-left 180ms ease, opacity 140ms ease;
+}
+
+.sidebar-wordmark img {
+  display: block;
+  width: auto;
+  height: 21px;
+  max-width: none;
+  flex: none;
+}
+
+.master-sidebar.is-expanded .sidebar-wordmark {
+  width: 90px;
+  margin-left: 6px;
+  opacity: 1;
+}
+
 .master-route-nav {
   display: flex;
   flex-direction: column;
