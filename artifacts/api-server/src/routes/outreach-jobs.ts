@@ -18,7 +18,7 @@ import {
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { loadRelationshipInsights, type RelationshipKind, type RelationshipSourceContact } from "../lib/relationship-insights.js";
-import { countEmailBodyCharacters, emailLengthInstruction, getEmailLength } from "../lib/email-length.js";
+import { emailLengthInstruction } from "../lib/email-length.js";
 import { resolveOutputVoice, VoicePersonaSelectionError } from "../lib/voice-personas.js";
 
 export const contactJobsRouter: IRouter = Router({ mergeParams: true });
@@ -793,7 +793,6 @@ ABSOLUTE PROHIBITIONS
   • Never add section labels (HOOK:, BRIDGE:, etc.) to the email body
   • Never fabricate statistics or claim specific results unless drawn from the seller context above`;
 
-  const lengthSpec = getEmailLength(params.length);
   const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
     { role: "system", content: systemPrompt },
     { role: "user", content: `Write the outreach email to ${contact.firstName} ${contact.lastName}.` },
@@ -807,14 +806,14 @@ ABSOLUTE PROHIBITIONS
     });
     result = stripPersonalSignoff(completion.choices[0]?.message?.content ?? "");
     const { subject, body } = parseEmailResult(result);
-    const bodyLength = countEmailBodyCharacters(body);
-    if (subject && bodyLength >= lengthSpec.min && bodyLength <= lengthSpec.max) break;
+    // Only incomplete responses need a retry; character targets never reject a complete email.
+    if (subject.trim() && body.trim()) break;
     if (attempt === 2) {
-      throw new Error(`Email body did not meet the ${lengthSpec.min}–${lengthSpec.max} character range after revision`);
+      throw new Error("Email generation returned an incomplete subject or body");
     }
     messages.push(
       { role: "assistant", content: result },
-      { role: "user", content: `Revise this email, preserving the factual evidence, five-layer structure, links, subject, and verbatim [STRUCTURE_JSON] extracts. The current visible body is ${bodyLength} characters; it must be ${lengthSpec.min}–${lengthSpec.max}, ideally ${lengthSpec.target}. Count only rendered email body copy, excluding the subject, Markdown formatting, and hidden link URLs. Return the entire corrected email and updated structure block.` },
+      { role: "user", content: "Return a complete email with a nonempty subject and body, preserving the factual evidence, Hook → Bridge → Value → Proof → CTA, links and verbatim [STRUCTURE_JSON] extracts. Length is advisory: prioritize complete anatomy and supported facts, not filling a character quota. Return the entire corrected email and updated structure block." },
     );
   }
   // Store enriched source keys: "category-id|Title|mediaType|score"

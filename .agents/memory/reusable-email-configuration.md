@@ -3,6 +3,12 @@ name: Reusable email configuration
 description: User-defined relationship between Playbook Manual Email and the Single Message composer.
 ---
 
+Email length is an advisory depth preference, never a hard character-count acceptance gate.
+
+**Why:** The user reported a rejected long Playbook preview and explicitly said generation should follow Hook → Bridge → Value → Proof → CTA rather than fail on character length.
+
+**How to apply:** Preserve all five layers and factual safeguards. Do not reject or make extra AI calls solely to fit email character ranges. Keep real channel limits, such as the 200-character LinkedIn connection-note cap, separate.
+
 Keep core Playbook message controls; replace advanced context-source and guideline editors with a single user-written Additional context field.
 
 **Why:** The user explicitly chose to keep core settings while asking for context such as meeting a recipient cohort at a tradeshow to inform messaging.

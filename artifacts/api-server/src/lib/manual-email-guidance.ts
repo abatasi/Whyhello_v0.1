@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { PLAYBOOK_ADDITIONAL_CONTEXT_GUIDANCE } from "./playbook-message-context.js";
-import { countEmailBodyCharacters, emailLengthInstruction, getEmailLength, type EmailLength } from "./email-length.js";
+import { emailLengthInstruction, type EmailLength } from "./email-length.js";
 
 export const EMAIL_INSIGHT_CATEGORIES = ["personal", "company", "industry", "role", "colleagues", "counterparts"] as const;
 export type EmailInsightCategory = typeof EMAIL_INSIGHT_CATEGORIES[number];
@@ -30,20 +30,6 @@ export function resolveEmailShape(variant: {
 
 export function emailBodyFromAnatomy(anatomy: z.infer<typeof emailAnatomySchema>, postscript = ""): string {
   return [anatomy.hook, anatomy.bridge, anatomy.value, anatomy.proof, anatomy.cta, postscript.trim()].filter(Boolean).join("\n\n");
-}
-
-/** Give the model measured per-layer targets, not just an overall count it must guess. */
-export function emailLengthRevision(length: EmailLength, anatomy: z.infer<typeof emailAnatomySchema>, postscript = ""): string {
-  const spec = getEmailLength(length);
-  const budget = Math.max(250, spec.target - countEmailBodyCharacters(postscript) - 5);
-  const weights = { hook: 0.2, bridge: 0.16, value: 0.3, proof: 0.22, cta: 0.12 } as const;
-  const layers = Object.entries(weights).map(([key, weight]) =>
-    `${key}: currently ${countEmailBodyCharacters(anatomy[key as keyof typeof anatomy])} visible characters; aim for ${Math.round(budget * weight)}`);
-  return `Revise the same draft to ${spec.min}–${spec.max} visible body characters, ideally ${spec.target}; currently ${countEmailBodyCharacters(emailBodyFromAnatomy(anatomy, postscript))}.
-Aim for ${length === "short" ? "about 60–70 words total: hook 10, bridge 9, value 20, proof 13, CTA 8, with a brief source P.S." : length === "medium" ? "about 105–125 words total" : "about 165–195 words total"}. Word budgets are a practical editing aid; the visible-character range remains authoritative.
-Use these measured paragraph targets to substantially rewrite, not just remove a few words:
-${layers.join("\n")}
-Keep one brief concrete CTA, usually under ${Math.round(budget * weights.cta)} characters. Remove redundant explanations rather than trimming only punctuation. Keep all five anatomy layers, supported facts, the chosen insight category and required source link. Never invent proof or fill space. Return the same complete JSON schema.`;
 }
 
 const POSTURE: Record<EmailInsightCategory, string> = {

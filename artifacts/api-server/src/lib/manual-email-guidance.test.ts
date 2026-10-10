@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, emailLengthRevision, manualEmailGuidance, resolveEmailShape } from "./manual-email-guidance.js";
+import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, manualEmailGuidance, resolveEmailShape } from "./manual-email-guidance.js";
+import { readFileSync } from "node:fs";
 import { countEmailBodyCharacters } from "./email-length.js";
 
 test("explicit length and category override legacy research controls", () => {
@@ -42,13 +43,38 @@ test("visible length excludes Markdown syntax and hidden URL characters", () => 
   assert.equal(countEmailBodyCharacters("**Value**\n\nA [useful finding](https://example.com/a-very-long-url)."), "Value A useful finding.".length);
 });
 
-test("length revisions supply measured per-layer budgets including space for source P.S.", () => {
-  const anatomy = { hook: "H".repeat(100), bridge: "B".repeat(100), value: "V".repeat(150), proof: "P".repeat(120), cta: "C".repeat(110) };
-  const instruction = emailLengthRevision("short", anatomy, "P.S. ".repeat(10));
-  assert.match(instruction, /cta: currently 110 visible characters; aim for/);
-  assert.match(instruction, /Remove redundant explanations/);
-  assert.match(instruction, /350–550/);
-  assert.match(instruction, /chosen insight category and required source link/);
+test("every email length is advisory and prioritizes all five layers over quotas", () => {
+  for (const length of ["short", "medium", "long"] as const) {
+    const instruction = manualEmailGuidance("company", length, "inline");
+    assert.match(instruction, /Anatomy and supported facts take priority/);
+    assert.match(instruction, /not minimums or hard caps/);
+    assert.match(instruction, /Never invent proof or add filler/);
+    assert.match(instruction, /Never omit a layer/);
+  }
+});
+
+test("complete anatomy accepts bodies below or above old ranges but not missing layers", () => {
+  const minimal = { hook: "A supported hook.", bridge: "A buyer implication.", value: "A supplied outcome.", proof: "Grounded qualitative proof.", cta: "Compare notes?" };
+  assert.ok(countEmailBodyCharacters(emailBodyFromAnatomy(emailAnatomySchema.parse(minimal))) < 350);
+  const extended = { ...minimal, value: "A supplied outcome with grounded context. ".repeat(40) };
+  assert.ok(countEmailBodyCharacters(emailBodyFromAnatomy(emailAnatomySchema.parse(extended))) > 1300);
+  for (const layer of ["hook", "bridge", "value", "proof", "cta"]) {
+    assert.equal(emailAnatomySchema.safeParse({ ...minimal, [layer]: "" }).success, false);
+  }
+});
+
+test("email generation routes contain no character-count gates or length-only rewrites", () => {
+  for (const name of ["playbook-manual-email", "outreach-jobs"]) {
+    const route = readFileSync(new URL(`../routes/${name}.ts`, import.meta.url), "utf8");
+    assert.doesNotMatch(route, /countEmailBodyCharacters|emailLengthRevision|lengthValid|lengthSpec|Email length verification failed/);
+    if (name === "playbook-manual-email") {
+      assert.match(route, /anatomy: emailAnatomySchema/);
+      assert.match(route, /assertFilledEmail\(generated.subject, body\)/);
+      assert.match(route, /resolveEvidenceIds\(evidence, generated.insightIdsUsed\)/);
+    } else {
+      assert.match(route, /subject.trim\(\) && body.trim\(\)/);
+    }
+  }
 });
 
 test("link placement is explicit and avoids invented quotes, proof or callbacks", () => {

@@ -11,9 +11,8 @@ import { eq, and, ne, desc } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts.js";
 import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evidence.js";
-import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, emailLengthRevision, manualEmailGuidance, resolveEmailShape } from "../lib/manual-email-guidance.js";
+import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, manualEmailGuidance, resolveEmailShape } from "../lib/manual-email-guidance.js";
 import { playbookMessageContext } from "../lib/playbook-message-context.js";
-import { countEmailBodyCharacters, getEmailLength } from "../lib/email-length.js";
 import { selectTopPlaybookInsight } from "../lib/playbook-insight-selection.js";
 import { resolveActiveHqVoice, resolveOutputVoice, voicePersonaOptions, VoicePersonaSelectionError, type OutputVoiceSelection } from "../lib/voice-personas.js";
 
@@ -270,29 +269,9 @@ manualEmailRouter.post("/preview", async (req, res) => {
       personalization: z.string().max(4000), insightIdsUsed: z.array(z.string()).min(1),
       postscript: z.string().max(2000).default(""),
     });
-    let generated = outputSchema.parse(JSON.parse(raw));
-    const spec = getEmailLength(shape.length);
-    let body = emailBodyFromAnatomy(generated.anatomy, generated.postscript);
-    const lengthValid = () => {
-      const count = countEmailBodyCharacters(body);
-      return count >= spec.min && count <= spec.max;
-    };
-    // Match Single Message's bounded three-attempt policy, with measured layer targets.
-    for (let revision = 0; revision < 2 && !lengthValid(); revision++) {
-      messages.push(
-        { role: "assistant", content: JSON.stringify(generated) },
-        { role: "user", content: emailLengthRevision(shape.length, generated.anatomy, generated.postscript) },
-      );
-      const rewrite = await openai.chat.completions.create({
-        model: "gpt-5-mini", response_format: { type: "json_object" },
-        messages,
-      }, { timeout: 120000, maxRetries: 0 });
-      const revised = rewrite.choices[0]?.message?.content;
-      if (!revised) throw new Error("Generation returned no content.");
-      generated = outputSchema.parse(JSON.parse(revised));
-      body = emailBodyFromAnatomy(generated.anatomy, generated.postscript);
-    }
-    if (!lengthValid()) throw new Error(`Email length verification failed: the ${shape.length} draft did not reach ${spec.min}–${spec.max} visible characters after revision. Try generating again or choose another length. Your saved content has not been changed.`);
+    const generated = outputSchema.parse(JSON.parse(raw));
+    // Anatomy and factual grounding are required; length is an advisory depth preference.
+    const body = emailBodyFromAnatomy(generated.anatomy, generated.postscript);
     const insightsUsed = resolveEvidenceIds(evidence, generated.insightIdsUsed);
     assertFilledEmail(generated.subject, body);
     res.json({ subject: generated.subject, body, anatomy: generated.anatomy, cta: generated.anatomy.cta,
@@ -300,7 +279,6 @@ manualEmailRouter.post("/preview", async (req, res) => {
   } catch (error) {
     if (error instanceof VoicePersonaSelectionError) { res.status(400).json({ error: error.message }); return; }
     const message = error instanceof Error && error.message.startsWith("Template field") ? error.message
-      : error instanceof Error && error.message.startsWith("Email length verification failed:") ? error.message
       : error instanceof Error && /Generated (evidence citation|email contains)/.test(error.message)
       ? "The generated preview could not be verified. Generate again; your saved content has not been changed."
       : "Preview generation failed. Your saved content has not been changed.";

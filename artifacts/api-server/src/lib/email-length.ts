@@ -46,8 +46,8 @@ export function countEmailBodyCharacters(body: string): number {
 
 export function emailLengthInstruction(length: string | undefined): string {
   const spec = getEmailLength(length);
-  return `Email BODY COPY only (exclude the subject line and signature): target about ${spec.target} visible characters, acceptable range ${spec.min}–${spec.max} visible characters (${spec.words} words). The intended feel is ${spec.feel}.
+  return `Email BODY COPY only (exclude the subject line and signature): approximate target ${spec.target} visible characters, an advisory guide of ${spec.min}–${spec.max} visible characters (${spec.words} words). The intended feel is ${spec.feel}.
 Keep all five layers, in order, at every length. Approximate character allocations by layer: ${spec.components}.
-These layer allocations describe relative depth, not hard caps: the full-body range takes priority, especially where the component estimates do not add up to the overall target. ${spec.development}
-Do not write the same email with filler added or removed. Develop the hook, bridge, value, and proof differently for this length. Never invent proof to fill space; if proof is limited, use the available verified context and stay within the acceptable body range. Count rendered copy, not Markdown formatting or hidden URLs.`;
+Anatomy and supported facts take priority over all character targets. These figures guide relative depth; they are not minimums or hard caps. ${spec.development}
+Do not write the same email with filler added or removed. Develop the hook, bridge, value, and proof differently for this length. Never invent proof or add filler to reach a quota. If supported context is limited, a complete five-layer message outside the guide is preferable. Never omit a layer, refuse a complete draft or request a length-only rewrite because of character count.`;
 }
