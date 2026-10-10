@@ -3,6 +3,12 @@ name: Playbooks design direction
 description: User's intended visual and interaction direction for the Playbooks module
 ---
 
+Do not show separate Personalization snippets or rationale fields in Playbook message previews.
+
+**Why:** The user said the snippet is unnecessary and does not add to this view.
+
+**How to apply:** Keep preview attention on the actual deliverable. Preserve recipient-specific message content and saved generation metadata; this is a display change, not a change to personalization logic.
+
 Playbooks should be a dense, table-first operational interface for daily B2B sales work, not a decorative dashboard. Use compact but legible typography, thin dividers, and progressive disclosure through menus and contextual controls. Use the application's existing dark-mode primary color for buttons, toggles, and accents instead of the brief's original lime/yellow.
 
 **Why:** The user supplied a comprehensive Playbooks design brief emphasizing mature enterprise SaaS, information density, and practical table interactions, then requested replacing yellow with an existing dark-mode button/toggle color.

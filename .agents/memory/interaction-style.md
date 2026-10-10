@@ -15,6 +15,12 @@ Clickable elements should show the standard hand cursor on hover.
 
 **How to apply:** Use the hand cursor for enabled actions; keep text-entry, disabled, dragging, and resizing cursor feedback appropriate to those interactions.
 
+The expanded desktop master sidebar has a right-aligned search icon on the logo row. It opens a larger search panel in focus mode with the input focused.
+
+**Why:** The user explicitly asked for this shortcut and focused expansion.
+
+**How to apply:** Reuse the existing global search and results rather than introducing a separate search engine or route. Keep the compact top-bar search available after dismissing the focused panel.
+
 The top-left logo on mobile must be tappable and navigate to Home.
 
 **Why:** The user explicitly requested this mobile navigation behavior.

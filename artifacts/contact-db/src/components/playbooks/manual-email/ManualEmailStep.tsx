@@ -238,7 +238,6 @@ function PreviewPanel({ playbookId, variant, contactOptions, selectedContactId, 
         <div className="mb-4 flex items-center gap-2 border-b border-border/70 pb-3 text-xs text-muted-foreground"><Mail size={14} />{previewContact ? `To: ${previewContact.name}` : "Generated email preview"}</div>
         {preview.contactId !== selectedContactId && <p role="status" className="mb-3 text-xs text-muted-foreground">This preview is for a different contact. Generate again to use the selected contact.</p>}
         <p className="text-xs text-muted-foreground">Subject</p><p className="mb-4 mt-1 text-sm font-semibold">{preview.subject}</p>
-        {preview.personalization && <div className="mb-4 rounded-md bg-primary/5 p-3"><p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-primary">Personalization</p><p className="text-xs leading-5">{preview.personalization}</p></div>}
         <div className="text-sm leading-6 [&_p:last-child]:mb-0" dangerouslySetInnerHTML={{ __html: emailMarkdownToHtml(preview.body) }} />
         {preview.anatomy ? <details className="mt-4 rounded-md border border-border/70">
           <summary className="cursor-pointer px-3 py-2 text-xs font-semibold">Preview anatomy</summary>

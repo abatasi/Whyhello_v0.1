@@ -1,5 +1,19 @@
 import { darkWordmarkUrl, lightWordmarkUrl, staticMarkLogoUrl } from "@/components/BrandLogo";
 import { cn } from "@/lib/utils";
+import { Search } from "lucide-react";
+
+export function SidebarBrandRow({ expanded, darkTheme, wartime = false, onSearch }: {
+  expanded: boolean; darkTheme: boolean; wartime?: boolean; onSearch: () => void;
+}) {
+  return <div className="master-brand-row">
+    <SidebarBrandLogo expanded={expanded} darkTheme={darkTheme} wartime={wartime} />
+    {expanded && <button type="button" className="sidebar-search-trigger" onClick={onSearch}
+      aria-label="Open search in focus mode" aria-haspopup="dialog" aria-controls="global-search-focus-dialog"
+      title="Search" data-testid="button-sidebar-search">
+      <Search size={17} aria-hidden="true" />
+    </button>}
+  </div>;
+}
 
 export function SidebarBrandLogo({ expanded, darkTheme, wartime = false }: {
   expanded: boolean;

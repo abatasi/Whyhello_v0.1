@@ -14,6 +14,7 @@
 - [Interaction feedback](interaction-style.md) — stationary, subtle button hovers; hand cursors on enabled clickable elements
 - [Playbooks design direction](playbooks-design-direction.md) — dense operational tables, shared theme surfaces and accents; replace scratch creation without changing saved workflows.
 - [Clerk browser test claims](clerk-testing-claims.md) — use normal programmatic login; do not require unsupported custom claim overrides when standard identity resolves ownership.
+- [Screenshot interaction verification](screenshot-verification.md) — require an explicit completion log before counting asynchronous UI smoke checks as passed.
 - [Playbook step modes](playbook-step-modes.md) — Manual Email is a seller-reviewed task, not an automatic send; keep Actions and Rules distinct.
 - [Generated API declarations](generated-api-declarations.md) — missing generated exports can mean stale declarations when an unrelated library blocks the full build.
 - [LinkedIn connection-note limit](linkedin-connection-limit.md) — the user specified a 200-character connection-request note budget as the product assumption.

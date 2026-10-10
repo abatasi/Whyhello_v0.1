@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
 import { darkLogoUrl, lightLogoUrl } from "@/components/BrandLogo";
-import { SidebarBrandLogo } from "./SidebarBrandLogo";
+import { SidebarBrandRow } from "./SidebarBrandLogo";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PlaybookIcon } from "@/components/PlaybookIcon";
 import { cn, getInitials } from "@/lib/utils";
 import { OverallScorePill } from "@/components/OverallScorePill";
@@ -145,7 +146,9 @@ function RecentContactMenuItem({
   );
 }
 
-function GlobalSearch({ wartime }: { wartime: boolean }) {
+export function GlobalSearch({ wartime, focusMode = false, onCloseFocusMode }: {
+  wartime: boolean; focusMode?: boolean; onCloseFocusMode?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -154,6 +157,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
   const [recentCompanies, setRecentCompanies] = useState<RecentCompanyVisit[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const suppressFocusOpen = useRef(false);
   const [, navigate] = useLocation();
   const { data: topBuyers = [] } = useTopBuyers();
 
@@ -174,12 +178,16 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
   }, [query]);
 
   useEffect(() => {
+    if (focusMode) setOpen(true);
+  }, [focusMode]);
+
+  useEffect(() => {
     if (open) {
       inputRef.current?.focus();
       setRecentContacts(getRecentContactVisits());
       setRecentCompanies(getRecentCompanyVisits());
     }
-  }, [open]);
+  }, [open, focusMode]);
 
   useEffect(() => {
     function handleShortcut(e: KeyboardEvent) {
@@ -195,12 +203,12 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (!focusMode && containerRef.current && !containerRef.current.contains(e.target as Node)) {
         closeSearch();
       }
     }
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") closeSearch();
+      if (e.key === "Escape" && !focusMode) closeSearch();
     }
     if (open) {
       document.addEventListener("mousedown", handleClick);
@@ -210,7 +218,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
       document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleKey);
     };
-  }, [open]);
+  }, [open, focusMode, onCloseFocusMode]);
 
   const enabled = debouncedQuery.length >= 2;
 
@@ -252,6 +260,7 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
     setOpen(false);
     setQuery("");
     setDebouncedQuery("");
+    if (focusMode) onCloseFocusMode?.();
   }
 
   function navigateTo(path: string) {
@@ -266,13 +275,14 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
     closeSearch();
   }
 
-  return (
+  const searchContent = (
     <div
       ref={containerRef}
-      className="relative w-full origin-center transition-transform duration-200 hover:scale-[1.015] focus-within:scale-[1.015]"
+      className={focusMode ? "relative w-full" : "relative w-full origin-center transition-transform duration-200 hover:scale-[1.015] focus-within:scale-[1.015]"}
     >
       <div className={cn(
         "flex h-7 w-full items-center gap-2 rounded-[7px] border px-2.5 transition-colors",
+        focusMode && "h-12 rounded-lg px-3",
         wartime
           ? "border-[#DDB99E] bg-[#EDD4C6] text-[#5C2E22] dark:border-[#5a2c1d] dark:bg-[#3d1c12] dark:text-[#edd4c6]"
           : "border-border bg-secondary/50 focus-within:border-primary/50 focus-within:bg-background focus-within:ring-2 focus-within:ring-primary/20",
@@ -283,13 +293,16 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
           type="text"
           placeholder="Search contacts & companies"
           value={query}
-          onFocus={() => setOpen(true)}
-          onChange={(e) => setQuery(e.target.value)}
+          data-testid="global-search-input"
+          aria-label="Search contacts and companies"
+          onFocus={() => { if (!suppressFocusOpen.current) setOpen(true); }}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && query.trim()) openSearch(query);
           }}
           className={cn(
             "min-w-0 flex-1 cursor-pointer bg-transparent text-[11px] font-medium outline-none",
+            focusMode && "cursor-text text-base",
             wartime ? "placeholder:text-[#A0624A]/70 text-[#5C2E22] dark:placeholder:text-[#e8c9b8]/70 dark:text-[#edd4c6]" : "text-foreground placeholder:text-muted-foreground",
           )}
         />
@@ -311,12 +324,14 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
             ? "border-[#C99478]/60 bg-[#F4E2D8]/70 text-[#7C3E2A] dark:border-[#8a4933] dark:bg-[#5a2c1d] dark:text-[#E0BBA8]"
             : "border-border bg-background/70 text-muted-foreground",
         )}>
-          Ctrl K
+          {focusMode ? "Esc" : "Ctrl K"}
         </kbd>
       </div>
 
       {showDropdown && (
-        <div className="absolute left-1/2 top-full z-50 mt-2 w-full min-w-[22rem] -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+        <div className={focusMode
+          ? "mt-3 max-h-[55dvh] w-full overflow-y-auto rounded-xl border border-border bg-background"
+          : "absolute left-1/2 top-full z-50 mt-2 w-full min-w-[22rem] -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-card shadow-lg"}>
           {debouncedQuery.length < 2 ? (
             <div className="max-h-[24rem] overflow-y-auto py-2">
               <div className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -463,6 +478,27 @@ function GlobalSearch({ wartime }: { wartime: boolean }) {
       )}
     </div>
   );
+  if (!focusMode) return searchContent;
+  return <Dialog open onOpenChange={next => { if (!next) closeSearch(); }}>
+    <DialogContent id="global-search-focus-dialog" data-testid="global-search-focus-dialog"
+      overlayClassName="z-[200] bg-black/50 backdrop-blur-sm"
+      className="z-[210] max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-xl p-5"
+      onOpenAutoFocus={event => { event.preventDefault(); inputRef.current?.focus(); }}
+      onCloseAutoFocus={event => {
+        event.preventDefault();
+        requestAnimationFrame(() => {
+          suppressFocusOpen.current = true;
+          inputRef.current?.focus();
+          suppressFocusOpen.current = false;
+        });
+      }}>
+      <DialogHeader className="pr-6 text-left">
+        <DialogTitle>Search</DialogTitle>
+        <DialogDescription>Find contacts and companies, or return to a recent visit.</DialogDescription>
+      </DialogHeader>
+      {searchContent}
+    </DialogContent>
+  </Dialog>;
 }
 
 function NotificationsDropdown({ onClose }: { onClose: () => void }) {
@@ -912,7 +948,7 @@ const directoryItems = [
   { label: "Companies", href: "/directory/companies", icon: Building2 },
 ];
 
-function MasterSidebar({ wartime }: { wartime: boolean }) {
+function MasterSidebar({ wartime, onOpenSearch }: { wartime: boolean; onOpenSearch: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [directoryOpen, setDirectoryOpen] = useState(false);
   const [location] = useLocation();
@@ -963,9 +999,8 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
       }}
     >
       <div className="master-sidebar-inner">
-        <div className="master-brand-row">
-          <SidebarBrandLogo expanded={expanded} darkTheme={darkTheme} wartime={wartime} />
-        </div>
+        <SidebarBrandRow expanded={expanded} darkTheme={darkTheme} wartime={wartime}
+          onSearch={() => { setExpanded(false); setDirectoryOpen(false); onOpenSearch(); }} />
 
         <nav className="master-route-nav" aria-label="Primary">
           {navItems.map(({ label, href, icon: Icon }) => {
@@ -1092,6 +1127,7 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
 // ── Main Navbar ──────────────────────────────────────────────────────────────
 
 export function Navbar() {
+  const [searchFocusMode, setSearchFocusMode] = useState(false);
   const { user } = useUser();
   const { signOut } = useClerk();
   const [location] = useLocation();
@@ -1126,7 +1162,7 @@ export function Navbar() {
 
   return (
     <>
-      <MasterSidebar wartime={wartime} />
+      <MasterSidebar wartime={wartime} onOpenSearch={() => setSearchFocusMode(true)} />
       <header
         className={cn(
         "sticky top-0 z-40 w-full md:ml-[42px] md:w-[calc(100%-42px)] border-b transition-colors duration-300",
@@ -1138,7 +1174,7 @@ export function Navbar() {
       {/* ── Desktop bar (md+) — navigation left, utilities right ── */}
       <div className="hidden h-11 w-full grid-cols-[minmax(0,1fr)_minmax(360px,560px)_minmax(0,1fr)] items-center gap-[18px] px-[18px] pl-[18px] md:grid">
         <div />
-        <GlobalSearch wartime={wartime} />
+        <GlobalSearch wartime={wartime} focusMode={searchFocusMode} onCloseFocusMode={() => setSearchFocusMode(false)} />
         <div className="flex min-w-0 items-center justify-end gap-3">
           <CreditTracker wartime={wartime} />
           <HQPill wartime={wartime} />

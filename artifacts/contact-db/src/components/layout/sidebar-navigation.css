@@ -46,6 +46,29 @@
   margin-bottom: 17px;
 }
 
+.sidebar-search-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  margin-right: 5px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.sidebar-search-trigger:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
 .sidebar-logo-menu {
   position: relative;
   display: flex;
@@ -160,17 +183,20 @@
   transition: background 140ms ease, color 140ms ease;
 }
 
-.master-route:hover {
+.master-route:hover,
+.sidebar-search-trigger:hover {
   color: hsl(var(--foreground));
   background: hsl(var(--secondary) / 0.8);
 }
 
-.master-sidebar.is-wartime .master-route:hover {
+.master-sidebar.is-wartime .master-route:hover,
+.master-sidebar.is-wartime .sidebar-search-trigger:hover {
   color: #5c2e22;
   background: #edd4c6;
 }
 
-.dark .master-sidebar.is-wartime .master-route:hover {
+.dark .master-sidebar.is-wartime .master-route:hover,
+.dark .master-sidebar.is-wartime .sidebar-search-trigger:hover {
   color: #f4e2d8;
   background: #5a2c1d;
 }
