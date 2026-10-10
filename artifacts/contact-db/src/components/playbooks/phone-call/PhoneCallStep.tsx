@@ -17,6 +17,7 @@ import { getManualEmailContext } from "../manual-email-api";
 import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
 import { RESEARCH_SOURCES, timingSummary, type EmailTiming, type ManualEmailContext, type TimingUnit } from "../manual-email-model";
 import { TonePersonaPicker } from "../TonePersonaPicker";
+import { AdditionalMessageContext } from "../AdditionalMessageContext";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
 const smallButton = "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50";
@@ -73,7 +74,6 @@ function VariantFields({ variant, context, contextLoading, contextError, onUpdat
   onGenerate: () => void; busy: boolean; readOnly: boolean;
 }) {
   const set = (patch: Partial<CallVariant>) => onUpdate({ ...variant, ...patch });
-  const addGuideline = () => set({ guidelines: [...variant.guidelines, { id: crypto.randomUUID(), text: "" }] });
   return <div className="space-y-5">
     <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Call generation mode">
       {(["assisted", "prompt", "template"] as const).map(mode => <button key={mode} type="button" role="tab" aria-selected={variant.mode === mode} disabled={readOnly}
@@ -97,25 +97,8 @@ function VariantFields({ variant, context, contextLoading, contextError, onUpdat
     </>}
     {variant.mode === "prompt" && <section className="space-y-3"><div><label className={labelClass}>Instructions for this call</label><textarea aria-label="Generation instructions" className={fieldClass + " min-h-36 resize-y"} value={variant.prompt} disabled={readOnly} onChange={e => set({ prompt: e.target.value })} placeholder="What should this conversation accomplish, and how should it feel?" /><p className="mt-1 text-xs text-muted-foreground">Selected research and workspace context are also included.</p></div><div><label className={labelClass}>Set your tone</label><TonePersonaPicker tones={["Default", "Direct", "Formal", "Casual", "Creative", "Custom"]} tone={variant.tone} voicePersonaId={variant.voicePersonaId} inheritHqTone={variant.inheritHqTone} context={context} loading={contextLoading} error={contextError} disabled={readOnly} showHqVoice={false} showGenericDescription onTone={tone => set({ tone, voicePersonaId: null, inheritHqTone: false })} onPersona={voicePersonaId => set({ tone: "Default", voicePersonaId, inheritHqTone: false })} />{variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}</div></section>}
     {variant.mode === "template" && <ScriptFields title="Call template" script={variant.template} onChange={template => set({ template })} readOnly={readOnly} prefix="Template" />}
-    <details className="rounded-md border border-border/70">
-      <summary className="cursor-pointer px-3 py-2.5 text-xs font-semibold">Set your AI context <span className="ml-1 font-normal text-muted-foreground">Inspect enabled HQ sources</span></summary>
-      <div className="space-y-2 border-t border-border/70 p-3">{(context?.contextSources ?? []).map(source => {
-        const active = variant.contextSources.includes(source.id);
-        return <div key={source.id} className="rounded-md border border-border/70 p-2.5"><label className="flex cursor-pointer items-start gap-2 text-xs font-medium"><input type="checkbox" checked={active} disabled={readOnly} onChange={e => set({ contextSources: e.target.checked ? [...variant.contextSources, source.id] : variant.contextSources.filter(id => id !== source.id) })} />{source.name}</label>{active && <p className="ml-5 mt-1.5 whitespace-pre-wrap text-xs leading-5 text-muted-foreground">{source.content || "No source content is available."}</p>}</div>;
-      })}
-        {!context?.contextSources.length && <p className="text-xs text-muted-foreground">HQ context is currently unavailable.</p>}
-        <label className="block text-xs font-medium">Additional context<textarea aria-label="Additional AI context" className={fieldClass + " mt-1.5 min-h-16 resize-y"} value={variant.userContext} disabled={readOnly} onChange={e => set({ userContext: e.target.value, contextSources: e.target.value.trim() ? [...new Set([...variant.contextSources, "custom"])] : variant.contextSources.filter(id => id !== "custom") })} placeholder="Add information specific to this playbook step" /></label>
-      </div>
-    </details>
-    <section><div className="mb-2 flex items-center justify-between"><label className={labelClass + " mb-0"}>Set your guidelines</label><button type="button" className={smallButton} disabled={readOnly} onClick={addGuideline}><Plus size={13} />Add guideline</button></div>
-      {variant.guidelines.map((guideline, index) => <div className="mb-2 flex items-center gap-1.5" key={guideline.id}>
-        <textarea aria-label={`Guideline ${index + 1}`} className={fieldClass + " min-h-9 resize-y py-2"} value={guideline.text} disabled={readOnly} onChange={e => set({ guidelines: variant.guidelines.map(item => item.id === guideline.id ? { ...item, text: e.target.value } : item) })} placeholder="Write a generation constraint" />
-        <button type="button" aria-label={`Move guideline ${index + 1} up`} className={smallButton} disabled={readOnly || index === 0} onClick={() => { const items = [...variant.guidelines]; [items[index - 1], items[index]] = [items[index], items[index - 1]]; set({ guidelines: items }); }}><ArrowUp size={13} /></button>
-        <button type="button" aria-label={`Move guideline ${index + 1} down`} className={smallButton} disabled={readOnly || index === variant.guidelines.length - 1} onClick={() => { const items = [...variant.guidelines]; [items[index + 1], items[index]] = [items[index], items[index + 1]]; set({ guidelines: items }); }}><ArrowDown size={13} /></button>
-        <button type="button" aria-label={`Delete guideline ${index + 1}`} className={smallButton} disabled={readOnly} onClick={() => set({ guidelines: variant.guidelines.filter(item => item.id !== guideline.id) })}><Trash2 size={13} /></button>
-      </div>)}
-      {!variant.guidelines.length && <p className="text-xs text-muted-foreground">No extra constraints. Add guidelines to keep the conversation on brief.</p>}
-    </section>
+    <AdditionalMessageContext value={variant.userContext} disabled={readOnly || busy} template={variant.mode === "template"}
+      onChange={userContext => set({ userContext, preview: undefined })} />
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
       <label className="flex items-center gap-2 text-xs font-medium">Generation length<select aria-label="Generation length" className="rounded-md border border-input bg-background px-2 py-1.5" value={variant.generationMode} disabled={readOnly} onChange={e => set({ generationMode: e.target.value })}>{["Standard", "Concise", "Detailed", "Experimental"].map(item => <option key={item}>{item}</option>)}</select></label>
        <button type="button" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50" disabled={readOnly || busy || (variant.mode !== "template" && !context?.aiAvailable)} onClick={onGenerate}>{busy ? <ThinkingIndicator decorative className="h-3.5 w-5" /> : <Sparkles size={14} />}{busy ? "Generating…" : variant.preview ? "Generate new preview" : "Generate preview"}</button>

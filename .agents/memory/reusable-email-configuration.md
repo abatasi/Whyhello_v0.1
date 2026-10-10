@@ -3,6 +3,12 @@ name: Reusable email configuration
 description: User-defined relationship between Playbook Manual Email and the Single Message composer.
 ---
 
+Keep core Playbook message controls; replace advanced context-source and guideline editors with a single user-written Additional context field.
+
+**Why:** The user explicitly chose to keep core settings while asking for context such as meeting a recipient cohort at a tradeshow to inform messaging.
+
+**How to apply:** Persist context per variant and include it in AI generation whenever nonblank, independently of legacy custom-source selection. Weave only stated facts into existing anatomy; a meeting is not proof of interest or seller outcomes. Preserve saved settings and literal templates rather than rewriting them automatically.
+
 Manual Email configuration must mimic the parameters and approach already established for constructing a single message. Message anatomy takes its cues from the Messaging Quran. Since Playbooks genericize the message, users specify an insight-category focus rather than choosing seeded individual insights.
 
 **Why:** The user explicitly requested consistency with Single Message rather than a separate generic-email recipe, and category selection rather than recipient-specific insight selection.

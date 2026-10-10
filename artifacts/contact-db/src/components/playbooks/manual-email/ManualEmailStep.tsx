@@ -18,6 +18,7 @@ import { emailMarkdownToHtml } from "./email-markdown";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { TonePersonaPicker } from "../TonePersonaPicker";
 import { InsightCategorySelect } from "../InsightCategorySelect";
+import { AdditionalMessageContext } from "../AdditionalMessageContext";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
 const smallButton = "inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50";
@@ -127,6 +128,8 @@ function VariantFields({ variant, config, context, contextLoading, contextError,
       <textarea className={fieldClass + " min-h-32 resize-y"} aria-label="Template body" value={variant.templateBody || template?.body || ""} disabled={readOnly} onChange={e => set({ templateBody: e.target.value })} placeholder="Email body" />
     </section>}
 
+    <AdditionalMessageContext value={variant.userContext} disabled={readOnly || busy} template={variant.mode === "template"}
+      onChange={userContext => set({ userContext, preview: undefined })} />
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
       {variant.mode === "template" && <span className="text-xs text-muted-foreground">Templates keep their authored subject and body.</span>}
       {validation && !variant.preview && <span className="text-xs text-muted-foreground">Complete required fields to generate.</span>}

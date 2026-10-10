@@ -12,6 +12,7 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts.js";
 import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evidence.js";
 import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, emailLengthRevision, manualEmailGuidance, resolveEmailShape } from "../lib/manual-email-guidance.js";
+import { playbookMessageContext } from "../lib/playbook-message-context.js";
 import { countEmailBodyCharacters, getEmailLength } from "../lib/email-length.js";
 import { selectTopPlaybookInsight } from "../lib/playbook-insight-selection.js";
 import { resolveActiveHqVoice, resolveOutputVoice, voicePersonaOptions, VoicePersonaSelectionError, type OutputVoiceSelection } from "../lib/voice-personas.js";
@@ -244,10 +245,8 @@ manualEmailRouter.post("/preview", async (req, res) => {
     const quotes = (await db.select().from(insightQuotesTable).where(and(eq(insightQuotesTable.contactId, contactId), eq(insightQuotesTable.signalType, quoteCategory))))
       .filter(quote => evidence.some(item => Number(item.id.split(":").at(-1)) === quote.signalId))
       .map(quote => ({ quote: quote.quote, attribution: quote.attribution, attributionRole: quote.attributionRole, signalId: quote.signalId }));
-    const selectedContext = new Set<string>(v.contextSources);
-    const insideOut = hq.contextSources.filter(s => selectedContext.has(s.id) && s.content).map(s => ({ name: s.name, content: s.content }));
-    if (v.contextSources.includes("custom") && v.userContext.trim()) insideOut.push({ name: "User-defined context", content: v.userContext });
-    if (!insideOut.length) {
+    const { insideOut, additionalContext } = playbookMessageContext(hq.contextSources, v);
+    if (!insideOut.length && !additionalContext) {
       res.status(422).json({ error: "Select available seller HQ context or add additional context to ground the email's value and proof. Your saved content has not been changed." });
       return;
     }
@@ -258,7 +257,7 @@ manualEmailRouter.post("/preview", async (req, res) => {
           emailType: v.emailType, mode: v.mode, prompt: v.mode === "prompt" ? v.prompt : "",
           tone: hq.tone, hqVoice: hq.voice,
           guidelines: v.guidelines.map(g => g.text), length: shape.length, insightCategory: shape.insightCategory,
-          insideOut, evidence, quotes, regeneration,
+           insideOut, additionalContext, evidence, quotes, regeneration,
         }) },
       ] as { role: "system" | "user" | "assistant"; content: string }[];
     const result = await openai.chat.completions.create({

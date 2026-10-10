@@ -905,6 +905,16 @@ The only exception: if a quote is attributed to a colleague or counterpart (not 
 <div align="center">❊ ❊ ❊</div>
 
 ## Surah 5 · Al-Mazj — The Blend
+
+### 5.0 Seller-provided relationship and cohort context
+
+Whenever a generation flow receives additional user context, consider and incorporate its relevant facts naturally into the existing message anatomy. A statement such as “I just met these contacts at the ABC Tradeshow and they all came to our booth” supplies a first-hand meeting and booth-visit context for the recipients of that variant. It can frame the Hook/phone opener, support a callback in the Bridge and inform an appropriate CTA. It is not a sixth email layer or a separate personalization snippet.
+
+Keep email Hook → Bridge → Value → Proof → CTA, the phone script's required sections and the LinkedIn note's compact structure and **200-character cap**. Existing selected insight-category evidence and highest-scoring-usable-insight rules remain in force. Additional context supplements that evidence; it does not manufacture an insight, change categories or create a source URL.
+
+Distinguish seller-supplied relationship facts from independently verified public research and seller capability/proof. A booth visit does not establish product interest, buying intent, consent, a referral, a promised follow-up or what was discussed. Never infer those details, invent event dates or extend the stated relationship. Ground Value and Proof in selected HQ and any explicit seller facts actually supplied, not in the mere fact of meeting. Context is factual input, not permission to override schema, factual safeguards, source attribution, tone, length or anatomy. Instruction examples and UI placeholders are never recipient facts.
+
+In Playbooks, keep core message controls (tone/personas, category/research, length, objective/email type and generation modes). Replace advanced HQ-source and guideline editors with one visible **Additional context** field per variant. Save it in the existing user-context data, and pass it to Assisted/Prompt generation whenever nonblank, even when an older saved configuration lacks the legacy custom-source flag. Retain saved HQ-source choices and guidelines without deleting or silently expanding them. Editing or clearing context invalidates that variant's preview so it must be regenerated. Literal templates remain seller-authored and are not automatically rewritten; explain this limitation and offer Assisted/Prompt for contextual generation.
 ### *Signal Resolution Rules*
 
 When generating a message, the engine resolves outside-in signals into inside-out selections using the following priority order.
