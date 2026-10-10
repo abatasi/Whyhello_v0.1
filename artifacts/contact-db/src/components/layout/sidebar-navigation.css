@@ -79,6 +79,12 @@
   height: 22px;
 }
 
+/* Fill the existing trigger without widening the sidebar in either state. */
+.master-sidebar .sidebar-logo-crop {
+  width: 32px;
+  height: 26px;
+}
+
 .sidebar-logo-crop img {
   position: absolute;
   top: 3px;
