@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EMAIL_QUOTE_GUIDANCE } from "./email-quote-guidance.js";
 import { PLAYBOOK_ADDITIONAL_CONTEXT_GUIDANCE } from "./playbook-message-context.js";
 import { emailLengthInstruction, type EmailLength } from "./email-length.js";
 
@@ -33,7 +34,7 @@ export function emailBodyFromAnatomy(anatomy: z.infer<typeof emailAnatomySchema>
 }
 
 const POSTURE: Record<EmailInsightCategory, string> = {
-  personal: "Recognition + specific evidence + thoughtful reaction. Recognize what the recipient actually created or said; do not pretend they authored content they only shared or engaged with. If a verified quote is supplied for the chosen insight, use it verbatim, bold it, name the source/platform and a short topic, then add one brief specific reaction.",
+  personal: "Recognition + specific evidence + thoughtful reaction. Recognize what the recipient actually created or said; do not pretend they authored content they only shared or engaged with. If a verified quote is supplied for the chosen insight, introduce discovering the supported source and topic, use a short verbatim excerpt in bold double quotation marks, then add one brief specific reaction. Never open with unexplained quoted prose or append a detached platform/topic attribution.",
   company: "Discovery + useful substance + reason for sharing. Be an informed external observer; distinguish a public company event from the recipient's personal involvement. Treat operational implications as hypotheses, not insider knowledge.",
   industry: "Discovery + useful substance + reason for sharing. Distill a specific useful finding the recipient may not have seen and invite comparison. Never assert that a broad trend is their company's established problem.",
   role: "Discovery + useful substance + reason for sharing. Respect their lived expertise; use the finding to quantify or reframe a familiar trade-off, not lecture them or use role stereotypes as personalization.",
@@ -47,7 +48,8 @@ Return JSON only: subject, anatomy {hook,bridge,value,proof,cta}, personalizatio
 Choose ONE primary hook from the selected ${category} insight category. Never switch category to find an easier hook. List only evidence actually used.
 SIGNAL POSTURE: ${POSTURE[category]}
 
-HOOK: 1–2 human, low-ceremony sentences about the most specific supported signal. Personal: recognition + evidence + reaction; other categories: discovery + useful substance + reason for sharing. Never open with "I" as the first word or "I hope this email finds you well". No generic praise or bare headline.
+HOOK: 1–2 human, low-ceremony sentences about the most specific supported signal. Personal: recognition + evidence + reaction; other categories: discovery + useful substance + reason for sharing. Avoid generic "I" openers, but allow a specific quote-discovery preface such as "I recently came across your post". Never open with "I hope this email finds you well". No empty praise or bare headline.
+${EMAIL_QUOTE_GUIDANCE}
 BRIDGE: Interpret what is consequential about the signal, then translate it into a calibrated buyer implication. Keep this about the buyer, not seller self-reference. Connect outside-in signal → buyer priority/problem/opportunity → naturally set up VALUE. Do not jump straight from "I saw your news" to a sales pitch.
 VALUE: Use the selected seller HQ value wedge or most relevant messaging pillar as the natural resolution of the bridge. Name the actual seller company when available, lead with outcomes not features, and bold only the crux outcome phrase. Whyhello is the software, not the seller identity.
 PROOF: Use a verified product/customer economic benefit and optional relevant customer reference from selected HQ sources. Use full declarative sentences, not labels. For a quantified EB, retain supplied amount, unit and frequency; gain framing uses "gaining on average", pain uses "saving on average", only when supported. Bold the predicate including the supported economic claim. If no verified quantified proof is supplied, use a grounded qualitative statement from selected seller context; never invent customers, metrics, testimonials, averages, product names or attribution.

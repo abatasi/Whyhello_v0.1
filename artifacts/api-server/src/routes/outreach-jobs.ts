@@ -19,6 +19,7 @@ import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { loadRelationshipInsights, type RelationshipKind, type RelationshipSourceContact } from "../lib/relationship-insights.js";
 import { emailLengthInstruction } from "../lib/email-length.js";
+import { EMAIL_QUOTE_GUIDANCE } from "../lib/email-quote-guidance.js";
 import { resolveOutputVoice, VoicePersonaSelectionError } from "../lib/voice-personas.js";
 
 export const contactJobsRouter: IRouter = Router({ mergeParams: true });
@@ -395,7 +396,7 @@ async function runGeneration(jobId: number) {
         const relationshipLine = sourceContact
           ? `\n    Relationship: ${relationship.kind === "colleague" ? "colleague inside the contact's company" : "counterpart in a similar role at another company"}\n    Source person: ${sourceContact.name}${sourceContact.jobTitle ? ` — ${sourceContact.jobTitle}` : ""}${sourceContact.companyName ? ` at ${sourceContact.companyName}` : ""}`
           : "";
-        return `[${i + 1}] "${q.quote}"\n    — ${q.attribution}${roleLine}${sourceLine}${relationshipLine}${bridgeLine}`;
+        return `[${i + 1}]\n    Exact quote: ${JSON.stringify(q.quote)}\n    Named author: ${q.attribution}${roleLine}${sourceLine}${relationshipLine}${bridgeLine}`;
       }).join("\n\n")
     : null;
 
@@ -463,13 +464,13 @@ ATTRIBUTABLE QUOTES  (highest-priority HOOK material)
 ═══════════════════════════════════════════
 These are verbatim quotes extracted from post bodies. Each entry includes the exact text to quote, its attribution, and the source platform.
 
-CRITICAL: The "[quote]" in your HOOK must be copied character-for-character from the "quote" field in one of the entries below. Never use the insight title from SELECTED SIGNALS as the quote — the title is a label, not quotable text.
+CRITICAL: The quote in your HOOK must be a short contiguous excerpt copied character-for-character from the Exact quote field in one of the entries below. Never use the insight title from SELECTED SIGNALS as the quote — the title is a label, not quotable text. Do not dump the entire reporting paragraph.
 
-Recommended starters (always name the platform AND include a brief topic qualifier — never leave the opener as bare "your post on LinkedIn"):
-  "Came across your post on [Source] on [topic]: '[verbatim quote from entry below]' I appreciated [one-sentence specific reaction]."
-  "Came across your post on [Source] re: [topic]: '[verbatim quote from entry below]' That framing of [specific idea] stood out to me."
-  "Saw your [Source] post on [topic]: '[verbatim quote from entry below]' Really appreciated the way you put [specific tension] into words."
-  "Your [Source] piece on [topic] caught my eye: '[verbatim quote from entry below]' [one-sentence specific reaction]."
+Recommended starters (name the supported source and include a brief topic qualifier in the preface; never invent a platform):
+  I recently came across your [Source] post on [topic] where you said: **"[verbatim excerpt]"**. [One specific reaction.]
+  Loved this from your [Source] post on [topic]: **"[verbatim excerpt]"**. [One specific reaction.]
+  Saw your [Source] post on [topic]: **"[verbatim excerpt]"**. [One specific reaction.]
+  Your [Source] piece on [topic] caught my eye: **"[verbatim excerpt]"**. [One specific reaction.]
 
 The [topic] must be a concise 2–5 word summary derived from the insight title — not the full title verbatim, not a vague word like "this". Examples: "on founder-market fit", "re: platform team models", "on AI in the clinic", "re: carbon reduction timelines".
 
@@ -612,6 +613,7 @@ The underlying architecture of Layers 1–3 follows four stages:
 The bridge is the most important piece. Without it, the message becomes two disconnected statements:
 "I saw something about you" followed by "Here is what we sell." The bridge supplies the buyer implication.
 ${quotesBlock}
+${EMAIL_QUOTE_GUIDANCE}
 LAYER 1 — HOOK  (1–2 sentences)
   Purpose : Open with the single most specific signal. The hook must sound like something the sender
             would still send even if no pitch followed — genuine, human, low-ceremony.
@@ -633,7 +635,7 @@ LAYER 1 — HOOK  (1–2 sentences)
     ⛔ HARD STOP — QUOTE SOURCE RULE:
     If a personal insight is tagged ⚠ VERBATIM QUOTE AVAILABLE in SELECTED SIGNALS, a quote from that
     signal's post body is listed in the ATTRIBUTABLE QUOTES block immediately above. You MUST use that
-    exact text as the quoted passage — copied character-for-character, no rewording, no summarising.
+    a short contiguous excerpt from that text as the quoted passage — copied character-for-character, no rewording, no summarising. Introduce discovering the source first and wrap the excerpt in bold double quotation marks.
     The insight title (the short label line in SELECTED SIGNALS) is a filing label. It is NOT a quote
     and must NEVER appear inside quotation marks in the email. Using the title as a quote is a
     critical error that breaks the message.
@@ -644,17 +646,17 @@ LAYER 1 — HOOK  (1–2 sentences)
       "Your recent [post/interview] on [topic] caught my attention — particularly the way you framed [specific idea]."
       "I appreciated your comments on [topic], especially the distinction you made between [X] and [Y]."
       "You made an interesting point recently about [specific idea]. It stayed with me because [brief interpretation]."
-      "I came across your conversation with [interviewer/publication]. Your comment that '[short quotation]' was a sharp way of capturing [issue]."
+      I came across your conversation with [interviewer/publication]. Your comment that **"[short verbatim quotation]"** was a sharp way of capturing [issue].
       "Your post about [topic] stood out, especially the way you connected [X] with [Y] — that's a connection people often miss."
-    For attributable quotes — always cite the source platform AND include a brief topic qualifier.
+    For attributable quotes — identify the supported source/platform and a brief topic in the preface, never in a detached citation suffix.
       Never write "Came across your post on LinkedIn:" without a topic — always follow the platform with a topic phrase.
       After invoking the quote, the reaction must be ONE short sentence naming the specific takeaway.
       No "— that stayed with me" preamble. No restatement of what the quote said.
       Correct patterns:
-        "Came across your post on [Source] on [topic]: '[quote]' I really appreciated [key takeaway]."
-        "Came across your [Source] post re: [topic]: '[quote]' Really appreciated the way you put [specific tension] into words."
-        "Saw your [Source] note on [topic]: '[quote]' That framing of [specific idea] stood out to me."
-        "Your [Source] piece on [topic] caught my eye: '[quote]' I thought the emphasis on [specific point] was sharp."
+        Came across your [Source] post on [topic]: **"[short verbatim excerpt]"**. I really appreciated [key takeaway].
+        Loved this from your [Source] post on [topic]: **"[short verbatim excerpt]"**. [One specific reaction.]
+        Saw your [Source] note on [topic]: **"[short verbatim excerpt]"**. That framing of [specific idea] stood out to me.
+        Your [Source] piece on [topic] caught my eye: **"[short verbatim excerpt]"**. I thought the emphasis on [specific point] was sharp.
       Wrong:
         "Came across your post on LinkedIn: '[quote]'" (missing topic qualifier — never acceptable)
         "[quote] — that stayed with me. The way you highlighted X makes clear that Y." (too long, restates the quote)
@@ -789,7 +791,7 @@ STYLING RULES
 
 ABSOLUTE PROHIBITIONS
   • Never open with "I hope this email finds you well" or any variant
-  • Never open the body with "I" as the first word
+  • Avoid generic "I" openers, but allow a specific quote-discovery preface such as "I recently came across your post"
   • Never add section labels (HOOK:, BRIDGE:, etc.) to the email body
   • Never fabricate statistics or claim specific results unless drawn from the seller context above`;
 

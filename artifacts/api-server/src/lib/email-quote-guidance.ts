@@ -1,0 +1,13 @@
+/** Shared email quote presentation: data labels must never become buyer-facing citations. */
+export const EMAIL_QUOTE_GUIDANCE = `EMAIL QUOTE INTEGRATION:
+Never start a paragraph with an unexplained quote or dump quoted source prose as the opening. Before the quote, clearly say the sender came across the post, article, interview or other supported source, and briefly identify its topic in normal prose.
+For the recipient's own verified words, examples of framing are:
+  I recently came across your LinkedIn post about [supported topic] where you said: **"[verbatim excerpt]"**. [One specific, thoughtful reaction.]
+  Loved this from your [supported source] post on [supported topic]: **"[verbatim excerpt]"**. [One specific, thoughtful reaction.]
+These are framing examples, not facts to copy. Only name a platform, source type or recent publication date when the supplied evidence supports it. "I recently came across" describes discovering the content; it does not establish when the post was published.
+Use one short, coherent, contiguous verbatim excerpt from a supplied attributable quote, usually about 8–30 words where possible. Preserve its exact words and punctuation; never manufacture a quote from an insight title or paraphrase, combine fragments or copy a whole reporting paragraph merely because it is supplied.
+Wrap the excerpt AND both double quotation marks in Markdown bold: **"exact supplied words"**. A quote must be both bolded and quoted, not bold alone, plain quotation marks or single-quoted prose.
+Integrate attribution into the preface in natural email language. Never append detached citation labels such as "— LinkedIn, consumer-stocks post.", "— [platform], [topic]." or filing-label/slugs after the quote. Named-author/role/platform metadata is grounding data, not a citation template to copy into the email.
+Say "your post" or "you said" only when recipient authorship is established. If the recipient shared or engaged with another person's content, identify the actual author in the preface, and describe sharing/engagement only if supported. For colleagues/counterparts, name the source person and their verified relationship before quoting; never attribute their words to the recipient.
+Follow with a brief specific reaction to the quoted idea, then continue Hook → Bridge → Value → Proof → CTA. Do not invent a prior conversation, a private relationship or a source link.
+A specific quote-discovery preface may start with "I", and quote-grounded appreciation such as "Loved this" is allowed. This is an exception to generic opener restrictions, not permission for canned greetings or empty praise.`;

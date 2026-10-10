@@ -17,6 +17,7 @@ import { getManualEmailContext } from "../manual-email-api";
 import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
 import { RESEARCH_SOURCES, timingSummary, type EmailTiming, type ManualEmailContext, type TimingUnit } from "../manual-email-model";
 import { TonePersonaPicker } from "../TonePersonaPicker";
+import { usePlaybookConfirm } from "../PlaybookConfirmProvider";
 import { AdditionalMessageContext } from "../AdditionalMessageContext";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
@@ -137,9 +138,10 @@ function PreviewPanel({ playbookId, variant, contacts, selectedContactId, onCont
   const currentContact = contacts.find(contact => contact.id === selectedContactId);
   const preview = variant.preview;
   const previewContact = contacts.find(contact => contact.id === preview?.contactId);
-  const doGenerate = (reason = "") => {
+  const confirm = usePlaybookConfirm();
+  const doGenerate = async (reason = "") => {
     if (!selectedContactId || (variant.mode !== "template" && !context?.aiAvailable) || readOnly || mutation.isPending) return;
-    if (preview && !window.confirm("Replace the current generated script preview? Your call template and other configuration will stay unchanged.")) return;
+    if (preview && !await confirm({ title: "Replace this call preview?", description: "The generated call script will be replaced. Your call template and other message settings will stay unchanged.", confirmLabel: "Generate new preview" })) return;
     setNotice("");
     mutation.mutate({ variantId: variant.id, variant: { ...variant, preview: undefined }, contactId: selectedContactId, reason });
   };

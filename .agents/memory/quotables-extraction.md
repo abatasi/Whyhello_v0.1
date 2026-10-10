@@ -3,6 +3,12 @@ name: Quotables extraction pipeline
 description: How LinkedIn Quotables are extracted, stored, and injected into message generation
 ---
 
+Email quote integration must preface discovering the source, use a short exact excerpt in **bold double quotation marks**, and attribute naturally before the quote rather than appending platform/topic citation labels.
+
+**Why:** The user rejected an unexplained opening quote with a detached “— LinkedIn, … post.” suffix and explicitly requested contextual discovery/appreciation framing.
+
+**How to apply:** Apply this to Playbook and Single Message email prompts. Allow specific “I recently came across…” prefaces despite generic opener restrictions. Preserve verified authorship; shared third-party content is not the recipient's own words.
+
 ## Rule
 Quotables are sourced by fetching LinkedIn post bodies live from the public URL at extraction time. Never use the stored `description` field — it is consistently `"N/A"` for LinkedIn signals.
 

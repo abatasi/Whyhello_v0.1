@@ -3,6 +3,12 @@ name: Playbooks design direction
 description: User's intended visual and interaction direction for the Playbooks module
 ---
 
+Playbook step changes should auto-save. Routine navigation should not ask users to save changes, and Playbooks notices and confirmations must use app-styled UI rather than browser dialogs.
+
+**Why:** The user explicitly requested automatic saving to avoid repeated leave/save prompts and wanted notifications styled within the app.
+
+**How to apply:** Persist editable configuration and workflow changes automatically with quiet save status. Make failed saves visible with retry and recovery; retain app-styled confirmations for genuinely destructive actions.
+
 Do not show separate Personalization snippets or rationale fields in Playbook message previews.
 
 **Why:** The user said the snippet is unnecessary and does not add to this view.

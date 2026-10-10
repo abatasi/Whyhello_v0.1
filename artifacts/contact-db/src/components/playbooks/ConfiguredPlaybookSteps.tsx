@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, GripVertical, Save } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertCircle, ArrowDown, ArrowUp, ChevronDown, ChevronRight, GripVertical } from "lucide-react";
 import { AddStepMenu } from "./AddStepMenu";
 import { getStepDefinition, type StepDefinition } from "./step-definitions";
 import { ManualEmailStep } from "./manual-email/ManualEmailStep";
@@ -24,6 +24,8 @@ export type ConfiguredPlaybookStepsProps = {
   onSave: () => void;
   dirty: boolean;
   saving: boolean;
+  saveStatus?: string;
+  saveError?: boolean;
   readOnly?: boolean;
 };
 
@@ -65,14 +67,10 @@ function StepSummary({ id, number, step, selected, onSelect, onDuplicate, onDele
 export function ConfiguredPlaybookSteps(props: ConfiguredPlaybookStepsProps) {
   const {
     playbookId, steps, selectedStepId, onSelect, onConfigure, onInsert, onDuplicate,
-    onDelete, onReorder, onSave, dirty, saving, readOnly = false,
+    onDelete, onReorder, onSave, dirty, saving, saveStatus, saveError = false, readOnly = false,
   } = props;
   const [collapseAll, setCollapseAll] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
-  const saveRequested = useRef(false);
-  const dirtyToClean = useRef(false);
-  const wasDirty = useRef(dirty);
   const stepIds = useMemo(() => steps.map(step => step.id), [steps]);
   useEffect(() => {
     if (selectedStepId) {
@@ -80,15 +78,6 @@ export function ConfiguredPlaybookSteps(props: ConfiguredPlaybookStepsProps) {
       requestAnimationFrame(() => document.getElementById(`configured-step-${selectedStepId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
     }
   }, [selectedStepId]);
-  useEffect(() => {
-    if (wasDirty.current && !dirty) dirtyToClean.current = true;
-    if (dirtyToClean.current && saveRequested.current && !saving) {
-      setSaveMessage("Changes saved");
-      saveRequested.current = false;
-      dirtyToClean.current = false;
-    }
-    wasDirty.current = dirty;
-  }, [dirty, saving]);
   const selected = (id: string) => selectedStepId === id && !collapseAll;
   const choose = (id: string) => onSelect(selectedStepId === id && !collapseAll ? null : id);
   const insertBefore = (index: number, type = "manual-email") => {
@@ -121,15 +110,14 @@ export function ConfiguredPlaybookSteps(props: ConfiguredPlaybookStepsProps) {
   };
   return <section data-testid="configured-playbook-steps" className="mx-auto w-full max-w-[1440px] px-3 pb-12 sm:px-6 lg:px-8">
     <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
-      <div className="mr-auto"><p className="text-sm font-semibold">{steps.length} {steps.length === 1 ? "step" : "steps"}</p><p className="text-xs text-muted-foreground">{dirty ? "Unsaved changes" : "All changes saved"}</p></div>
+      <div className="mr-auto"><p className="text-sm font-semibold">{steps.length} {steps.length === 1 ? "step" : "steps"}</p><p role="status" className={`text-xs ${saveError ? "text-destructive" : "text-muted-foreground"}`}>{saveStatus ?? (dirty || saving ? "Saving changes…" : "All changes saved")}</p></div>
       <button type="button" data-testid="button-collapse-steps" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted" onClick={() => {
         const next = !collapseAll;
         setCollapseAll(next);
         if (next) onSelect(null);
         else if (steps[0]) onSelect(steps[0].id);
       }}>{collapseAll ? <ChevronRight size={14} /> : <ChevronDown size={14} />}{collapseAll ? "Expand steps" : "Collapse steps"}</button>
-      <button type="button" data-testid="button-save-playbook-changes" className="inline-flex items-center gap-2 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50" disabled={!dirty || saving || readOnly} onClick={() => { saveRequested.current = true; setSaveMessage(""); onSave(); }}><Save size={14} />{saving ? "Saving…" : "Save changes"}</button>
-      {!dirty && saveMessage && <span role="status" className="flex items-center gap-1 text-xs text-muted-foreground"><Check size={13} />{saveMessage}</span>}
+      {saveError && <button type="button" data-testid="button-save-playbook-changes" className="inline-flex items-center gap-2 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50" disabled={saving || readOnly} onClick={onSave}>Retry auto-save</button>}
     </div>
     {steps.length === 0 ? <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
       <h2 className="text-base font-semibold">Start with the first step</h2><p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">Build a clear path from first outreach to the next conversation.</p>

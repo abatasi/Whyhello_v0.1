@@ -19,6 +19,7 @@ import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { TonePersonaPicker } from "../TonePersonaPicker";
 import { InsightCategorySelect } from "../InsightCategorySelect";
 import { AdditionalMessageContext } from "../AdditionalMessageContext";
+import { usePlaybookConfirm } from "../PlaybookConfirmProvider";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
 const smallButton = "inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50";
@@ -184,11 +185,12 @@ function PreviewPanel({ playbookId, variant, contactOptions, selectedContactId, 
     onSuccess: () => setNotice("Test email sent to your account."),
   });
   const contextQueryKey = ["manual-email-context", playbookId];
+  const confirm = usePlaybookConfirm();
   const refresh = () => queryClient.invalidateQueries({ queryKey: contextQueryKey });
   const error = previewMutation.error || testMutation.error;
   const errorText = error instanceof Error ? error.message : "Something went wrong. Try again.";
-  const doGenerate = (reason = "") => {
-    if (variant.preview && !window.confirm("Replace the current generated preview? This does not change your saved configuration.")) return;
+  const doGenerate = async (reason = "") => {
+    if (variant.preview && !await confirm({ title: "Replace this preview?", description: "The current generated email preview will be replaced. Other message settings will stay unchanged.", confirmLabel: "Generate new preview" })) return;
     if (selectedContactId === null) {
       previewMutation.reset();
       return;
@@ -271,8 +273,8 @@ function PreviewPanel({ playbookId, variant, contactOptions, selectedContactId, 
         <select aria-label="Connected mailbox" className={fieldClass + " min-w-40 flex-1"} value={mailboxId} onChange={e => setMailboxId(e.target.value ? Number(e.target.value) : "")}>
           <option value="">Choose connected mailbox</option>{context?.mailboxes.map(mailbox => <option key={mailbox.id} value={mailbox.id}>{mailbox.email} · {mailbox.provider}</option>)}
         </select>
-        <button type="button" data-testid="button-send-test-email" className={smallButton} disabled={readOnly || !preview || !mailboxId || testMutation.isPending} onClick={() => {
-          if (!window.confirm(`Send this preview as a test email to your own account using ${selectedMailbox?.email ?? "the selected mailbox"}?`)) return;
+        <button type="button" data-testid="button-send-test-email" className={smallButton} disabled={readOnly || !preview || !mailboxId || testMutation.isPending} onClick={async () => {
+          if (!await confirm({ title: "Send yourself a test email?", description: `This sends the preview to your own account using ${selectedMailbox?.email ?? "the selected mailbox"}.`, confirmLabel: "Send test email" })) return;
           setNotice(""); testMutation.mutate();
         }}><Send size={13} />{testMutation.isPending ? "Sending…" : "Send me a test email"}</button>
       </div>

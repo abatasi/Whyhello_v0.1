@@ -1,4 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useUser } from "@clerk/react";
+import { usePlaybookAutosave } from "@/components/playbooks/use-playbook-autosave";
+import { PlaybookConfirmProvider, usePlaybookConfirm } from "@/components/playbooks/PlaybookConfirmProvider";
+import { autosaveLabel } from "@/components/playbooks/playbook-autosave-model";
 import { useRoute, useLocation, Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -2149,41 +2153,77 @@ function CanvasInner({
   const liveBuyingCenterText = liveBuyingCenter ? [liveBuyingCenter.name, ...(liveBuyingCenter.seats ?? []).map(seat => seat.seat)].filter(Boolean).join(" · ") : "";
   const liveTargetMarketText = liveTargetMarket ? [liveTargetMarket.name, ...(liveTargetMarket.industries ?? []), ...(liveTargetMarket.companySizes ?? []), ...(liveTargetMarket.locations ?? [])].filter(Boolean).join(" · ") : "";
 
-  const storageKey = `playbook_canvas_v3_${playbookId}`;
+  const { user } = useUser();
+  const confirm = usePlaybookConfirm();
+  const [, navigateFromEditor] = useLocation();
+  const storageKey = `playbook_canvas_v4_${user?.id ?? "signed-out"}_${playbookId}`;
+  const recoveryRef = useRef<CanvasState | null>(null);
 
   // Load initial state — v3 key (fall back to legacy key and migrate); sanitize & migrate older cached canvases
   const initialState = useMemo<CanvasState>(() => {
     try {
       // Try v3 first; if absent, try legacy key and promote to v3
-      const legacyKey = `playbook_canvas_${playbookId}`;
+      const legacyKey = `playbook_canvas_v3_${playbookId}`;
       let raw: string | null = null;
       try { raw = localStorage.getItem(storageKey); } catch { /* Saved server canvas remains available without browser storage. */ }
+      let pendingBaseline: string | null = null;
+      try { pendingBaseline = localStorage.getItem(`${storageKey}_pending`); } catch { /* Still load the server workflow if storage is blocked. */ }
       if (!raw) {
         let legacyRaw: string | null = null;
-        try { legacyRaw = localStorage.getItem(legacyKey); } catch { /* Use the server canvas below. */ }
+        try { legacyRaw = localStorage.getItem(legacyKey) ?? localStorage.getItem(`playbook_canvas_${playbookId}`); } catch { /* Use the server canvas below. */ }
         if (legacyRaw) {
-          // Promote to v3 and clean up legacy
-          localStorage.setItem(storageKey, legacyRaw);
-          localStorage.removeItem(legacyKey);
           raw = legacyRaw;
         }
       }
-      // Preserve unsaved local work; otherwise restore the saved canvas from
-      // the API, including newly created templates and draft duplicates.
-      if (!raw && initialCanvas?.trim().startsWith("{")) raw = initialCanvas;
+      // Never autosave an old browser cache over a newer server workflow.
+      if (initialCanvas?.trim().startsWith("{")) {
+        const server = readStoredWorkflow<Node<PlaybookNodeData>, Edge, ProspectEntry>(initialCanvas);
+        const serverSnapshot = JSON.stringify(server);
+        if (["active", "archived", "completed"].includes(playbookStatus)) return server;
+        if (raw) {
+          const cached = readStoredWorkflow<Node<PlaybookNodeData>, Edge, ProspectEntry>(raw);
+          if (JSON.stringify(cached) !== serverSnapshot) {
+            if (pendingBaseline === serverSnapshot || pendingBaseline === initialCanvas) return cached;
+            if (pendingBaseline || !localStorage.getItem(storageKey)) recoveryRef.current = cached;
+          }
+        }
+        return server;
+      }
       if (raw) {
         return readStoredWorkflow<Node<PlaybookNodeData>, Edge, ProspectEntry>(raw);
       }
     } catch {}
+    // A corrupt or unavailable local cache must never replace a valid server
+    // workflow with the starter canvas.
+    if (initialCanvas?.trim().startsWith("{")) {
+      return readStoredWorkflow<Node<PlaybookNodeData>, Edge, ProspectEntry>(initialCanvas);
+    }
     // A scratch record is deliberately empty even if the list response omits
     // its description field. Its blank v3 cache is then restored normally.
     if (!initialCanvas && playbookName === "Untitled playbook") return { nodes: [], edges: [], prospects: [] };
     return buildStarterCanvas();
-  }, [storageKey, initialCanvas, playbookName]);
+  }, [storageKey, initialCanvas, playbookName, playbookStatus]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<PlaybookNodeData>>(initialState.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
   const [prospects, setProspects] = useState<ProspectEntry[]>(initialState.prospects ?? []);
+  const [needsRecovery, setNeedsRecovery] = useState(() => !!recoveryRef.current);
+  useEffect(() => {
+    if (!needsRecovery) return;
+    let cancelled = false;
+    void confirm({ title: "Recover a local Playbook draft?", description: "A draft in this browser differs from the saved Playbook. Recovering it will replace the saved workflow and auto-save it. You can keep the saved version instead.", confirmLabel: "Recover draft", cancelLabel: "Keep saved version" }).then(recover => {
+      if (cancelled) return;
+      if (recover && recoveryRef.current) {
+        setNodes(recoveryRef.current.nodes); setEdges(recoveryRef.current.edges); setProspects(recoveryRef.current.prospects ?? []);
+      }
+      try {
+        localStorage.removeItem(`playbook_canvas_v3_${playbookId}`);
+        localStorage.removeItem(`playbook_canvas_${playbookId}`);
+      } catch { /* Server persistence remains available. */ }
+      setNeedsRecovery(false);
+    });
+    return () => { cancelled = true; };
+  }, [needsRecovery, confirm]);
 
   // History for undo/redo
   const historyRef = useRef<HistoryEntry[]>([{
@@ -2261,9 +2301,26 @@ function CanvasInner({
   });
   const hasUnsavedChanges = JSON.stringify({ nodes, edges, prospects }) !== savedSnapshot;
   const readOnlySteps = ["active", "archived", "completed"].includes(playbookStatus);
+  const autosave = usePlaybookAutosave({
+    value: JSON.stringify({ nodes, edges, prospects }), initialSaved: savedSnapshot, storageKey,
+    enabled: !!user && !readOnlySteps && !needsRecovery,
+    onSave: snapshot => {
+      const workflow = JSON.parse(snapshot) as CanvasState;
+      return externalSave(workflow.nodes, workflow.edges, workflow.prospects ?? []);
+    },
+    onSaved: setSavedSnapshot,
+  });
+  const saveStatus = autosaveLabel(autosave.state, hasUnsavedChanges);
+  const requestLeave = useCallback(async () => {
+    if (await autosave.flush()) return true;
+    return confirm({ title: "Changes haven't synced", description: autosave.hasLocalDraft
+      ? "Auto-save could not reach the server. Your latest draft is kept in this browser. Stay to retry, or leave with the local recovery draft."
+      : "Auto-save failed and a local recovery draft could not be stored. Leaving may lose these changes. Stay to retry.",
+      confirmLabel: "Leave anyway", cancelLabel: "Stay", destructive: !autosave.hasLocalDraft });
+  }, [autosave.flush, autosave.hasLocalDraft, confirm]);
   const activationReason = !enabledSteps.length
     ? "Add at least one workflow step before activating this playbook."
-    : hasUnsavedChanges ? "Save changes before activating this playbook."
+    : hasUnsavedChanges ? "Wait for changes to sync before activating this playbook."
     : ["archived", "completed"].includes(playbookStatus)
       ? `${playbookStatus[0].toUpperCase()}${playbookStatus.slice(1)} playbooks cannot be activated.`
     : stepNodes.some(n => (n.data as PlaybookNodeData).blockType === "send-email") && emailAccounts.isSuccess && emailAccounts.data.length === 0
@@ -2272,19 +2329,21 @@ function CanvasInner({
       ? "Complete the required configuration on every step before activating."
       : undefined;
   useEffect(() => {
-    if (!hasUnsavedChanges) return;
-    const unload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     const navigate = (event: MouseEvent) => {
       const anchor = event.target instanceof Element ? event.target.closest("a") : null;
-      if (!anchor || anchor.target === "_blank" || !anchor.href || new URL(anchor.href).pathname === window.location.pathname) return;
-      if (!window.confirm("You have unsaved Playbook changes. Leave without saving?")) {
-        event.preventDefault(); event.stopImmediatePropagation();
-      }
+      if (!hasUnsavedChanges || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || !anchor || anchor.target === "_blank" || anchor.hasAttribute("download") || !anchor.href) return;
+      const target = new URL(anchor.href);
+      if (target.pathname === window.location.pathname && target.search === window.location.search) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      void requestLeave().then(leave => {
+        if (!leave) return;
+        if (target.origin === window.location.origin) navigateFromEditor(target.pathname + target.search + target.hash);
+        else window.location.assign(target.href);
+      });
     };
-    window.addEventListener("beforeunload", unload);
     document.addEventListener("click", navigate, true);
-    return () => { window.removeEventListener("beforeunload", unload); document.removeEventListener("click", navigate, true); };
-  }, [hasUnsavedChanges]);
+    return () => { document.removeEventListener("click", navigate, true); };
+  }, [hasUnsavedChanges, requestLeave, navigateFromEditor]);
 
   // Insert block menu
   const [insertMenu, setInsertMenu] = useState<{ edgeId: string; x: number; y: number } | null>(null);
@@ -2299,9 +2358,6 @@ function CanvasInner({
   useEffect(() => { prospectsRef.current = prospects; }, [prospects]);
 
   // Auto-save to localStorage
-  useEffect(() => {
-    try { localStorage.setItem(storageKey, JSON.stringify({ nodes, edges, prospects })); } catch {}
-  }, [nodes, edges, prospects, storageKey]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -2591,13 +2647,8 @@ function CanvasInner({
   }
 
   // Save
-  async function persistCanvas(nextNodes: Node<PlaybookNodeData>[], nextEdges: Edge[], nextProspects: ProspectEntry[]) {
-    const success = await externalSave(nextNodes, nextEdges, nextProspects);
-    if (success) setSavedSnapshot(JSON.stringify({ nodes: nextNodes, edges: nextEdges, prospects: nextProspects }));
-    return success;
-  }
   function save() {
-    void persistCanvas(nodes, edges, prospects);
+    void autosave.flush();
   }
 
   function addManualStep(definition: StepDefinition, afterId: string | null = stepNodes.at(-1)?.id ?? null) {
@@ -2620,7 +2671,7 @@ function CanvasInner({
     commitToHistory(next, nextEdges, prospectsRef.current);
     setManualEmailStepId(step.id);
     setActiveTab("editor");
-    // New steps, like their configuration, remain unsaved until Save Changes.
+    // The shared autosave queue persists new steps and their configuration.
   }
 
   function changeManualConfiguration(id: string, configuration: ManualEmailConfiguration | PhoneCallConfiguration | LinkedInConnectionConfiguration) {
@@ -2654,7 +2705,7 @@ function CanvasInner({
     const next = [...nodes]; next.splice(index + 1, 0, copy);
     setNodes(next); commitToHistory(next, edges, prospects); setManualEmailStepId(copy.id);
   }
-  function deleteConfiguredStep(id: string) {
+  async function deleteConfiguredStep(id: string) {
     if (readOnlySteps) return;
     const step = nodes.find(node => node.id === id);
     const config = step?.data.blockType === "manual-email" ? readManualEmailConfiguration(step.data.configuration) : null;
@@ -2664,9 +2715,9 @@ function CanvasInner({
       || call?.variants.some(v => v.preview || v.prompt.trim() || v.userContext.trim() || v.guidelines.length || v.customTone.trim() || v.template.opener.trim() || v.template.closing.trim() || v.template.voicemail.trim() || v.template.talkingPoints.length || v.template.questions.length || v.template.objections.length)
       || connection?.variants.some(v => v.preview || v.prompt.trim() || v.templateBody.trim() || v.userContext.trim() || v.guidelines.length || v.customTone.trim())
       || !!(step?.data.emailBody || step?.data.subject || step?.data.linkedinBody || step?.data.callObjective);
-    if (substantial && !window.confirm(connection ? "Delete this step and its configured LinkedIn connection note?" : call ? "Delete this step and its configured call content?" : "Delete this step and its configured email content?")) return;
-    const next = nodes.filter(node => node.id !== id);
-    const nextEdges = edges.filter(edge => edge.source !== id && edge.target !== id);
+    if (substantial && !await confirm({ title: "Delete this step?", description: "This removes the step and its configured message content. The workflow change will auto-save.", confirmLabel: "Delete step", destructive: true })) return;
+    const next = nodesRef.current.filter(node => node.id !== id);
+    const nextEdges = edgesRef.current.filter(edge => edge.source !== id && edge.target !== id);
     setNodes(next); setEdges(nextEdges); commitToHistory(next, nextEdges, prospects);
     if (manualEmailStepId === id) setManualEmailStepId(null);
   }
@@ -2737,7 +2788,8 @@ function CanvasInner({
 
   async function duplicateRecord() {
     try {
-      let records = qc.getQueryData<PlaybookRecord[]>(["playbooks"]);
+      if (!await autosave.flush()) return;
+      let records = qc.getQueryData<PlaybookRecord[]>(["playbooks", user?.id]);
       if (!records) records = await playbookRequest<PlaybookRecord[]>("/api/playbooks");
       const record = records.find(item => item.id === playbookId);
       if (!record) throw new Error("Playbook record could not be found.");
@@ -2754,6 +2806,7 @@ function CanvasInner({
     setRecordActionBusy(true);
     try {
       if (pendingRecordAction === "archive") {
+        if (!await autosave.flush()) return;
         const response = await apiFetch(`/api/playbooks/${playbookId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -2863,7 +2916,8 @@ function CanvasInner({
         steps={stepNodes.length}
         saving={saving}
         dirty={hasUnsavedChanges}
-        onBeforeLeave={() => !hasUnsavedChanges || window.confirm("You have unsaved Playbook changes. Leave without saving?")}
+        onBeforeLeave={requestLeave}
+        saveStatus={saveStatus} saveError={autosave.state === "error"}
         activationReason={playbookStatus === "active" ? undefined : activationReason}
         onTab={setActiveTab}
         onRename={renameRecord}
@@ -2884,7 +2938,7 @@ function CanvasInner({
               selectedStepId={manualEmailStepId} onSelect={setManualEmailStepId}
               onConfigure={changeManualConfiguration} onInsert={(afterId, definition) => addManualStep(definition, afterId)}
               onDuplicate={duplicateConfiguredStep} onDelete={deleteConfiguredStep} onReorder={reorderConfiguredSteps}
-              onSave={save} dirty={hasUnsavedChanges} saving={saving} readOnly={readOnlySteps} /></div>}
+              onSave={save} dirty={hasUnsavedChanges} saving={saving} saveStatus={saveStatus} saveError={autosave.state === "error"} readOnly={readOnlySteps} /></div>}
       </div> : <StructurePanel
         tab={activeTab}
         playbookId={playbookId}
@@ -2943,9 +2997,12 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const { user } = useUser();
+  const lastSaveError = useRef<string | null>(null);
 
   const playbooksQuery = useQuery<PlaybookMeta[]>({
-    queryKey: ["playbooks"],
+    queryKey: ["playbooks", user?.id],
+    enabled: !!user,
     queryFn: async () => {
       const response = await apiFetch("/api/playbooks");
       if (!response.ok) throw new Error(`Playbooks could not be loaded (${response.status})`);
@@ -2965,14 +3022,18 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: canvas }),
+        keepalive: new TextEncoder().encode(JSON.stringify({ description: canvas })).byteLength < 60000,
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || `Save failed (${response.status})`);
-      await qc.invalidateQueries({ queryKey: ["playbooks"] });
-      toast({ title: "Saved", description: "Playbook saved." });
+      lastSaveError.current = null;
+      qc.setQueryData<PlaybookMeta[]>(["playbooks", user?.id], rows => rows?.map(row => row.id === playbookId ? { ...row, description: canvas } : row));
+      void qc.invalidateQueries({ queryKey: ["playbooks"] });
       return true;
     } catch (error) {
-      toast({ title: "Save failed", description: error instanceof Error ? error.message : "The canvas could not be saved.", variant: "destructive" });
+      const message = error instanceof Error ? error.message : "Retry to sync your changes.";
+      if (lastSaveError.current !== message) toast({ title: "Playbook auto-save failed", description: message, variant: "destructive" });
+      lastSaveError.current = message;
       return false;
     } finally {
       setSaving(false);
@@ -2991,7 +3052,7 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
   return (
     <Shell>
         <CanvasInner
-          key={playbookId}
+          key={`${user?.id}:${playbookId}`}
           playbookId={playbookId}
           playbookName={seq.name}
           playbookStatus={seq.status}
@@ -3037,7 +3098,7 @@ export default function Playbooks() {
   const [matchDetail, params] = useRoute("/playbooks/:id");
   if (matchDetail && params?.id) {
     const id = parseInt(params.id);
-    if (!isNaN(id)) return <CanvasBuilder playbookId={id} />;
+    if (!isNaN(id)) return <PlaybookConfirmProvider><CanvasBuilder playbookId={id} /></PlaybookConfirmProvider>;
   }
-  return <PlaybooksListPage />;
+  return <PlaybookConfirmProvider><PlaybooksListPage /></PlaybookConfirmProvider>;
 }
