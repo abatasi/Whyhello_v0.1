@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/apiFetch";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { useRoute, Link } from "wouter";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -1249,7 +1250,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                         title="Refresh relevance now"
                         className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-secondary transition-colors disabled:opacity-50"
                       >
-                        <RefreshCw className={cn("h-3 w-3", relevanceMutation.isPending && "animate-spin")} />
+                        {relevanceMutation.isPending ? <ThinkingIndicator decorative className="h-3 w-5" /> : <RefreshCw className="h-3 w-3" />}
                       </button>
                       <button
                         onClick={() => setInsightsMode("expanded")}
@@ -1269,7 +1270,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                   </div>
                   {relevanceMutation.isPending && (
                     <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <Loader2 className="h-2.5 w-2.5 animate-spin" /> Scoring relevance…
+                      <ThinkingIndicator decorative className="h-3 w-5" /> Scoring relevance…
                     </div>
                   )}
                   {relevanceMap.size > 0 && !relevanceMutation.isPending && (
@@ -1353,7 +1354,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                             title="Refresh relevance now"
                             className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-secondary transition-colors disabled:opacity-50"
                           >
-                            <RefreshCw className={cn("h-3 w-3", relevanceMutation.isPending && "animate-spin")} />
+                            {relevanceMutation.isPending ? <ThinkingIndicator decorative className="h-3 w-5" /> : <RefreshCw className="h-3 w-3" />}
                           </button>
                           <button
                             onClick={() => setInsightsMode("normal")}
@@ -1373,7 +1374,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                       </div>
                       {relevanceMutation.isPending && (
                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Loader2 className="h-2.5 w-2.5 animate-spin" /> Scoring relevance…
+                          <ThinkingIndicator decorative className="h-3 w-5" /> Scoring relevance…
                         </div>
                       )}
                       {relevanceMap.size > 0 && !relevanceMutation.isPending && (
@@ -2071,7 +2072,7 @@ function QuotablesCarousel({
               {quotes.length}
             </span>
           )}
-          {isPending && <Loader2 className="h-2.5 w-2.5 animate-spin text-violet-400 flex-shrink-0" />}
+          {isPending && <ThinkingIndicator className="h-3 w-5" label="Extracting quotables" />}
         </div>
 
         <div className="flex items-center gap-0.5">
@@ -2529,10 +2530,9 @@ function InsightDetailView({
             </div>
             <div className="border-t border-border/40 pt-2.5">
               {aiLoading ? (
-                <div className="flex flex-col gap-2">
-                  <div className="h-3 bg-muted rounded-full animate-pulse w-full" />
-                  <div className="h-3 bg-muted rounded-full animate-pulse w-[90%]" />
-                  <div className="h-3 bg-muted rounded-full animate-pulse w-[75%]" />
+                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                  <ThinkingIndicator label="Summarizing insight" />
+                  <span>Summarizing insight…</span>
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground leading-relaxed">{aiData?.summary}</p>
@@ -2544,13 +2544,9 @@ function InsightDetailView({
                 <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Key Takeaways</span>
               </div>
               {aiLoading ? (
-                <div className="flex flex-col gap-3">
-                  {[80, 95, 70, 85].map((w, i) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                      <div className="h-1.5 w-1.5 rounded-full bg-muted mt-1.5 flex-shrink-0" />
-                      <div className="h-3 bg-muted rounded-full animate-pulse" style={{ width: `${w}%` }} />
-                    </div>
-                  ))}
+                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                  <ThinkingIndicator label="Finding key takeaways" />
+                  <span>Finding key takeaways…</span>
                 </div>
               ) : (
                 <ul className="flex flex-col gap-3">
@@ -3882,11 +3878,7 @@ function ContactChat({
                   >
                     {msg.content || (
                       isStreaming && i === messages.length - 1 ? (
-                        <span className="inline-flex gap-1 items-center">
-                          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: "300ms" }} />
-                        </span>
+                        <ThinkingIndicator label="Preparing a reply" />
                       ) : null
                     )}
                   </div>

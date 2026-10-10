@@ -9,6 +9,7 @@ import {
   useNodesState, useEdgesState, type NodeProps, type EdgeProps,
 } from "@xyflow/react";
 import { apiFetch } from "@/lib/apiFetch";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { cn } from "@/lib/utils";
 import {
   Plus, ArrowLeft, Trash2, X, Search, Loader2,
@@ -1366,7 +1367,7 @@ function ConfigDrawer({
             <TextInput value={data.sendTiming ?? ""} onChange={v => upd({ sendTiming: v })} placeholder="e.g. Tuesday 9–11 AM" />
           </Field>
           <button onClick={handleGenerate} disabled={generating} className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all", cat.border, cat.text, cat.bg, "hover:opacity-80 disabled:opacity-50")}>
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            {generating ? <ThinkingIndicator decorative className="h-4 w-6" /> : <Wand2 className="h-4 w-4" />}
             Generate with Whyhello
           </button>
         </>)}
@@ -1386,7 +1387,7 @@ function ConfigDrawer({
             <TextInput value={data.linkedinBody ?? ""} onChange={v => upd({ linkedinBody: v })} placeholder="LinkedIn message…" multiline />
           </Field>
           <button onClick={handleGenerate} disabled={generating} className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all", cat.border, cat.text, cat.bg, "hover:opacity-80 disabled:opacity-50")}>
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            {generating ? <ThinkingIndicator decorative className="h-4 w-6" /> : <Wand2 className="h-4 w-4" />}
             Generate with Whyhello
           </button>
         </>)}
@@ -1409,7 +1410,7 @@ function ConfigDrawer({
             <TextInput value={data.voicemail ?? ""} onChange={v => upd({ voicemail: v })} placeholder="Short voicemail if no answer…" multiline />
           </Field>
           <button onClick={handleGenerate} disabled={generating} className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all", cat.border, cat.text, cat.bg, "hover:opacity-80 disabled:opacity-50")}>
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            {generating ? <ThinkingIndicator decorative className="h-4 w-6" /> : <Wand2 className="h-4 w-4" />}
             Generate with Whyhello
           </button>
         </>)}

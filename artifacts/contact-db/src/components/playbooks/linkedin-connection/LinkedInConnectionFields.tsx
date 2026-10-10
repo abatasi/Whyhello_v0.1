@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { ArrowDown, ArrowUp, Check, Plus, Trash2 } from "lucide-react";
 import type { ConnectionVariant } from "../linkedin-connection-model";
 import { RESEARCH_SOURCES, type ManualEmailContext } from "../manual-email-model";
@@ -58,7 +59,7 @@ export function ConnectionFields({ variant, context, onUpdate, readOnly, busy, o
     </section>
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
       <label className="flex items-center gap-2 text-xs font-medium">Generation length<select aria-label="Generation length" className="rounded-md border border-input bg-background px-2 py-1.5" value={variant.generationMode} disabled={readOnly} onChange={e => set({ generationMode: e.target.value })}>{["Standard", "Concise", "Detailed", "Experimental"].map(item => <option key={item}>{item}</option>)}</select></label>
-      <button type="button" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50" disabled={readOnly || busy || (variant.mode !== "template" && !context?.aiAvailable)} onClick={onGenerate}>{busy ? "Generating…" : variant.preview ? "Generate new preview" : "Generate preview"}</button>
+      <button type="button" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50" disabled={readOnly || busy || (variant.mode !== "template" && !context?.aiAvailable)} onClick={onGenerate}>{busy && <ThinkingIndicator decorative className="h-3.5 w-5" />}{busy ? "Generating…" : variant.preview ? "Generate new preview" : "Generate preview"}</button>
       {variant.mode !== "template" && !context?.aiAvailable && <span className="w-full text-xs text-muted-foreground">AI preview generation is unavailable for this workspace.</span>}
     </div>
   </div>;

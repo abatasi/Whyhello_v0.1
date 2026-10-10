@@ -14,6 +14,7 @@ import {
 } from "../manual-email-model";
 import { getManualEmailContext, generateManualEmailPreview, sendManualEmailTest } from "../manual-email-api";
 import { emailMarkdownToHtml } from "./email-markdown";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
 const smallButton = "inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50";
@@ -159,7 +160,7 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
       {variant.mode === "template" && <span className="text-xs text-muted-foreground">Templates keep their authored subject and body.</span>}
       {validation && !variant.preview && <span className="text-xs text-muted-foreground">Complete required fields to generate.</span>}
       <button type="button" data-testid="button-generate-preview" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50" disabled={readOnly || busy || !(context && (context.aiAvailable || variant.mode === "template"))} onClick={onPreview}>
-        <Sparkles size={14} />{busy ? "Generating…" : variant.preview ? "Generate new preview" : "Generate preview"}
+        {busy ? <ThinkingIndicator decorative className="h-3.5 w-5" /> : <Sparkles size={14} />}{busy ? "Generating…" : variant.preview ? "Generate new preview" : "Generate preview"}
       </button>
       {!context?.aiAvailable && variant.mode !== "template" && <span className="w-full text-xs text-muted-foreground">AI preview generation is unavailable for this workspace.</span>}
     </div>
@@ -279,7 +280,7 @@ function PreviewPanel({ playbookId, variant, contactOptions, selectedContactId, 
           {insight.url && <a href={insight.url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-primary">Inspect source <ExternalLink size={11} /></a>}
         </article>)}</div>}
       </div> : generationPending ? <div className="flex min-h-[250px] w-full max-w-lg flex-col items-center justify-center text-center">
-        <div className="mb-4 flex gap-1.5"><span className="size-2 animate-pulse rounded-full bg-primary/50" /><span className="size-2 animate-pulse rounded-full bg-primary/70 [animation-delay:120ms]" /><span className="size-2 animate-pulse rounded-full bg-primary [animation-delay:240ms]" /></div>
+         <ThinkingIndicator className="mb-4 h-10 w-16" label="Generating email preview" />
         <p className="text-sm font-medium">Translating insight into outreach…</p><p className="mt-1 text-xs text-muted-foreground">You can keep editing while your preview is generated.</p>
       </div> : <div className="flex min-h-[250px] max-w-sm flex-col items-center justify-center text-center">
         <div className="mb-3 rounded-full bg-background p-3 text-muted-foreground"><Mail size={20} /></div><p className="text-sm font-semibold">Your message will appear here</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Choose a contact and generate a preview to see the email and its supporting Whyhello insights.</p>

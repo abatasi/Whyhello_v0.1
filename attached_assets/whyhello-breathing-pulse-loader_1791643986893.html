@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Whyhello Breathing Pulse Loader</title>
+<style>
+  :root { --size: 320px; --duration: 1.8s; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; }
+  .whyhello-loader {
+    width: var(--size);
+    max-width: 100%;
+    display: inline-block;
+    line-height: 0;
+  }
+  .whyhello-loader svg { width: 100%; height: auto; overflow: visible; }
+  .whyhello-loader .seg {
+    opacity: .38;
+    filter: saturate(.75) brightness(.78);
+    transform-origin: center;
+    animation: wh-breathe var(--duration) cubic-bezier(.45,0,.55,1) infinite;
+  }
+  .whyhello-loader .s1 { animation-delay: 0s; }
+  .whyhello-loader .s2 { animation-delay: .22s; }
+  .whyhello-loader .s3 { animation-delay: .44s; }
+  .whyhello-loader .s4 { animation-delay: .66s; }
+  .whyhello-loader .s5 { animation-delay: .88s; }
+
+  @keyframes wh-breathe {
+    0%,100% { opacity:.38; filter:saturate(.75) brightness(.78); }
+    25% { opacity:1; filter:saturate(1.18) brightness(1.18); }
+    52% { opacity:.58; filter:saturate(.9) brightness(.92); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .whyhello-loader .seg { animation: none; opacity: 1; filter: none; }
+  }
+</style>
+</head>
+<body>
+<!--
+  WHYHELLO BREATHING PULSE LOADER
+  Drop the .whyhello-loader element + CSS into your app.
+  Resize by changing --size. Speed by changing --duration.
+-->
+<div class="whyhello-loader" role="status" aria-label="Loading">
+  <svg viewBox="0 0 320 205" role="img" aria-label="Whyhello loading">
+    <path class="seg s1" d="M20 18 H72 L105 184 H57 Z" fill="#76D84F"/>
+    <path class="seg s2" d="M105 184 H57 L129 18 H174 Z" fill="#22BED2"/>
+    <path class="seg s3" d="M129 18 H174 L207 184 H163 Z" fill="#76D84F"/>
+    <path class="seg s4" d="M163 184 L244 4 L292 21 L211 184 Z" fill="#19B9D5"/>
+    <path class="seg s5" d="M211 184 H299 A88 88 0 0 0 250 105 Z" fill="#F52535"/>
+  </svg>
+</div>
+</body>
+</html>

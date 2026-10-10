@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Headphones, Loader2, RefreshCw, X } from "lucide-react";
+import { Headphones, RefreshCw, X } from "lucide-react";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { apiFetch } from "@/lib/apiFetch";
 import type { CallScript } from "../phone-call-model";
 import { CALL_AUDIO_CHARACTER_LIMIT, callAudioText, type CallAudioSection } from "./call-audio-text";
@@ -84,7 +85,7 @@ export function CallAudioPreview({ playbookId, script, generatingScript }: {
       <select aria-label="Call audio section" className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1.5 text-xs" value={section} disabled={generatingScript} onChange={event => setSection(event.target.value as CallAudioSection)}>
         <option value="conversation">Conversation script</option><option value="opener">Opener only</option><option value="voicemail">Voicemail</option>
       </select>
-      <button type="button" className={buttonClass} disabled={busy || generatingScript || !text.trim() || text.length > CALL_AUDIO_CHARACTER_LIMIT} onClick={generate}>{busy ? <Loader2 size={13} className="animate-spin" /> : recording ? <RefreshCw size={13} /> : <Headphones size={13} />}{busy ? "Generating audio…" : recording ? "Regenerate audio" : "Generate audio"}</button>
+      <button type="button" className={buttonClass} disabled={busy || generatingScript || !text.trim() || text.length > CALL_AUDIO_CHARACTER_LIMIT} onClick={generate}>{busy ? <ThinkingIndicator decorative className="h-3.5 w-5" /> : recording ? <RefreshCw size={13} /> : <Headphones size={13} />}{busy ? "Generating audio…" : recording ? "Regenerate audio" : "Generate audio"}</button>
       {busy && <button type="button" className={buttonClass} onClick={cancel}><X size={13} />Cancel</button>}
     </div>
     {!text.trim() && <p className="mt-2 text-xs text-muted-foreground">This section is empty. Add script text to listen to it.</p>}

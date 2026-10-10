@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, Check, Loader2, Mail, Phone, Linkedin, Clock, X, WandSparkles } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 
 export interface ProposedStep {
   blockType: string;
@@ -88,7 +89,7 @@ export function AiProposalDialog({ onClose, onInsert, liveBuyingCenter = "", liv
         <label className="text-xs font-semibold text-foreground">Cadence<input data-testid="input-ai-cadence" className={`${inputClass} mt-1.5`} value={cadence} onChange={e => setCadence(e.target.value)} /></label>
         <label className="text-xs font-semibold text-foreground">Duration (days)<input data-testid="input-ai-duration" type="number" min="1" max="365" className={`${inputClass} mt-1.5`} value={durationDays} onChange={e => setDurationDays(e.target.value)} /></label>
         {error && <p className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive sm:col-span-2" role="alert"><AlertCircle size={15} />{error}</p>}
-        <div className="flex justify-end gap-2 pt-1 sm:col-span-2"><button type="button" className={buttonClass} onClick={onClose} disabled={busy}>Cancel</button><button type="button" data-testid="button-generate-proposal" className={primaryClass} disabled={busy || !objective.trim() || !desiredOutcome.trim() || !channels.length || !Number.isInteger(Number(durationDays)) || Number(durationDays) < 1 || Number(durationDays) > 365} onClick={() => void generate()}>{busy && <Loader2 size={15} className="animate-spin" />}{busy ? "Generating…" : "Generate proposal"}</button></div>
+        <div className="flex justify-end gap-2 pt-1 sm:col-span-2"><button type="button" className={buttonClass} onClick={onClose} disabled={busy}>Cancel</button><button type="button" data-testid="button-generate-proposal" className={primaryClass} disabled={busy || !objective.trim() || !desiredOutcome.trim() || !channels.length || !Number.isInteger(Number(durationDays)) || Number(durationDays) < 1 || Number(durationDays) > 365} onClick={() => void generate()}>{busy && <ThinkingIndicator decorative className="h-4 w-6" />}{busy ? "Generating…" : "Generate proposal"}</button></div>
       </div> : <div className="overflow-y-auto p-5">
         <div className="mb-4 rounded-lg bg-secondary/40 p-4"><p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Proposed playbook</p><h3 className="mt-1 text-lg font-bold">{proposal.name}</h3>{proposal.summary && <p className="mt-1 text-sm text-muted-foreground">{proposal.summary}</p>}</div>
         <ol className="space-y-2">{proposal.steps.map((step, index) => {

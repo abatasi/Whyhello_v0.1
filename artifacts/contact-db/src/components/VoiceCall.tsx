@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/apiFetch";
 import { useToast } from "@/hooks/use-toast";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import {
   PhoneCall, PhoneOff, Mic, MicOff, Loader2, Phone,
   FileText, Sparkles, Clock, CheckCheck, Volume2,
@@ -328,7 +329,7 @@ export function PostCallPanel({
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">AI Summary</p>
               {!hasSummary && stillLoading && (
                 <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Generating…
+                  <ThinkingIndicator decorative className="h-3 w-5" /> Generating…
                 </span>
               )}
             </div>
@@ -352,7 +353,7 @@ export function PostCallPanel({
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Transcript</p>
               {!hasTranscript && (
                 <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Processing…
+                  <ThinkingIndicator decorative className="h-3 w-5" /> Processing…
                 </span>
               )}
             </div>

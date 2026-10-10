@@ -6,6 +6,7 @@ import {
   useUpdateOutreachJob,
 } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { Button } from "@/components/ui/Button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose,
@@ -307,27 +308,7 @@ function EmailBody({ text }: { text: string }) {
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function GeneratingBars() {
-  return (
-    <span className="inline-flex items-end gap-[3px] h-3.5">
-      {[0, 1, 2, 3].map((i) => (
-        <span
-          key={i}
-          className="w-[3px] rounded-full bg-blue-400"
-          style={{
-            animation: "wyBarBounce 1.1s ease-in-out infinite",
-            animationDelay: `${i * 0.16}s`,
-            height: "6px",
-          }}
-        />
-      ))}
-      <style>{`
-        @keyframes wyBarBounce {
-          0%, 80%, 100% { transform: scaleY(1); opacity: 0.5; }
-          40% { transform: scaleY(2.2); opacity: 1; }
-        }
-      `}</style>
-    </span>
-  );
+  return <ThinkingIndicator className="h-4 w-6" label="Generating outreach" />;
 }
 
 function RenameDialog({ job, onClose, onSave }: { job: Job; onClose: () => void; onSave: (title: string) => void }) {
@@ -534,7 +515,7 @@ function JobViewerModal({
                         : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"
                   )}
                 >
-                  {isGen && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
+                  {isGen && <ThinkingIndicator className="h-3 w-5" label="Generating variant" />}
                   {label}
                 </button>
               );
@@ -568,7 +549,7 @@ function JobViewerModal({
         <div className="flex-1 overflow-y-auto px-7 py-5">
           {isActiveGenerating ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-              <Loader2 className="h-6 w-6 animate-spin text-primary/40" />
+              <ThinkingIndicator className="h-10 w-16" label="Generating variant" />
               <p className="text-sm text-muted-foreground">Generating this variant…</p>
             </div>
           ) : (

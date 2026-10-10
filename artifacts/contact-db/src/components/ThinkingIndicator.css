@@ -1,0 +1,30 @@
+@layer components {
+  .whyhello-thinking-loader {
+    overflow: visible;
+  }
+
+  .whyhello-thinking-loader .seg {
+    opacity: .38;
+    filter: saturate(.75) brightness(.78);
+    animation: whyhello-breathe 1.8s cubic-bezier(.45, 0, .55, 1) infinite;
+  }
+  .whyhello-thinking-loader .s1 { animation-delay: 0s; }
+  .whyhello-thinking-loader .s2 { animation-delay: .22s; }
+  .whyhello-thinking-loader .s3 { animation-delay: .44s; }
+  .whyhello-thinking-loader .s4 { animation-delay: .66s; }
+  .whyhello-thinking-loader .s5 { animation-delay: .88s; }
+
+  @keyframes whyhello-breathe {
+    0%, 100% { opacity: .38; filter: saturate(.75) brightness(.78); }
+    25% { opacity: 1; filter: saturate(1.18) brightness(1.18); }
+    52% { opacity: .58; filter: saturate(.9) brightness(.92); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .whyhello-thinking-loader .seg {
+      animation: none;
+      opacity: 1;
+      filter: none;
+    }
+  }
+}

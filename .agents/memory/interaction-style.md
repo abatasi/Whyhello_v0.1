@@ -20,3 +20,9 @@ The top-left logo on mobile must be tappable and navigate to Home.
 **Why:** The user explicitly requested this mobile navigation behavior.
 
 **How to apply:** Preserve the Home link when changing the mobile header; use an accessible touch target and close any open navigation drawer on activation.
+
+Use the user's supplied Whyhello breathing-pulse animation as the platform's thinking throbber.
+
+**Why:** The user asked to adopt this animation for when the platform is thinking.
+
+**How to apply:** Keep AI thinking feedback consistent with that animation, rather than introducing unrelated dot or spinner designs. Retain reduced-motion support.
