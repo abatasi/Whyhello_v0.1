@@ -75,7 +75,7 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
         <select id={`insight-category-${variant.id}`} data-testid="select-insight-category" aria-label="Insight category" className={fieldClass} value={variant.insightCategory ?? "personal"} disabled={readOnly} onChange={e => set({ insightCategory: e.target.value as InsightCategory })}>
           <option value="personal">Personal</option><option value="company">Company</option><option value="industry">Industry</option><option value="role">Role</option><option value="colleagues">Colleagues</option><option value="counterparts">Counterparts</option>
         </select>
-        <p className="mt-1.5 text-xs leading-5 text-muted-foreground">For each contact, evidence is resolved from available contact and company intelligence in this category. If no usable evidence is found, generation returns an error instead of inventing a signal.</p>
+        <p className="mt-1.5 text-xs leading-5 text-muted-foreground">For each contact, we start with the highest-scoring usable insight in this category. Scored insights take priority; if none have scores yet, we use the latest available insight. If no usable evidence is found, generation stops rather than inventing a signal.</p>
       </section>
       <details className="rounded-md border border-border/70 bg-muted/20">
         <summary className="cursor-pointer px-3 py-2.5 text-xs font-semibold">Five-layer email anatomy</summary>

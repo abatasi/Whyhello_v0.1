@@ -14,3 +14,9 @@ Show HQ voice as a label in messaging configuration, not a wall of its underlyin
 **Why:** The user explicitly said users do not need to see all the voice parameters.
 
 **How to apply:** Keep voice settings available for generation, but do not render their serialized values in step configuration.
+
+When a Playbook insight category is chosen, lead with its highest-scoring usable insight for the recipient and tell users this policy in the editor. “Top-performing” here means stored insight relevance, not measured message engagement.
+
+**Why:** The user explicitly asked to start with the highest-scoring insight within the selected category and document the approach in the Messaging Quran.
+
+**How to apply:** Keep selection recipient- and category-specific; do not let the model choose a weaker lead from an arbitrary recent batch. Make an unscored fallback explicit rather than implying it has a measured score.

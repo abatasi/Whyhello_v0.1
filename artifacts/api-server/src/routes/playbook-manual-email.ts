@@ -5,7 +5,7 @@ import { db } from "@workspace/db";
 import {
   sequencesTable, sequenceStepsTable, sequenceEnrollmentsTable, contactsTable, companiesTable,
   dnaProfilesTable, userEmailAccountsTable, usersTable, contactInsightsTable, companyInsightsTable,
-  roleInsightsTable, industryInsightsTable, colleagueInsightsTable, counterpartInsightsTable, insightQuotesTable,
+  roleInsightsTable, industryInsightsTable, colleagueInsightsTable, counterpartInsightsTable, insightQuotesTable, insightRelevanceScoresTable,
 } from "@workspace/db/schema";
 import { eq, and, ne, desc } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
@@ -13,6 +13,7 @@ import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accou
 import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evidence.js";
 import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, emailLengthRevision, manualEmailGuidance, resolveEmailShape } from "../lib/manual-email-guidance.js";
 import { countEmailBodyCharacters, getEmailLength } from "../lib/email-length.js";
+import { selectTopPlaybookInsight } from "../lib/playbook-insight-selection.js";
 
 export const timing = z.object({
   unit: z.enum(["immediately", "minutes", "hours", "days", "business-days", "specific"]),
@@ -156,31 +157,40 @@ type Evidence = { id: string; category: string; title: string; description: stri
 export async function collectPlaybookEvidence(contact: typeof contactsTable.$inferSelect, company: typeof companiesTable.$inferSelect | undefined, sources: string[]): Promise<Evidence[]> {
   const contactId = contact.id;
   const evidence: Evidence[] = [];
-  const add = (category: string, rows: { id: number; title: string; description: string | null; url: string }[]) =>
-    rows.slice(0, 12).forEach(row => evidence.push({ id: `${category}:${row.id}`, category, title: row.title, description: row.description ?? "", url: row.url }));
+  const scoreRows = await db.select().from(insightRelevanceScoresTable)
+    .where(eq(insightRelevanceScoresTable.contactId, contactId))
+    .orderBy(desc(insightRelevanceScoresTable.computedAt), desc(insightRelevanceScoresTable.id));
+  // The newest computation wins when legacy duplicate score rows exist.
+  const scores = new Map(scoreRows.reverse().map(row => [`${row.signalType}:${row.signalId}`, row.score]));
+  const add = (category: string, signalType: string, rows: { id: number; title: string; description: string | null; url: string }[]) => {
+    const row = selectTopPlaybookInsight(rows, signalType, scores);
+    if (row) evidence.push({ id: `${category}:${row.id}`, category, title: row.title, description: row.description ?? "", url: row.url });
+  };
   const wanted = new Set(sources);
   if (wanted.has("personal") || wanted.has("executive")) {
-    add("Personal / Executive Persona Research", await db.select().from(contactInsightsTable).where(eq(contactInsightsTable.contactId, contactId)).orderBy(desc(contactInsightsTable.id)).limit(12));
+    add("Personal / Executive Persona Research", "personal", await db.select().from(contactInsightsTable).where(eq(contactInsightsTable.contactId, contactId)));
   }
   if (company && ["company-news", "job-postings", "strategic", "company", "competitors"].some(s => wanted.has(s))) {
-    const rows = await db.select().from(companyInsightsTable).where(eq(companyInsightsTable.companyId, company.id)).orderBy(desc(companyInsightsTable.id)).limit(40);
+    const rows = await db.select().from(companyInsightsTable).where(eq(companyInsightsTable.companyId, company.id));
     const jobs = (r: typeof rows[number]) => /hiring|vacanc|job posting|recruit|career/i.test(`${r.title} ${r.description}`);
-    if (wanted.has("job-postings")) add("Relevant Job Postings", rows.filter(jobs));
-    if (wanted.has("company-news") || wanted.has("strategic") || wanted.has("company")) add("Company / Strategic Company Research", rows.filter(r => !jobs(r)));
-    if (wanted.has("competitors")) add("Competitors", rows.filter(r => /competit|rival/i.test(`${r.title} ${r.description}`)));
+    if (wanted.has("job-postings")) add("Relevant Job Postings", "company", rows.filter(jobs));
+    if (wanted.has("company-news") || wanted.has("strategic") || wanted.has("company")) add("Company / Strategic Company Research", "company", wanted.has("company") ? rows : rows.filter(r => !jobs(r)));
+    if (wanted.has("competitors")) add("Competitors", "company", rows.filter(r => /competit|rival/i.test(`${r.title} ${r.description}`)));
   }
-  if (wanted.has("role") && contact.roleId) add("Role", await db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId)).limit(12));
+  if (wanted.has("role") && contact.roleId) add("Role", "role", await db.select().from(roleInsightsTable).where(eq(roleInsightsTable.roleId, contact.roleId)));
   const industryId = contact.industryId ?? company?.industryId;
-  if (wanted.has("industry") && industryId) add("Industry", await db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, industryId)).limit(12));
+  if (wanted.has("industry") && industryId) add("Industry", "industry", await db.select().from(industryInsightsTable).where(eq(industryInsightsTable.industryId, industryId)));
   for (const category of ["colleagues", "counterparts"]) {
     if (!wanted.has(category)) continue;
     const table = category === "colleagues" ? colleagueInsightsTable : counterpartInsightsTable;
     const rows = await db.select({ id: table.id, title: table.title, description: table.description, url: table.url, firstName: contactsTable.firstName, lastName: contactsTable.lastName, companyId: contactsTable.companyId })
       .from(table).innerJoin(contactInsightsTable, eq(table.url, contactInsightsTable.url))
       .innerJoin(contactsTable, eq(contactInsightsTable.contactId, contactsTable.id))
-      .where(and(eq(table.contactId, contactId), ne(contactsTable.id, contactId))).limit(12);
-    const validRows = rows.filter(row => category !== "colleagues" || row.companyId === contact.companyId);
-    add(category, validRows.map(row => ({ ...row, description: `Source person: ${row.firstName} ${row.lastName}. ${row.description ?? ""}` })));
+      .where(and(eq(table.contactId, contactId), ne(contactsTable.id, contactId)));
+    const validRows = rows.filter(row =>
+      (row.title.trim() || row.description?.trim())
+      && (category !== "colleagues" || row.companyId === contact.companyId));
+    add(category, category === "colleagues" ? "colleague" : "counterpart", validRows.map(row => ({ ...row, description: `Source person: ${row.firstName} ${row.lastName}. ${row.description ?? ""}` })));
   }
   return evidence;
 }
