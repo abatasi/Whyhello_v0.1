@@ -22,6 +22,7 @@ import {
   Crown, Link2, Link2Off, Users,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useHqVoiceProfile } from "@/hooks/use-hq-voice-profile";
 import { Shell } from "@/components/layout/Shell";
 import { PlaybooksList } from "@/components/playbooks/PlaybooksList";
 import { createPlaybookRecord, duplicatePlaybookRecord, playbookRequest } from "@/components/playbooks/list-api";
@@ -35,6 +36,8 @@ import { createManualEmailConfiguration, readManualEmailConfiguration, validateM
 import { createPhoneCallConfiguration, readPhoneCallConfiguration, validatePhoneCallConfiguration, type PhoneCallConfiguration } from "@/components/playbooks/phone-call-model";
 import { createLinkedInConnectionConfiguration, readLinkedInConnectionConfiguration, validateLinkedInConnectionConfiguration, type LinkedInConnectionConfiguration } from "@/components/playbooks/linkedin-connection-model";
 import { getStepDefinition, type StepDefinition } from "@/components/playbooks/step-definitions";
+import "@/components/playbooks/playbook-selects.css";
+import { InsightCategorySelect, LEGACY_INSIGHT_CATEGORY_OPTIONS } from "@/components/playbooks/InsightCategorySelect";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1000,7 +1003,6 @@ function PlaybookEdge({
 // ── Configuration Drawer ──────────────────────────────────────────────────────
 
 const EMAIL_TYPES = ["Initial Email", "Follow-up", "Value Share", "Breakup Email"];
-const INSIGHT_CATEGORIES = ["Automatic", "Personal", "Company", "Industry", "Role", "Colleague", "Counterpart"];
 const MESSAGING_OBJECTIVES = ["Interrupt", "Engage", "Educate", "Offer"];
 const LINKEDIN_ACTIONS = ["View Profile", "Send Connection Request", "Send Message", "Send Follow-up"];
 const DELAY_UNITS = ["minutes", "hours", "business days", "calendar days"];
@@ -1349,7 +1351,7 @@ function ConfigDrawer({
             <SelectField value={data.emailType ?? "Initial Email"} onChange={v => upd({ emailType: v })} options={EMAIL_TYPES} />
           </Field>
           <Field label="Outside-in insight category" hint="Which insight type should drive this message?">
-            <SelectField value={data.insightCategory ?? "Automatic"} onChange={v => upd({ insightCategory: v })} options={INSIGHT_CATEGORIES} />
+            <InsightCategorySelect value={data.insightCategory ?? "Automatic"} onValueChange={v => upd({ insightCategory: v })} options={LEGACY_INSIGHT_CATEGORY_OPTIONS} />
           </Field>
           <Field label="Messaging objective">
             <SelectField value={data.messagingObjective ?? "Interrupt"} onChange={v => upd({ messagingObjective: v })} options={MESSAGING_OBJECTIVES} />
@@ -1378,7 +1380,7 @@ function ConfigDrawer({
             <SelectField value={data.linkedinAction ?? "Send Connection Request"} onChange={v => upd({ linkedinAction: v })} options={LINKEDIN_ACTIONS} />
           </Field>
           <Field label="Outside-in insight category">
-            <SelectField value={data.insightCategory ?? "Automatic"} onChange={v => upd({ insightCategory: v })} options={INSIGHT_CATEGORIES} />
+            <InsightCategorySelect value={data.insightCategory ?? "Automatic"} onValueChange={v => upd({ insightCategory: v })} options={LEGACY_INSIGHT_CATEGORY_OPTIONS} />
           </Field>
           <Field label="Messaging objective">
             <SelectField value={data.messagingObjective ?? "Engage"} onChange={v => upd({ messagingObjective: v })} options={MESSAGING_OBJECTIVES} />
@@ -1398,7 +1400,7 @@ function ConfigDrawer({
             <TextInput value={data.callObjective ?? ""} onChange={v => upd({ callObjective: v })} placeholder="e.g. Book a discovery call" />
           </Field>
           <Field label="Outside-in insight category">
-            <SelectField value={data.insightCategory ?? "Automatic"} onChange={v => upd({ insightCategory: v })} options={INSIGHT_CATEGORIES} />
+            <InsightCategorySelect value={data.insightCategory ?? "Automatic"} onValueChange={v => upd({ insightCategory: v })} options={LEGACY_INSIGHT_CATEGORY_OPTIONS} />
           </Field>
           <Field label="Call opener">
             <TextInput value={data.opener ?? ""} onChange={v => upd({ opener: v })} placeholder="Opening line for the call…" multiline />
@@ -2111,6 +2113,7 @@ function CanvasInner({
 }) {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const voiceProfileQuery = useHqVoiceProfile();
   const [showAiBuilder, setShowAiBuilder] = useState(false);
   const emailAccounts = useQuery<unknown[]>({
     queryKey: ["playbook-email-accounts"],
@@ -2599,13 +2602,15 @@ function CanvasInner({
 
   function addManualStep(definition: StepDefinition, afterId: string | null = stepNodes.at(-1)?.id ?? null) {
     if (!definition.enabled || !["manual-email", "phone-call", "linkedin-connection-request"].includes(definition.id) || saving || ["active", "archived", "completed"].includes(playbookStatus)) return;
+    // While HQ is loading, retain live HQ inheritance rather than pinning a generic fallback.
+    const voiceOptions = voiceProfileQuery.data === undefined ? undefined : voiceProfileQuery.data ?? {};
     const step = makeNode(definition.id, { x: 0, y: stepNodes.length * 140 }, {
       label: definition.name,
       laneId: PRIMARY_LANE_ID,
       stepType: definition.type,
       category: definition.category,
       executionMode: definition.executionMode,
-      configuration: definition.id === "linkedin-connection-request" ? createLinkedInConnectionConfiguration() : definition.id === "phone-call" ? createPhoneCallConfiguration() : createManualEmailConfiguration(),
+      configuration: definition.id === "linkedin-connection-request" ? createLinkedInConnectionConfiguration(voiceOptions) : definition.id === "phone-call" ? createPhoneCallConfiguration(voiceOptions) : createManualEmailConfiguration(voiceOptions),
     });
     const next = [...nodes];
     next.splice(afterId ? next.findIndex(node => node.id === afterId) + 1 : 0, 0, step);
@@ -2849,7 +2854,7 @@ function CanvasInner({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+    <div className="playbook-select-controls flex h-full min-h-0 flex-col overflow-hidden bg-background">
       <BuilderHeader
         playbookId={playbookId}
         name={playbookName}

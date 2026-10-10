@@ -1,4 +1,4 @@
-import { createEmailVariant, type EmailTiming, type EmailVariant, type EmailPreview } from "./manual-email-model";
+import { createEmailVariant, type EmailTiming, type EmailVariant, type EmailPreview, type HqVoiceOptions } from "./manual-email-model";
 
 export interface CallScript {
   opener: string;
@@ -25,12 +25,12 @@ export interface PhoneCallConfiguration {
   dueTiming: EmailTiming;
   variants: CallVariant[];
 }
-export function createCallVariant(name = "Test A"): CallVariant {
-  const { emailType: _emailType, templateId: _templateId, templateSubject: _subject, templateBody: _body, preview: _preview, ...common } = createEmailVariant(name);
+export function createCallVariant(name = "Test A", voiceOptions?: HqVoiceOptions): CallVariant {
+  const { emailType: _emailType, templateId: _templateId, templateSubject: _subject, templateBody: _body, preview: _preview, ...common } = createEmailVariant(name, voiceOptions);
   return { ...common, objective: "First conversation", template: { opener: "", talkingPoints: [], questions: [], objections: [], voicemail: "", closing: "" } };
 }
-export function createPhoneCallConfiguration(): PhoneCallConfiguration {
-  return { version: 1, enabled: true, createTiming: { unit: "immediately", amount: 1, at: "" }, dueTiming: { unit: "minutes", amount: 30, at: "" }, variants: [createCallVariant()] };
+export function createPhoneCallConfiguration(voiceOptions?: HqVoiceOptions): PhoneCallConfiguration {
+  return { version: 1, enabled: true, createTiming: { unit: "immediately", amount: 1, at: "" }, dueTiming: { unit: "minutes", amount: 30, at: "" }, variants: [createCallVariant("Test A", voiceOptions)] };
 }
 export function readPhoneCallConfiguration(value: unknown): PhoneCallConfiguration {
   const defaults = createPhoneCallConfiguration();

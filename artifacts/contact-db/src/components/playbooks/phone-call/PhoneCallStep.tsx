@@ -14,7 +14,9 @@ import { generatePhoneCallPreview } from "../phone-call-api";
 import { CallAudioPreview } from "./CallAudioPreview";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { getManualEmailContext } from "../manual-email-api";
+import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
 import { RESEARCH_SOURCES, timingSummary, type EmailTiming, type ManualEmailContext, type TimingUnit } from "../manual-email-model";
+import { TonePersonaPicker } from "../TonePersonaPicker";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
 const smallButton = "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50";
@@ -65,8 +67,9 @@ function ScriptFields({ title, script, onChange, readOnly, prefix }: {
   </section>;
 }
 
-function VariantFields({ variant, context, onUpdate, onGenerate, busy, readOnly }: {
+function VariantFields({ variant, context, contextLoading, contextError, onUpdate, onGenerate, busy, readOnly }: {
   variant: CallVariant; context?: ManualEmailContext; onUpdate: (next: CallVariant) => void;
+  contextLoading: boolean; contextError: boolean;
   onGenerate: () => void; busy: boolean; readOnly: boolean;
 }) {
   const set = (patch: Partial<CallVariant>) => onUpdate({ ...variant, ...patch });
@@ -84,13 +87,15 @@ function VariantFields({ variant, context, onUpdate, onGenerate, busy, readOnly 
         return <button key={source.id} type="button" aria-pressed={active} disabled={readOnly} onClick={() => set({ researchSources: active ? variant.researchSources.filter(id => id !== source.id) : [...variant.researchSources, source.id] })}
           className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs transition-colors ${active ? "border-primary/50 bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:bg-muted"}`}>{active && <Check size={12} />}{source.name}</button>;
       })}</div></section>
-      <section><label className={labelClass}>Set your tone</label><div className="flex flex-wrap gap-2">{["Default", "Direct", "Formal", "Casual", "Creative", "Custom"].map(tone =>
-        <button key={tone} type="button" disabled={readOnly} onClick={() => set({ tone })} className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs transition-colors ${variant.tone === tone ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>{tone}</button>)}</div>
-        <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={variant.inheritHqTone} disabled={readOnly || !context?.voice} onChange={e => set({ inheritHqTone: e.target.checked })} />HQ voice{!context?.voice && <span>(not available)</span>}</label>
+      <section><label className={labelClass}>Set your tone</label><TonePersonaPicker tones={["Default", "Direct", "Formal", "Casual", "Creative", "Custom"]} tone={variant.tone} voicePersonaId={variant.voicePersonaId}
+        inheritHqTone={variant.inheritHqTone} context={context} loading={contextLoading} error={contextError} disabled={readOnly}
+        showHqVoice={false} showGenericDescription
+        onTone={tone => set({ tone, voicePersonaId: null, inheritHqTone: false })}
+        onPersona={voicePersonaId => set({ tone: "Default", voicePersonaId, inheritHqTone: false })} />
         {variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}
       </section>
     </>}
-    {variant.mode === "prompt" && <section><label className={labelClass}>Instructions for this call</label><textarea aria-label="Generation instructions" className={fieldClass + " min-h-36 resize-y"} value={variant.prompt} disabled={readOnly} onChange={e => set({ prompt: e.target.value })} placeholder="What should this conversation accomplish, and how should it feel?" /><p className="mt-1 text-xs text-muted-foreground">Selected research and workspace context are also included.</p></section>}
+    {variant.mode === "prompt" && <section className="space-y-3"><div><label className={labelClass}>Instructions for this call</label><textarea aria-label="Generation instructions" className={fieldClass + " min-h-36 resize-y"} value={variant.prompt} disabled={readOnly} onChange={e => set({ prompt: e.target.value })} placeholder="What should this conversation accomplish, and how should it feel?" /><p className="mt-1 text-xs text-muted-foreground">Selected research and workspace context are also included.</p></div><div><label className={labelClass}>Set your tone</label><TonePersonaPicker tones={["Default", "Direct", "Formal", "Casual", "Creative", "Custom"]} tone={variant.tone} voicePersonaId={variant.voicePersonaId} inheritHqTone={variant.inheritHqTone} context={context} loading={contextLoading} error={contextError} disabled={readOnly} showHqVoice={false} showGenericDescription onTone={tone => set({ tone, voicePersonaId: null, inheritHqTone: false })} onPersona={voicePersonaId => set({ tone: "Default", voicePersonaId, inheritHqTone: false })} />{variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}</div></section>}
     {variant.mode === "template" && <ScriptFields title="Call template" script={variant.template} onChange={template => set({ template })} readOnly={readOnly} prefix="Template" />}
     <details className="rounded-md border border-border/70">
       <summary className="cursor-pointer px-3 py-2.5 text-xs font-semibold">Set your AI context <span className="ml-1 font-normal text-muted-foreground">Inspect enabled HQ sources</span></summary>
@@ -203,7 +208,7 @@ export function PhoneCallStep({ playbookId, stepId, stepNumber, config: rawConfi
   onMoveUp: () => void; onMoveDown: () => void; canMoveUp: boolean; canMoveDown: boolean;
 }) {
   const { user } = useUser();
-  const contextQuery = useQuery({ queryKey: ["manual-email-context", playbookId, user?.id ?? "signed-out"], queryFn: () => getManualEmailContext(playbookId), enabled: !!user?.id, staleTime: 60_000 });
+  const contextQuery = useQuery({ queryKey: playbookContextQueryKey(playbookId, user?.id), queryFn: () => getManualEmailContext(playbookId), enabled: !!user?.id, staleTime: 0, refetchOnMount: "always" });
   const config = useMemo(() => readPhoneCallConfiguration(rawConfig ?? createPhoneCallConfiguration()), [rawConfig]);
   const currentConfigRef = useRef(config);
   currentConfigRef.current = config;
@@ -226,7 +231,7 @@ export function PhoneCallStep({ playbookId, stepId, stepNumber, config: rawConfi
   const status = !config.enabled ? "Disabled" : contextQuery.isError || (variant?.mode !== "template" && context && !context.aiAvailable) ? "Error" : !contacts.length ? "Warning" : validationError ? "Incomplete" : "Complete";
   const addVariant = () => {
     if (config.variants.length >= 6) return;
-    const next = createCallVariant(`Test ${String.fromCharCode(65 + config.variants.length)}`);
+    const next = createCallVariant(`Test ${String.fromCharCode(65 + config.variants.length)}`, context);
     const each = Math.floor(100 / (config.variants.length + 1));
     const variants = config.variants.map((item, index) => ({ ...item, allocation: index === config.variants.length - 1 ? 100 - each * config.variants.length : each }));
     next.allocation = each;
@@ -273,7 +278,7 @@ export function PhoneCallStep({ playbookId, stepId, stepNumber, config: rawConfi
       {contextQuery.isLoading && <div className="mb-4 animate-pulse rounded-md bg-muted p-4 text-xs text-muted-foreground">Loading workspace contacts and context…</div>}
       {contextQuery.isError && <div role="alert" className="mb-4 flex items-center justify-between gap-2 rounded-md border border-destructive/30 p-3 text-xs text-destructive"><span>{contextError}</span><button type="button" className={smallButton} onClick={() => contextQuery.refetch()}>Retry</button></div>}
       {validationError && config.enabled && <p role="status" className="mb-3 flex items-center gap-2 text-xs text-muted-foreground"><AlertCircle size={14} />{validationError}</p>}
-      {variant && <div className="grid min-w-0 gap-6 xl:grid-cols-2"><div className="min-w-0"><h3 className="mb-3 text-sm font-semibold">Configuration</h3><VariantFields variant={variant} context={context} onUpdate={updateVariant} onGenerate={() => { if (variant.mode === "template" || context?.aiAvailable) window.dispatchEvent(new CustomEvent(`phone-call-generate-${variant.id}`)); }} busy={generatingVariantId !== null} readOnly={readOnly} /></div><PreviewPanel playbookId={playbookId} variant={variant} contacts={contacts} selectedContactId={chosenId} onContactChange={setContactId} context={context} onPreviewChange={updatePreview} onGenerationState={setGeneratingVariantId} readOnly={readOnly} /></div>}
+      {variant && <div className="grid min-w-0 gap-6 xl:grid-cols-2"><div className="min-w-0"><h3 className="mb-3 text-sm font-semibold">Configuration</h3><VariantFields variant={variant} context={context} contextLoading={contextQuery.isLoading} contextError={contextQuery.isError} onUpdate={updateVariant} onGenerate={() => { if (variant.mode === "template" || context?.aiAvailable) window.dispatchEvent(new CustomEvent(`phone-call-generate-${variant.id}`)); }} busy={generatingVariantId !== null} readOnly={readOnly} /></div><PreviewPanel playbookId={playbookId} variant={variant} contacts={contacts} selectedContactId={chosenId} onContactChange={setContactId} context={context} onPreviewChange={updatePreview} onGenerationState={setGeneratingVariantId} readOnly={readOnly} /></div>}
     </div>}
     {!selected && <button type="button" className="w-full cursor-pointer px-5 py-3 text-left text-xs text-muted-foreground hover:bg-muted/40" onClick={onSelect}>Expand to edit {variant?.name ?? "call"} configuration</button>}
   </article>;

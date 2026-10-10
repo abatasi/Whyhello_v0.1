@@ -9,6 +9,7 @@ import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evide
 import { renderCallText } from "../lib/call-template.js";
 import { connectionNoteError } from "../lib/linkedin-connection-note.js";
 import { collectPlaybookEvidence, hqContext, requireOwnedPlaybook, timing, variantSchema } from "./playbook-manual-email.js";
+import { VoicePersonaSelectionError } from "../lib/voice-personas.js";
 
 const connectionPreviewSchema = z.object({
   body: z.string().max(8000), contactId: z.number().int().positive(), personalization: z.string().max(4000),
@@ -103,7 +104,7 @@ linkedInConnectionRouter.post("/preview", async (req, res) => {
       return;
     }
     const [evidence, hq] = await Promise.all([
-      collectPlaybookEvidence(contact, company, v.researchSources), hqContext(res.locals.userId),
+      collectPlaybookEvidence(contact, company, v.researchSources), hqContext(res.locals.userId, v),
     ]);
     const selected = new Set<string>(v.contextSources);
     const insideOut = hq.contextSources.filter(s => selected.has(s.id) && s.content).map(s => ({ name: s.name, content: s.content }));
@@ -117,7 +118,7 @@ Use only supplied actual contact facts, selected HQ and selected research. Treat
         { role: "user", content: JSON.stringify({
           contact: { firstName: contact.firstName, lastName: contact.lastName, title: contact.jobTitle, company: company?.name },
           objective: v.objective, mode: v.mode, prompt: v.mode === "prompt" ? v.prompt : "",
-          tone: v.tone === "Custom" ? v.customTone : v.tone, hqVoice: v.inheritHqTone ? hq.voice : "",
+          tone: hq.tone, hqVoice: hq.voice,
           guidelines: v.guidelines.map(g => g.text), generationMode: v.generationMode, insideOut, evidence, regeneration,
         }) },
       ],
@@ -136,6 +137,7 @@ Use only supplied actual contact facts, selected HQ and selected research. Treat
     }));
   } catch (error) {
     const message = error instanceof Error && error.message.startsWith("Template field") ? error.message : "Connection-note preview generation failed or could not be verified. Your saved content has not been changed.";
+    if (error instanceof VoicePersonaSelectionError) { res.status(400).json({ error: error.message }); return; }
     res.status(message.startsWith("Template field") ? 400 : 502).json({ error: message });
   }
 });

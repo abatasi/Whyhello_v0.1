@@ -19,6 +19,7 @@ import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { loadRelationshipInsights, type RelationshipKind, type RelationshipSourceContact } from "../lib/relationship-insights.js";
 import { countEmailBodyCharacters, emailLengthInstruction, getEmailLength } from "../lib/email-length.js";
+import { resolveOutputVoice, VoicePersonaSelectionError } from "../lib/voice-personas.js";
 
 export const contactJobsRouter: IRouter = Router({ mergeParams: true });
 export const jobsRouter: IRouter = Router({ mergeParams: true });
@@ -1039,12 +1040,24 @@ contactJobsRouter.post("/", async (req, res) => {
 
     const { type, title, params } = req.body ?? {};
     if (!type || !title || !params) { res.status(400).json({ error: "type, title, and params are required" }); return; }
+    if (typeof params !== "object" || Array.isArray(params)) { res.status(400).json({ error: "Output parameters must be an object." }); return; }
 
     const userId = getUserId(req);
     if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
+    const resolvedParams = { ...params };
+    // Resolve the selected ID against this account, and freeze the definition for
+    // this output and its children. Never accept a browser-supplied voice snapshot.
+    delete resolvedParams.voiceProfile;
+    if (params.voicePersonaId != null || params.tone === "my_voice_profile") {
+      const [profile] = await db.select().from(dnaProfilesTable).where(eq(dnaProfilesTable.userId, userId));
+      const voice = resolveOutputVoice(profile ? JSON.parse(profile.data) : {}, params);
+      resolvedParams.voiceProfile = voice.voiceProfile;
+      resolvedParams.voicePersonaId = voice.voicePersonaId;
+      resolvedParams.tone = "my_voice_profile";
+    }
     const [job] = await db.insert(outreachJobsTable)
-      .values({ contactId, userId, type, title, params, status: "generating" })
+      .values({ contactId, userId, type, title, params: resolvedParams, status: "generating" })
       .returning();
 
     res.status(201).json(job);
@@ -1066,6 +1079,7 @@ contactJobsRouter.post("/", async (req, res) => {
           .catch(console.error);
       });
   } catch (err) {
+    if (err instanceof VoicePersonaSelectionError) { res.status(400).json({ error: err.message }); return; }
     console.error("Create outreach job error:", err);
     res.status(500).json({ error: "Internal server error" });
   }

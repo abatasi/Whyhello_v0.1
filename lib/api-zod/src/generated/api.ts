@@ -7,6 +7,45 @@
  */
 import * as zod from "zod";
 
+/**
+ * Account-owned successful quote and score indexing is reused for seven days unless HQ changes. Empty successful results are indexed too.
+ */
+export const GetContactIndexingStatusParams = zod.object({
+  contactId: zod.coerce.number(),
+});
+
+export const GetContactIndexingStatusResponse = zod.object({
+  quotesNeedRefresh: zod.boolean(),
+  scoresNeedRefresh: zod.boolean(),
+  quotesIndexedAt: zod.date().nullable(),
+  scoresIndexedAt: zod.date().nullable(),
+  hqRevision: zod.string(),
+});
+
+export const GenerateContactChatParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const generateContactChatBodyToneMax = 2000;
+
+export const generateContactChatBodyVoicePersonaIdMax = 100;
+
+export const GenerateContactChatBody = zod.object({
+  messages: zod.array(
+    zod.object({
+      role: zod.enum(["user", "assistant"]),
+      content: zod.string(),
+    }),
+  ),
+  selectedIds: zod.array(zod.string()).optional(),
+  tone: zod.string().max(generateContactChatBodyToneMax).optional(),
+  voicePersonaId: zod
+    .string()
+    .min(1)
+    .max(generateContactChatBodyVoicePersonaIdMax)
+    .nullish(),
+});
+
 export const GeneratePhoneCallAudioParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -38,6 +77,21 @@ export const GetManualEmailEditorContextResponse = zod.object({
     }),
   ),
   voice: zod.string(),
+  voicePersonas: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        name: zod.string(),
+        summary: zod
+          .string()
+          .optional()
+          .describe(
+            "The owner's saved HQ Voice Profile short description, reused verbatim in output tone selectors.",
+          ),
+      }),
+    )
+    .optional(),
+  activeVoicePersonaId: zod.string().nullish(),
   aiAvailable: zod.boolean(),
   mailboxes: zod.array(
     zod.object({
@@ -853,6 +907,18 @@ export const ListOutreachJobsResponseItem = zod.object({
   params: zod.object({
     length: zod.string(),
     tone: zod.string(),
+    voicePersonaId: zod
+      .string()
+      .nullish()
+      .describe(
+        "Saved persona ID resolved against the authenticated user's HQ profile; overrides generic tone without activating that persona in HQ.",
+      ),
+    voiceProfile: zod
+      .record(zod.string(), zod.unknown())
+      .optional()
+      .describe(
+        "Server-resolved voice snapshot retained for follow-ups and regenerations; client-supplied definitions are ignored.",
+      ),
     selectedInsightKeys: zod.array(zod.string()),
   }),
   result: zod.string().nullish(),
@@ -876,6 +942,18 @@ export const CreateOutreachJobBody = zod.object({
   params: zod.object({
     length: zod.string(),
     tone: zod.string(),
+    voicePersonaId: zod
+      .string()
+      .nullish()
+      .describe(
+        "Saved persona ID resolved against the authenticated user's HQ profile; overrides generic tone without activating that persona in HQ.",
+      ),
+    voiceProfile: zod
+      .record(zod.string(), zod.unknown())
+      .optional()
+      .describe(
+        "Server-resolved voice snapshot retained for follow-ups and regenerations; client-supplied definitions are ignored.",
+      ),
     selectedInsightKeys: zod.array(zod.string()),
   }),
 });
@@ -896,6 +974,18 @@ export const GetOutreachJobResponse = zod.object({
   params: zod.object({
     length: zod.string(),
     tone: zod.string(),
+    voicePersonaId: zod
+      .string()
+      .nullish()
+      .describe(
+        "Saved persona ID resolved against the authenticated user's HQ profile; overrides generic tone without activating that persona in HQ.",
+      ),
+    voiceProfile: zod
+      .record(zod.string(), zod.unknown())
+      .optional()
+      .describe(
+        "Server-resolved voice snapshot retained for follow-ups and regenerations; client-supplied definitions are ignored.",
+      ),
     selectedInsightKeys: zod.array(zod.string()),
   }),
   result: zod.string().nullish(),
@@ -925,6 +1015,18 @@ export const UpdateOutreachJobResponse = zod.object({
   params: zod.object({
     length: zod.string(),
     tone: zod.string(),
+    voicePersonaId: zod
+      .string()
+      .nullish()
+      .describe(
+        "Saved persona ID resolved against the authenticated user's HQ profile; overrides generic tone without activating that persona in HQ.",
+      ),
+    voiceProfile: zod
+      .record(zod.string(), zod.unknown())
+      .optional()
+      .describe(
+        "Server-resolved voice snapshot retained for follow-ups and regenerations; client-supplied definitions are ignored.",
+      ),
     selectedInsightKeys: zod.array(zod.string()),
   }),
   result: zod.string().nullish(),

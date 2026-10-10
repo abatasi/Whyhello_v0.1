@@ -1,3 +1,5 @@
+import { preferredHqPersonaId } from "../../lib/hq-voice-profile-model";
+
 export type EmailMode = "assisted" | "prompt" | "template";
 export type TimingUnit = "immediately" | "minutes" | "hours" | "days" | "business-days" | "specific";
 export interface EmailTiming { unit: TimingUnit; amount: number; at: string }
@@ -11,7 +13,7 @@ export type InsightCategory = "personal" | "company" | "industry" | "role" | "co
 export interface EmailVariant {
   id: string; name: string; allocation: number; mode: EmailMode;
   emailType: "Outreach" | "Follow-up" | "Last pitch";
-  researchSources: string[]; tone: string; customTone: string; inheritHqTone: boolean;
+  researchSources: string[]; tone: string; customTone: string; inheritHqTone: boolean; voicePersonaId?: string | null;
   length?: EmailLength; insightCategory?: InsightCategory;
   contextSources: string[]; userContext: string;
   guidelines: { id: string; text: string }[];
@@ -28,6 +30,8 @@ export interface ManualEmailContext {
   contacts: { id: number; name: string; company: string; enrolled: boolean }[];
   contextSources: { id: string; name: string; content: string }[];
   voice: string; aiAvailable: boolean;
+  voicePersonas?: { id: string; name: string; summary?: string }[];
+  activeVoicePersonaId?: string | null;
   mailboxes: { id: number; email: string; provider: string }[];
   templates: { id: string; name: string; subject: string; body: string }[];
 }
@@ -41,16 +45,18 @@ export const RESEARCH_SOURCES = [
   { id: "competitors", name: "Competitors" }, { id: "role", name: "Role" },
   { id: "counterparts", name: "Counterparts" },
 ];
-export function createEmailVariant(name = "Test A"): EmailVariant {
+export type HqVoiceOptions = Pick<ManualEmailContext, "voicePersonas" | "activeVoicePersonaId">;
+export function createEmailVariant(name = "Test A", voiceOptions?: HqVoiceOptions): EmailVariant {
   return {
     id: crypto.randomUUID(), name, allocation: 100, mode: "assisted", emailType: "Outreach",
     researchSources: ["executive", "strategic"], tone: "Default", customTone: "", inheritHqTone: true,
+    ...(voiceOptions ? { voicePersonaId: preferredHqPersonaId(voiceOptions), inheritHqTone: false } : {}),
     contextSources: ["company", "products", "value-propositions"], userContext: "", guidelines: [],
     generationMode: "Standard", prompt: "", templateId: "", templateSubject: "", templateBody: "",
   };
 }
-export function createManualEmailConfiguration(): ManualEmailConfiguration {
-  const first = createEmailVariant();
+export function createManualEmailConfiguration(voiceOptions?: HqVoiceOptions): ManualEmailConfiguration {
+  const first = createEmailVariant("Test A", voiceOptions);
   first.length = "medium";
   first.insightCategory = "personal";
   first.tone = "Professional";

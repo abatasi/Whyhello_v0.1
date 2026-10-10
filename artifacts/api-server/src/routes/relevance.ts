@@ -18,6 +18,7 @@ import { getAuth } from "@clerk/express";
 import { inspectLinkedInSource, type LinkedInSourceData } from "../lib/linkedin-source";
 import { isContactAuthoredLinkedInSignal } from "../lib/linkedin-authorship";
 import { unrelatedSportsVideo } from "../lib/video-relevance";
+import { cachedContactIndex, contactIndexingStatus, indexingUserId, readContactIndex } from "../lib/contact-index-cache";
 
 const VIDEO_MEDIA_TYPES = new Set(["video", "youtube", "youtube_video"]);
 function getUserId(req: Request): string | null {
@@ -26,7 +27,6 @@ function getUserId(req: Request): string | null {
 }
 
 const LINKEDIN_MEDIA_TYPES = new Set(["linkedin", "linkedin_post"]);
-const RELEVANCE_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const FRESHNESS_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
 const FRESHNESS_ANNUAL_DECAY = 0.2;
 const FRESHNESS_FLOOR = 0.2;
@@ -71,6 +71,10 @@ router.get("/relevance", async (req, res) => {
   try {
     const contactId = parseInt(req.params.contactId);
     if (isNaN(contactId)) { res.status(400).json({ error: "Invalid contact ID" }); return; }
+    const userId = indexingUserId(req);
+    if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+    const snapshot = await readContactIndex(userId, contactId, "scores");
+    if (snapshot) { res.json(snapshot.results); return; }
 
     const rows = await db
       .select()
@@ -97,14 +101,15 @@ router.get("/relevance", async (req, res) => {
 // Fetches all outside-in signals + HQ inside-out profile, scores every signal
 // with AI, persists results, and returns the scored list.
 
-router.post("/relevance/score", async (req, res) => {
+router.get("/indexing-status", contactIndexingStatus);
+
+router.post("/relevance/score", cachedContactIndex("scores", async (req, res) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
 
   try {
-    const contactId = parseInt(req.params.contactId);
+    const contactId = Number(req.params.contactId);
     if (isNaN(contactId)) { res.status(400).json({ error: "Invalid contact ID" }); return; }
-    const forceRefresh = req.body?.force === true;
 
     // 1. Load contact (to get companyId / industryId / roleId)
     const [contact] = await db
@@ -208,7 +213,9 @@ router.post("/relevance/score", async (req, res) => {
     // 3. Build quotable lookup: "signalType-signalId" → quote row
     type QuotableInfo = { quote: string; attribution: string; attributionRole: string | null; hqBridge: string | null };
     const quoteMap = new Map<string, QuotableInfo>();
-    for (const q of quotes) {
+    const ownedQuotes = await readContactIndex(userId, contactId, "quotes");
+    const effectiveQuotes = ownedQuotes && Array.isArray(ownedQuotes.results) ? ownedQuotes.results as typeof quotes : quotes;
+    for (const q of effectiveQuotes) {
       quoteMap.set(`${q.signalType}-${q.signalId}`, {
         quote: q.quote,
         attribution: q.attribution,
@@ -251,33 +258,6 @@ router.post("/relevance/score", async (req, res) => {
       ...counterpart.map((s) => ({ signalType: "counterpart", signalId: s.id, title: s.title, url: s.url, mediaType: s.mediaType, description: s.description, publishedDate: s.publishedDate, quotable: quoteMap.get(`counterpart-${s.id}`) })),
     ];
 
-    // Keep relevance refreshes to one run per contact every ten minutes.
-    // This server-side guard protects against duplicate tabs and callers that
-    // bypass the client-side freshness check.
-    const existingScores = await db
-      .select()
-      .from(insightRelevanceScoresTable)
-      .where(eq(insightRelevanceScoresTable.contactId, contactId));
-    const latestComputedAt = existingScores.reduce((latest, score) => {
-      const timestamp = new Date(score.computedAt).getTime();
-      return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
-    }, 0);
-    if (
-      !forceRefresh
-      &&
-      latestComputedAt > 0
-      && Date.now() - latestComputedAt < RELEVANCE_REFRESH_WINDOW_MS
-    ) {
-      res.json(existingScores.map((score) => ({
-        signalType: score.signalType,
-        signalId: score.signalId,
-        score: score.score,
-        description: score.description,
-        matchedHqSignals: score.matchedHqSignals ? (JSON.parse(score.matchedHqSignals) as string[]) : [],
-        computedAt: score.computedAt,
-      })));
-      return;
-    }
 
     // Set of signal keys that have an extracted quotable — used for post-processing boost
     const quotableKeys = new Set(signals.filter((s) => s.quotable).map((s) => `${s.signalType}-${s.signalId}`));
@@ -309,7 +289,7 @@ router.post("/relevance/score", async (req, res) => {
       .from(dnaProfilesTable)
       .where(eq(dnaProfilesTable.userId, userId));
 
-    const hqProfile = dnaRow ? (JSON.parse(dnaRow.data) as Record<string, unknown>) : {};
+    const hqProfile = res.locals.contactIndexHqProfile ?? (dnaRow ? (JSON.parse(dnaRow.data) as Record<string, unknown>) : {});
     const hqSummary = buildHqSummary(hqProfile);
 
     // 6. Build prompt and call AI
@@ -384,7 +364,8 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       messages: [{ role: "user", content: prompt }],
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "[]";
+    const raw = completion.choices[0]?.message?.content?.trim();
+    if (!raw) { res.status(502).json({ error: "Scoring returned no result. The previous indexing is unchanged." }); return; }
     const match = raw.match(/\[[\s\S]*\]/);
     if (!match) { res.status(500).json({ error: "AI returned unparseable response" }); return; }
 
@@ -396,6 +377,9 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
       matchedHqSignals: string[];
     };
     const rawScored: ScoredSignal[] = JSON.parse(match[0]);
+    if (!Array.isArray(rawScored) || rawScored.length === 0) {
+      res.status(502).json({ error: "Scoring returned no scored insights. The previous indexing is unchanged." }); return;
+    }
 
     // 7. Apply deterministic Quotable Bonus for signals with an extracted quote
     //    that scored ≥ 20 on HQ alignment — a quote that connects to nothing gets no lift.
@@ -576,7 +560,7 @@ Return ONLY a valid JSON array — no preamble, no code fences, no explanation:
     console.error("Relevance score error:", err);
     res.status(500).json({ error: "Failed to score relevance" });
   }
-});
+}));
 
 // ── GET /api/contacts/:contactId/insights/relevance/meta ─────────────────────
 // Returns the stored meta (aggregate) score for this contact, or null if scoring
@@ -586,6 +570,22 @@ router.get("/relevance/meta", async (req, res) => {
   try {
     const contactId = parseInt(req.params.contactId);
     if (isNaN(contactId)) { res.status(400).json({ error: "Invalid contact ID" }); return; }
+    const userId = indexingUserId(req);
+    if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+    const snapshot = await readContactIndex(userId, contactId, "scores");
+    if (snapshot && Array.isArray(snapshot.results)) {
+      const best = { personal: 0, company: 0, industry: 0, role: 0 };
+      for (const score of snapshot.results as { signalType: string; score: number }[]) {
+        if (score.signalType in best) {
+          const category = score.signalType as keyof typeof best;
+          best[category] = Math.max(best[category], score.score);
+        }
+      }
+      res.json({ metaScore: Math.round(Object.values(best).reduce((a, b) => a + b, 0) / 4),
+        personalBest: best.personal, companyBest: best.company, industryBest: best.industry, roleBest: best.role,
+        signalCount: snapshot.results.length, computedAt: snapshot.indexedAt.toISOString() });
+      return;
+    }
 
     const [row] = await db
       .select()

@@ -1,4 +1,4 @@
-import { createEmailVariant, type EmailTiming, type EmailVariant, type EmailPreview } from "./manual-email-model";
+import { createEmailVariant, type EmailTiming, type EmailVariant, type EmailPreview, type HqVoiceOptions } from "./manual-email-model";
 
 export const CONNECTION_NOTE_LIMIT = 200;
 export interface ConnectionPreview {
@@ -15,13 +15,13 @@ export interface LinkedInConnectionConfiguration {
   version: 1; enabled: boolean; createTiming: EmailTiming; dueTiming: EmailTiming;
   variants: ConnectionVariant[];
 }
-export function createConnectionVariant(name = "Test A"): ConnectionVariant {
-  const { emailType: _type, templateId: _id, templateSubject: _subject, templateBody: _body, preview: _preview, ...common } = createEmailVariant(name);
+export function createConnectionVariant(name = "Test A", voiceOptions?: HqVoiceOptions): ConnectionVariant {
+  const { emailType: _type, templateId: _id, templateSubject: _subject, templateBody: _body, preview: _preview, ...common } = createEmailVariant(name, voiceOptions);
   return { ...common, objective: "Connect", templateBody: "" };
 }
-export function createLinkedInConnectionConfiguration(): LinkedInConnectionConfiguration {
+export function createLinkedInConnectionConfiguration(voiceOptions?: HqVoiceOptions): LinkedInConnectionConfiguration {
   return { version: 1, enabled: true, createTiming: { unit: "immediately", amount: 1, at: "" },
-    dueTiming: { unit: "minutes", amount: 30, at: "" }, variants: [createConnectionVariant()] };
+    dueTiming: { unit: "minutes", amount: 30, at: "" }, variants: [createConnectionVariant("Test A", voiceOptions)] };
 }
 export function readLinkedInConnectionConfiguration(value: unknown): LinkedInConnectionConfiguration {
   const base = createLinkedInConnectionConfiguration();

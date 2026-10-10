@@ -5,6 +5,32 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+export type ContactChatTurnRole =
+  (typeof ContactChatTurnRole)[keyof typeof ContactChatTurnRole];
+
+export const ContactChatTurnRole = {
+  user: "user",
+  assistant: "assistant",
+} as const;
+
+export interface ContactChatTurn {
+  role: ContactChatTurnRole;
+  content: string;
+}
+
+export interface ContactChatInput {
+  messages: ContactChatTurn[];
+  selectedIds?: string[];
+  /** @maxLength 2000 */
+  tone?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   * @nullable
+   */
+  voicePersonaId?: string | null;
+}
+
 export interface PhoneCallAudioInput {
   /**
    * @minLength 1
@@ -199,10 +225,20 @@ export interface ManualEmailSavedTemplate {
   body: string;
 }
 
+export interface VoicePersonaOption {
+  id: string;
+  name: string;
+  /** The owner's saved HQ Voice Profile short description, reused verbatim in output tone selectors. */
+  summary?: string;
+}
+
 export interface ManualEmailEditorContext {
   contacts: ManualEmailContact[];
   contextSources: ManualEmailContextSource[];
   voice: string;
+  voicePersonas?: VoicePersonaOption[];
+  /** @nullable */
+  activeVoicePersonaId?: string | null;
   aiAvailable: boolean;
   mailboxes: ManualEmailMailbox[];
   templates: ManualEmailSavedTemplate[];
@@ -504,9 +540,21 @@ export interface FilterOptions {
   locations: string[];
 }
 
+/**
+ * Server-resolved voice snapshot retained for follow-ups and regenerations; client-supplied definitions are ignored.
+ */
+export type OutreachJobParamsVoiceProfile = { [key: string]: unknown };
+
 export interface OutreachJobParams {
   length: string;
   tone: string;
+  /**
+   * Saved persona ID resolved against the authenticated user's HQ profile; overrides generic tone without activating that persona in HQ.
+   * @nullable
+   */
+  voicePersonaId?: string | null;
+  /** Server-resolved voice snapshot retained for follow-ups and regenerations; client-supplied definitions are ignored. */
+  voiceProfile?: OutreachJobParamsVoiceProfile;
   selectedInsightKeys: string[];
 }
 
@@ -638,6 +686,16 @@ export interface PlaybookProposal {
    */
   steps: PlaybookProposedStep[];
 }
+
+export type GetContactIndexingStatus200 = {
+  quotesNeedRefresh: boolean;
+  scoresNeedRefresh: boolean;
+  /** @nullable */
+  quotesIndexedAt: string | null;
+  /** @nullable */
+  scoresIndexedAt: string | null;
+  hqRevision: string;
+};
 
 export type SendManualEmailPreviewTest200 = {
   success: boolean;

@@ -12,6 +12,7 @@ import {
 } from "../linkedin-connection-model";
 import { generateLinkedInConnectionPreview } from "../linkedin-connection-api";
 import { getManualEmailContext } from "../manual-email-api";
+import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
 import { timingSummary, type EmailTiming, type ManualEmailContext, type TimingUnit } from "../manual-email-model";
 import { ConnectionFields, fieldClass, labelClass, smallButton } from "./LinkedInConnectionFields";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
@@ -145,7 +146,7 @@ export function LinkedInConnectionStep({ playbookId, stepId, stepNumber, config:
   onMoveUp: () => void; onMoveDown: () => void; canMoveUp: boolean; canMoveDown: boolean;
 }) {
   const { user } = useUser();
-  const contextQuery = useQuery({ queryKey: ["manual-email-context", playbookId, user?.id ?? "signed-out"], queryFn: () => getManualEmailContext(playbookId), enabled: !!user?.id, staleTime: 60_000 });
+  const contextQuery = useQuery({ queryKey: playbookContextQueryKey(playbookId, user?.id), queryFn: () => getManualEmailContext(playbookId), enabled: !!user?.id, staleTime: 0, refetchOnMount: "always" });
   const config = useMemo(() => readLinkedInConnectionConfiguration(rawConfig ?? createLinkedInConnectionConfiguration()), [rawConfig]);
   const currentConfigRef = useRef(config);
   currentConfigRef.current = config;
@@ -174,7 +175,7 @@ export function LinkedInConnectionStep({ playbookId, stepId, stepNumber, config:
   const chosenId = contactId !== null && contacts.some(contact => contact.id === contactId) ? contactId : contacts.find(contact => contact.enrolled)?.id ?? contacts[0]?.id ?? null;
   const addVariant = () => {
     if (config.variants.length >= 6 || readOnly) return;
-    const next = createConnectionVariant(`Test ${String.fromCharCode(65 + config.variants.length)}`);
+    const next = createConnectionVariant(`Test ${String.fromCharCode(65 + config.variants.length)}`, context);
     const each = Math.floor(100 / (config.variants.length + 1));
     const variants = config.variants.map((item, index) => ({ ...item, allocation: index === config.variants.length - 1 ? 100 - each * config.variants.length : each }));
     next.allocation = each; update({ ...config, variants: [...variants, next] }); setActiveVariantId(next.id);
@@ -223,7 +224,7 @@ export function LinkedInConnectionStep({ playbookId, stepId, stepNumber, config:
       {contextQuery.isLoading && <div className="mb-4 animate-pulse rounded-md bg-muted p-4 text-xs text-muted-foreground">Loading contacts and HQ context…</div>}
       {contextQuery.isError && <div role="alert" className="mb-4 flex items-center justify-between gap-2 rounded-md border border-destructive/30 p-3 text-xs text-destructive"><span>{contextError}</span><button type="button" className={smallButton} onClick={() => contextQuery.refetch()}>Retry</button></div>}
       {validationError && config.enabled && <p role="status" className="mb-3 flex items-center gap-2 text-xs text-muted-foreground"><AlertCircle size={14} />{validationError}</p>}
-      {variant && <div className="grid min-w-0 gap-6 xl:grid-cols-2"><div className="min-w-0"><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold">Configuration</h3><span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"><Sparkles size={12} />Seller reviewed</span></div><ConnectionFields variant={variant} context={context} onUpdate={updateVariant} onGenerate={() => { if (variant.mode === "template" || context?.aiAvailable) window.dispatchEvent(new CustomEvent(`linkedin-connection-generate-${variant.id}`)); }} busy={generatingVariantId !== null} readOnly={readOnly} /></div>
+      {variant && <div className="grid min-w-0 gap-6 xl:grid-cols-2"><div className="min-w-0"><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold">Configuration</h3><span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"><Sparkles size={12} />Seller reviewed</span></div><ConnectionFields variant={variant} context={context} contextLoading={contextQuery.isLoading} contextError={contextQuery.isError} onUpdate={updateVariant} onGenerate={() => { if (variant.mode === "template" || context?.aiAvailable) window.dispatchEvent(new CustomEvent(`linkedin-connection-generate-${variant.id}`)); }} busy={generatingVariantId !== null} readOnly={readOnly} /></div>
         <PreviewPanel key={variant.id} playbookId={playbookId} variant={variant} contacts={contacts} selectedContactId={chosenId} onContactChange={setContactId} context={context} onPreviewChange={updatePreview} onGenerationState={setGeneratingVariantId} readOnly={readOnly} /></div>}
     </div>}
     {!selected && <button type="button" className="w-full cursor-pointer px-5 py-3 text-left text-xs text-muted-foreground hover:bg-muted/40" onClick={onSelect}>Expand to edit {variant?.name ?? "connection"} configuration</button>}

@@ -17,6 +17,57 @@ tags:
     description: HQ profile operations
 
 paths:
+  /contacts/{contactId}/insights/indexing-status:
+    get:
+      operationId: getContactIndexingStatus
+      tags: [contacts]
+      description: Account-owned successful quote and score indexing is reused for seven days unless HQ changes. Empty successful results are indexed too.
+      parameters:
+        - in: path
+          name: contactId
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Whether quote extraction or scoring needs refreshing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [quotesNeedRefresh, scoresNeedRefresh, quotesIndexedAt, scoresIndexedAt, hqRevision]
+                properties:
+                  quotesNeedRefresh: { type: boolean }
+                  scoresNeedRefresh: { type: boolean }
+                  quotesIndexedAt: { type: ["string", "null"], format: date-time }
+                  scoresIndexedAt: { type: ["string", "null"], format: date-time }
+                  hqRevision: { type: string }
+        "401":
+          description: Authentication required.
+        "404":
+          description: Contact not found.
+  /contacts/{id}/chat:
+    post:
+      operationId: generateContactChat
+      tags: [contacts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContactChatInput" }
+      responses:
+        "200":
+          description: SSE content chunks, attributable sources, and completion event; chosen voice changes style only.
+          content:
+            text/event-stream:
+              schema: { type: string }
+        "400": { description: Invalid input or unavailable user-owned voice persona }
+        "401": { description: Authentication required }
+        "404": { description: Contact not found }
   /playbooks/{id}/phone-call/audio:
     post:
       operationId: generatePhoneCallAudio
@@ -777,6 +828,24 @@ paths:
 
 components:
   schemas:
+    ContactChatTurn:
+      type: object
+      required: [role, content]
+      properties:
+        role: { type: string, enum: [user, assistant] }
+        content: { type: string }
+    ContactChatInput:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/ContactChatTurn" }
+        selectedIds:
+          type: array
+          items: { type: string }
+        tone: { type: string, maxLength: 2000 }
+        voicePersonaId: { type: ["string", "null"], minLength: 1, maxLength: 100 }
     PhoneCallAudioInput:
       type: object
       required: [text]
@@ -944,6 +1013,10 @@ components:
           type: array
           items: { $ref: "#/components/schemas/ManualEmailContextSource" }
         voice: { type: string }
+        voicePersonas:
+          type: array
+          items: { $ref: "#/components/schemas/VoicePersonaOption" }
+        activeVoicePersonaId: { type: ["string", "null"] }
         aiAvailable: { type: boolean }
         mailboxes:
           type: array
@@ -951,6 +1024,15 @@ components:
         templates:
           type: array
           items: { $ref: "#/components/schemas/ManualEmailSavedTemplate" }
+    VoicePersonaOption:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        summary:
+          type: string
+          description: The owner's saved HQ Voice Profile short description, reused verbatim in output tone selectors.
     HqAudienceInput:
       oneOf:
         - $ref: "#/components/schemas/HqBuyingCenterAudienceInput"
@@ -1608,6 +1690,13 @@ components:
           type: string
         tone:
           type: string
+        voicePersonaId:
+          type: ["string", "null"]
+          description: Saved persona ID resolved against the authenticated user's HQ profile; overrides generic tone without activating that persona in HQ.
+        voiceProfile:
+          type: object
+          additionalProperties: true
+          description: Server-resolved voice snapshot retained for follow-ups and regenerations; client-supplied definitions are ignored.
         selectedInsightKeys:
           type: array
           items:

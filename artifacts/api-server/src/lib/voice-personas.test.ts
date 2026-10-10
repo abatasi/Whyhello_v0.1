@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { prepareVoicePersonaProfile, resolveActiveHqVoice, voiceSettingsSchema } from "./voice-personas.js";
+import { prepareVoicePersonaProfile, resolveActiveHqVoice, voiceSettingsSchema, voicePersonaOptions } from "./voice-personas.js";
 
 const persona = (id: string, name: string, writingNotes: string) => ({
   id, name, voice: voiceSettingsSchema.parse({ writingNotes }), summary: `${name} summary`,
@@ -18,6 +18,15 @@ test("legacy profiles remain unchanged and retain their voice", () => {
   assert.ok(result.ok);
   assert.equal(result.data, legacy);
   assert.deepEqual(resolveActiveHqVoice(legacy), legacy.voice);
+});
+
+test("output voice options carry each saved HQ description verbatim without raw voice parameters", () => {
+  const input = profile();
+  input.voicePersonas[0].summary = "Warm and concise.\nPractical questions, without pressure.";
+  const options = voicePersonaOptions(input);
+  assert.deepEqual(options.voicePersonas, input.voicePersonas.map(({ id, name, summary }) => ({ id, name, summary })));
+  assert.equal(options.activeVoicePersonaId, "warm");
+  assert.equal(JSON.stringify(options).includes("writingNotes"), false);
 });
 
 test("only the explicitly active persona drives the legacy mirror and generation", () => {

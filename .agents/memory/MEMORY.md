@@ -1,5 +1,6 @@
 - [gpt-5-mini API parameters](gpt-5-mini-params.md) — never set max_tokens or max_completion_tokens; both silently produce empty output
 - [Relevance Scoring System](relevance-scoring.md) — outside-in signal scoring against HQ profile; DB table, API routes, hooks, and UI components
+- [Contact indexing freshness](contact-indexing-freshness.md) — reuse successful indexing, including zero quotables, for seven days unless owned HQ content changes.
 - [Quotables extraction pipeline](quotables-extraction.md) — LinkedIn post body fetched live from URL; source label injected into quotes prompt block; carousel in Outreach panel; dev userId bypass header
 - [Doctrine-first development](doctrine-first-dev.md) — Messaging/Scoring code changes must update the Quran/Bible in the same turn; Torah not actively maintained
 - [User-scoped buyer ranking](user-scoped-buyer-ranking.md) — Home buyer fit comes only from the signed-in user's explicitly live Target Market, never global contact scores or drafts
@@ -18,5 +19,5 @@
 - [LinkedIn connection-note limit](linkedin-connection-limit.md) — the user specified a 200-character connection-request note budget as the product assumption.
 - [Spoken phone messaging](spoken-phone-messaging.md) — phone scripts need a separate conversational library; retain natural pronouns rather than written-outreach fragments.
 - [Reusable email configuration](reusable-email-configuration.md) — Manual Email mirrors Single Message and the Messaging Quran; reusable variants choose an insight category, not individual insights.
-- [HQ voice personas](hq-voice-personas.md) — multiple named saved voices; editing is separate from activation, and summaries are account- and persona-owned.
+- [HQ voice personas](hq-voice-personas.md) — named voices as output-specific tone choices; HQ activation stays separate, and summaries remain account- and persona-owned.
 - [Dark-mode filled buttons](dark-filled-buttons.md) — solid button fills with white text and standard icons; keep unfilled controls and dark-card surfaces distinct.

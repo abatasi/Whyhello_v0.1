@@ -9,6 +9,12 @@ Playbooks should be a dense, table-first operational interface for daily B2B sal
 
 **How to apply:** Keep metrics and names easy to scan; allow horizontal table scrolling rather than shrinking text. Preserve stationary, subtle hover feedback and clear focus states. Do not add giant cards, gradients, glass effects, decorative illustrations, or excessive whitespace.
 
+Playbook Insight category pick lists must use page-styled menus with a corresponding icon for each category, not browser/system-rendered option popups.
+
+**Why:** The user explicitly requested styling consistent with the overall page and category-specific icons.
+
+**How to apply:** Reuse themed accessible menu components for the options and show the selected category's icon too. Preserve saved category values and evidence-selection behavior.
+
 The Playbooks page background must match the master sidebar/topbar, not use the prototype's separate warm near-black page color.
 
 **Why:** The user explicitly requested matching the Playbooks background to the sidebar/topbar after integration.
@@ -62,3 +68,9 @@ Loading a saved inline workflow must not invent graph scaffolding or modify its 
 **Why:** Retired graph hydration inserted a new placeholder on reload and made a saved, unchanged Manual Email workflow appear dirty.
 
 **How to apply:** Apply identical non-mutating restoration to saved and working snapshots; preserve existing records without graph-specific migrations.
+
+Playbook email creation must omit “Five-layer email anatomy,” “Set your AI context,” and “Set your guidelines,” and show an AI-mistakes disclaimer.
+
+**Why:** The user explicitly requested this simplified email creation interface.
+
+**How to apply:** Do not restore these sections when extending the editor. Preserve existing saved configuration and email-generation anatomy; the request removes creation UI, not saved data or generation rules.

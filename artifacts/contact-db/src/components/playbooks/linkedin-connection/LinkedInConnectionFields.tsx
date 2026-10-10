@@ -3,14 +3,16 @@ import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { ArrowDown, ArrowUp, Check, Plus, Trash2 } from "lucide-react";
 import type { ConnectionVariant } from "../linkedin-connection-model";
 import { RESEARCH_SOURCES, type ManualEmailContext } from "../manual-email-model";
+import { TonePersonaPicker } from "../TonePersonaPicker";
 
 export const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
 export const smallButton = "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50";
 export const labelClass = "mb-1.5 block text-xs font-semibold text-foreground";
 const objectives = ["Connect", "Reconnect"] as const;
 
-export function ConnectionFields({ variant, context, onUpdate, readOnly, busy, onGenerate }: {
+export function ConnectionFields({ variant, context, contextLoading, contextError, onUpdate, readOnly, busy, onGenerate }: {
   variant: ConnectionVariant; context?: ManualEmailContext; onUpdate: (next: ConnectionVariant) => void;
+  contextLoading: boolean; contextError: boolean;
   readOnly: boolean; busy: boolean; onGenerate: () => void;
 }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
@@ -29,13 +31,11 @@ export function ConnectionFields({ variant, context, onUpdate, readOnly, busy, o
         return <button key={source.id} type="button" aria-pressed={active} disabled={readOnly} onClick={() => set({ researchSources: active ? variant.researchSources.filter(id => id !== source.id) : [...variant.researchSources, source.id] })}
           className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs ${active ? "border-primary/50 bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:bg-muted"}`}>{active && <Check size={12} />}{source.name}</button>;
       })}</div></section>
-      <section><label className={labelClass}>Set your tone</label><div className="flex flex-wrap gap-2">{["Default", "Direct", "Formal", "Casual", "Creative", "Custom"].map(tone =>
-        <button key={tone} type="button" disabled={readOnly} onClick={() => set({ tone })} className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs ${variant.tone === tone ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>{tone}</button>)}</div>
-        <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={variant.inheritHqTone} disabled={readOnly || !context?.voice} onChange={e => set({ inheritHqTone: e.target.checked })} />HQ voice{!context?.voice && <span>(not available)</span>}</label>
+      <section><label className={labelClass}>Set your tone</label><TonePersonaPicker tones={["Default", "Direct", "Formal", "Casual", "Creative", "Custom"]} tone={variant.tone} voicePersonaId={variant.voicePersonaId} inheritHqTone={variant.inheritHqTone} context={context} loading={contextLoading} error={contextError} disabled={readOnly} showHqVoice={false} showGenericDescription onTone={tone => set({ tone, voicePersonaId: null, inheritHqTone: false })} onPersona={voicePersonaId => set({ tone: "Default", voicePersonaId, inheritHqTone: false })} />
         {variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}
       </section>
     </>}
-    {variant.mode === "prompt" && <section><label className={labelClass}>Instructions for this connection</label><textarea aria-label="Generation instructions" className={fieldClass + " min-h-32 resize-y"} value={variant.prompt} disabled={readOnly} onChange={e => set({ prompt: e.target.value })} placeholder="What makes this connection relevant, and how should the note sound?" /><p className="mt-1 text-xs text-muted-foreground">Selected research and workspace context are included.</p></section>}
+    {variant.mode === "prompt" && <section className="space-y-3"><div><label className={labelClass}>Instructions for this connection</label><textarea aria-label="Generation instructions" className={fieldClass + " min-h-32 resize-y"} value={variant.prompt} disabled={readOnly} onChange={e => set({ prompt: e.target.value })} placeholder="What makes this connection relevant, and how should the note sound?" /><p className="mt-1 text-xs text-muted-foreground">Selected research and workspace context are included.</p></div><div><label className={labelClass}>Set your tone</label><TonePersonaPicker tones={["Default", "Direct", "Formal", "Casual", "Creative", "Custom"]} tone={variant.tone} voicePersonaId={variant.voicePersonaId} inheritHqTone={variant.inheritHqTone} context={context} loading={contextLoading} error={contextError} disabled={readOnly} showHqVoice={false} showGenericDescription onTone={tone => set({ tone, voicePersonaId: null, inheritHqTone: false })} onPersona={voicePersonaId => set({ tone: "Default", voicePersonaId, inheritHqTone: false })} />{variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}</div></section>}
     {variant.mode === "template" && <section><label className={labelClass}>Connection-note template</label><textarea aria-label="Connection note template" className={fieldClass + " min-h-32 resize-y"} value={variant.templateBody} disabled={readOnly} onChange={e => set({ templateBody: e.target.value })} placeholder={"Hi {{firstName}}, I noticed…"} /><p className="mt-1 text-xs text-muted-foreground">{variant.templateBody.length} raw template characters. Merge tokens may expand in a real contact preview; the final personalized note must fit 200 characters.</p><p className="mt-1 text-xs text-muted-foreground">Available fields: {"{{firstName}}, {{lastName}}, {{fullName}}, {{company}}, {{jobTitle}}"}.</p></section>}
     <details className="rounded-md border border-border/70" open={sourcesOpen} onToggle={e => setSourcesOpen((e.currentTarget as HTMLDetailsElement).open)}>
       <summary className="cursor-pointer px-3 py-2.5 text-xs font-semibold">HQ context <span className="ml-1 font-normal text-muted-foreground">Inspect available sources</span></summary>

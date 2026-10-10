@@ -11,6 +11,7 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { getAuth } from "@clerk/express";
 import { inspectLinkedInSource } from "../lib/linkedin-source";
 import { isContactAuthoredLinkedInSignal } from "../lib/linkedin-authorship";
+import { cachedContactIndex, indexingUserId, readContactIndex } from "../lib/contact-index-cache";
 
 export const quotesRouter: IRouter = Router({ mergeParams: true });
 
@@ -76,12 +77,12 @@ async function fetchLinkedInPostData(url: string): Promise<{
   };
 }
 
-async function buildHqSummary(userId: string | null): Promise<string> {
+async function buildHqSummary(userId: string | null, snapshot?: Record<string, any>): Promise<string> {
   if (!userId) return "No HQ profile configured.";
   try {
     const [row] = await db.select().from(dnaProfilesTable).where(eq(dnaProfilesTable.userId, userId)).limit(1);
     if (!row?.data) return "No HQ profile configured.";
-    const d = JSON.parse(row.data);
+    const d = snapshot ?? JSON.parse(row.data);
     const lines: string[] = [];
     const co = d.company ?? {};
     if (co.name) lines.push(`Company: ${co.name}`);
@@ -186,6 +187,10 @@ quotesRouter.get("/quotes", async (req, res) => {
   try {
     const contactId = parseInt((req.params as { contactId: string }).contactId, 10);
     if (!contactId) return res.status(400).json({ error: "Invalid contact ID" });
+    const userId = indexingUserId(req);
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    const snapshot = await readContactIndex(userId, contactId, "quotes");
+    if (snapshot) return res.json(snapshot.results);
 
     const rows = await db
       .select()
@@ -208,7 +213,7 @@ quotesRouter.get("/quotes", async (req, res) => {
 
 // ── POST /quotes/extract ────────────────────────────────────────────────────
 
-quotesRouter.post("/quotes/extract", async (req, res) => {
+quotesRouter.post("/quotes/extract", cachedContactIndex("quotes", async (req, res) => {
   try {
     const contactId = parseInt((req.params as { contactId: string }).contactId, 10);
     if (!contactId) return res.status(400).json({ error: "Invalid contact ID" });
@@ -258,11 +263,14 @@ quotesRouter.post("/quotes/extract", async (req, res) => {
     );
 
     if (scannable.length === 0) {
+      if (withBodies.some(signal => signal.postBody === null)) {
+        return res.status(503).json({ error: "Quote sources could not be loaded. The previous indexing is unchanged." });
+      }
       return res.json([]);
     }
 
     const contactName = `${contact.firstName} ${contact.lastName}`.trim();
-    const hqSummary = await buildHqSummary(userId);
+    const hqSummary = await buildHqSummary(userId, res.locals.contactIndexHqProfile);
 
     const signalBlocks = scannable.map((s, i) =>
       `[${i + 1}] signalId=${s.signalId}${s.publishedDate && s.publishedDate !== "N/A" ? ` published="${s.publishedDate}"` : ""}
@@ -328,13 +336,17 @@ OUTPUT: A JSON array only — no markdown fences, no preamble. Empty array [] if
       stream: false,
     });
 
-    const raw = completion.choices[0]?.message?.content?.trim() ?? "[]";
+    const raw = completion.choices[0]?.message?.content?.trim();
+    if (!raw) return res.status(502).json({ error: "Quote indexing returned no result. The previous indexing is unchanged." });
     let parsed: Array<{
       signalType: string; signalId: number; quote: string;
       attribution: string; attributionRole: string | null;
       hqBridge: string | null; matchedHqSignals: string[];
     }> = [];
-    try { parsed = JSON.parse(raw); } catch { parsed = []; }
+    try { parsed = JSON.parse(raw); } catch {
+      return res.status(502).json({ error: "Quote indexing returned an invalid result. The previous indexing is unchanged." });
+    }
+    if (!Array.isArray(parsed)) return res.status(502).json({ error: "Quote indexing returned an invalid result. The previous indexing is unchanged." });
 
     const signalById = new Map(scannable.map(signal => [signal.signalId, signal]));
     const validParsed = Array.isArray(parsed)
@@ -373,6 +385,6 @@ OUTPUT: A JSON array only — no markdown fences, no preamble. Empty array [] if
     console.error(err);
     return res.status(500).json({ error: "Internal server error" });
   }
-});
+}));
 
 export default quotesRouter;

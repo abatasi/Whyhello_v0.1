@@ -14,7 +14,7 @@ import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evide
 import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, emailLengthRevision, manualEmailGuidance, resolveEmailShape } from "../lib/manual-email-guidance.js";
 import { countEmailBodyCharacters, getEmailLength } from "../lib/email-length.js";
 import { selectTopPlaybookInsight } from "../lib/playbook-insight-selection.js";
-import { resolveActiveHqVoice } from "../lib/voice-personas.js";
+import { resolveActiveHqVoice, resolveOutputVoice, voicePersonaOptions, VoicePersonaSelectionError, type OutputVoiceSelection } from "../lib/voice-personas.js";
 
 export const timing = z.object({
   unit: z.enum(["immediately", "minutes", "hours", "days", "business-days", "specific"]),
@@ -38,6 +38,7 @@ export const variantSchema = z.object({
   length: z.enum(["short", "medium", "long"]).optional(),
   insightCategory: z.enum(EMAIL_INSIGHT_CATEGORIES).optional(),
   customTone: z.string().max(2000), inheritHqTone: z.boolean(),
+  voicePersonaId: z.string().trim().min(1).max(100).nullable().optional(),
   contextSources: z.array(z.enum(["company", "products", "solutions", "customers", "competition", "value-propositions", "target-market", "buying-center", "custom"])).max(9),
   userContext: z.string().max(6000), guidelines: z.array(z.object({ id: z.string(), text: z.string().max(1000) })).max(30),
   generationMode: z.enum(["Standard", "Concise", "Detailed", "Experimental"]), prompt: z.string().max(8000),
@@ -84,7 +85,7 @@ export const requireOwnedPlaybook: RequestHandler = async (req, res, next) => {
 };
 manualEmailRouter.use(requireOwnedPlaybook);
 
-export async function hqContext(userId: string) {
+async function loadHqContext(userId: string, selection?: OutputVoiceSelection) {
   const [record] = await db.select().from(dnaProfilesTable).where(eq(dnaProfilesTable.userId, userId));
   const data = record ? JSON.parse(record.data) : {};
   const meaningful = (value: unknown): boolean => {
@@ -106,7 +107,20 @@ export async function hqContext(userId: string) {
     { id: "target-market", name: "Live Target Market", content: serialize(liveMarket) },
     { id: "buying-center", name: "Live Buying Center", content: serialize(liveCenter) },
   ];
-  return { contextSources, voice: record ? serialize(resolveActiveHqVoice(data)) : "" };
+  const output = selection ? resolveOutputVoice(data, selection) : null;
+  return {
+    contextSources,
+    voice: output ? output.hqVoice : record ? serialize(resolveActiveHqVoice(data)) : "",
+    ...voicePersonaOptions(data),
+    ...(output ? { tone: output.tone } : {}),
+  };
+}
+
+type HqContextResult = Awaited<ReturnType<typeof loadHqContext>>;
+export function hqContext(userId: string, selection: OutputVoiceSelection): Promise<HqContextResult & { tone: string }>;
+export function hqContext(userId: string): Promise<HqContextResult>;
+export function hqContext(userId: string, selection?: OutputVoiceSelection): Promise<HqContextResult> {
+  return loadHqContext(userId, selection);
 }
 
 manualEmailRouter.get("/context", async (_req, res) => {
@@ -219,6 +233,7 @@ manualEmailRouter.post("/preview", async (req, res) => {
       res.json({ subject: render(v.templateSubject), body: render(v.templateBody), contactId,
         personalization: `Template populated using ${fields.fullName}'s actual contact details.`, cta: "", insightsUsed: [] }); return;
     }
+    const hq = await hqContext(res.locals.userId, v);
     const shape = resolveEmailShape(v);
     const evidence = await collectPlaybookEvidence(contact, company, [shape.insightCategory]);
     if (!evidence.length) {
@@ -229,7 +244,6 @@ manualEmailRouter.post("/preview", async (req, res) => {
     const quotes = (await db.select().from(insightQuotesTable).where(and(eq(insightQuotesTable.contactId, contactId), eq(insightQuotesTable.signalType, quoteCategory))))
       .filter(quote => evidence.some(item => Number(item.id.split(":").at(-1)) === quote.signalId))
       .map(quote => ({ quote: quote.quote, attribution: quote.attribution, attributionRole: quote.attributionRole, signalId: quote.signalId }));
-    const hq = await hqContext(res.locals.userId);
     const selectedContext = new Set<string>(v.contextSources);
     const insideOut = hq.contextSources.filter(s => selectedContext.has(s.id) && s.content).map(s => ({ name: s.name, content: s.content }));
     if (v.contextSources.includes("custom") && v.userContext.trim()) insideOut.push({ name: "User-defined context", content: v.userContext });
@@ -242,7 +256,7 @@ manualEmailRouter.post("/preview", async (req, res) => {
         { role: "user", content: JSON.stringify({
           contact: { firstName: contact.firstName, lastName: contact.lastName, title: contact.jobTitle, company: company?.name },
           emailType: v.emailType, mode: v.mode, prompt: v.mode === "prompt" ? v.prompt : "",
-          tone: v.tone === "Custom" ? v.customTone : v.tone, hqVoice: v.inheritHqTone ? hq.voice : "",
+          tone: hq.tone, hqVoice: hq.voice,
           guidelines: v.guidelines.map(g => g.text), length: shape.length, insightCategory: shape.insightCategory,
           insideOut, evidence, quotes, regeneration,
         }) },
@@ -285,6 +299,7 @@ manualEmailRouter.post("/preview", async (req, res) => {
     res.json({ subject: generated.subject, body, anatomy: generated.anatomy, cta: generated.anatomy.cta,
       personalization: generated.personalization, contactId, insightsUsed });
   } catch (error) {
+    if (error instanceof VoicePersonaSelectionError) { res.status(400).json({ error: error.message }); return; }
     const message = error instanceof Error && error.message.startsWith("Template field") ? error.message
       : error instanceof Error && error.message.startsWith("Email length verification failed:") ? error.message
       : error instanceof Error && /Generated (evidence citation|email contains)/.test(error.message)

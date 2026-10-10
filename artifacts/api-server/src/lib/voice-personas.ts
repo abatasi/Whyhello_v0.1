@@ -50,8 +50,66 @@ export function prepareVoicePersonaProfile(value: unknown): ProfileResult {
   return { ok: true, data: { ...profile, voicePersonas, activeVoicePersonaId, voice: active.voice } };
 }
 
-export function resolveActiveHqVoice(profile: Record<string, unknown>): unknown {
+export class VoicePersonaSelectionError extends Error {
+  constructor(message = "This voice persona is no longer available. Choose another tone or saved persona.") {
+    super(message);
+    this.name = "VoicePersonaSelectionError";
+  }
+}
+
+export function voicePersonaOptions(profile: Record<string, unknown>) {
   const result = prepareVoicePersonaProfile(profile);
   if (!result.ok) throw new Error(result.error);
-  return result.data.voice;
+  const personas = (result.data.voicePersonas ?? []) as z.infer<typeof personaSchema>[];
+  return {
+    voicePersonas: personas.map(({ id, name, summary }) => ({ id, name, summary })),
+    activeVoicePersonaId: personas.length ? result.data.activeVoicePersonaId as string : null,
+  };
+}
+
+export function resolveHqVoice(profile: Record<string, unknown>, personaId?: string | null): unknown {
+  const result = prepareVoicePersonaProfile(profile);
+  if (!result.ok) throw new Error(result.error);
+  if (personaId == null) return result.data.voice;
+  if (typeof personaId !== "string" || !personaId.trim() || personaId.trim().length > 100) {
+    throw new VoicePersonaSelectionError("Choose a valid saved voice persona.");
+  }
+  const personas = (result.data.voicePersonas ?? []) as z.infer<typeof personaSchema>[];
+  const selected = personas.find(persona => persona.id === personaId.trim());
+  if (!selected) throw new VoicePersonaSelectionError();
+  return selected.voice;
+}
+
+export function resolveActiveHqVoice(profile: Record<string, unknown>): unknown {
+  return resolveHqVoice(profile);
+}
+
+export interface OutputVoiceSelection {
+  tone?: string;
+  customTone?: string;
+  inheritHqTone?: boolean;
+  voicePersonaId?: string | null;
+}
+
+/** Resolve only against the authenticated owner's profile, never client definitions. */
+export function resolveOutputVoice(profile: Record<string, unknown>, selection: OutputVoiceSelection) {
+  const explicit = selection.voicePersonaId != null;
+  const wantsVoice = explicit || selection.inheritHqTone || selection.tone === "my_voice_profile";
+  const genericTone = selection.tone === "Custom" ? selection.customTone ?? "" : selection.tone ?? "Default";
+  if (!wantsVoice) return { tone: genericTone, hqVoice: "", voiceProfile: undefined, voicePersonaId: null };
+  const raw = resolveHqVoice(profile, selection.voicePersonaId);
+  if (!raw) {
+    if (explicit || selection.tone === "my_voice_profile") {
+      throw new VoicePersonaSelectionError("No saved HQ voice is available. Choose a generic tone or define a persona in HQ.");
+    }
+    return { tone: genericTone, hqVoice: "", voiceProfile: undefined, voicePersonaId: null };
+  }
+  const voiceProfile = voiceSettingsSchema.parse(raw);
+  return {
+    tone: explicit ? "Selected HQ voice persona — use its style instead of a generic tone" : genericTone,
+    // Bound examples before serialization so every constraint remains present.
+    hqVoice: JSON.stringify({ ...voiceProfile, trainingText: voiceProfile.trainingText.slice(0, 8000) }),
+    voiceProfile,
+    voicePersonaId: explicit ? selection.voicePersonaId!.trim() : null,
+  };
 }

@@ -5,9 +5,17 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+import type { OutreachJobParamsVoiceProfile } from "./outreachJobParamsVoiceProfile";
 
 export interface OutreachJobParams {
   length: string;
   tone: string;
+  /**
+   * Saved persona ID resolved against the authenticated user's HQ profile; overrides generic tone without activating that persona in HQ.
+   * @nullable
+   */
+  voicePersonaId?: string | null;
+  /** Server-resolved voice snapshot retained for follow-ups and regenerations; client-supplied definitions are ignored. */
+  voiceProfile?: OutreachJobParamsVoiceProfile;
   selectedInsightKeys: string[];
 }

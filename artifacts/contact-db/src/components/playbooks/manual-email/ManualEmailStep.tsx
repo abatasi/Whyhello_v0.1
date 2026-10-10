@@ -13,8 +13,11 @@ import {
   type ManualEmailContext, type TimingUnit, type InsightCategory,
 } from "../manual-email-model";
 import { getManualEmailContext, generateManualEmailPreview, sendManualEmailTest } from "../manual-email-api";
+import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
 import { emailMarkdownToHtml } from "./email-markdown";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
+import { TonePersonaPicker } from "../TonePersonaPicker";
+import { InsightCategorySelect } from "../InsightCategorySelect";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
 const smallButton = "inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50";
@@ -43,12 +46,12 @@ function TimingEditor({ label, timing, onChange, readOnly }: {
   </div>;
 }
 
-function VariantFields({ variant, config, context, onUpdate, onPreview, busy, readOnly }: {
+function VariantFields({ variant, config, context, contextLoading, contextError, onUpdate, onPreview, busy, readOnly }: {
   variant: EmailVariant; config: ManualEmailConfiguration; context?: ManualEmailContext;
+  contextLoading: boolean; contextError: boolean;
   onUpdate: (variant: EmailVariant) => void; onPreview: () => void; busy: boolean; readOnly: boolean;
 }) {
   const set = (patch: Partial<EmailVariant>) => onUpdate({ ...variant, ...patch });
-  const addGuideline = () => set({ guidelines: [...variant.guidelines, { id: crypto.randomUUID(), text: "" }] });
   const validation = validateManualEmailConfiguration(config);
   const template = context?.templates.find(item => item.id === variant.templateId);
   return <div className="space-y-5">
@@ -72,21 +75,10 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
       </section>
       <section>
         <label className={labelClass} htmlFor={`insight-category-${variant.id}`}>Insight category</label>
-        <select id={`insight-category-${variant.id}`} data-testid="select-insight-category" aria-label="Insight category" className={fieldClass} value={variant.insightCategory ?? "personal"} disabled={readOnly} onChange={e => set({ insightCategory: e.target.value as InsightCategory })}>
-          <option value="personal">Personal</option><option value="company">Company</option><option value="industry">Industry</option><option value="role">Role</option><option value="colleagues">Colleagues</option><option value="counterparts">Counterparts</option>
-        </select>
+        <InsightCategorySelect id={`insight-category-${variant.id}`} className={fieldClass} value={variant.insightCategory ?? "personal"} disabled={readOnly}
+          onValueChange={value => set({ insightCategory: value as InsightCategory })} />
         <p className="mt-1.5 text-xs leading-5 text-muted-foreground">For each contact, we start with the highest-scoring usable insight in this category. Scored insights take priority; if none have scores yet, we use the latest available insight. If no usable evidence is found, generation stops rather than inventing a signal.</p>
       </section>
-      <details className="rounded-md border border-border/70 bg-muted/20">
-        <summary className="cursor-pointer px-3 py-2.5 text-xs font-semibold">Five-layer email anatomy</summary>
-        <ol className="space-y-2 border-t border-border/70 px-4 py-3 text-xs leading-5 text-muted-foreground">
-          <li><strong className="text-foreground">Hook</strong> — frame the contact-specific signal and establish posture.</li>
-          <li><strong className="text-foreground">Bridge</strong> — interpret why the signal matters, then connect it to a buyer implication.</li>
-          <li><strong className="text-foreground">Value</strong> — introduce the relevant outcome as the natural resolution.</li>
-          <li><strong className="text-foreground">Proof</strong> — support the claim with verified evidence or grounded context.</li>
-          <li><strong className="text-foreground">CTA</strong> — make a specific, low-friction ask connected to the message.</li>
-        </ol>
-      </details>
     </>}
 
     {variant.mode === "assisted" && <>
@@ -98,8 +90,11 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
       </section>
       <section>
         <label className={labelClass}>Set your tone</label>
-        <div className="flex flex-wrap gap-2">{["Professional", "Friendly", "Direct", "Warm", "Authoritative", "Custom"].map(tone => <button key={tone} type="button" data-testid={`button-tone-${tone.toLowerCase()}`} disabled={readOnly} onClick={() => set({ tone })} className={`rounded-full border px-3 py-1.5 text-xs ${variant.tone === tone ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>{tone}</button>)}</div>
-        <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={variant.inheritHqTone} disabled={readOnly || !context?.voice} onChange={e => set({ inheritHqTone: e.target.checked })} />HQ voice{!context?.voice && <span>(not available)</span>}</label>
+        <TonePersonaPicker tones={["Professional", "Friendly", "Direct", "Warm", "Authoritative", "Custom"]} tone={variant.tone} voicePersonaId={variant.voicePersonaId}
+          inheritHqTone={variant.inheritHqTone} context={context} loading={contextLoading} error={contextError} disabled={readOnly}
+          showHqVoice={false} showGenericDescription
+          onTone={tone => set({ tone, voicePersonaId: null, inheritHqTone: false })}
+          onPersona={voicePersonaId => set({ tone: "Professional", voicePersonaId, inheritHqTone: false })} />
         {variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}
       </section>
     </>}
@@ -110,8 +105,11 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
       <p className="mt-1 text-xs text-muted-foreground">The selected insight category and available workspace context are resolved for the preview contact.</p>
       <section className="mt-4">
         <label className={labelClass}>Set your tone</label>
-        <div className="flex flex-wrap gap-2">{["Professional", "Friendly", "Direct", "Warm", "Authoritative", "Custom"].map(tone => <button key={tone} type="button" data-testid={`button-tone-${tone.toLowerCase()}`} disabled={readOnly} onClick={() => set({ tone })} className={`rounded-full border px-3 py-1.5 text-xs ${variant.tone === tone ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>{tone}</button>)}</div>
-        <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={variant.inheritHqTone} disabled={readOnly || !context?.voice} onChange={e => set({ inheritHqTone: e.target.checked })} />HQ voice{!context?.voice && <span>(not available)</span>}</label>
+        <TonePersonaPicker tones={["Professional", "Friendly", "Direct", "Warm", "Authoritative", "Custom"]} tone={variant.tone} voicePersonaId={variant.voicePersonaId}
+          inheritHqTone={variant.inheritHqTone} context={context} loading={contextLoading} error={contextError} disabled={readOnly}
+          showHqVoice={false} showGenericDescription
+          onTone={tone => set({ tone, voicePersonaId: null, inheritHqTone: false })}
+          onPersona={voicePersonaId => set({ tone: "Professional", voicePersonaId, inheritHqTone: false })} />
         {variant.tone === "Custom" && <textarea aria-label="Custom tone instructions" className={fieldClass + " mt-2 min-h-16 resize-y"} value={variant.customTone} disabled={readOnly} onChange={e => set({ customTone: e.target.value })} placeholder="Describe the tone to use" />}
       </section>
     </section>}
@@ -129,33 +127,6 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
       <textarea className={fieldClass + " min-h-32 resize-y"} aria-label="Template body" value={variant.templateBody || template?.body || ""} disabled={readOnly} onChange={e => set({ templateBody: e.target.value })} placeholder="Email body" />
     </section>}
 
-    <details className="rounded-md border border-border/70">
-      <summary className="cursor-pointer px-3 py-2.5 text-xs font-semibold">Set your AI context <span className="ml-1 font-normal text-muted-foreground">Inspect enabled HQ sources</span></summary>
-      <div className="space-y-2 border-t border-border/70 p-3">
-        {(context?.contextSources ?? []).map(source => {
-          const active = variant.contextSources.includes(source.id);
-          return <div key={source.id} className="rounded-md border border-border/70 p-2.5">
-            <label className="flex items-start gap-2 text-xs font-medium"><input type="checkbox" checked={active} disabled={readOnly} onChange={e => set({ contextSources: e.target.checked ? [...variant.contextSources, source.id] : variant.contextSources.filter(id => id !== source.id) })} />{source.name}</label>
-            {active && <p className="ml-5 mt-1.5 whitespace-pre-wrap text-xs leading-5 text-muted-foreground">{source.content || "No source content is available."}</p>}
-          </div>;
-        })}
-        {!context?.contextSources.length && <p className="text-xs text-muted-foreground">HQ context is currently unavailable.</p>}
-        <label className="block text-xs font-medium">Additional context
-          <textarea aria-label="Additional AI context" className={fieldClass + " mt-1.5 min-h-16 resize-y"} value={variant.userContext} disabled={readOnly} onChange={e => set({ userContext: e.target.value, contextSources: e.target.value.trim() ? [...new Set([...variant.contextSources, "custom"])] : variant.contextSources.filter(id => id !== "custom") })} placeholder="Add information specific to this playbook step" />
-        </label>
-      </div>
-    </details>
-
-    <section>
-      <div className="mb-2 flex items-center justify-between"><label className={labelClass + " mb-0"}>Set your guidelines</label><button type="button" className={smallButton} disabled={readOnly} onClick={addGuideline}><Plus size={13} />Add guideline</button></div>
-      {variant.guidelines.map((guideline, index) => <div className="mb-2 flex items-center gap-1.5" key={guideline.id}>
-        <textarea aria-label={`Guideline ${index + 1}`} className={fieldClass + " min-h-9 resize-y py-2"} value={guideline.text} disabled={readOnly} onChange={e => set({ guidelines: variant.guidelines.map(item => item.id === guideline.id ? { ...item, text: e.target.value } : item) })} placeholder="Write a generation constraint" />
-        <button type="button" aria-label={`Move guideline ${index + 1} up`} className={smallButton} disabled={readOnly || index === 0} onClick={() => { const items = [...variant.guidelines]; [items[index - 1], items[index]] = [items[index], items[index - 1]]; set({ guidelines: items }); }}><ArrowUp size={13} /></button>
-        <button type="button" aria-label={`Move guideline ${index + 1} down`} className={smallButton} disabled={readOnly || index === variant.guidelines.length - 1} onClick={() => { const items = [...variant.guidelines]; [items[index + 1], items[index]] = [items[index], items[index + 1]]; set({ guidelines: items }); }}><ArrowDown size={13} /></button>
-        <button type="button" aria-label={`Delete guideline ${index + 1}`} className={smallButton} disabled={readOnly} onClick={() => set({ guidelines: variant.guidelines.filter(item => item.id !== guideline.id) })}><Trash2 size={13} /></button>
-      </div>)}
-      {!variant.guidelines.length && <p className="text-xs text-muted-foreground">No extra constraints. Add guidelines to keep generated emails on brief.</p>}
-    </section>
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
       {variant.mode === "template" && <span className="text-xs text-muted-foreground">Templates keep their authored subject and body.</span>}
       {validation && !variant.preview && <span className="text-xs text-muted-foreground">Complete required fields to generate.</span>}
@@ -163,6 +134,7 @@ function VariantFields({ variant, config, context, onUpdate, onPreview, busy, re
         {busy ? <ThinkingIndicator decorative className="h-3.5 w-5" /> : <Sparkles size={14} />}{busy ? "Generating…" : variant.preview ? "Generate new preview" : "Generate preview"}
       </button>
       {!context?.aiAvailable && variant.mode !== "template" && <span className="w-full text-xs text-muted-foreground">AI preview generation is unavailable for this workspace.</span>}
+      <p className="w-full text-xs leading-5 text-muted-foreground">AI may make mistakes. Review and verify emails before sending.</p>
     </div>
   </div>;
 }
@@ -314,12 +286,13 @@ export function ManualEmailStep({ playbookId, stepId, stepNumber, config: rawCon
   onMoveUp: () => void; onMoveDown: () => void; canMoveUp: boolean; canMoveDown: boolean;
 }) {
   const { user } = useUser();
-  const queryKey = ["manual-email-context", playbookId, user?.id ?? "signed-out"];
+  const queryKey = playbookContextQueryKey(playbookId, user?.id);
   const contextQuery = useQuery({
     queryKey,
     queryFn: () => getManualEmailContext(playbookId),
     enabled: !!user?.id,
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
   const config = useMemo(() => readManualEmailConfiguration(rawConfig), [rawConfig]);
   const [activeVariantId, setActiveVariantId] = useState(config.variants[0]?.id ?? "");
@@ -348,7 +321,7 @@ export function ManualEmailStep({ playbookId, stepId, stepNumber, config: rawCon
     : validationError ? "Incomplete" : "Complete";
   const addVariant = () => {
     if (config.variants.length >= 6) return;
-    const next = createEmailVariant(`Test ${String.fromCharCode(65 + config.variants.length)}`);
+    const next = createEmailVariant(`Test ${String.fromCharCode(65 + config.variants.length)}`, context);
     next.length = "medium";
     next.insightCategory = "personal";
     next.tone = "Professional";
@@ -369,7 +342,7 @@ export function ManualEmailStep({ playbookId, stepId, stepNumber, config: rawCon
   const contextError = contextQuery.error instanceof Error ? contextQuery.error.message : "Couldn't load Manual Email context.";
   return <article id={`configured-step-${stepId}`} data-testid={`configured-step-${stepId}`} className={`overflow-hidden rounded-xl border bg-card transition-shadow ${selected ? "border-primary/50 shadow-sm" : "border-border"} ${!config.enabled ? "opacity-75" : ""}`}>
     <header className="flex flex-wrap items-center gap-3 border-b border-border/70 px-4 py-3 sm:px-5">
-      <button type="button" aria-label={`Step ${stepNumber} ${config.enabled ? "enabled" : "disabled"}`} role="switch" aria-checked={config.enabled} disabled={readOnly} data-testid={`switch-step-enabled-${stepId}`} onClick={e => { e.stopPropagation(); update({ ...config, enabled: !config.enabled }); }} className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${config.enabled ? "bg-primary" : "bg-muted-foreground/40"}`}><span className={`absolute top-0.5 size-4 rounded-full bg-background shadow-sm transition-transform ${config.enabled ? "translate-x-4" : "translate-x-0.5"}`} /></button>
+      <button type="button" aria-label={`Step ${stepNumber} ${config.enabled ? "enabled" : "disabled"}`} role="switch" aria-checked={config.enabled} disabled={readOnly} data-testid={`switch-step-enabled-${stepId}`} onClick={e => { e.stopPropagation(); update({ ...config, enabled: !config.enabled }); }} className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full p-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${config.enabled ? "bg-emerald-100 dark:bg-emerald-950" : "bg-muted-foreground/40"}`}><span className={`absolute left-0.5 top-0.5 size-4 rounded-full shadow-sm transition-[transform,translate,background-color] duration-200 ease-in-out motion-reduce:transition-none ${config.enabled ? "translate-x-4 bg-emerald-600 dark:bg-emerald-400" : "translate-x-0 bg-background"}`} /></button>
        <button type="button" draggable={!readOnly} aria-label={`Drag to reorder step ${stepNumber}`} data-testid={`handle-reorder-step-${stepId}`} onClick={e => e.stopPropagation()} onDragStart={e => { e.dataTransfer.setData("text/plain", stepId); e.dataTransfer.effectAllowed = "move"; }} className="grid size-8 shrink-0 cursor-grab place-items-center rounded-lg bg-muted text-muted-foreground active:cursor-grabbing"><GripVertical size={15} /></button>
        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Icon size={16} /></span>
       <div className="min-w-0 flex-1">
@@ -417,7 +390,7 @@ export function ManualEmailStep({ playbookId, stepId, stepNumber, config: rawCon
       {validationError && config.enabled && <p role="status" className="mb-3 flex items-center gap-2 text-xs text-muted-foreground"><AlertCircle size={14} />{validationError}</p>}
       {!hasContacts && context && config.enabled && <p role="status" className="mb-3 rounded-md border border-border bg-muted/40 p-2.5 text-xs text-muted-foreground">No enrolled or directory contacts are available for preview yet.</p>}
       {variant && <div className="grid min-w-0 gap-6 xl:grid-cols-2">
-        <div className="min-w-0"><h3 className="mb-3 text-sm font-semibold">Configuration</h3><VariantFields variant={variant} config={config} context={context} onUpdate={updateVariant} onPreview={() => {
+        <div className="min-w-0"><h3 className="mb-3 text-sm font-semibold">Configuration</h3><VariantFields variant={variant} config={config} context={context} contextLoading={contextQuery.isLoading} contextError={contextQuery.isError} onUpdate={updateVariant} onPreview={() => {
           if (!(context && (context.aiAvailable || variant.mode === "template"))) return;
           // Preview generation is owned by the panel so the actual contact and server response are retained.
           window.dispatchEvent(new CustomEvent(`manual-email-generate-${variant.id}`));

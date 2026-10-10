@@ -9,11 +9,15 @@ import type { ManualEmailContact } from "./manualEmailContact";
 import type { ManualEmailContextSource } from "./manualEmailContextSource";
 import type { ManualEmailMailbox } from "./manualEmailMailbox";
 import type { ManualEmailSavedTemplate } from "./manualEmailSavedTemplate";
+import type { VoicePersonaOption } from "./voicePersonaOption";
 
 export interface ManualEmailEditorContext {
   contacts: ManualEmailContact[];
   contextSources: ManualEmailContextSource[];
   voice: string;
+  voicePersonas?: VoicePersonaOption[];
+  /** @nullable */
+  activeVoicePersonaId?: string | null;
   aiAvailable: boolean;
   mailboxes: ManualEmailMailbox[];
   templates: ManualEmailSavedTemplate[];

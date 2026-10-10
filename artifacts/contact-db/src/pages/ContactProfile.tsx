@@ -1,8 +1,10 @@
 import { apiFetch } from "@/lib/apiFetch";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
+import { SingleMessageToneDescription, SINGLE_MESSAGE_TONE_DESCRIPTIONS } from "@/components/SingleMessageToneDescription";
 import { useRoute, Link } from "wouter";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useUser } from "@clerk/react";
 import { recordContactVisit } from "@/lib/recentVisits";
 import {
   useGetContact,
@@ -23,6 +25,7 @@ import {
   useGetInsightRelevance,
   useTriggerInsightRelevance,
   useGetContactMetaScore,
+  useGetContactIndexingStatus,
   useGetTopRelevantContact,
   useGetInsightQuotes,
   useExtractInsightQuotes,
@@ -33,6 +36,8 @@ import {
 } from "@workspace/api-client-react";
 import lostFriendoImg from "@/assets/lost-friendo.png";
 import { getContactProfileImage } from "@/lib/contactProfileImages";
+import { TonePersonaPicker } from "@/components/playbooks/TonePersonaPicker";
+import { useHqVoiceProfile, useHqToneSelection, toVoicePickerContext } from "@/hooks/use-hq-voice-profile";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
 import { ComposeDrawer } from "@/components/ComposeDrawer";
@@ -402,41 +407,12 @@ const OUTPUT_TYPES: OutputType[] = [
 
 const DNA_STORAGE_KEY = "whyhello_dna_v4";
 
-interface VoiceProfileData {
-  toneTags: string[];
-  communicationStyle: string;
-  writingNotes: string;
-  trainingText: string;
-  suppressions: string[];
-  suppressionNotes: string;
-}
-
 function loadHqCompanyName(): string | null {
   try {
     const raw = localStorage.getItem(DNA_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { company?: { name?: string } };
     return parsed.company?.name?.trim() || null;
-  } catch { return null; }
-}
-
-function loadVoiceProfile(): VoiceProfileData | null {
-  try {
-    const raw = localStorage.getItem(DNA_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { voice?: Partial<VoiceProfileData> };
-    const v = parsed.voice;
-    if (!v) return null;
-    const hasData = (v.toneTags?.length ?? 0) > 0 || !!v.communicationStyle || !!v.writingNotes || !!v.trainingText || (v.suppressions?.length ?? 0) > 0 || !!v.suppressionNotes;
-    if (!hasData) return null;
-    return {
-      toneTags: v.toneTags ?? [],
-      communicationStyle: v.communicationStyle ?? "",
-      writingNotes: v.writingNotes ?? "",
-      trainingText: v.trainingText ?? "",
-      suppressions: v.suppressions ?? [],
-      suppressionNotes: v.suppressionNotes ?? "",
-    };
   } catch { return null; }
 }
 
@@ -459,16 +435,18 @@ function IntroEmailModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onGenerate: (params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => void;
+  onGenerate: (params: { length: string; tone: string; voicePersonaId?: string; voicePersonaName?: string; selectedInsightKeys: string[] }) => void;
   checkedIds: Set<string>;
   categoryData: Record<string, InsightItem[]>;
   relevanceMap?: Map<string, InsightRelevanceScore>;
   quoteMap?: Map<string, InsightQuote>;
 }) {
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
-  const [tone, setTone] = useState("professional");
   const [selectedInsights, setSelectedInsights] = useState<Set<string>>(new Set());
-  const [voiceProfile, setVoiceProfile] = useState<VoiceProfileData | null>(null);
+  const profileQuery = useHqVoiceProfile(open);
+  const profile = profileQuery.data;
+  const { tone, setTone, voicePersonaId, setVoicePersonaId } = useHqToneSelection(profile, open);
+  const pickerContext = toVoicePickerContext(profile);
 
   const availableInsights = useMemo(() => {
     const items = INSIGHT_CATEGORIES.flatMap(cat =>
@@ -487,8 +465,6 @@ function IntroEmailModal({
   useEffect(() => {
     if (open) {
       setLength("medium");
-      setTone("professional");
-      setVoiceProfile(loadVoiceProfile());
       // Auto-select the single highest-scored insight
       if (availableInsights.length > 0) {
         const top = availableInsights[0];
@@ -561,66 +537,17 @@ function IntroEmailModal({
               </div>
             </div>
 
-            {/* Tone */}
+      {/* Tone */}
             <div>
               <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-3">Tone</p>
-              <div className="flex flex-wrap gap-2">
-                {EMAIL_TONES.map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setTone(t.toLowerCase())}
-                    className={cn(
-                      "px-4 py-2 rounded-full text-xs font-semibold border transition-all",
-                      tone === t.toLowerCase()
-                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm ring-1 ring-blue-200 dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-400 dark:ring-blue-500/20"
-                        : "bg-card border-border/60 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-
-              {/* My Voice Profile option */}
-              {voiceProfile && (
-                <div className="mt-3">
-                  <button
-                    onClick={() => setTone("my_voice_profile")}
-                    className={cn(
-                      "w-full flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all",
-                      tone === "my_voice_profile"
-                        ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:ring-indigo-500/20"
-                        : "bg-card border-border/60 hover:bg-secondary/40 hover:border-indigo-200 dark:hover:border-indigo-500/30"
-                    )}
-                  >
-                    <div className={cn(
-                      "h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 border mt-0.5",
-                      tone === "my_voice_profile" ? "bg-indigo-100 border-indigo-200 dark:bg-indigo-500/20 dark:border-indigo-500/30" : "bg-secondary border-border/60"
-                    )}>
-                      <Sparkles className={cn("h-3.5 w-3.5", tone === "my_voice_profile" ? "text-indigo-600 dark:text-indigo-400" : "text-muted-foreground")} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={cn("text-xs font-semibold", tone === "my_voice_profile" ? "text-indigo-700 dark:text-indigo-300" : "text-foreground")}>
-                        My Voice Profile
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
-                        {[
-                          voiceProfile.toneTags.length > 0 && voiceProfile.toneTags.slice(0, 3).join(", "),
-                          voiceProfile.communicationStyle && `${voiceProfile.communicationStyle} style`,
-                          voiceProfile.suppressions.length > 0 && `${voiceProfile.suppressions.length} suppression${voiceProfile.suppressions.length > 1 ? "s" : ""}`,
-                        ].filter(Boolean).join(" · ") || "Defined in HQ"}
-                      </p>
-                    </div>
-                    {tone === "my_voice_profile" && (
-                      <div className="h-4 w-4 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 mt-1">
-                        <svg viewBox="0 0 10 10" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path d="M1.5 5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                </div>
-              )}
+              <TonePersonaPicker tones={EMAIL_TONES} tone={tone} voicePersonaId={voicePersonaId} inheritHqTone={false} showHqVoice={false}
+                context={pickerContext} loading={profileQuery.isLoading} error={profileQuery.isError} disabled={profileQuery.isLoading}
+                showVoiceDescription={false}
+                getDescription={(item, personaId) => personaId ? profile?.voicePersonas?.find(persona => persona.id === personaId)?.summary : SINGLE_MESSAGE_TONE_DESCRIPTIONS[item.toLowerCase()]}
+                onTone={selected => { setTone(selected.toLowerCase()); setVoicePersonaId(null); }}
+                onPersona={id => { setTone("professional"); setVoicePersonaId(id); }} />
+              {!profileQuery.isLoading && !profileQuery.isError && <SingleMessageToneDescription tone={tone} voicePersonaId={voicePersonaId} profile={profile} />}
+              {profileQuery.isError && <button type="button" className="mt-2 text-xs text-primary underline" onClick={() => profileQuery.refetch()}>Retry loading saved voices</button>}
             </div>
 
           </div>
@@ -724,12 +651,14 @@ function IntroEmailModal({
           <Button
             size="sm"
             className="h-9 px-5 gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+            disabled={profileQuery.isLoading}
             onClick={() => {
               onGenerate({
                 length,
-                tone,
+                tone: voicePersonaId ? "my_voice_profile" : tone,
+                ...(voicePersonaId ? { voicePersonaId } : {}),
+                ...(voicePersonaId ? { voicePersonaName: profile?.voicePersonas?.find(persona => persona.id === voicePersonaId)?.name } : {}),
                 selectedInsightKeys: Array.from(selectedInsights),
-                ...(tone === "my_voice_profile" && voiceProfile ? { voiceProfile } : {}),
               });
               onClose();
             }}
@@ -742,6 +671,60 @@ function IntroEmailModal({
       </DialogContent>
     </Dialog>
   );
+}
+
+function GenericOutputModal({ open, output, checkedIds, busy, error, onClose, onGenerate }: {
+  open: boolean;
+  output: OutputType | undefined;
+  checkedIds: Set<string>;
+  busy: boolean;
+  error?: string | null;
+  onClose: () => void;
+  onGenerate: (params: { outputType: string; length: string; tone: string; voicePersonaId?: string; voicePersonaName?: string; selectedInsightKeys: string[] }) => void;
+}) {
+  const profileQuery = useHqVoiceProfile(open);
+  const { tone, setTone, voicePersonaId, setVoicePersonaId } = useHqToneSelection(profileQuery.data, open);
+  const pickerContext = toVoicePickerContext(profileQuery.data);
+  if (!output) return null;
+  const Icon = output.icon;
+  return <Dialog open={open} onOpenChange={isOpen => !isOpen && onClose()}>
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <div className="mb-1 flex items-center gap-3">
+          <div className={cn("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border", output.bg, output.border)}>
+            <Icon className={cn("h-5 w-5", output.color)} />
+          </div>
+          <div>
+            <DialogTitle className="text-base">{output.label}</DialogTitle>
+            <DialogDescription className="mt-0.5 text-xs leading-snug">{output.description}</DialogDescription>
+          </div>
+        </div>
+      </DialogHeader>
+      <section>
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-foreground">Tone</p>
+        <TonePersonaPicker tones={EMAIL_TONES} tone={tone} voicePersonaId={voicePersonaId} inheritHqTone={tone === "my_voice_profile"}
+          context={pickerContext} loading={profileQuery.isLoading} error={profileQuery.isError} disabled={profileQuery.isLoading || busy}
+          onTone={selected => { setTone(selected.toLowerCase()); setVoicePersonaId(null); }}
+          onPersona={id => { setTone("professional"); setVoicePersonaId(id); }}
+          onHqVoice={() => { setTone("my_voice_profile"); setVoicePersonaId(null); }} />
+        {profileQuery.isError && <button type="button" className="mt-2 text-xs text-primary underline" onClick={() => profileQuery.refetch()}>Retry loading saved voices</button>}
+      </section>
+      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      <DialogFooter className="gap-2 sm:gap-2">
+        <DialogClose asChild><Button variant="outline" size="sm">Cancel</Button></DialogClose>
+        <Button size="sm" disabled={profileQuery.isLoading || busy} className={cn("gap-1.5", output.bg, output.color, "border", output.border, "hover:brightness-95")}
+          onClick={() => onGenerate({
+            outputType: output.id,
+            length: "medium",
+            tone: voicePersonaId || tone === "my_voice_profile" ? "my_voice_profile" : tone,
+            ...(voicePersonaId ? { voicePersonaId, voicePersonaName: profileQuery.data?.voicePersonas?.find(persona => persona.id === voicePersonaId)?.name } : {}),
+            selectedInsightKeys: Array.from(checkedIds),
+          })}>
+          <Wand2 className="h-3.5 w-3.5" />{busy ? "Generating…" : `Generate ${output.label}`}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>;
 }
 
 // ── BattlecardModal ──────────────────────────────────────────────────────────
@@ -924,6 +907,11 @@ function PlaybookPickerModal({
 
 export function ContactProfileView({ contactId, embedded, seatContext }: { contactId: number; embedded?: boolean; seatContext?: SeatContext }) {
   const id = contactId;
+  const { user } = useUser();
+  const indexingStatus = useGetContactIndexingStatus(id, { query: {
+    queryKey: ["contact-indexing-status", id, user?.id ?? "signed-out"],
+    enabled: !!id && !!user?.id, staleTime: 0, refetchOnWindowFocus: false,
+  } });
 
   const { data: contact, isLoading, isError } = useGetContact(id, { query: { enabled: !!id, refetchOnMount: "always" } });
   const competitorIds = useCompetitorIds();
@@ -939,22 +927,28 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
   const revealMutation = useRevealContact();
   const createJobMutation = useCreateOutreachJob();
   const [jobRefetchTrigger, setJobRefetchTrigger] = useState(0);
-  const { data: relevanceData = [], refetch: refetchRelevance } = useGetInsightRelevance(id, { query: { enabled: !!id } });
+  const { data: relevanceData = [], refetch: refetchRelevance } = useGetInsightRelevance(id, { query: {
+    queryKey: ["contact-relevance", id, user?.id ?? "signed-out"], enabled: !!id && !!user?.id, refetchOnWindowFocus: false,
+  } });
   const relevanceMutation = useTriggerInsightRelevance();
-  const { data: metaScore } = useGetContactMetaScore(id, { query: { enabled: !!id } });
-  const hasAutoScoredRef = useRef<number | null>(null); // stores the contactId that was last scored
+  const { data: metaScore, refetch: refetchMetaScore } = useGetContactMetaScore(id, { query: {
+    queryKey: ["contact-meta-score", id, user?.id ?? "signed-out"], enabled: !!id && !!user?.id, refetchOnWindowFocus: false,
+  } });
   const [showLostFriendo, setShowLostFriendo] = useState(false);
   const { data: topContact } = useGetTopRelevantContact(id, showLostFriendo);
-  const { data: quotesData = [], refetch: refetchQuotes } = useGetInsightQuotes(id, { query: { enabled: !!id } });
+  const { data: quotesData = [], refetch: refetchQuotes } = useGetInsightQuotes(id, { query: {
+    queryKey: ["contact-quotes", id, user?.id ?? "signed-out"], enabled: !!id && !!user?.id, refetchOnWindowFocus: false,
+  } });
   const quotesMutation = useExtractInsightQuotes();
-  const hasAutoExtractedQuotesRef = useRef<number | null>(null);
+  const hasAutoIndexedRef = useRef<string | null>(null);
+  const [indexingError, setIndexingError] = useState("");
   const [reassignOpen, setReassignOpen] = useState(false);
-  const RELEVANCE_REFRESH_WINDOW_MS = 10 * 60 * 1000;
   const refreshRelevance = useCallback(() => {
     if (!id || relevanceMutation.isPending) return;
-    hasAutoScoredRef.current = id;
-    relevanceMutation.mutate({ contactId: id, force: true }, { onSuccess: () => refetchRelevance() });
-  }, [id, relevanceMutation, refetchRelevance]);
+    relevanceMutation.mutate({ contactId: id, force: true }, { onSuccess: () => {
+      refetchRelevance(); refetchMetaScore(); indexingStatus.refetch();
+    } });
+  }, [id, relevanceMutation, refetchRelevance, refetchMetaScore, indexingStatus.refetch]);
 
   // Effect 1: show toast whenever scores are settled and max ≤ 50
   useEffect(() => {
@@ -963,80 +957,70 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
     if (maxScore <= 50) setShowLostFriendo(true);
   }, [relevanceData, relevanceMutation.isPending]);
 
-  // Effect 2: auto-trigger scoring when scores are missing or older than ten
-  // minutes. The API enforces the same window so duplicate requests cannot
-  // trigger another AI scoring run.
-  // Tracks the last contactId scored (not a boolean) so it resets automatically
-  // when navigating to a different contact within the same component instance.
+  // Server-owned completion metadata, rather than empty/loading arrays, decides freshness.
+  // Extract before scoring, so a new quote bonus is included in a single scoring run.
+  const indexState = indexingStatus.data;
+  const autoIndexKey = indexState && user?.id
+    ? `${user.id}:${id}:${indexState.hqRevision}:${indexState.quotesIndexedAt}:${indexState.scoresIndexedAt}`
+    : "";
   useEffect(() => {
-    if (!id || hasAutoScoredRef.current === id || relevanceMutation.isPending) return;
+    if (!indexState || !autoIndexKey || indexingStatus.isFetching || hasAutoIndexedRef.current === autoIndexKey) return;
+    if (!indexState.quotesNeedRefresh && !indexState.scoresNeedRefresh) return;
+    hasAutoIndexedRef.current = autoIndexKey;
+    setIndexingError("");
+    let cancelled = false;
+    void (async () => {
+      try {
+        if (indexState.quotesNeedRefresh) {
+          await quotesMutation.mutateAsync(id);
+          if (cancelled) return;
+          await refetchQuotes();
+        }
+        if (cancelled) return;
+        if (indexState.scoresNeedRefresh || indexState.quotesNeedRefresh) {
+          await relevanceMutation.mutateAsync(id);
+          if (cancelled) return;
+          await Promise.all([refetchRelevance(), refetchMetaScore()]);
+        }
+        if (!cancelled) await indexingStatus.refetch();
+      } catch (error) {
+        if (!cancelled) setIndexingError(error instanceof Error ? error.message : "Indexing could not be refreshed. Previously indexed results are unchanged.");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [id, autoIndexKey, indexingStatus.isFetching]);
 
-    const allInsightKeys = [
-      ...personalInsights.map(i => `personal-${i.id}`),
-      ...companyInsights.map(i => `company-${i.id}`),
-      ...industryInsights.map(i => `industry-${i.id}`),
-      ...roleInsights.map(i => `role-${i.id}`),
-      ...colleagueInsights.map(i => `colleague-${i.id}`),
-      ...counterpartInsights.map(i => `counterpart-${i.id}`),
-    ];
-    if (allInsightKeys.length === 0) return; // insights not loaded yet
-
-    const latestComputedAt = relevanceData.reduce((latest, score) => {
-      const timestamp = new Date(score.computedAt).getTime();
-      return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
-    }, 0);
-    const scoresAreFresh = latestComputedAt > 0
-      && Date.now() - latestComputedAt < RELEVANCE_REFRESH_WINDOW_MS;
-    if (scoresAreFresh) {
-      hasAutoScoredRef.current = id;
-      return;
-    }
-
-    hasAutoScoredRef.current = id;
-    relevanceMutation.mutate(id, { onSuccess: () => refetchRelevance() });
-  }, [id, relevanceData, personalInsights, companyInsights, industryInsights, roleInsights,
-    colleagueInsights, counterpartInsights, relevanceMutation.isPending]);
-
-  // Effect 3: auto-extract quotes once when insights load and no quotes exist yet
-  useEffect(() => {
-    if (!id || hasAutoExtractedQuotesRef.current === id || quotesMutation.isPending) return;
-    if (quotesData.length > 0) return; // already have quotes
-
-    const totalInsights = personalInsights.length + companyInsights.length +
-      industryInsights.length + roleInsights.length +
-      colleagueInsights.length + counterpartInsights.length;
-    if (totalInsights === 0) return;
-
-    hasAutoExtractedQuotesRef.current = id;
-    quotesMutation.mutate(id, {
-      onSuccess: () => {
-        refetchQuotes();
-        // Quote extraction can change a Personal signal from a low-confidence
-        // engagement into a direct, quotable contact-authored signal. Re-score
-        // immediately so the new attribution and quote bonus are reflected
-        // without requiring a second manual refresh.
-        relevanceMutation.mutate(
-          { contactId: id, force: true },
-          { onSuccess: () => refetchRelevance() },
-        );
-      },
-    });
-  }, [id, quotesData.length, personalInsights.length, companyInsights.length,
-    industryInsights.length, roleInsights.length, colleagueInsights.length,
-    counterpartInsights.length, quotesMutation.isPending, relevanceMutation, refetchRelevance]);
-
-  const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[]; voiceProfile?: VoiceProfileData }) => {
+  const handleGenerateIntroEmail = useCallback((params: { length: string; tone: string; selectedInsightKeys: string[]; voicePersonaId?: string; voicePersonaName?: string }) => {
     const lengthLabel = params.length.charAt(0).toUpperCase() + params.length.slice(1);
-    const toneLabel = params.tone === "my_voice_profile" ? "My Voice Profile" : params.tone.charAt(0).toUpperCase() + params.tone.slice(1);
+    const toneLabel = params.voicePersonaName ?? (params.tone === "my_voice_profile" ? "HQ voice" : params.tone.charAt(0).toUpperCase() + params.tone.slice(1));
     createJobMutation.mutate({
       id,
       data: {
         type: "intro_email",
         title: `Single Message — ${lengthLabel}, ${toneLabel}`,
-        params: { length: params.length, tone: params.tone, selectedInsightKeys: params.selectedInsightKeys, voiceProfile: params.voiceProfile },
+        params: { length: params.length, tone: params.tone, selectedInsightKeys: params.selectedInsightKeys, ...(params.voicePersonaId ? { voicePersonaId: params.voicePersonaId } : {}) },
       },
     }, {
       onSuccess: () => setJobRefetchTrigger(t => t + 1),
+    });
+  }, [createJobMutation, id]);
+
+  const handleGenerateOutput = useCallback((params: { outputType: string; length: string; tone: string; selectedInsightKeys: string[]; voicePersonaId?: string; voicePersonaName?: string }) => {
+    const output = OUTPUT_TYPES.find(item => item.id === params.outputType);
+    createJobMutation.mutate({
+      id,
+      data: {
+        type: params.outputType,
+        title: `${output?.label ?? "Outreach"} — ${params.voicePersonaName ?? (params.tone === "my_voice_profile" ? "HQ voice" : params.tone.charAt(0).toUpperCase() + params.tone.slice(1))}`,
+        params: {
+          length: params.length,
+          tone: params.tone,
+          selectedInsightKeys: params.selectedInsightKeys,
+          ...(params.voicePersonaId ? { voicePersonaId: params.voicePersonaId } : {}),
+        },
+      },
+    }, {
+      onSuccess: () => setActiveOutput(null),
     });
   }, [createJobMutation, id]);
 
@@ -1234,6 +1218,9 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                 LEFT COLUMN — Insights
             ═══════════════════════════════════════════════════════════════ */}
             {/* ── NORMAL left column ── */}
+            {(indexingError || indexingStatus.isError) && <p role="alert" className="col-span-full text-xs text-destructive">
+              {indexingError || "Indexing freshness could not be checked. Previously indexed results are unchanged."}
+            </p>}
             {insightsMode === "normal" && (
               <aside className="order-2 md:order-none flex flex-col gap-3 overflow-visible md:overflow-y-scroll min-h-0 pr-0 md:pr-1 scroll-thin">
                 <div className="sticky top-0 bg-background py-1 z-10 flex-shrink-0 space-y-1">
@@ -1906,50 +1893,16 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
         onGenerate={handleGenerateBattlecard}
       />
 
-      {/* ── Generic outreach modal (coming soon) ── */}
-      {(() => {
-        if (activeOutput === "intro_email") return null;
-        if (activeOutput === "battlecard") return null;
-        const output = OUTPUT_TYPES.find(o => o.id === activeOutput);
-        if (!output) return null;
-        const Icon = output.icon;
-        return (
-          <Dialog open={!!activeOutput} onOpenChange={(open) => !open && setActiveOutput(null)}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <div className="flex items-center gap-3 mb-1">
-                  <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border flex-shrink-0", output.bg, output.border)}>
-                    <Icon className={cn("h-5 w-5", output.color)} />
-                  </div>
-                  <div>
-                    <DialogTitle className="text-base">{output.label}</DialogTitle>
-                    <DialogDescription className="text-xs mt-0.5 leading-snug">{output.description}</DialogDescription>
-                  </div>
-                </div>
-              </DialogHeader>
-              <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 px-4 py-6 flex flex-col items-center gap-2 text-center">
-                <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
-                  <Wand2 className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-medium text-foreground">Parameters coming soon</p>
-                <p className="text-xs text-muted-foreground max-w-[22rem]">
-                  Customisation options for this output type will appear here. For now, click Generate to create with defaults.
-                </p>
-              </div>
-              <DialogFooter className="gap-2 sm:gap-2">
-                <DialogClose asChild>
-                  <Button variant="outline" size="sm">Cancel</Button>
-                </DialogClose>
-                <Button size="sm" className={cn("gap-1.5", output.bg, output.color, "border", output.border, "hover:brightness-95")}
-                  onClick={() => setActiveOutput(null)}>
-                  <Wand2 className="h-3.5 w-3.5" />
-                  Generate {output.label}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        );
-      })()}
+      {/* ── Generic outreach modal ── */}
+      {activeOutput !== "intro_email" && activeOutput !== "battlecard" && <GenericOutputModal
+        open={!!activeOutput}
+        output={OUTPUT_TYPES.find(output => output.id === activeOutput)}
+        checkedIds={checkedIds}
+        busy={createJobMutation.isPending}
+        error={createJobMutation.error instanceof Error ? createJobMutation.error.message : null}
+        onClose={() => setActiveOutput(null)}
+        onGenerate={handleGenerateOutput}
+      />}
 
       {/* ── Sequence picker modal ── */}
       <PlaybookPickerModal
@@ -3684,12 +3637,15 @@ function ContactChat({
   const { data: savedMessages = [], isLoading: historyLoading } = useListChatMessages(id);
   const persistMessage = useCreateChatMessage();
   const clearMutation = useClearChatMessages();
+  const profileQuery = useHqVoiceProfile();
+  const voicePickerContext = toVoicePickerContext(profileQuery.data);
 
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [useOnlyHighlighted, setUseOnlyHighlighted] = useState(false);
+  const { tone, setTone, voicePersonaId, setVoicePersonaId } = useHqToneSelection(profileQuery.data);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -3707,6 +3663,7 @@ function ContactChat({
     }
     return Array.from(checkedIds).filter(id => currentIds.has(id));
   })();
+  const selectedPersonaMissing = !!voicePersonaId && !profileQuery.data?.voicePersonas?.some(persona => persona.id === voicePersonaId);
 
   // Hydrate from DB on first load
   useEffect(() => {
@@ -3722,7 +3679,7 @@ function ContactChat({
 
   async function sendMessage(content: string) {
     const text = content.trim();
-    if (!text || isStreaming) return;
+    if (!text || isStreaming || profileQuery.isLoading || selectedPersonaMissing) return;
 
     const userMsg: ChatMessage = { role: "user", content: text };
     const history = [...localMessages, userMsg];
@@ -3741,10 +3698,19 @@ function ContactChat({
       const resp = await apiFetch(`/api/contacts/${id}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, selectedIds: effectiveIds }),
+        body: JSON.stringify({
+          messages: history,
+          selectedIds: effectiveIds,
+          tone: voicePersonaId || tone === "my_voice_profile" ? "my_voice_profile" : tone,
+          voicePersonaId,
+        }),
       });
 
-      if (!resp.ok || !resp.body) throw new Error("Request failed");
+      if (!resp.ok) {
+        const details = await resp.json().catch(() => null) as { error?: string } | null;
+        throw new Error(details?.error ?? "Sorry, something went wrong. Please try again.");
+      }
+      if (!resp.body) throw new Error("The reply could not be loaded. Please try again.");
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -3799,8 +3765,8 @@ function ContactChat({
       if (cleanContent) {
         persistMessage.mutate({ id, data: { role: "assistant", content: cleanContent } });
       }
-    } catch {
-      const errMsg = "Sorry, something went wrong. Please try again.";
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : "Sorry, something went wrong. Please try again.";
       setLocalMessages((prev) => {
         const next = [...prev];
         next[next.length - 1] = { role: "assistant", content: errMsg };
@@ -3929,36 +3895,48 @@ function ContactChat({
         </div>
       )}
 
-      {/* Input */}
-      <div className={cn("p-3 flex gap-2 flex-shrink-0 bg-card", !highlightedInsight && "border-t border-border/40")}>
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              sendMessage(input);
+      {/* Input and reply voice */}
+      <div className={cn("flex flex-shrink-0 flex-col gap-2 bg-card p-3", !highlightedInsight && "border-t border-border/40")}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Reply voice</span>
+          <TonePersonaPicker tones={["Professional", "Friendly", "Direct", "Warm", "Authoritative"]} tone={tone} voicePersonaId={voicePersonaId}
+            inheritHqTone={tone === "my_voice_profile"} context={voicePickerContext} loading={profileQuery.isLoading} error={profileQuery.isError}
+            disabled={profileQuery.isLoading || isStreaming} onTone={selected => { setTone(selected.toLowerCase()); setVoicePersonaId(null); }}
+            onPersona={id => { setTone("professional"); setVoicePersonaId(id); }}
+            onHqVoice={() => { setTone("my_voice_profile"); setVoicePersonaId(null); }} />
+          {profileQuery.isError && <button type="button" className="text-[10px] text-primary underline" onClick={() => profileQuery.refetch()}>Retry</button>}
+        </div>
+        <div className="flex gap-2">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(input);
+              }
+            }}
+            placeholder={
+              highlightedInsight && useOnlyHighlighted
+                ? `Ask about this source…`
+                : !showEmpty
+                  ? `Ask about ${contact.firstName} using ${effectiveIds.length} source${effectiveIds.length === 1 ? "" : "s"}…`
+                  : `Ask about ${contact.firstName}…`
             }
-          }}
-          placeholder={
-            highlightedInsight && useOnlyHighlighted
-              ? `Ask about this source…`
-              : !showEmpty
-                ? `Ask about ${contact.firstName} using ${effectiveIds.length} source${effectiveIds.length === 1 ? "" : "s"}…`
-                : `Ask about ${contact.firstName}…`
-          }
-          rows={1}
-          className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/50 disabled:opacity-50"
-          disabled={isStreaming}
-        />
-        <button
-          onClick={() => sendMessage(input)}
-          disabled={!input.trim() || isStreaming}
-          className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <Send className="h-3.5 w-3.5" />
-        </button>
+            rows={1}
+            className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/50 disabled:opacity-50"
+            disabled={isStreaming}
+          />
+          <button
+            onClick={() => sendMessage(input)}
+            disabled={!input.trim() || isStreaming || profileQuery.isLoading || selectedPersonaMissing}
+            className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <Send className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        {selectedPersonaMissing && <p role="status" className="text-[10px] text-amber-700 dark:text-amber-300">This saved voice is no longer available. Choose another voice before sending.</p>}
       </div>
     </>
   );

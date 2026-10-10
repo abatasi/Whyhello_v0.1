@@ -2,6 +2,8 @@ import { apiFetch } from "@/lib/apiFetch";
 import { useBuyingCenterRoles } from "@/hooks/useBuyingCenterRoles";
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@clerk/react";
+import { isHqVoiceQueryForUser } from "@/lib/hq-voice-query-model";
 import { Shell } from "@/components/layout/Shell";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { cn } from "@/lib/utils";
@@ -620,6 +622,9 @@ const COLOR_MAP: Record<string, {
 
 function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<string>) {
   const queryClient = useQueryClient();
+  const { user } = useUser();
+  const currentUserId = useRef(user?.id);
+  currentUserId.current = user?.id;
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -643,6 +648,7 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
       // writes so a slower, older response cannot overwrite the latest choice.
       saveQueue.current = saveQueue.current.then(async () => {
         try {
+          const saveOwnerId = currentUserId.current;
           const response = await apiFetch(API_PROFILE_URL, {
             method: "PUT",
             headers: { "Content-Type": "application/json", "X-Profile-Revision": revision.current ?? "new" },
@@ -659,6 +665,9 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
           saveDNA(data);
           setSaveError("");
           setSaved(true);
+          void queryClient.invalidateQueries({
+            predicate: query => isHqVoiceQueryForUser(query.queryKey, saveOwnerId),
+          });
           void queryClient.invalidateQueries({
             predicate: query => typeof query.queryKey[0] === "string" &&
               /^\/api\/(contacts|companies)\/\d+$/.test(query.queryKey[0]),

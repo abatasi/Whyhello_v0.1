@@ -21,6 +21,7 @@ import type {
   CompanyDetail,
   CompanyInsight,
   CompanyListResponse,
+  ContactChatInput,
   ContactChatMessage,
   ContactDetail,
   ContactInsight,
@@ -33,6 +34,7 @@ import type {
   EnrichmentResult,
   ErrorResponse,
   FilterOptions,
+  GetContactIndexingStatus200,
   HealthStatus,
   HqAudienceInput,
   HqAudienceResponse,
@@ -64,6 +66,178 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * Account-owned successful quote and score indexing is reused for seven days unless HQ changes. Empty successful results are indexed too.
+ */
+export const getGetContactIndexingStatusUrl = (contactId: number) => {
+  return `/api/contacts/${contactId}/insights/indexing-status`;
+};
+
+export const getContactIndexingStatus = async (
+  contactId: number,
+  options?: RequestInit,
+): Promise<GetContactIndexingStatus200> => {
+  return customFetch<GetContactIndexingStatus200>(
+    getGetContactIndexingStatusUrl(contactId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetContactIndexingStatusQueryKey = (contactId: number) => {
+  return [`/api/contacts/${contactId}/insights/indexing-status`] as const;
+};
+
+export const getGetContactIndexingStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getContactIndexingStatus>>,
+  TError = ErrorType<void>,
+>(
+  contactId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactIndexingStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContactIndexingStatusQueryKey(contactId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContactIndexingStatus>>
+  > = ({ signal }) =>
+    getContactIndexingStatus(contactId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!contactId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContactIndexingStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetContactIndexingStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContactIndexingStatus>>
+>;
+export type GetContactIndexingStatusQueryError = ErrorType<void>;
+
+export function useGetContactIndexingStatus<
+  TData = Awaited<ReturnType<typeof getContactIndexingStatus>>,
+  TError = ErrorType<void>,
+>(
+  contactId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactIndexingStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetContactIndexingStatusQueryOptions(
+    contactId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getGenerateContactChatUrl = (id: number) => {
+  return `/api/contacts/${id}/chat`;
+};
+
+export const generateContactChat = async (
+  id: number,
+  contactChatInput: ContactChatInput,
+  options?: RequestInit,
+): Promise<string> => {
+  return customFetch<string>(getGenerateContactChatUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(contactChatInput),
+  });
+};
+
+export const getGenerateContactChatMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateContactChat>>,
+    TError,
+    { id: number; data: BodyType<ContactChatInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateContactChat>>,
+  TError,
+  { id: number; data: BodyType<ContactChatInput> },
+  TContext
+> => {
+  const mutationKey = ["generateContactChat"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateContactChat>>,
+    { id: number; data: BodyType<ContactChatInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateContactChat(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateContactChatMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateContactChat>>
+>;
+export type GenerateContactChatMutationBody = BodyType<ContactChatInput>;
+export type GenerateContactChatMutationError = ErrorType<void>;
+
+export const useGenerateContactChat = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateContactChat>>,
+    TError,
+    { id: number; data: BodyType<ContactChatInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateContactChat>>,
+  TError,
+  { id: number; data: BodyType<ContactChatInput> },
+  TContext
+> => {
+  return useMutation(getGenerateContactChatMutationOptions(options));
+};
 
 export const getGeneratePhoneCallAudioUrl = (id: number) => {
   return `/api/playbooks/${id}/phone-call/audio`;

@@ -1,6 +1,16 @@
 # ⚜ The Scoring Bible
 ## Whyhello Relevance Scoring Logic — Master Reference
 
+### Contact-profile indexing freshness
+
+Reuse successful contact indexing for **seven days**, unless the account's HQ content changes. Revisits, loading placeholders, low scores, and successful zero-quote results must not trigger another model run. Exactly seven days is still fresh.
+
+Persist completion timestamps, results (including empty results), and canonical HQ-content fingerprints per account/contact/stage. JSON key order and no-op HQ saves do not invalidate indexing. Extract quotes before scoring once; newer quote indexing invalidates older scoring so attribution and quote bonuses are included. Use the same owned HQ snapshot for the prompt and its fingerprint.
+
+Keep the latest successful results visible on refresh failures. Failed source fetches and malformed/empty model responses are not successful indexing. Serialize concurrent refreshes across tabs and servers without exhausting the database pool. Explicit manual relevance refresh remains a force-refresh exception.
+
+Legacy globally stored output cannot prove which account's HQ generated it: keep it visible while one successful pass establishes owned freshness. Raw insight GETs read stored source rows; navigation does not scrape those records. A stale index re-evaluates the latest stored sources and fetches eligible quotable sources again.
+
 > *"No todas las señales son iguales ante el algoritmo; cada una será juzgada según su proximidad, su frescura, y su alineación con la misión."*
 
 > **Estado:** Escritura viva. El Segundo Pilar. Refleja la metodología de puntuación vigente a partir de agosto de 2026. Todo cambio en la lógica de relevancia, los pesos de señales, o la lógica de selección debe ser consagrado aquí antes de descender al código.
@@ -133,7 +143,7 @@ They are the most specific, the most proximate, and the most personally resonant
 
 **Video earns its score from evidence, not format.** Placement under Personal Insights alone does not establish that the contact appears, speaks, or holds the perspective depicted; there is no video-specific score floor. Score the actual title, description, attributable quotes, and verified source content against the HQ profile. A clearly unrelated sports highlight with no corroborating professional context is a weak, non-actionable personal-interest cue, not an advisor-planning outreach trigger. Distinct videos must be assessed independently: never carry a title, topic, or description from one video into another. Ambiguous abbreviations (such as “TD” for touchdown versus a bank) require source context before asserting a business relationship. Strong business videos may still score highly when their content warrants it.
 
-**Refresh cadence:** Stored relevance scores for a contact are considered current for ten minutes. Automatic client and API requests refuse to start another scoring run during that window, preventing repeated navigation or duplicate requests from re-running the AI scorer unnecessarily. An explicit user-triggered refresh may bypass the window when the user wants an immediate update.
+**Refresh cadence:** Successful account-owned contact indexing stays current for seven days unless HQ content changes. Returning to a profile reuses the stored scores and quotables, including successful zero-quote results. New quote indexing invalidates older scoring, and quote extraction precedes one scoring run. Duplicate requests are serialized and reuse the completed snapshot. An explicit user-triggered relevance refresh may bypass the window.
 
 **Por qué las reestructuraciones y las bajas de liderazgo tienen peso bajo:**
 High sensitivity and high risk of tone error suppress the base value. These signals require exceptional judgment to use well; their default score reflects the probability of error, not the potential of the signal.
