@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="205" viewBox="0 0 320 205">
+  <title>Whyhello full-color mark</title>
+  <desc>The breathing-pulse mark with every segment fully opaque at peak saturation and brightness.</desc>
+  <path d="M20 18 H72 L105 184 H57 Z" fill="#7DFF47"/>
+  <path d="M105 184 H57 L129 18 H174 Z" fill="#0EE7FF"/>
+  <path d="M129 18 H174 L207 184 H163 Z" fill="#7DFF47"/>
+  <path d="M163 184 L244 4 L292 21 L211 184 Z" fill="#02E1FF"/>
+  <path d="M211 184 H299 A88 88 0 0 0 250 105 Z" fill="#FF2238"/>
+</svg>

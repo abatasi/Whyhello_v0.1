@@ -4,7 +4,7 @@
 - [Doctrine-first development](doctrine-first-dev.md) — Messaging/Scoring code changes must update the Quran/Bible in the same turn; Torah not actively maintained
 - [User-scoped buyer ranking](user-scoped-buyer-ranking.md) — Home buyer fit comes only from the signed-in user's explicitly live Target Market, never global contact scores or drafts
 - [Insight uniqueness and publishing](insight-uniqueness-publishing.md) — prioritize a publishable schema over DB-enforced insight URL uniqueness while legacy production duplicates remain
-- [Whyhello logo on dark backgrounds](whyhello-logo-counters.md) — original image has white letter counters and a pale W edge matte; both need transparency cleanup
+- [Whyhello logo variants](whyhello-logo-counters.md) — peak-color static sidebar mark; older wordmark PNGs need counter and edge transparency cleanup.
 - [Theme selector alignment](theme-selector-alignment.md) — Tailwind v4 dark utilities default to system preference; align them with next-themes class switching
 - [Dark card surfaces](dark-card-surfaces.md) — dark-mode cards share the page background; use borders for category distinction, not tinted fills
 - [Drizzle correlated SQL qualifiers](drizzle-correlated-sql.md) — table-column interpolation in aggregate SELECT fragments may lose its table qualifier

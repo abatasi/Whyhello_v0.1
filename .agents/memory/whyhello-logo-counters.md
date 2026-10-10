@@ -8,3 +8,9 @@ The original full Whyhello image has opaque white pixels inside letter counters 
 **Why:** White counters blend into light backgrounds but appear as white-filled holes on dark ones, while the W matte makes its edges look jagged and outlined.
 
 **How to apply:** For future logo variants, inspect the source image at actual display size and enlarged over both light and dark backgrounds. Verify that letter openings show the actual background color and the W edges have no pale halo.
+
+Use the breathing-pulse mark with all segments simultaneously at full opacity and peak saturation/brightness as the fixed master-sidebar logo. Keep it a transparent, scalable standalone mark, not a crop of the older wordmark.
+
+**Why:** The user approved the animation and explicitly chose its richest, all-colors-at-maximum appearance for the sidebar's fixed logo.
+
+**How to apply:** Preserve this static-versus-animated distinction in future branding changes. A random frame of the staggered animation has dimmed segments and is not the approved fixed appearance.

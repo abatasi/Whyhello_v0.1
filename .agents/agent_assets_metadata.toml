@@ -7,6 +7,7 @@ uri = "file://docs/scraping-torah.md"
 type = "text"
 title = "Scraping Torah"
 description = "Whyhello scraping and signal-quality doctrine in Markdown format."
+logical_id = "0b96e726-91c2-431e-bf46-15779bf2c9b6"
 
 [[outputs]]
 id = "M5W6_t_cIbc_kL7K4cqQo"
@@ -14,6 +15,7 @@ uri = "file://docs/scoring-bible.md"
 type = "text"
 title = "Scoring Bible"
 description = "Whyhello relevance-scoring doctrine, including the Contact Meta Score, in Markdown format."
+logical_id = "6a530561-5d80-4742-b4dc-8f3b72ae6e80"
 
 [[outputs]]
 id = "fCD6npfNp3iGgP1gsjLNw"
@@ -21,6 +23,7 @@ uri = "file://docs/messaging-quran.md"
 type = "text"
 title = "Messaging Quran"
 description = "Whyhello messaging and outreach doctrine in Markdown format."
+logical_id = "cc659c42-1d30-40f7-96de-d12035655ffc"
 
 [[outputs]]
 id = "VYJd1U5uC2gskktqeY8_d"
@@ -28,6 +31,7 @@ uri = "file://.agents/outputs/role-insights.md"
 type = "text"
 title = "Role Insights"
 description = "14 Role insight records exported as Markdown."
+logical_id = "c4dd117a-b3c0-426c-99bf-723b9f1b93b6"
 
 [[outputs]]
 id = "Q0L8tGLg6Q5HRRhyxyp9E"
@@ -35,6 +39,7 @@ uri = "file://.agents/outputs/industry-insights.md"
 type = "text"
 title = "Industry Insights"
 description = "11 Industry insight records exported as Markdown."
+logical_id = "459f4aa6-9a20-4f1b-b658-db39f987c9c3"
 
 [[outputs]]
 id = "hqGGlddz1GsgFeiAY_Izm"
@@ -42,6 +47,7 @@ uri = "file://.agents/outputs/role-insights.csv"
 type = "table"
 title = "Role Insights CSV"
 description = "14 Role insight records in CSV format."
+logical_id = "c9471ad0-a000-42ea-83c1-93ae9722f5f7"
 
 [[outputs]]
 id = "yMaJ30pwLO-em9BLx5c1g"
@@ -49,3 +55,18 @@ uri = "file://.agents/outputs/industry-insights.csv"
 type = "table"
 title = "Industry Insights CSV"
 description = "11 Industry insight records in CSV format."
+logical_id = "e833ebc9-8240-41c9-9a9c-6b25a6ac114d"
+
+[[outputs]]
+id = "fv3TNIi34dN-c1H5RgOuk"
+uri = "file://generated-artifacts/whyhello-mark-static-3200.png"
+type = "image"
+title = "Whyhello — full-color static logo"
+description = "3200 × 2050 PNG with a transparent background. All segments use the breathing animation’s peak color and brightness."
+logical_id = "a8304482-2678-4ad9-afd9-091d1309bcc8"
+content_hash = "sha256:8feaf1bc792f573a073dc5babe460fb84075aaacd2c566a3542f18e86b75e0fc"
+size = 126675
+mtime_ms = 1791645246906
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:f4a4155c-2926-4faf-b4db-4fa352c8f96c/a8304482-2678-4ad9-afd9-091d1309bcc8/81c35e02-a25f-454e-ae99-270dd00ad0ab"
+storage_version_token = "1791645280556290"
+content_type = "image/png"

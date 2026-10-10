@@ -9,7 +9,7 @@ import {
   MessageSquare, Layers3, House, Sun, Moon, Monitor
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
-import { darkLogoUrl, lightLogoUrl } from "@/components/BrandLogo";
+import { darkLogoUrl, lightLogoUrl, staticMarkLogoUrl } from "@/components/BrandLogo";
 import { PlaybookIcon } from "@/components/PlaybookIcon";
 import { cn, getInitials } from "@/lib/utils";
 import { OverallScorePill } from "@/components/OverallScorePill";
@@ -972,7 +972,7 @@ function MasterSidebar({ wartime }: { wartime: boolean }) {
               aria-label="Whyhello"
             >
               <div className={cn("sidebar-logo-crop", expanded && "sidebar-logo-crop-expanded")}>
-                <img src={darkTheme ? darkLogoUrl : lightLogoUrl} alt="Whyhello" />
+                <img src={staticMarkLogoUrl} alt="Whyhello" className="sidebar-static-mark" />
               </div>
             </div>
           </div>

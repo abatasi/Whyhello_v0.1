@@ -94,6 +94,15 @@
   height: 16px;
 }
 
+/* Standalone vector mark: show the entire logo rather than cropping a wordmark. */
+.sidebar-logo-crop img.sidebar-static-mark {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .master-route-nav {
   display: flex;
   flex-direction: column;
