@@ -84,6 +84,12 @@ All inside-out data is defined and maintained in the HQ module (`DNAData`). The 
 
 ### 2.2 Voice Profile
 
+**Named HQ personas:** Voice & Tone is an account-scoped library of saved, named personas rather than one disposable voice configuration. Each persona retains its tone descriptors, communication style, writing notes, training examples, suppressions, suppression notes, and independent profile summary. Existing single-voice settings become the first Default persona without losing their definition. Users can create, rename, duplicate, and confirm-delete personas; at least one remains. Names must be nonblank and unique within the account, ignoring case.
+
+**Editing is not activation:** Selecting a persona opens it for editing; only **Use this persona** changes the voice messaging inherits. Editing a non-active persona leaves the active voice unchanged. Deleting an active persona requires a confirmation that names its replacement. The profile's legacy `voice` fields mirror only the explicitly active persona, preserving Single Message and Playbook compatibility. Server validation enforces this mirror and rejects an invalid active ID rather than using a different voice silently. Personas use existing user-owned, revision-aware HQ persistence, with visible auto-save/failure feedback. The messaging parameter label remains **HQ voice**, not a wall of serialized voice settings.
+
+**Independent summaries:** Summary generation and manual edits belong to the edited persona, and summaries persist with the user’s HQ profile. Switching personas does not generate a new summary automatically. Late AI responses cannot overwrite another persona, newer voice inputs, or a manually saved summary; failed or empty generation preserves the saved summary. Unscoped legacy browser summaries are not automatically assigned to an account or persona because their ownership cannot be established. The six voice definition fields below remain the messaging inputs; the summary is a seller-editable description, not invented proof or sender identity.
+
 | Field | Description | Messaging Role |
 |---|---|---|
 | `voice.toneTags` | Array of tone descriptors (e.g. `["direct","warm"]`) | Sentence register, word choice |
@@ -91,6 +97,7 @@ All inside-out data is defined and maintained in the HQ module (`DNAData`). The 
 | `voice.writingNotes` | Freeform notes on language preferences | Edge-case overrides |
 | `voice.trainingText` | Sample approved copy | Few-shot exemplar for generation |
 | `voice.suppressions` | Words/phrases to avoid | Negative constraint list |
+| `voice.suppressionNotes` | Additional language/style prohibitions | Negative instruction block |
 
 ### 2.3 Products
 

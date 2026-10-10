@@ -3,9 +3,10 @@ import { useBuyingCenterRoles } from "@/hooks/useBuyingCenterRoles";
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Shell } from "@/components/layout/Shell";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { cn } from "@/lib/utils";
 import {
-  Mic2, Package, Building2, Plus, Trash2, ChevronDown,
+  Mic2, Package, Building2, Plus, Trash2, ChevronDown, Copy,
   Save, CheckCircle2, Landmark, Sparkles, Upload, X, FileText,
   Loader2, RefreshCw, Ban, PenLine, TrendingDown, TrendingUp,
   Info, BarChart3, Users, Users2, Target, Globe, MessageSquare, Shield, Search, MapPin,
@@ -13,6 +14,11 @@ import {
   ShoppingCart, Scale, Calculator, User, Wrench, MessageCircle, GraduationCap,
 } from "lucide-react";
 import { useAppMode } from "@/contexts/AppModeContext";
+import {
+  activateVoicePersona, cloneVoice, createVoicePersonaId, deleteVoicePersona,
+  duplicateVoicePersona, migrateVoicePersonas, renameVoicePersona, selectVoicePersona,
+  updateVoicePersona, updateVoicePersonaSummary, type VoicePersona,
+} from "@/lib/voice-personas";
 import {
   Dialog, DialogContent, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -72,10 +78,12 @@ function mergeDNA(parsed: StoredDNA): DNAData {
   const d = defaultDNA();
   const buyingCenters = mergeBuyingCenters(parsed.buyingCenters, parsed.buyingCenter);
   const targetMarkets = mergeTargetMarkets(parsed.targetMarkets, parsed.targetMarket);
-  return {
+  const merged: DNAData = {
     ...d,
     ...parsed,
     voice: { ...d.voice, ...(parsed.voice ?? {}) },
+    voicePersonas: parsed.voicePersonas ?? [],
+    activeVoicePersonaId: parsed.activeVoicePersonaId ?? "",
     company: { ...d.company, ...(parsed.company ?? {}) },
     products: (parsed.products ?? []).map(p => ({ ...p, economicBenefits: (p.economicBenefits ?? []).map(eb => ({ label: "", ...eb })) })),
     customers: (parsed.customers ?? []).map(c => ({
@@ -104,14 +112,7 @@ function mergeDNA(parsed: StoredDNA): DNAData {
     liveBuyingCenterId: buyingCenters.some(bc => bc.id === parsed.liveBuyingCenterId) ? parsed.liveBuyingCenterId! : null,
     liveTargetMarketId: targetMarkets.some(tm => tm.id === parsed.liveTargetMarketId) ? parsed.liveTargetMarketId! : null,
   };
-}
-
-function loadDNA(): DNAData {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return mergeDNA(JSON.parse(raw) as StoredDNA);
-  } catch { /* ignore */ }
-  return defaultDNA();
+  return migrateVoicePersonas(merged);
 }
 
 function saveDNA(data: DNAData) {
@@ -483,6 +484,8 @@ type StoredDNA = Partial<DNAData> & {
 interface DNAData {
   liveBuyingCenterId: string | null;
   liveTargetMarketId: string | null;
+  voicePersonas: VoicePersona[];
+  activeVoicePersonaId: string;
   voice: {
     toneTags: string[];
     communicationStyle: string;
@@ -518,6 +521,8 @@ function defaultDNA(): DNAData {
       suppressions: [],
       suppressionNotes: "",
     },
+    voicePersonas: [],
+    activeVoicePersonaId: "",
     products: [],
     company: {
       name: "",
@@ -617,7 +622,7 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
   const queryClient = useQueryClient();
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
   const saveVersion = useRef(0);
   const hydrated = useRef(false);
@@ -627,13 +632,13 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
     // The server GET populates data; it is not a user edit and needs no PUT.
     if (!hydrated.current) {
       hydrated.current = true;
+      setSaved(true);
       return;
     }
     if (timer.current) clearTimeout(timer.current);
     const version = ++saveVersion.current;
     setSaved(false);
     timer.current = setTimeout(() => {
-      saveDNA(data);
       // Profile PUT replaces the whole JSON document. Serialize in-flight
       // writes so a slower, older response cannot overwrite the latest choice.
       saveQueue.current = saveQueue.current.then(async () => {
@@ -651,6 +656,7 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
           const result: { revision: string } = await response.json();
           revision.current = result.revision;
           if (version !== saveVersion.current) return;
+          saveDNA(data);
           setSaveError("");
           setSaved(true);
           void queryClient.invalidateQueries({
@@ -658,7 +664,6 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
               /^\/api\/(contacts|companies)\/\d+$/.test(query.queryKey[0]),
           });
           void queryClient.invalidateQueries({ queryKey: ["/api/home/top-buyers"] });
-          setTimeout(() => setSaved(false), 1800);
         } catch (error) {
           if (version === saveVersion.current) setSaveError(error instanceof Error ? error.message : "Not synced — edit to retry");
         }
@@ -748,6 +753,8 @@ function Input({ value, onChange, placeholder }: {
 // ── Uploaded file pill ───────────────────────────────────────────────────────
 
 interface UploadedFile {
+  id: string;
+  personaId: string;
   name: string;
   status: "processing" | "done" | "error";
 }
@@ -892,17 +899,16 @@ function VoiceProfileCard({
             title="Regenerate"
             className="h-6 w-6 rounded-md flex items-center justify-center text-violet-500 dark:text-violet-300 hover:text-violet-700 dark:hover:text-violet-200 hover:bg-violet-100 transition-colors disabled:opacity-40"
           >
-            <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+            {loading ? <ThinkingIndicator decorative className="h-3 w-5" /> : <RefreshCw className="h-3 w-3" />}
           </button>
         )}
       </div>
 
       <div className="px-4 py-3.5">
         {loading ? (
-          <div className="flex flex-col gap-2">
-            <div className="h-3.5 bg-violet-200/60 rounded-full animate-pulse w-full" />
-            <div className="h-3.5 bg-violet-200/60 rounded-full animate-pulse w-[88%]" />
-            <div className="h-3.5 bg-violet-200/60 rounded-full animate-pulse w-[72%]" />
+          <div className="flex items-center gap-3">
+            <ThinkingIndicator label="Generating this persona's voice profile" />
+            <span className="text-xs text-muted-foreground">Building your voice profile…</span>
           </div>
         ) : isEditing ? (
           <div className="flex flex-col gap-2.5">
@@ -2079,13 +2085,14 @@ export default function HQ() {
   const { mode, toggleMode } = useAppMode();
   const { names: roleOptions, loading: rolesLoading, error: rolesError } = useBuyingCenterRoles();
   const wartime = mode === "wartime";
-  const [data, setData] = useState<DNAData>(loadDNA);
+  // Never hydrate a user-scoped profile from a browser-global cache before auth-scoped GET.
+  const [data, setData] = useState<DNAData>(defaultDNA);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [profileLoadError, setProfileLoadError] = useState(false);
   const profileRevision = useRef("new");
   const { saved, saveError } = useAutoSave(data, profileLoaded && !profileLoadError, profileRevision);
 
-  // Load from server on mount — server is the source of truth; localStorage is the fast startup cache
+  // Load the account-scoped profile on mount; do not expose a browser-global startup cache.
   useEffect(() => {
     let cancelled = false;
     apiFetch(API_PROFILE_URL)
@@ -2099,7 +2106,9 @@ export default function HQ() {
           if (!json?.data) {
             try { localStorage.removeItem(STORAGE_KEY); } catch { /* server is authoritative */ }
           }
-          setData(json?.data ? mergeDNA(json.data) : defaultDNA());
+          const hydratedData = mergeDNA(json?.data ?? defaultDNA());
+          setData(hydratedData);
+          saveDNA(hydratedData);
           setProfileLoaded(true);
         }
       })
@@ -2110,6 +2119,15 @@ export default function HQ() {
 
   const [activeSeat, setActiveSeat] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<SectionId>("voice");
+  const [editorVoicePersonaId, setEditorVoicePersonaId] = useState<string | null>(null);
+  const [personaNameDraft, setPersonaNameDraft] = useState("");
+  const [personaNameError, setPersonaNameError] = useState("");
+  const [summaryLoadingPersonaIds, setSummaryLoadingPersonaIds] = useState<Set<string>>(() => new Set());
+  const [summaryError, setSummaryError] = useState("");
+  const [summaryErrorPersonaId, setSummaryErrorPersonaId] = useState<string | null>(null);
+  const [textDirtyForProfile, setTextDirtyForProfile] = useState(false);
+  const summaryRequestVersions = useRef(new Map<string, number>());
+  const observedVoiceSignature = useRef<{ id: string; signature: string } | null>(null);
   const [activeBuyingCenterId, setActiveBuyingCenterId] = useState<string>(
     () => data.buyingCenters[0]?.id ?? ""
   );
@@ -2129,6 +2147,15 @@ export default function HQ() {
   const [tmSampleCompanies, setTmSampleCompanies] = useState<CompanySample[]>([]);
   const [tmSampleTotal, setTmSampleTotal] = useState<number | null>(null);
   const [tmSampleLoading, setTmSampleLoading] = useState(false);
+
+  useEffect(() => {
+    if (!profileLoaded) return;
+    const initial = selectVoicePersona(data, data.activeVoicePersonaId);
+    setEditorVoicePersonaId(initial.editorPersonaId);
+    const persona = data.voicePersonas.find(item => item.id === initial.editorPersonaId);
+    setPersonaNameDraft(persona?.name ?? "");
+    observedVoiceSignature.current = null;
+  }, [profileLoaded]); // authoritative profile initialization only
 
   useEffect(() => {
     setTmOptionsLoading(true);
@@ -2220,28 +2247,25 @@ export default function HQ() {
     }));
   }
 
-  // Voice profile AI summary
-  const SUMMARY_KEY = "whyhello_voice_summary";
-  const [voiceSummary, setVoiceSummaryState] = useState<string>(() => localStorage.getItem(SUMMARY_KEY) ?? "");
-  const [voiceSummaryLoading, setVoiceSummaryLoading] = useState(false);
-  function setVoiceSummary(text: string) {
-    setVoiceSummaryState(text);
-    if (text) localStorage.setItem(SUMMARY_KEY, text);
-    else localStorage.removeItem(SUMMARY_KEY);
-  }
-  // True when text fields have changed since the last profile generation
-  const [textDirtyForProfile, setTextDirtyForProfile] = useState(false);
-  const mountedRef = useRef(false);
+  const editorPersona = data.voicePersonas.find(persona => persona.id === editorVoicePersonaId)
+    ?? data.voicePersonas.find(persona => persona.id === data.activeVoicePersonaId)
+    ?? null;
+  const editorPersonaId = editorPersona?.id ?? null;
+  const editorVoice = editorPersona?.voice ?? data.voice;
+  const voiceSummary = editorPersona?.summary ?? "";
+  const voiceSummaryLoading = !!editorPersonaId && summaryLoadingPersonaIds.has(editorPersonaId);
 
   // File upload state
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const personaFiles = uploadedFiles.filter(file => file.personaId === editorPersonaId);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Setters ──────────────────────────────────────────────────────────────
 
   function setVoice(patch: Partial<DNAData["voice"]>) {
-    setData(d => ({ ...d, voice: { ...d.voice, ...patch } }));
+    if (!profileLoaded || profileLoadError || !editorPersonaId) return;
+    setData(d => updateVoicePersona(d, editorPersonaId, patch));
   }
   function setCompany(patch: Partial<DNAData["company"]>) {
     setData(d => ({ ...d, company: { ...d.company, ...patch } }));
@@ -2360,67 +2384,195 @@ export default function HQ() {
     setData(d => ({ ...d, competitors: d.competitors.filter(c => c.id !== id) }));
   }
   function toggleTag(tag: string) {
-    setData(d => {
-      const has = d.voice.toneTags.includes(tag);
-      return { ...d, voice: { ...d.voice, toneTags: has ? d.voice.toneTags.filter(t => t !== tag) : [...d.voice.toneTags, tag] } };
-    });
+    if (!profileLoaded || profileLoadError || !editorPersonaId) return;
+    const has = editorVoice.toneTags.includes(tag);
+    setVoice({ toneTags: has ? editorVoice.toneTags.filter(t => t !== tag) : [...editorVoice.toneTags, tag] });
   }
   function toggleSuppression(tag: string) {
-    setData(d => {
-      const has = d.voice.suppressions.includes(tag);
-      return { ...d, voice: { ...d.voice, suppressions: has ? d.voice.suppressions.filter(t => t !== tag) : [...d.voice.suppressions, tag] } };
+    if (!profileLoaded || profileLoadError || !editorPersonaId) return;
+    const has = editorVoice.suppressions.includes(tag);
+    setVoice({ suppressions: has ? editorVoice.suppressions.filter(t => t !== tag) : [...editorVoice.suppressions, tag] });
+  }
+
+  function chooseVoicePersona(id: string) {
+    if (!profileLoaded || profileLoadError) return;
+    const selected = selectVoicePersona(data, id);
+    setEditorVoicePersonaId(selected.editorPersonaId);
+    const persona = data.voicePersonas.find(item => item.id === selected.editorPersonaId);
+    setPersonaNameDraft(persona?.name ?? "");
+    setPersonaNameError("");
+    setSummaryError("");
+    setSummaryErrorPersonaId(null);
+    setTextDirtyForProfile(false);
+  }
+
+  function createVoicePersona() {
+    if (!profileLoaded || profileLoadError) return;
+    const id = createVoicePersonaId();
+    let name = "New persona";
+    let suffix = 2;
+    while (data.voicePersonas.some(persona => persona.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+      name = `New persona ${suffix++}`;
+    }
+    const persona: VoicePersona = {
+      id,
+      name,
+      voice: { toneTags: [], communicationStyle: "balanced", writingNotes: "", trainingText: "", suppressions: [], suppressionNotes: "" },
+      summary: "",
+    };
+    setData(current => ({ ...current, voicePersonas: [...current.voicePersonas, persona] }));
+    setEditorVoicePersonaId(id);
+    setPersonaNameDraft(name);
+    setPersonaNameError("");
+  }
+
+  function duplicateCurrentVoicePersona() {
+    if (!profileLoaded || profileLoadError || !editorPersonaId) return;
+    const id = createVoicePersonaId();
+    const next = duplicateVoicePersona(data, editorPersonaId, id);
+    const name = next.voicePersonas.find(persona => persona.id === id)?.name ?? "New persona";
+    setData(next);
+    setEditorVoicePersonaId(id);
+    setPersonaNameDraft(name);
+    setPersonaNameError("");
+  }
+
+  function savePersonaName() {
+    if (!profileLoaded || profileLoadError || !editorPersonaId) return;
+    const result = renameVoicePersona(data, editorPersonaId, personaNameDraft);
+    if (result.error) {
+      setPersonaNameError(result.error);
+      return;
+    }
+    setData(result.data);
+    setPersonaNameDraft(result.data.voicePersonas.find(persona => persona.id === editorPersonaId)?.name ?? "");
+    setPersonaNameError("");
+  }
+
+  function activateEditedPersona() {
+    if (!profileLoaded || profileLoadError || !editorPersonaId) return;
+    setData(current => activateVoicePersona(current, editorPersonaId));
+  }
+
+  function confirmDeleteVoicePersona(persona: VoicePersona) {
+    if (!profileLoaded || profileLoadError) return;
+    if (data.voicePersonas.length <= 1) {
+      window.alert("Keep at least one voice persona. The final persona cannot be deleted.");
+      return;
+    }
+    const result = deleteVoicePersona(data, persona.id);
+    const replacementName = result.data.voicePersonas.find(item => item.id === result.replacementId)?.name ?? "the remaining persona";
+    const isActive = persona.id === data.activeVoicePersonaId;
+    const consequence = isActive
+      ? ` This persona is active, so ${replacementName} will become active and its voice will replace the messaging voice.`
+      : "";
+    if (!window.confirm(`Delete “${persona.name}”? This cannot be undone.${consequence}`)) return;
+    setData(result.data);
+    summaryRequestVersions.current.delete(persona.id);
+    if (editorVoicePersonaId === persona.id) {
+      const nextEditor = result.replacementId ?? result.data.activeVoicePersonaId;
+      setEditorVoicePersonaId(nextEditor);
+      setPersonaNameDraft(result.data.voicePersonas.find(item => item.id === nextEditor)?.name ?? "");
+    }
+    setPersonaNameError("");
+  }
+
+  function saveVoiceSummary(text: string) {
+    if (!profileLoaded || profileLoadError || !editorPersonaId) return;
+    // A seller's manual summary supersedes any AI response still in flight.
+    summaryRequestVersions.current.set(editorPersonaId, (summaryRequestVersions.current.get(editorPersonaId) ?? 0) + 1);
+    setSummaryLoadingPersonaIds(current => {
+      const next = new Set(current);
+      next.delete(editorPersonaId);
+      return next;
     });
+    setData(current => updateVoicePersonaSummary(current, editorPersonaId, text));
+    setSummaryError("");
+    setSummaryErrorPersonaId(null);
   }
 
   // ── Voice profile generation ─────────────────────────────────────────────
 
   // Takes explicit voice snapshot so callers are never affected by stale closures
-  async function generateVoiceSummary(voice: DNAData["voice"]) {
+  async function generateVoiceSummary(personaId: string, voice: DNAData["voice"]) {
     const { toneTags, communicationStyle, writingNotes, trainingText, suppressions, suppressionNotes } = voice;
     const hasInputs = toneTags.length > 0 || !!communicationStyle || !!writingNotes || !!trainingText || suppressions.length > 0 || !!suppressionNotes;
-    if (!hasInputs) { setVoiceSummary(""); return; }
+    if (!hasInputs || !profileLoaded || profileLoadError) return;
 
-    setVoiceSummaryLoading(true);
-    setTextDirtyForProfile(false);
+    const signature = JSON.stringify(voice);
+    const requestVersion = (summaryRequestVersions.current.get(personaId) ?? 0) + 1;
+    summaryRequestVersions.current.set(personaId, requestVersion);
+    setSummaryLoadingPersonaIds(current => new Set(current).add(personaId));
+    setSummaryError("");
+    setSummaryErrorPersonaId(null);
+    if (personaId === editorPersonaId) {
+      setTextDirtyForProfile(false);
+    }
     try {
       const resp = await apiFetch("/api/hq/voice-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ toneTags, communicationStyle, writingNotes, trainingText, suppressions, suppressionNotes }),
       });
+      if (!resp.ok) throw new Error("Could not generate a voice profile");
       const json = await resp.json() as { summary: string };
-      setVoiceSummary(json.summary ?? "");
+      if (summaryRequestVersions.current.get(personaId) !== requestVersion) return;
+      setData(current => {
+        const target = current.voicePersonas.find(persona => persona.id === personaId);
+        if (!target || JSON.stringify(target.voice) !== signature) return current;
+        return updateVoicePersonaSummary(current, personaId, json.summary ?? "");
+      });
     } catch {
-      setVoiceSummary("Unable to generate summary right now.");
+      if (summaryRequestVersions.current.get(personaId) === requestVersion) {
+        setSummaryError("Could not generate a voice profile. Your saved summary is unchanged.");
+        setSummaryErrorPersonaId(personaId);
+      }
     } finally {
-      setVoiceSummaryLoading(false);
+      if (summaryRequestVersions.current.get(personaId) === requestVersion) {
+        setSummaryLoadingPersonaIds(current => {
+          const next = new Set(current);
+          next.delete(personaId);
+          return next;
+        });
+      }
     }
   }
 
-  // Auto-regen when pill pickers change (immediate user actions, not typing).
-  // Skip the very first render to avoid firing on page load.
+  // Picker edits can refresh the profile; switching personas establishes a baseline only.
   useEffect(() => {
-    if (!mountedRef.current) { mountedRef.current = true; return; }
-    generateVoiceSummary(data.voice);
+    if (!profileLoaded || profileLoadError || !editorPersonaId) return;
+    const signature = JSON.stringify(editorVoice);
+    const previous = observedVoiceSignature.current;
+    if (!previous || previous.id !== editorPersonaId) {
+      observedVoiceSignature.current = { id: editorPersonaId, signature };
+      setTextDirtyForProfile(false);
+      return;
+    }
+    if (previous.signature === signature) return;
+    let before: typeof editorVoice;
+    try { before = JSON.parse(previous.signature) as typeof editorVoice; } catch { before = editorVoice; }
+    observedVoiceSignature.current = { id: editorPersonaId, signature };
+    const pickerChanged = JSON.stringify([before.toneTags, before.communicationStyle, before.suppressions])
+      !== JSON.stringify([editorVoice.toneTags, editorVoice.communicationStyle, editorVoice.suppressions]);
+    const textChanged = before.writingNotes !== editorVoice.writingNotes || before.trainingText !== editorVoice.trainingText;
+    if (textChanged) {
+      setTextDirtyForProfile(true);
+    }
+    if (pickerChanged) void generateVoiceSummary(editorPersonaId, cloneVoice(editorVoice));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.voice.toneTags, data.voice.communicationStyle, data.voice.suppressions]);
-
-  // When text fields change, just mark the profile as potentially stale.
-  // The user triggers regen explicitly via the Save button.
-  useEffect(() => {
-    if (!mountedRef.current) return;
-    setTextDirtyForProfile(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.voice.writingNotes, data.voice.trainingText]);
+  }, [profileLoaded, profileLoadError, editorPersonaId, JSON.stringify(editorVoice)]);
 
   // ── File upload handling ─────────────────────────────────────────────────
 
   async function processFile(file: File) {
+    const targetPersonaId = editorPersonaId;
+    if (!targetPersonaId || !profileLoaded || profileLoadError) return;
     const name = file.name;
     const allowed = name.endsWith(".txt") || name.endsWith(".docx") || name.endsWith(".pdf");
     if (!allowed) return;
 
-    setUploadedFiles(prev => [...prev, { name, status: "processing" }]);
+    const uploadId = createVoicePersonaId();
+    setUploadedFiles(prev => [...prev, { id: uploadId, personaId: targetPersonaId, name, status: "processing" }]);
 
     try {
       const form = new FormData();
@@ -2428,18 +2580,18 @@ export default function HQ() {
       const resp = await apiFetch("/api/hq/extract-text", { method: "POST", body: form });
       if (!resp.ok) throw new Error("Extraction failed");
       const { text } = await resp.json() as { text: string };
-      setData(d => ({
-        ...d,
-        voice: {
-          ...d.voice,
-          trainingText: d.voice.trainingText
-            ? d.voice.trainingText + "\n\n---\n\n" + text
+      setData(current => {
+        const target = current.voicePersonas.find(persona => persona.id === targetPersonaId);
+        if (!target) return current;
+        return updateVoicePersona(current, targetPersonaId, {
+          trainingText: target.voice.trainingText
+            ? target.voice.trainingText + "\n\n---\n\n" + text
             : text,
-        },
-      }));
-      setUploadedFiles(prev => prev.map(f => f.name === name ? { ...f, status: "done" } : f));
+        });
+      });
+      setUploadedFiles(prev => prev.map(f => f.id === uploadId ? { ...f, status: "done" } : f));
     } catch {
-      setUploadedFiles(prev => prev.map(f => f.name === name ? { ...f, status: "error" } : f));
+      setUploadedFiles(prev => prev.map(f => f.id === uploadId ? { ...f, status: "error" } : f));
     }
   }
 
@@ -2449,19 +2601,19 @@ export default function HQ() {
   }
 
   const voiceHasInputs =
-    data.voice.toneTags.length > 0 ||
-    !!data.voice.communicationStyle ||
-    !!data.voice.writingNotes ||
-    !!data.voice.trainingText ||
-    data.voice.suppressions.length > 0 ||
-    !!data.voice.suppressionNotes;
+    editorVoice.toneTags.length > 0 ||
+    !!editorVoice.communicationStyle ||
+    !!editorVoice.writingNotes ||
+    !!editorVoice.trainingText ||
+    editorVoice.suppressions.length > 0 ||
+    !!editorVoice.suppressionNotes;
 
   return (
     <Shell>
-      <div className="w-full max-w-[1400px] mx-auto py-8 px-8 flex-1 min-h-0 overflow-y-auto flex flex-col gap-6">
+      <div className="w-full max-w-[1400px] mx-auto py-8 px-4 sm:px-8 flex-1 min-h-0 overflow-y-auto flex flex-col gap-6">
 
         {/* Page header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
               <Landmark className="h-6 w-6 text-primary" />
@@ -2487,10 +2639,36 @@ export default function HQ() {
         </div>
 
         {/* Two-column body */}
-        <div className="flex gap-6 items-start" inert={!profileLoaded || profileLoadError} aria-busy={!profileLoaded}>
+        <div className="flex flex-col gap-6 items-stretch lg:flex-row lg:items-start" inert={!profileLoaded || profileLoadError} aria-busy={!profileLoaded}>
+
+          <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-border/60 bg-background p-3 lg:hidden">
+            <label className="min-w-0 text-xs font-semibold text-muted-foreground">
+              HQ section
+              <select
+                aria-label="HQ section"
+                value={activeSection}
+                onChange={event => setActiveSection(event.target.value as SectionId)}
+                className="mt-1 block h-10 w-full min-w-0 rounded-lg border border-border bg-background px-2 text-sm text-foreground"
+              >
+                {HQ_NAV.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-semibold text-muted-foreground">
+              Mode
+              <select
+                aria-label="HQ mode"
+                value={wartime ? "wartime" : "peacetime"}
+                onChange={event => { if ((event.target.value === "wartime") !== wartime) toggleMode(); }}
+                className="mt-1 block h-10 rounded-lg border border-border bg-background px-2 text-sm text-foreground"
+              >
+                <option value="peacetime">Peacetime</option>
+                <option value="wartime">Wartime</option>
+              </select>
+            </label>
+          </div>
 
           {/* Left sidebar nav */}
-          <nav className="w-56 flex-shrink-0 sticky top-0 flex flex-col gap-0.5 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
+          <nav className="hidden w-56 flex-shrink-0 sticky top-0 lg:flex flex-col gap-0.5 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
             {HQ_NAV.map(item => (
               <button
                 key={item.id}
@@ -2576,10 +2754,152 @@ export default function HQ() {
           accentBorder="border-violet-200"
           accentColor="text-violet-600"
         >
+          <div className="rounded-2xl border border-violet-200/70 bg-background p-5 shadow-sm dark:border-violet-500/30">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-700 dark:text-violet-300">Persona library</span>
+                  <span className="rounded-full border border-violet-200 bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-violet-700 dark:border-violet-500/30 dark:text-violet-300">
+                    {data.voicePersonas.length} {data.voicePersonas.length === 1 ? "voice" : "voices"}
+                  </span>
+                </div>
+                <h3 className="mt-1 text-base font-bold text-foreground">One voice, shaped for each conversation.</h3>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                  Voice fields and profile summaries auto-save to your account. Choose a persona to edit without changing the voice your messaging uses; only “Use this persona” switches the active voice.
+                </p>
+              </div>
+              <button
+                type="button"
+                data-testid="button-add-voice-persona"
+                onClick={createVoicePersona}
+                disabled={!profileLoaded || profileLoadError}
+                className="inline-flex items-center gap-2 rounded-xl bg-violet-700 px-3.5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="h-3.5 w-3.5" /> New persona
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {data.voicePersonas.map(persona => {
+                const isEditor = persona.id === editorPersonaId;
+                const isActive = persona.id === data.activeVoicePersonaId;
+                return (
+                  <div
+                    key={persona.id}
+                    data-testid={`card-voice-persona-${persona.id}`}
+                    className={cn(
+                      "min-w-0 rounded-xl border p-3 transition-colors",
+                      isEditor ? "border-violet-400 bg-background shadow-sm ring-1 ring-violet-200 dark:ring-violet-500/30" : "border-border/70 bg-background/70",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      data-testid={`button-edit-voice-persona-${persona.id}`}
+                      onClick={() => chooseVoicePersona(persona.id)}
+                      disabled={!profileLoaded || profileLoadError}
+                      className="w-full text-left"
+                      aria-pressed={isEditor}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="truncate text-sm font-bold text-foreground">{persona.name}</span>
+                        <span className="flex flex-shrink-0 items-center gap-1">
+                          {isActive && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Active</span>}
+                          {isEditor && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-800 dark:bg-violet-950/50 dark:text-violet-300">Editing</span>}
+                        </span>
+                      </span>
+                      <span className="mt-1 block truncate text-[10px] text-muted-foreground">
+                        {persona.voice.toneTags.length ? persona.voice.toneTags.slice(0, 3).join(" · ") : "No tone tags yet"}
+                      </span>
+                    </button>
+                    <div className="mt-3 flex items-center gap-2 border-t border-border/50 pt-2.5">
+                      {isEditor && !isActive ? (
+                        <button
+                          type="button"
+                          data-testid={`button-activate-voice-persona-${persona.id}`}
+                          onClick={activateEditedPersona}
+                          disabled={!profileLoaded || profileLoadError}
+                          className="rounded-lg bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white transition hover:bg-emerald-800"
+                        >
+                          Use this persona
+                        </button>
+                      ) : (
+                        <span className="flex-1 text-[10px] text-muted-foreground">
+                          {isActive ? "Used by messaging" : "Not active"}
+                        </span>
+                      )}
+                      {isEditor && (
+                        <>
+                          <button
+                            type="button"
+                            data-testid="button-duplicate-voice-persona"
+                            onClick={duplicateCurrentVoicePersona}
+                            disabled={!profileLoaded || profileLoadError}
+                            title="Duplicate persona"
+                            className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border/70 px-2 py-1.5 text-[10px] font-semibold text-foreground hover:bg-secondary"
+                          >
+                            <Copy className="h-3 w-3" /> Duplicate
+                          </button>
+                          <button
+                            type="button"
+                            data-testid="button-delete-voice-persona"
+                            onClick={() => confirmDeleteVoicePersona(persona)}
+                            disabled={!profileLoaded || profileLoadError || data.voicePersonas.length <= 1}
+                            title={data.voicePersonas.length <= 1 ? "Keep at least one persona" : "Delete persona"}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {data.voicePersonas.length === 0 && (
+                <div className="rounded-xl border border-dashed border-violet-300 bg-background/60 p-4 text-xs text-muted-foreground">
+                  Your first voice persona will appear here after the profile finishes loading.
+                </div>
+              )}
+            </div>
+
+            {editorPersona && (
+              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-violet-200/70 bg-background/80 p-3 sm:flex-row sm:items-end dark:border-violet-500/20">
+                <div className="min-w-0 flex-1">
+                  <label htmlFor="voice-persona-name" className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Editing persona name</label>
+                  <input
+                    id="voice-persona-name"
+                    data-testid="input-voice-persona-name"
+                    value={personaNameDraft}
+                    maxLength={120}
+                    disabled={!profileLoaded || profileLoadError}
+                    onChange={event => { setPersonaNameDraft(event.target.value); setPersonaNameError(""); }}
+                    onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); savePersonaName(); } }}
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200/70"
+                  />
+                  {personaNameError && <p className="mt-1 text-[11px] font-medium text-destructive" role="alert">{personaNameError}</p>}
+                </div>
+                <button
+                  type="button"
+                  data-testid="button-save-voice-persona-name"
+                  onClick={savePersonaName}
+                  disabled={!profileLoaded || profileLoadError}
+                  className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-800 hover:bg-violet-100 disabled:opacity-50 dark:border-violet-500/30 dark:bg-violet-950/30 dark:text-violet-200"
+                >
+                  Save name
+                </button>
+                {editorPersona.id !== data.activeVoicePersonaId && (
+                  <p className="basis-full text-[10px] leading-relaxed text-violet-800/80 dark:text-violet-200/80">
+                    You are editing a draft selection. Changes save automatically. Messaging continues to use {data.voicePersonas.find(persona => persona.id === data.activeVoicePersonaId)?.name ?? "the active persona"} until you explicitly activate this one.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <Field label="Tone tags" hint="Select all that apply">
             <div className="flex flex-wrap gap-2">
               {TONE_SUGGESTIONS.map(tag => {
-                const active = data.voice.toneTags.includes(tag);
+                const active = editorVoice.toneTags.includes(tag);
                 return (
                   <button
                     key={tag}
@@ -2601,7 +2921,7 @@ export default function HQ() {
           <Field label="Communication style">
             <div className="flex flex-wrap gap-2">
               {STYLE_OPTIONS.map(opt => {
-                const active = data.voice.communicationStyle === opt.value;
+                const active = editorVoice.communicationStyle === opt.value;
                 return (
                   <button
                     key={opt.value}
@@ -2622,14 +2942,14 @@ export default function HQ() {
 
           <Field label="Writing style notes" hint="Describe your natural voice in detail">
             <Textarea
-              value={data.voice.writingNotes}
+              value={editorVoice.writingNotes}
               onChange={v => setVoice({ writingNotes: v })}
               placeholder="e.g. I keep sentences short and punchy. I avoid jargon. I like to lead with a question that makes the reader think…"
               rows={4}
             />
             <SaveFieldButton
-              show={!!data.voice.writingNotes}
-              onSave={() => generateVoiceSummary(data.voice)}
+              show={!!editorVoice.writingNotes}
+              onSave={() => editorPersonaId && generateVoiceSummary(editorPersonaId, cloneVoice(editorVoice))}
             />
           </Field>
 
@@ -2639,14 +2959,14 @@ export default function HQ() {
             hint="Paste emails, messages, or any writing you want Whyhello to learn from"
           >
             <Textarea
-              value={data.voice.trainingText}
+              value={editorVoice.trainingText}
               onChange={v => setVoice({ trainingText: v })}
               placeholder={`Paste previous emails, LinkedIn messages, proposals, or any writing that reflects how you genuinely communicate. The more you share, the more accurately Whyhello can write in your voice.\n\nYou can also upload .txt, .docx, or .pdf files below — the extracted text will be added here automatically.`}
               rows={10}
             />
             <SaveFieldButton
-              show={!!data.voice.trainingText}
-              onSave={() => generateVoiceSummary(data.voice)}
+              show={!!editorVoice.trainingText}
+              onSave={() => editorPersonaId && generateVoiceSummary(editorPersonaId, cloneVoice(editorVoice))}
             />
           </Field>
 
@@ -2687,11 +3007,11 @@ export default function HQ() {
             </div>
 
             {/* Uploaded file pills */}
-            {uploadedFiles.length > 0 && (
+            {personaFiles.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-1">
-                {uploadedFiles.map((f, i) => (
+                {personaFiles.map(f => (
                   <div
-                    key={i}
+                    key={f.id}
                     className={cn(
                       "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-semibold transition-all",
                       f.status === "processing" && "bg-secondary border-border/50 text-muted-foreground",
@@ -2707,7 +3027,7 @@ export default function HQ() {
                     {f.status === "done" && <CheckCircle2 className="h-2.5 w-2.5" />}
                     {f.status === "error" && <span className="opacity-70">failed</span>}
                     <button
-                      onClick={e => { e.stopPropagation(); setUploadedFiles(prev => prev.filter((_, j) => j !== i)); }}
+                      onClick={e => { e.stopPropagation(); setUploadedFiles(prev => prev.filter(file => file.id !== f.id)); }}
                       className="ml-0.5 opacity-50 hover:opacity-100 transition-opacity"
                     >
                       <X className="h-2.5 w-2.5" />
@@ -2732,7 +3052,7 @@ export default function HQ() {
 
             <div className="flex flex-wrap gap-2">
               {SUPPRESSION_SUGGESTIONS.map(tag => {
-                const active = data.voice.suppressions.includes(tag);
+                const active = editorVoice.suppressions.includes(tag);
                 return (
                   <button
                     key={tag}
@@ -2753,28 +3073,32 @@ export default function HQ() {
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-foreground">Additional suppressions</label>
               <textarea
-                value={data.voice.suppressionNotes}
+                value={editorVoice.suppressionNotes}
                 onChange={e => setVoice({ suppressionNotes: e.target.value })}
                 rows={3}
                 placeholder="Anything else to avoid — phrases, structural habits, or stylistic tics you want to leave behind…"
                 className="w-full resize-y rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-rose-300/40 leading-relaxed transition-colors"
               />
               <SaveFieldButton
-                show={!!data.voice.suppressionNotes}
-                onSave={() => generateVoiceSummary(data.voice)}
+                show={!!editorVoice.suppressionNotes}
+                onSave={() => editorPersonaId && generateVoiceSummary(editorPersonaId, cloneVoice(editorVoice))}
               />
             </div>
           </div>
 
           {/* AI Voice Profile card */}
           <VoiceProfileCard
+            key={editorPersonaId ?? "voice-persona-none"}
             summary={voiceSummary}
             loading={voiceSummaryLoading}
-            onRefresh={() => generateVoiceSummary(data.voice)}
-            onSave={setVoiceSummary}
+            onRefresh={() => editorPersonaId && generateVoiceSummary(editorPersonaId, cloneVoice(editorVoice))}
+            onSave={saveVoiceSummary}
             hasInputs={voiceHasInputs}
             textDirty={textDirtyForProfile}
           />
+          {summaryError && summaryErrorPersonaId === editorPersonaId && (
+            <p className="text-xs text-destructive" role="status">{summaryError}</p>
+          )}
         </Section>
         )}
 

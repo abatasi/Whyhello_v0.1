@@ -1,0 +1,113 @@
+/* Dark-mode button policy. Match actual fill utilities, not hover-only classes.
+   Cards, badges, unfilled controls, and the branded loader are not recolored. */
+.dark :is(button, [role="button"], a.inline-flex, input[type="button"], input[type="submit"]):is(
+  [class^="bg-"], [class*=" bg-"], [class^="dark:bg-"], [class*=" dark:bg-"]
+):not(:is(
+  [class~="bg-transparent"], [class~="dark:bg-transparent"],
+  [class~="bg-background"], [class~="dark:bg-background"],
+  [class~="bg-card"], [class~="dark:bg-card"],
+  [class~="bg-inherit"], [class~="dark:bg-inherit"],
+  [role="switch"], [role="checkbox"], [role="radio"]
+)) {
+  --solid-button-color: #334155;
+  background-color: var(--solid-button-color) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+
+  &:is([class~="bg-primary"], [class^="bg-primary/"], [class*=" bg-primary/"]) {
+    --solid-button-color: #4338ca;
+  }
+  &:is([class~="bg-destructive"], [class^="bg-destructive/"], [class*=" bg-destructive/"]) {
+    --solid-button-color: #b91c1c;
+  }
+  &:is([class^="bg-violet-"], [class*=" bg-violet-"], [class^="dark:bg-violet-"], [class*=" dark:bg-violet-"]) {
+    --solid-button-color: #6d28d9;
+  }
+  &:is([class^="bg-purple-"], [class*=" bg-purple-"], [class^="dark:bg-purple-"], [class*=" dark:bg-purple-"]) {
+    --solid-button-color: #7e22ce;
+  }
+  &:is([class^="bg-indigo-"], [class*=" bg-indigo-"], [class^="dark:bg-indigo-"], [class*=" dark:bg-indigo-"]) {
+    --solid-button-color: #4338ca;
+  }
+  &:is([class^="bg-blue-"], [class*=" bg-blue-"], [class^="dark:bg-blue-"], [class*=" dark:bg-blue-"]) {
+    --solid-button-color: #1d4ed8;
+  }
+  &:is([class^="bg-sky-"], [class*=" bg-sky-"], [class^="dark:bg-sky-"], [class*=" dark:bg-sky-"]) {
+    --solid-button-color: #0369a1;
+  }
+  &:is([class^="bg-cyan-"], [class*=" bg-cyan-"], [class^="dark:bg-cyan-"], [class*=" dark:bg-cyan-"]) {
+    --solid-button-color: #0e7490;
+  }
+  &:is([class^="bg-teal-"], [class*=" bg-teal-"], [class^="dark:bg-teal-"], [class*=" dark:bg-teal-"]) {
+    --solid-button-color: #0f766e;
+  }
+  &:is([class^="bg-emerald-"], [class*=" bg-emerald-"], [class^="dark:bg-emerald-"], [class*=" dark:bg-emerald-"]) {
+    --solid-button-color: #047857;
+  }
+  &:is([class^="bg-green-"], [class*=" bg-green-"], [class^="dark:bg-green-"], [class*=" dark:bg-green-"]) {
+    --solid-button-color: #15803d;
+  }
+  &:is([class^="bg-lime-"], [class*=" bg-lime-"], [class^="dark:bg-lime-"], [class*=" dark:bg-lime-"]) {
+    --solid-button-color: #3f6212;
+  }
+  &:is([class^="bg-amber-"], [class*=" bg-amber-"], [class^="dark:bg-amber-"], [class*=" dark:bg-amber-"]) {
+    --solid-button-color: #b45309;
+  }
+  &:is([class^="bg-yellow-"], [class*=" bg-yellow-"], [class^="dark:bg-yellow-"], [class*=" dark:bg-yellow-"]) {
+    --solid-button-color: #a16207;
+  }
+  &:is([class^="bg-orange-"], [class*=" bg-orange-"], [class^="dark:bg-orange-"], [class*=" dark:bg-orange-"]) {
+    --solid-button-color: #c2410c;
+  }
+  &:is([class^="bg-red-"], [class*=" bg-red-"], [class^="dark:bg-red-"], [class*=" dark:bg-red-"]) {
+    --solid-button-color: #b91c1c;
+  }
+  &:is([class^="bg-rose-"], [class*=" bg-rose-"], [class^="dark:bg-rose-"], [class*=" dark:bg-rose-"]) {
+    --solid-button-color: #be123c;
+  }
+  &:is([class^="bg-pink-"], [class*=" bg-pink-"], [class^="dark:bg-pink-"], [class*=" dark:bg-pink-"]) {
+    --solid-button-color: #be185d;
+  }
+  &:is([class^="bg-fuchsia-"], [class*=" bg-fuchsia-"], [class^="dark:bg-fuchsia-"], [class*=" dark:bg-fuchsia-"]) {
+    --solid-button-color: #a21caf;
+  }
+  &:is([class~="bg-[#F4E2D8]"], [class~="bg-[#7C3E2A]"], [class~="dark:bg-[#3d1c12]"]) {
+    --solid-button-color: #7c3e2a;
+  }
+
+  & :is(span, div, p, svg, i, a) {
+    color: #ffffff !important;
+  }
+
+  /* Avoid placing white glyphs on a pale nested icon tile. */
+  & :is(span, div):has(> svg) {
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  &:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: color-mix(in srgb, var(--solid-button-color), #000000 10%) !important;
+  }
+
+  &:disabled, &[aria-disabled="true"] {
+    background-color: #374151 !important;
+    opacity: 1 !important;
+  }
+}
+
+/* Ghost/outline controls stay unfilled at rest; their hover fill is also opaque. */
+.dark :is(button, [role="button"], a.inline-flex):is(
+  [class^="hover:bg-"], [class*=" hover:bg-"],
+  [class^="dark:hover:bg-"], [class*=" dark:hover:bg-"]
+):hover:not(:disabled):not([aria-disabled="true"]):not(:is(
+  [role="switch"], [role="checkbox"], [role="radio"]
+)) {
+  background-color: color-mix(in srgb, var(--solid-button-color, #334155), #000000 10%) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+
+  & :is(span, div, p, svg, i, a) {
+    color: #ffffff !important;
+  }
+}

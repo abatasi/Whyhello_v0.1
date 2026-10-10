@@ -14,6 +14,7 @@ import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evide
 import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, emailLengthRevision, manualEmailGuidance, resolveEmailShape } from "../lib/manual-email-guidance.js";
 import { countEmailBodyCharacters, getEmailLength } from "../lib/email-length.js";
 import { selectTopPlaybookInsight } from "../lib/playbook-insight-selection.js";
+import { resolveActiveHqVoice } from "../lib/voice-personas.js";
 
 export const timing = z.object({
   unit: z.enum(["immediately", "minutes", "hours", "days", "business-days", "specific"]),
@@ -105,7 +106,7 @@ export async function hqContext(userId: string) {
     { id: "target-market", name: "Live Target Market", content: serialize(liveMarket) },
     { id: "buying-center", name: "Live Buying Center", content: serialize(liveCenter) },
   ];
-  return { contextSources, voice: record && data.voice ? serialize(data.voice) : "" };
+  return { contextSources, voice: record ? serialize(resolveActiveHqVoice(data)) : "" };
 }
 
 manualEmailRouter.get("/context", async (_req, res) => {

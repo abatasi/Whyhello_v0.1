@@ -18,3 +18,5 @@
 - [LinkedIn connection-note limit](linkedin-connection-limit.md) — the user specified a 200-character connection-request note budget as the product assumption.
 - [Spoken phone messaging](spoken-phone-messaging.md) — phone scripts need a separate conversational library; retain natural pronouns rather than written-outreach fragments.
 - [Reusable email configuration](reusable-email-configuration.md) — Manual Email mirrors Single Message and the Messaging Quran; reusable variants choose an insight category, not individual insights.
+- [HQ voice personas](hq-voice-personas.md) — multiple named saved voices; editing is separate from activation, and summaries are account- and persona-owned.
+- [Dark-mode filled buttons](dark-filled-buttons.md) — solid button fills with white text and standard icons; keep unfilled controls and dark-card surfaces distinct.

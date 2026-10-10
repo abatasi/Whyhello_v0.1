@@ -9,6 +9,7 @@ import { dnaProfilesTable } from "@workspace/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { CreateHqAudienceBody } from "@workspace/api-zod";
+import { prepareVoicePersonaProfile, voiceSettingsSchema } from "../lib/voice-personas.js";
 import {
   appendAudienceToProfile,
   parseDnaProfile,
@@ -72,8 +73,10 @@ router.put("/profile", async (req, res) => {
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const { data } = req.body as { data: unknown };
   if (!data) { res.status(400).json({ error: "No data provided" }); return; }
+  const prepared = prepareVoicePersonaProfile(data);
+  if (!prepared.ok) { res.status(400).json({ error: prepared.error }); return; }
   try {
-    const serialised = JSON.stringify(data);
+    const serialised = JSON.stringify(prepared.data);
     const expectedRevision = req.header("X-Profile-Revision");
     if (expectedRevision) {
       if (expectedRevision === "new") {
@@ -223,6 +226,9 @@ router.post("/extract-text", upload.single("file"), async (req, res) => {
 // ── POST /api/dna/voice-summary ──────────────────────────────────────────────
 
 router.post("/voice-summary", async (req, res) => {
+  if (!getUserId(req)) { res.status(401).json({ error: "Authentication required" }); return; }
+  const input = voiceSettingsSchema.safeParse(req.body);
+  if (!input.success) { res.status(400).json({ error: "Check the voice definition before generating its summary." }); return; }
   const {
     toneTags = [],
     communicationStyle = "",
@@ -230,7 +236,7 @@ router.post("/voice-summary", async (req, res) => {
     trainingText = "",
     suppressions = [],
     suppressionNotes = "",
-  } = req.body as {
+  } = input.data as {
     toneTags?: string[];
     communicationStyle?: string;
     writingNotes?: string;
@@ -272,6 +278,7 @@ Write only the 2–3 sentence description. No preamble, no label.`;
     });
 
     const summary = completion.choices[0]?.message?.content?.trim() ?? "";
+    if (!summary) throw new Error("Voice summary generation returned no content.");
     res.json({ summary });
   } catch (err) {
     console.error("DNA voice-summary error:", err);
