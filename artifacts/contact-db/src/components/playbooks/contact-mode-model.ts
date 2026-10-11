@@ -32,11 +32,16 @@ export function appendBuyingCenterSeat(document: MultiContactDocument, name: str
   }] };
 }
 
-export function singleToMultiContact(workflow: SeatWorkflow, name: string, lead?: { id: number; companyId: number }): MultiContactDocument {
+export function appendBuyingCenterSeats(document: MultiContactDocument, names: string[]): MultiContactDocument {
+  if (!names.length) throw new Error("Choose at least one Buying Center seat.");
+  return names.reduce((next, name) => appendBuyingCenterSeat(next, name), document);
+}
+
+export function singleToMultiContact(workflow: SeatWorkflow, names: string | string[], lead?: { id: number; companyId: number }): MultiContactDocument {
   const original = structuredClone(workflow);
-  return appendBuyingCenterSeat({ ...original, contactMode: "multi", companyId: lead?.companyId ?? null,
+  return appendBuyingCenterSeats({ ...original, contactMode: "multi", companyId: lead?.companyId ?? null,
     seatSequences: [{ id: "seat-0", name: "Business Champion", contactId: lead?.id ?? null, workflow: original }],
-  }, name);
+  }, typeof names === "string" ? [names] : names);
 }
 
 export function createContactModeDocument(workflow: SeatWorkflow, choice: ContactModeChoice): SeatWorkflow | MultiContactDocument {

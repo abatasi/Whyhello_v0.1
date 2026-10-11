@@ -6,7 +6,7 @@ import { buyingCenterIcon } from "./buying-center-icons";
 import { AddBuyingCenterSeat } from "./AddBuyingCenterSeat";
 import { PlaybookDialog } from "./PlaybookDialog";
 import { playbookRequest } from "./list-api";
-import { BUYING_CENTER_SEATS, appendBuyingCenterSeat, clearRecipientPreviews, readMultiContactDocument, updateSeatWorkflow, type MultiContactDocument, type SeatWorkflow } from "./contact-mode-model";
+import { BUYING_CENTER_SEATS, appendBuyingCenterSeats, clearRecipientPreviews, readMultiContactDocument, updateSeatWorkflow, type MultiContactDocument, type SeatWorkflow } from "./contact-mode-model";
 import { MultiContactAssignments } from "./MultiContactAssignments";
 import { PlaybookSeatBusy, PlaybookSeatRecipient } from "./PlaybookSeatContext";
 import { usePlaybookConfirm } from "./PlaybookConfirmProvider";
@@ -140,20 +140,21 @@ export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, 
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold ${activeId === item.id ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}>
           <Icon size={12} aria-hidden="true" />{item.name}{item.name === "Business Champion" && <span className="text-[10px] opacity-80">Lead</span>}
         </button>; })}
-      </SeatTabList>
       <button type="button" aria-label="Add Buying Center seat" data-testid="button-add-bc-seat" disabled={readOnly || !!busy || !!pending || failed || BUYING_CENTER_SEATS.every(name => document.seatSequences.some(seat => seat.name === name))}
         onClick={() => void guarded(() => setAddingSeat(true))} className="inline-flex shrink-0 items-center rounded-md border border-border p-2 disabled:opacity-45"><Plus size={14} /></button>
+      </SeatTabList>
       <button type="button" aria-label="Company & contacts" data-testid="button-company-seats" onClick={() => setEditingContacts(true)} className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-2 text-xs font-semibold"><Users size={14} /><span className="hidden sm:inline">Company & contacts</span></button>
     </div>;
   };
   return <>
-    {addingSeat && <AddBuyingCenterSeat selectedSeats={document.seatSequences.map(seat => seat.name)} onClose={() => setAddingSeat(false)} onAdd={async name => {
+    {addingSeat && <AddBuyingCenterSeat selectedSeats={document.seatSequences.map(seat => seat.name)} onClose={() => setAddingSeat(false)} onAdd={async names => {
       let added = false;
       await guarded(async () => {
         if (readOnly) return;
-        const next = appendBuyingCenterSeat(latest.current, name);
+        const firstAdded = latest.current.seatSequences.length;
+        const next = appendBuyingCenterSeats(latest.current, names);
         await queue(next);
-        setActiveId(next.seatSequences[next.seatSequences.length - 1].id);
+        setActiveId(next.seatSequences[firstAdded].id);
         added = true;
       });
       return added;

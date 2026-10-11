@@ -4,6 +4,21 @@ import { createContactModeDocument, readMultiContactDocument, updateSeatWorkflow
 import { duplicateDescription, type PlaybookRecord } from "./list-model";
 import { configuredBuyingCenterSeats, BUYING_CENTER_SEATS } from "./contact-mode-model";
 import { appendBuyingCenterSeat, singleToMultiContact } from "./contact-mode-model";
+import { appendBuyingCenterSeats } from "./contact-mode-model";
+test("multi-select adds all seats in one document without changing existing sequences", () => {
+  const original = singleToMultiContact(starter(), "Economic Buyer");
+  const before = JSON.stringify(original);
+  const next = appendBuyingCenterSeats(original, ["Technical Buyer", "Finance"]);
+  assert.deepEqual(next.seatSequences.map(seat => seat.name), ["Business Champion", "Economic Buyer", "Technical Buyer", "Finance"]);
+  assert.deepEqual(next.seatSequences.slice(0, 2), original.seatSequences);
+  assert.ok(next.seatSequences.slice(2).every(seat => !seat.workflow.nodes.length && seat.contactId === null));
+  assert.throws(() => appendBuyingCenterSeats(original, ["Technical Buyer", "Economic Buyer"]), /already included/);
+  assert.equal(JSON.stringify(original), before);
+  assert.throws(() => appendBuyingCenterSeats(original, []), /at least one/);
+  const converted = singleToMultiContact(starter(), ["Economic Buyer", "Technical Buyer"]);
+  assert.equal(converted.seatSequences.length, 3);
+  assert.deepEqual(converted.seatSequences[0].workflow, starter());
+});
 test("adding a seat preserves saved sequences and assignments and starts an independent empty sequence", () => {
   const original = singleToMultiContact(starter(), "Economic Buyer", { id: 42, companyId: 9 });
   const before = JSON.stringify(original);

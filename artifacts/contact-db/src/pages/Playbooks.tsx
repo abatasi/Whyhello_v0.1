@@ -2122,7 +2122,7 @@ function CanvasInner({
   seatNavigation?: (flush: () => Promise<boolean>) => React.ReactNode;
   multiActivationReason?: string; documentSaveStatus?: string; documentSaveError?: boolean;
   onRetryDocument?: () => void; onMultiContacts?: () => void;
-  onAddSeat?: (workflow: SeatWorkflow, seat: string) => Promise<boolean>; generationBusy?: boolean;
+  onAddSeat?: (workflow: SeatWorkflow, seats: string[]) => Promise<boolean>; generationBusy?: boolean;
 }) {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -3085,7 +3085,7 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
           onBack={() => navigate("/playbooks")}
           onSave={handleSave}
           generationBusy={singleBusy > 0}
-          onAddSeat={async (workflow, name) => {
+          onAddSeat={async (workflow, names) => {
             if (singleBusy || ["active", "archived", "completed"].includes(seq.status)) return false;
             const primary = workflow.prospects.find(value => value && typeof value === "object" && (value as { isPrimary?: boolean }).isPrimary) as { contactId?: number } | undefined;
             let lead: { id: number; companyId: number } | undefined;
@@ -3095,8 +3095,8 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
               const contact = await response.json() as { id: number; companyId?: number | null };
               if (contact.companyId) lead = { id: contact.id, companyId: contact.companyId };
             }
-            setNewSeatName(name);
-            const ok = await persistCanvas(JSON.stringify(singleToMultiContact(workflow, name, lead)));
+            setNewSeatName(names[0]);
+            const ok = await persistCanvas(JSON.stringify(singleToMultiContact(workflow, names, lead)));
             if (!ok) setNewSeatName(undefined);
             return ok;
           }}
