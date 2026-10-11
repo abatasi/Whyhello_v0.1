@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { useLocation } from "wouter";
 import { Activity, Archive, ArrowLeft, BarChart3, BookOpen, Check, ChevronDown, Copy, Ellipsis, HeartPulse, MoreHorizontal, Pencil, Settings2, Share2, Sparkles, Users, Workflow, X, Zap, type LucideIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -19,12 +20,13 @@ const tabs: { id: PlaybookTab; label: string; Icon: LucideIcon }[] = [
 
 export function BuilderHeader({
   playbookId, name, status, activeTab, steps, saving, activationReason, dirty = false, onBeforeLeave, saveStatus, saveError = false,
-  onTab, onRename, onSave, onShare, onOptimize, onWorkflows, onContacts,
+  onTab, onRename, onSave, onShare, onOptimize, onWorkflows, onContacts, seatNavigation,
   onActivate, onDuplicate, onArchive, onDelete,
 }: {
   playbookId: number; name: string; status: string; activeTab: PlaybookTab;
   steps: number; saving: boolean; activationReason?: string;
   dirty?: boolean; onBeforeLeave?: () => boolean | Promise<boolean>; saveStatus?: string; saveError?: boolean;
+  seatNavigation?: ReactNode;
   onTab: (tab: PlaybookTab) => void; onRename: (name: string) => Promise<void>;
   onSave: () => void; onShare: () => void; onOptimize: () => void;
   onWorkflows: () => void; onContacts: () => void; onActivate: () => void;
@@ -80,7 +82,11 @@ export function BuilderHeader({
     <nav className="flex min-h-10 items-end gap-1 overflow-x-auto px-4" aria-label="Playbook workspace">
       {tabs.map(({ id, label, Icon }) => <button type="button" key={id} data-testid={`tab-playbook-${id}`} aria-current={activeTab === id ? "page" : undefined} onClick={() => onTab(id)} className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-xs font-semibold transition-colors ${activeTab === id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}><Icon size={14} />{label}</button>)}
     </nav>
-    {activeTab === "editor" && <div className="flex h-9 items-center gap-2 border-t border-border/40 bg-background/50 px-4 text-xs text-muted-foreground"><Workflow size={14} /><span data-testid="text-playbook-step-count"><b className="text-foreground">{steps}</b> {steps === 1 ? "step" : "steps"}</span><span className="mx-1 h-3 w-px bg-border" /><span>{saveStatus ?? (dirty || saving ? "Saving changes…" : "All changes saved")}</span></div>}
+    {activeTab === "editor" && <div className="flex min-h-9 flex-wrap items-center gap-x-2 gap-y-2 border-t border-border/40 bg-background/50 px-4 py-1.5 text-xs text-muted-foreground">
+      <div className="flex shrink-0 items-center gap-2"><Workflow size={14} /><span data-testid="text-playbook-step-count"><b className="text-foreground">{steps}</b> {steps === 1 ? "step" : "steps"}</span></div>
+      {seatNavigation && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">{seatNavigation}</div>}
+      <div className={`flex shrink-0 items-center gap-2 ${seatNavigation ? "ml-auto" : ""}`}><span className="mx-1 h-3 w-px bg-border" /><span role="status" data-testid="playbook-builder-save-status">{saveStatus ?? (dirty || saving ? "Saving changes…" : "All changes saved")}</span></div>
+    </div>}
   </div>;
 }
 

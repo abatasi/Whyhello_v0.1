@@ -20,6 +20,7 @@ import { TonePersonaPicker } from "../TonePersonaPicker";
 import { InsightCategorySelect } from "../InsightCategorySelect";
 import { AdditionalMessageContext } from "../AdditionalMessageContext";
 import { usePlaybookConfirm } from "../PlaybookConfirmProvider";
+import { useSeatScopedContext, useSeatWorkInFlight } from "../PlaybookSeatContext";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
 const smallButton = "inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50";
@@ -212,6 +213,7 @@ function PreviewPanel({ playbookId, variant, contactOptions, selectedContactId, 
     window.addEventListener(eventName, handler);
     return () => window.removeEventListener(eventName, handler);
   }, [variant, selectedContactId, context?.aiAvailable]);
+  useSeatWorkInFlight(previewMutation.isPending);
   const currentContact = contactOptions.find(item => item.id === selectedContactId);
   const selectedMailbox = context?.mailboxes.find(item => item.id === Number(mailboxId));
   const preview = variant.preview;
@@ -309,7 +311,7 @@ export function ManualEmailStep({ playbookId, stepId, stepNumber, config: rawCon
   currentConfigRef.current = config;
   const [timingOpen, setTimingOpen] = useState(false);
   const variant = config.variants.find(item => item.id === activeVariantId) ?? config.variants[0];
-  const context = contextQuery.data;
+  const context = useSeatScopedContext(contextQuery.data);
   const availableContacts = context?.contacts ?? [];
   const [contactId, setContactId] = useState<number | null>(null);
   const chosenId = contactId !== null && availableContacts.some(contact => contact.id === contactId)

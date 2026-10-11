@@ -22,6 +22,7 @@ import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts.js";
 import crypto from "node:crypto";
+import { multiContactCanvas, multiContactActivationError, storedPlaybookNodes, type MultiCanvas } from "../lib/multi-contact-playbook.js";
 import { manualEmailRouter, manualEmailConfigurationError } from "./playbook-manual-email.js";
 import { phoneCallRouter, phoneCallConfigurationError } from "./playbook-phone-call.js";
 import { linkedInConnectionRouter, linkedInConnectionActivationError } from "./playbook-linkedin-connection.js";
@@ -114,11 +115,19 @@ playbooksRouter.get("/", async (req: Request, res: Response) => {
   }
 });
 
+async function validateMultiCompany(canvas: MultiCanvas | null) {
+  if (!canvas) return;
+  const ids = canvas.seatSequences.map(seat => seat.contactId).filter((id): id is number => id !== null);
+  if (!ids.length) return;
+  const rows = await db.select({ id: contactsTable.id, companyId: contactsTable.companyId }).from(contactsTable).where(inArray(contactsTable.id, ids));
+  if (rows.length !== ids.length || rows.some(contact => contact.companyId !== canvas.companyId)) throw new Error("Multi-Contact contacts must all belong to the selected company.");
+}
 playbooksRouter.post("/", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   try {
     const { name, description, status } = req.body as { name: string; description?: string; status?: string };
+    await validateMultiCompany(multiContactCanvas(description));
     if (!name?.trim()) { res.status(400).json({ error: "name is required" }); return; }
     if (status !== undefined && status !== "draft" && status !== "active") {
       res.status(400).json({ error: "New playbooks must be draft or active" }); return;
@@ -131,6 +140,7 @@ playbooksRouter.post("/", async (req: Request, res: Response) => {
     }).returning();
     res.status(201).json(seq);
   } catch (err) {
+    if (err instanceof Error && err.message.startsWith("Multi-Contact")) { res.status(400).json({ error: err.message }); return; }
     console.error(err);
     res.status(500).json({ error: "Failed to create playbook" });
   }
@@ -158,6 +168,7 @@ playbooksRouter.patch("/:id", async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id));
   try {
     const { name, description, status } = req.body as { name?: string; description?: string; status?: string };
+    if (description !== undefined) await validateMultiCompany(multiContactCanvas(description));
     if (status === "active") {
       const [current] = await db.select().from(sequencesTable)
         .where(and(eq(sequencesTable.id, id), eq(sequencesTable.userId, userId)));
@@ -165,7 +176,15 @@ playbooksRouter.patch("/:id", async (req: Request, res: Response) => {
       const canvasText = description ?? current.description;
       if (canvasText?.trim().startsWith("{")) {
         let canvas: { nodes?: { data?: Record<string, unknown> }[] };
-        try { canvas = JSON.parse(canvasText); }
+        try {
+          const multi = multiContactCanvas(canvasText);
+          if (multi) {
+            await validateMultiCompany(multi);
+            const reason = multiContactActivationError(multi);
+            if (reason) { res.status(400).json({ error: reason }); return; }
+          }
+          canvas = { nodes: storedPlaybookNodes(canvasText) };
+        }
         catch { res.status(400).json({ error: "Save a valid playbook workflow before activating." }); return; }
         if (Array.isArray(canvas.nodes)) {
           const structural = new Set(["placeholder", "prospect-added", "trigger-detected", "added-to-playbook", "company-added", "list-entry", "manual-enrollment"]);
@@ -206,6 +225,7 @@ playbooksRouter.patch("/:id", async (req: Request, res: Response) => {
     if (!seq) { res.status(404).json({ error: "Sequence not found" }); return; }
     res.json(seq);
   } catch (err) {
+    if (err instanceof Error && err.message.startsWith("Multi-Contact")) { res.status(400).json({ error: err.message }); return; }
     res.status(500).json({ error: "Failed to update playbook" });
   }
 });
@@ -229,7 +249,7 @@ playbooksRouter.get("/:id/steps", async (req: Request, res: Response) => {
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
   try {
-    const [seq] = await db.select({ id: sequencesTable.id }).from(sequencesTable)
+    const [seq] = await db.select({ id: sequencesTable.id, description: sequencesTable.description }).from(sequencesTable)
       .where(and(eq(sequencesTable.id, seqId), eq(sequencesTable.userId, userId)));
     if (!seq) { res.status(404).json({ error: "Sequence not found" }); return; }
     const steps = await db.select().from(sequenceStepsTable)
@@ -566,13 +586,21 @@ playbooksRouter.post("/:id/enrollments", async (req: Request, res: Response) => 
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
   const seqId = parseInt(String(req.params.id));
   try {
-    const [seq] = await db.select({ id: sequencesTable.id }).from(sequencesTable)
+    const [seq] = await db.select({ id: sequencesTable.id, description: sequencesTable.description }).from(sequencesTable)
       .where(and(eq(sequencesTable.id, seqId), eq(sequencesTable.userId, userId)));
     if (!seq) { res.status(404).json({ error: "Sequence not found" }); return; }
 
     const { contactIds } = req.body as { contactIds: number[] };
     if (!Array.isArray(contactIds) || contactIds.length === 0) {
       res.status(400).json({ error: "contactIds must be a non-empty array" }); return;
+    }
+    const multi = multiContactCanvas(seq.description);
+    if (multi) {
+      await validateMultiCompany(multi);
+      const allowed = new Set(multi.seatSequences.map(seat => seat.contactId));
+      if (!multi.companyId || contactIds.some(contactId => !allowed.has(contactId))) {
+        res.status(400).json({ error: "Multi-Contact enrollments must use the company contacts assigned to Buying Center seats." }); return;
+      }
     }
 
     const inserted = await db.insert(sequenceEnrollmentsTable)
@@ -581,6 +609,7 @@ playbooksRouter.post("/:id/enrollments", async (req: Request, res: Response) => 
       .returning();
     res.status(201).json(inserted);
   } catch (err) {
+    if (err instanceof Error && err.message.startsWith("Multi-Contact")) { res.status(400).json({ error: err.message }); return; }
     console.error(err);
     res.status(500).json({ error: "Failed to enroll contacts" });
   }

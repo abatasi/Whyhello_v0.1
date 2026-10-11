@@ -7,7 +7,7 @@ import {
   dnaProfilesTable, userEmailAccountsTable, usersTable, contactInsightsTable, companyInsightsTable,
   roleInsightsTable, industryInsightsTable, colleagueInsightsTable, counterpartInsightsTable, insightQuotesTable, insightRelevanceScoresTable,
 } from "@workspace/db/schema";
-import { eq, and, ne, desc } from "drizzle-orm";
+import { eq, and, ne, desc, inArray } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts.js";
 import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evidence.js";
@@ -15,6 +15,7 @@ import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, man
 import { firstHandMeetingContext, playbookMessageContext, preserveFirstHandMeeting } from "../lib/playbook-message-context.js";
 import { selectTopPlaybookInsight } from "../lib/playbook-insight-selection.js";
 import { assertEmailCompactionSafe, fitManualEmailLength } from "../lib/manual-email-length-fit.js";
+import { storedPlaybookNodes, multiContactCanvas, multiRecipientContext, BUYING_CENTER_MESSAGING_GUIDANCE } from "../lib/multi-contact-playbook.js";
 import { resolveActiveHqVoice, resolveOutputVoice, voicePersonaOptions, VoicePersonaSelectionError, type OutputVoiceSelection } from "../lib/voice-personas.js";
 
 export const timing = z.object({
@@ -128,6 +129,9 @@ manualEmailRouter.get("/context", async (_req, res) => {
   try {
     const id = res.locals.playbook.id as number;
     const userId = res.locals.userId as string;
+    const assignedIds = multiContactCanvas(res.locals.playbook.description)?.seatSequences.map(seat => seat.contactId).filter((id): id is number => id !== null) ?? [];
+    const assigned = assignedIds.length ? await db.select({ id: contactsTable.id, firstName: contactsTable.firstName, lastName: contactsTable.lastName, company: companiesTable.name })
+      .from(contactsTable).leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id)).where(inArray(contactsTable.id, assignedIds)) : [];
     const [hq, enrolled, samples, mailboxes, templates] = await Promise.all([
       hqContext(userId),
       db.select({ id: contactsTable.id, firstName: contactsTable.firstName, lastName: contactsTable.lastName, company: companiesTable.name })
@@ -142,7 +146,7 @@ manualEmailRouter.get("/context", async (_req, res) => {
         .where(eq(sequencesTable.userId, userId)).limit(100),
     ]);
     const seen = new Set<number>();
-    const contacts = [...enrolled.map(v => ({ ...v, enrolled: true })), ...samples.map(v => ({ ...v, enrolled: false }))]
+    const contacts = [...enrolled.map(v => ({ ...v, enrolled: true })), ...assigned.map(v => ({ ...v, enrolled: false })), ...samples.map(v => ({ ...v, enrolled: false }))]
       .filter(v => { if (seen.has(v.id)) return false; seen.add(v.id); return true; })
       .map(v => ({ id: v.id, name: `${v.firstName ?? ""} ${v.lastName ?? ""}`.trim(), company: v.company ?? "", enrolled: v.enrolled }));
     // Also expose genuinely saved inline drafts as reusable templates.
@@ -152,7 +156,7 @@ manualEmailRouter.get("/context", async (_req, res) => {
     for (const record of saved) {
       if (!record.description?.trim().startsWith("{")) continue;
       let canvas: { nodes?: { id: string; data?: Record<string, unknown> }[] };
-      try { canvas = JSON.parse(record.description); } catch { continue; }
+      try { canvas = { nodes: storedPlaybookNodes(record.description) }; } catch { continue; }
       for (const node of canvas.nodes ?? []) {
         const config = configSchema.safeParse(node.data?.configuration);
         if (!config.success) continue;
@@ -219,6 +223,8 @@ manualEmailRouter.post("/preview", async (req, res) => {
     if (v.mode === "prompt" && !v.prompt.trim()) { res.status(400).json({ error: "Add email generation instructions." }); return; }
     const [contact] = await db.select().from(contactsTable).where(eq(contactsTable.id, contactId));
     if (!contact) { res.status(404).json({ error: "Contact not found." }); return; }
+    const audience = multiRecipientContext(res.locals.playbook.description, contactId, contact.companyId);
+    if (audience.error) { res.status(400).json({ error: audience.error }); return; }
     const [company] = contact.companyId ? await db.select().from(companiesTable).where(eq(companiesTable.id, contact.companyId)) : [];
     if (v.mode === "template") {
       const fields: Record<string, string> = {
@@ -253,12 +259,13 @@ manualEmailRouter.post("/preview", async (req, res) => {
     }
     const messages = [
         { role: "system", content: manualEmailGuidance(shape.insightCategory, shape.length, Math.random() < 0.5 ? "inline" : "postscript") },
+        { role: "system", content: BUYING_CENTER_MESSAGING_GUIDANCE },
         { role: "user", content: JSON.stringify({
           contact: { firstName: contact.firstName, lastName: contact.lastName, title: contact.jobTitle, company: company?.name },
           emailType: v.emailType, mode: v.mode, prompt: v.mode === "prompt" ? v.prompt : "",
           tone: hq.tone, hqVoice: hq.voice,
           guidelines: v.guidelines.map(g => g.text), length: shape.length, insightCategory: shape.insightCategory,
-           insideOut, additionalContext, requiredFirstHandContext, evidence, quotes, regeneration,
+           insideOut, additionalContext, requiredFirstHandContext, evidence, quotes, regeneration, buyingCenterSeat: audience.seat,
         }) },
       ] as { role: "system" | "user" | "assistant"; content: string }[];
     const result = await openai.chat.completions.create({

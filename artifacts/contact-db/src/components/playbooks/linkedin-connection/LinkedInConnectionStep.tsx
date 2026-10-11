@@ -16,6 +16,7 @@ import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
 import { timingSummary, type EmailTiming, type ManualEmailContext, type TimingUnit } from "../manual-email-model";
 import { ConnectionFields, fieldClass, labelClass, smallButton } from "./LinkedInConnectionFields";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
+import { useSeatScopedContext, useSeatWorkInFlight } from "../PlaybookSeatContext";
 
 function TimingEditor({ label, timing, onChange, readOnly }: {
   label: string; timing: EmailTiming; onChange: (next: EmailTiming) => void; readOnly: boolean;
@@ -63,6 +64,7 @@ function PreviewPanel({ playbookId, variant, contacts, selectedContactId, onCont
     onMutate: request => generationStateRef.current(request.variantId),
     onSettled: () => generationStateRef.current(null),
   });
+  useSeatWorkInFlight(mutation.isPending);
   const currentContact = contacts.find(contact => contact.id === selectedContactId);
   const preview = variant.preview;
   const previewContact = contacts.find(contact => contact.id === preview?.contactId);
@@ -154,7 +156,7 @@ export function LinkedInConnectionStep({ playbookId, stepId, stepNumber, config:
   const [timingOpen, setTimingOpen] = useState(false);
   const [generatingVariantId, setGeneratingVariantId] = useState<string | null>(null);
   const variant = config.variants.find(item => item.id === activeVariantId) ?? config.variants[0];
-  const context = contextQuery.data;
+  const context = useSeatScopedContext(contextQuery.data);
   const contacts = context?.contacts ?? [];
   const validationError = validateLinkedInConnectionConfiguration(config);
   const update = (next: LinkedInConnectionConfiguration) => { currentConfigRef.current = next; onConfigure(next); };

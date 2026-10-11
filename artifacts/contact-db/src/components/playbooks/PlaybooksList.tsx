@@ -12,12 +12,13 @@ import { PlaybookCreationChoice } from "./PlaybookCreationChoice";
 import { PlaybooksTable } from "./PlaybooksTable";
 import { PlaybooksToolbar } from "./PlaybooksToolbar";
 import { createPlaybookRecord, duplicatePlaybookRecord, playbookRequest } from "./list-api";
+import { createContactModeDocument, type ContactModeChoice } from "./contact-mode-model";
 import { copyConfig, DEFAULT_VIEW, filterPlaybooks, type PlaybookRecord, type ViewConfig } from "./list-model";
 import { usePlaybookViews, type SavedView } from "./use-playbook-views";
 import "./playbooks-list.css";
 
 export function PlaybooksList({ onTemplates }: {
-  onTemplates: () => void;
+  onTemplates: (choice?: ContactModeChoice) => void;
 }) {
   const { user } = useUser();
   const [, navigate] = useLocation();
@@ -88,11 +89,11 @@ export function PlaybooksList({ onTemplates }: {
     setFiltersOpen(false); setSelected([]); setPage(1);
   });
   const openCreate = () => { setFormError(""); setDialog("chooseCreate"); };
-  const openScratch = async () => {
+  const openScratch = async (choice: ContactModeChoice) => {
     if (busy) return;
     setBusy(true); setFormError("");
     try {
-      const created = await createPlaybookRecord("Untitled playbook", JSON.stringify({ nodes: [], edges: [], prospects: [] }));
+      const created = await createPlaybookRecord("Untitled playbook", JSON.stringify(createContactModeDocument({ nodes: [], edges: [], prospects: [] }, choice)));
       await qc.invalidateQueries({ queryKey: ["playbooks"] });
       setDialog("");
       navigate(`/playbooks/${created.id}`);
@@ -177,7 +178,7 @@ export function PlaybooksList({ onTemplates }: {
   return <div className="playbooks-operational">
     <header className="pb-header">
       <div><h1>Playbooks</h1><p>Build and manage insight-led, multi-touch outreach.</p></div>
-      <div className="pb-header-actions"><button className="pb-secondary-button" disabled={busy} onClick={onTemplates}><BookOpen size={15} />Templates</button><button className="pb-primary-button" disabled={busy} onClick={openCreate}><Plus size={16} />Create playbook</button></div>
+      <div className="pb-header-actions"><button className="pb-secondary-button" disabled={busy} onClick={() => onTemplates()}><BookOpen size={15} />Templates</button><button className="pb-primary-button" disabled={busy} onClick={openCreate}><Plus size={16} />Create playbook</button></div>
     </header>
     <nav className="pb-tabs" aria-label="Playbook sections">
       {([["all", "All Playbooks", ClipboardList], ["analytics", "Analytics", BarChart3], ["diagnostics", "Diagnostics", ShieldAlert]] as const).map(([id, label, Icon]) => <button key={id} className={tab === id ? "is-selected" : ""} aria-current={tab === id ? "page" : undefined} onClick={() => { if (id === "analytics") setAnalyticsId(null); setTab(id); }}><Icon size={15} />{label}{id === "all" && <span>{records.isLoading ? "…" : rows.filter(row => row.status !== "archived").length}</span>}</button>)}
@@ -218,7 +219,7 @@ export function PlaybooksList({ onTemplates }: {
       {rows.filter(row => row.status === "paused").map(row => <div className="pb-diagnostic" key={row.id}><ShieldAlert size={18} /><div><strong>{row.name}</strong><p>Playbook status is paused.</p></div><button className="pb-secondary-button" onClick={() => navigate(`/playbooks/${row.id}`)}>Review playbook</button></div>)}
       <div className="pb-diagnostic"><BarChart3 size={18} /><div><strong>Delivery and reply monitoring</strong><p>These outcomes are not recorded by the current playbook API. No health score is fabricated.</p></div></div>
     </section>}
-    {dialog === "chooseCreate" && <PlaybookCreationChoice onClose={closeDialog} onScratch={openScratch} onTemplate={() => { setDialog(""); onTemplates(); }} />}
+    {dialog === "chooseCreate" && <PlaybookCreationChoice onClose={closeDialog} onScratch={openScratch} onTemplate={choice => { setDialog(""); onTemplates(choice); }} />}
     {dialog && dialog !== "chooseCreate" && <PlaybookDialog title={dialog === "create" ? "Build from scratch" : dialog === "rename" ? "Rename playbook" : dialog === "saveView" ? "Save as new view" : "Rename view"}
       description={dialog === "create" ? "Start as a draft, then build your outreach workflow." : dialog === "rename" ? "Change the name without changing its canvas or enrollments." : "Views save search, filters, sorting, columns and density. Private to your account in this browser."} onClose={closeDialog} busy={busy}>
       <form className="pb-form" onSubmit={event => { event.preventDefault(); void submitForm(); }}>

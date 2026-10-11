@@ -42,6 +42,8 @@ import { createLinkedInConnectionConfiguration, readLinkedInConnectionConfigurat
 import { getStepDefinition, type StepDefinition } from "@/components/playbooks/step-definitions";
 import "@/components/playbooks/playbook-selects.css";
 import { InsightCategorySelect, LEGACY_INSIGHT_CATEGORY_OPTIONS } from "@/components/playbooks/InsightCategorySelect";
+import { createContactModeDocument, readMultiContactDocument, SINGLE_CONTACT, type ContactModeChoice } from "@/components/playbooks/contact-mode-model";
+import { MultiSeatBuilder } from "@/components/playbooks/MultiSeatBuilder";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -2108,12 +2110,16 @@ interface HistoryEntry {
 
 function CanvasInner({
   playbookId, playbookName, playbookStatus, initialCanvas,
-  enrollmentCount, onBack, onSave: externalSave, saving,
+  enrollmentCount, onBack, onSave: externalSave, saving, seatId, seatNavigation, multiActivationReason, documentSaveStatus, documentSaveError, onRetryDocument, onMultiContacts,
 }: {
   playbookId: number; playbookName: string; playbookStatus: string; initialCanvas?: string | null;
   enrollmentCount?: number;
   onBack: () => void;
   onSave: (nodes: Node<PlaybookNodeData>[], edges: Edge[], prospects: ProspectEntry[]) => Promise<boolean>; saving: boolean;
+  seatId?: string;
+  seatNavigation?: (flush: () => Promise<boolean>) => React.ReactNode;
+  multiActivationReason?: string; documentSaveStatus?: string; documentSaveError?: boolean;
+  onRetryDocument?: () => void; onMultiContacts?: () => void;
 }) {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -2156,7 +2162,7 @@ function CanvasInner({
   const { user } = useUser();
   const confirm = usePlaybookConfirm();
   const [, navigateFromEditor] = useLocation();
-  const storageKey = `playbook_canvas_v4_${user?.id ?? "signed-out"}_${playbookId}`;
+  const storageKey = `playbook_canvas_v4_${user?.id ?? "signed-out"}_${playbookId}${seatId ? `_${seatId}` : ""}`;
   const recoveryRef = useRef<CanvasState | null>(null);
 
   // Load initial state — v3 key (fall back to legacy key and migrate); sanitize & migrate older cached canvases
@@ -2170,7 +2176,7 @@ function CanvasInner({
       try { pendingBaseline = localStorage.getItem(`${storageKey}_pending`); } catch { /* Still load the server workflow if storage is blocked. */ }
       if (!raw) {
         let legacyRaw: string | null = null;
-        try { legacyRaw = localStorage.getItem(legacyKey) ?? localStorage.getItem(`playbook_canvas_${playbookId}`); } catch { /* Use the server canvas below. */ }
+        try { if (!seatId) legacyRaw = localStorage.getItem(legacyKey) ?? localStorage.getItem(`playbook_canvas_${playbookId}`); } catch { /* Use the server canvas below. */ }
         if (legacyRaw) {
           raw = legacyRaw;
         }
@@ -2310,7 +2316,7 @@ function CanvasInner({
     },
     onSaved: setSavedSnapshot,
   });
-  const saveStatus = autosaveLabel(autosave.state, hasUnsavedChanges);
+  const saveStatus = documentSaveStatus ?? autosaveLabel(autosave.state, hasUnsavedChanges);
   const requestLeave = useCallback(async () => {
     if (await autosave.flush()) return true;
     return confirm({ title: "Changes haven't synced", description: autosave.hasLocalDraft
@@ -2318,7 +2324,7 @@ function CanvasInner({
       : "Auto-save failed and a local recovery draft could not be stored. Leaving may lose these changes. Stay to retry.",
       confirmLabel: "Leave anyway", cancelLabel: "Stay", destructive: !autosave.hasLocalDraft });
   }, [autosave.flush, autosave.hasLocalDraft, confirm]);
-  const activationReason = !enabledSteps.length
+  const activationReason = multiActivationReason ?? (!enabledSteps.length
     ? "Add at least one workflow step before activating this playbook."
     : hasUnsavedChanges ? "Wait for changes to sync before activating this playbook."
     : ["archived", "completed"].includes(playbookStatus)
@@ -2327,7 +2333,7 @@ function CanvasInner({
       ? "Link an email mailbox before activating an email workflow."
     : enabledSteps.some(n => !nodeComplete(n.data as PlaybookNodeData))
       ? "Complete the required configuration on every step before activating."
-      : undefined;
+      : undefined);
   useEffect(() => {
     const navigate = (event: MouseEvent) => {
       const anchor = event.target instanceof Element ? event.target.closest("a") : null;
@@ -2917,15 +2923,16 @@ function CanvasInner({
         saving={saving}
         dirty={hasUnsavedChanges}
         onBeforeLeave={requestLeave}
-        saveStatus={saveStatus} saveError={autosave.state === "error"}
+        saveStatus={saveStatus} saveError={documentSaveError || autosave.state === "error"}
+        seatNavigation={seatNavigation?.(autosave.flush)}
         activationReason={playbookStatus === "active" ? undefined : activationReason}
         onTab={setActiveTab}
         onRename={renameRecord}
-        onSave={save}
+        onSave={() => { if (documentSaveError) onRetryDocument?.(); save(); }}
         onShare={() => void shareCurrentPlaybook()}
         onOptimize={() => { setActiveTab("editor"); setShowOptimize(true); }}
         onWorkflows={() => setActiveTab("settings")}
-        onContacts={() => setShowContactEnroll(true)}
+        onContacts={onMultiContacts ?? (() => setShowContactEnroll(true))}
         onActivate={() => void changeStatus(playbookStatus === "active" ? "paused" : "active")}
         onDuplicate={() => void duplicateRecord()}
         onArchive={() => setPendingRecordAction("archive")}
@@ -3015,9 +3022,11 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
   const seq = seqList?.find(s => s.id === playbookId);
 
   async function handleSave(nodes: Node<PlaybookNodeData>[], edges: Edge[], prospects: ProspectEntry[]) {
+    return persistCanvas(JSON.stringify({ nodes, edges, prospects }));
+  }
+  async function persistCanvas(canvas: string) {
     setSaving(true);
     try {
-      const canvas = JSON.stringify({ nodes, edges, prospects });
       const response = await apiFetch(`/api/playbooks/${playbookId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -3051,6 +3060,15 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
 
   return (
     <Shell>
+      {readMultiContactDocument(seq.description) ? <MultiSeatBuilder
+        key={`${user?.id}:${playbookId}:multi`} id={playbookId} status={seq.status}
+        initial={readMultiContactDocument(seq.description)!} primaryLaneId={PRIMARY_LANE_ID} persist={persistCanvas}
+        render={seat => <CanvasInner key={`${user?.id}:${playbookId}:${seat.seatId}`} playbookId={playbookId} playbookName={seq.name}
+          playbookStatus={seq.status} initialCanvas={JSON.stringify(seat.workflow)} enrollmentCount={seq.enrollmentCount}
+          onBack={() => navigate("/playbooks")} onSave={(nodes, edges, prospects) => seat.save({ nodes, edges, prospects })} saving={saving}
+          seatId={seat.seatId} seatNavigation={seat.navigation} multiActivationReason={seat.activationReason}
+          documentSaveStatus={seat.saveStatus} documentSaveError={seat.saveError} onRetryDocument={seat.retry} onMultiContacts={seat.contacts} />}
+      /> :
         <CanvasInner
           key={`${user?.id}:${playbookId}`}
           playbookId={playbookId}
@@ -3061,7 +3079,7 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
           onBack={() => navigate("/playbooks")}
           onSave={handleSave}
           saving={saving}
-        />
+        />}
     </Shell>
   );
 }
@@ -3070,19 +3088,21 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
 
 function PlaybooksListPage() {
   const [showCanned, setShowCanned] = useState(false);
+  const [templateChoice, setTemplateChoice] = useState<ContactModeChoice>(SINGLE_CONTACT);
   const templateBusy = useRef(false);
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   return <Shell>
     <PlaybooksList
-      onTemplates={() => setShowCanned(true)}
+      onTemplates={(choice = SINGLE_CONTACT) => { setTemplateChoice(choice); setShowCanned(true); }}
     />
     <CannedLibraryModal open={showCanned} onClose={() => setShowCanned(false)} onSelect={async template => {
       if (templateBusy.current) return;
       templateBusy.current = true;
       try {
-        const playbook = await createPlaybookRecord(template.name, JSON.stringify(template.build()));
+        const workflow = template.build();
+        const playbook = await createPlaybookRecord(template.name, JSON.stringify(createContactModeDocument({ ...workflow, prospects: workflow.prospects ?? [] }, templateChoice)));
         await qc.invalidateQueries({ queryKey: ["playbooks"] });
         navigate(`/playbooks/${playbook.id}`);
       } catch (error) {

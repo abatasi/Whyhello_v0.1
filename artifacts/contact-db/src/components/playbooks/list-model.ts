@@ -104,15 +104,26 @@ export function rowSummary(row: PlaybookRecord): string {
   }
   return description || `${row.stepCount} step${row.stepCount === 1 ? "" : "s"} · Updated ${new Date(row.updatedAt).toLocaleDateString()}`;
 }
-export function duplicateDescription(row: PlaybookRecord): string | null {
+export function duplicateDescription(row: PlaybookRecord, clearPreviews = false): string | null {
   const description = canvasDescription(row);
   if (!description?.trim().startsWith("{")) return description;
   const canvas = JSON.parse(description);
   if (!Array.isArray(canvas.nodes)) return description;
+  if (canvas.contactMode === "multi" && Array.isArray(canvas.seatSequences)) {
+    canvas.companyId = null;
+    canvas.seatSequences = canvas.seatSequences.map((seat: { contactId: number | null; workflow: Record<string, unknown> }) => ({
+      ...seat, contactId: null, workflow: JSON.parse(duplicateDescription({ ...row, description: JSON.stringify(seat.workflow) }, true)!),
+    }));
+    Object.assign(canvas, canvas.seatSequences[0].workflow);
+  }
   canvas.nodes = canvas.nodes.map((node: { data?: Record<string, unknown> }) => {
     const data = { ...node.data };
     delete data.contactId;
     delete data.contactName;
+    const configuration = data.configuration;
+    if (clearPreviews && configuration && typeof configuration === "object" && "variants" in configuration && Array.isArray(configuration.variants)) data.configuration = {
+      ...configuration, variants: configuration.variants.map(variant => ({ ...variant, preview: undefined })),
+    };
     return { ...node, data };
   });
   if (Array.isArray(canvas.prospects)) canvas.prospects = canvas.prospects.map((p: Record<string, unknown>) => {

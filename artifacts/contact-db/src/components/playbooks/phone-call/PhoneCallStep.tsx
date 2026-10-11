@@ -18,6 +18,7 @@ import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
 import { RESEARCH_SOURCES, timingSummary, type EmailTiming, type ManualEmailContext, type TimingUnit } from "../manual-email-model";
 import { TonePersonaPicker } from "../TonePersonaPicker";
 import { usePlaybookConfirm } from "../PlaybookConfirmProvider";
+import { useSeatScopedContext, useSeatWorkInFlight } from "../PlaybookSeatContext";
 import { AdditionalMessageContext } from "../AdditionalMessageContext";
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30";
@@ -135,6 +136,7 @@ function PreviewPanel({ playbookId, variant, contacts, selectedContactId, onCont
     onMutate: request => generationStateRef.current(request.variantId),
     onSettled: () => generationStateRef.current(null),
   });
+  useSeatWorkInFlight(mutation.isPending);
   const currentContact = contacts.find(contact => contact.id === selectedContactId);
   const preview = variant.preview;
   const previewContact = contacts.find(contact => contact.id === preview?.contactId);
@@ -201,7 +203,7 @@ export function PhoneCallStep({ playbookId, stepId, stepNumber, config: rawConfi
   const [timingOpen, setTimingOpen] = useState(false);
   const [generatingVariantId, setGeneratingVariantId] = useState<string | null>(null);
   const variant = config.variants.find(item => item.id === activeVariantId) ?? config.variants[0];
-  const context = contextQuery.data;
+  const context = useSeatScopedContext(contextQuery.data);
   const contacts = context?.contacts ?? [];
   const chosenId = contactId !== null && contacts.some(contact => contact.id === contactId) ? contactId : contacts.find(contact => contact.enrolled)?.id ?? contacts[0]?.id ?? null;
   const update = (next: PhoneCallConfiguration) => { currentConfigRef.current = next; onConfigure(next); };
