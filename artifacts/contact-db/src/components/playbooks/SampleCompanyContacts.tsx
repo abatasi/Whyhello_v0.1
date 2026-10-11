@@ -116,11 +116,11 @@ export function SampleCompanyContacts({
             onValueChange={value => onCompany(value === NONE ? null : Number(value))}
             disabled={readOnly || loading}
           >
-            <SelectTrigger id="sample-contact-company" data-testid="select-sample-company" className="h-9 w-full bg-background text-sm">
-              <span className="flex min-w-0 items-center gap-2">
+            <SelectTrigger id="sample-contact-company" data-testid="select-sample-company" className="h-9 w-full gap-2 bg-background text-sm [&>svg]:shrink-0">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Building2 size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
-                <SelectValue placeholder="Choose a company" />
-              </span>
+                <SelectValue className="truncate" placeholder="Choose a company" />
+              </div>
             </SelectTrigger>
             <SelectContent className="z-[250]">
               <SelectItem value={NONE}>Choose a company</SelectItem>
@@ -197,11 +197,11 @@ export function SampleCompanyContacts({
                       onValueChange={value => onContact(seat.id, value === NONE ? null : Number(value))}
                       disabled={readOnly || companyId === null}
                     >
-                      <SelectTrigger data-testid={`select-sample-contact-${seat.id}`} className="h-9 w-full bg-background text-xs">
-                        <span className="flex min-w-0 items-center gap-2">
+                      <SelectTrigger data-testid={`select-sample-contact-${seat.id}`} className="h-9 w-full gap-2 bg-background text-xs [&>svg]:shrink-0">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
                           <UserRound size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
-                          <SelectValue placeholder={companyId === null ? "Choose a company first" : "Choose a sample contact"} />
-                        </span>
+                          <SelectValue className="truncate" placeholder={companyId === null ? "Choose a company first" : "Choose a sample contact"} />
+                        </div>
                       </SelectTrigger>
                       <SelectContent className="z-[250]">
                         <SelectItem value={NONE}>No sample contact</SelectItem>
