@@ -42,7 +42,9 @@ import { createLinkedInConnectionConfiguration, readLinkedInConnectionConfigurat
 import { getStepDefinition, type StepDefinition } from "@/components/playbooks/step-definitions";
 import "@/components/playbooks/playbook-selects.css";
 import { InsightCategorySelect, LEGACY_INSIGHT_CATEGORY_OPTIONS } from "@/components/playbooks/InsightCategorySelect";
-import { createContactModeDocument, readMultiContactDocument, SINGLE_CONTACT, type ContactModeChoice } from "@/components/playbooks/contact-mode-model";
+import { createContactModeDocument, readMultiContactDocument, singleToMultiContact, SINGLE_CONTACT, type SeatWorkflow, type ContactModeChoice } from "@/components/playbooks/contact-mode-model";
+import { SingleSeatNavigation } from "@/components/playbooks/AddBuyingCenterSeat";
+import { PlaybookSeatBusy } from "@/components/playbooks/PlaybookSeatContext";
 import { MultiSeatBuilder } from "@/components/playbooks/MultiSeatBuilder";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -2110,7 +2112,7 @@ interface HistoryEntry {
 
 function CanvasInner({
   playbookId, playbookName, playbookStatus, initialCanvas,
-  enrollmentCount, onBack, onSave: externalSave, saving, seatId, seatNavigation, multiActivationReason, documentSaveStatus, documentSaveError, onRetryDocument, onMultiContacts,
+  enrollmentCount, onBack, onSave: externalSave, saving, seatId, seatNavigation, multiActivationReason, documentSaveStatus, documentSaveError, onRetryDocument, onMultiContacts, onAddSeat, generationBusy,
 }: {
   playbookId: number; playbookName: string; playbookStatus: string; initialCanvas?: string | null;
   enrollmentCount?: number;
@@ -2120,6 +2122,7 @@ function CanvasInner({
   seatNavigation?: (flush: () => Promise<boolean>) => React.ReactNode;
   multiActivationReason?: string; documentSaveStatus?: string; documentSaveError?: boolean;
   onRetryDocument?: () => void; onMultiContacts?: () => void;
+  onAddSeat?: (workflow: SeatWorkflow, seat: string) => Promise<boolean>; generationBusy?: boolean;
 }) {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -2924,7 +2927,7 @@ function CanvasInner({
         dirty={hasUnsavedChanges}
         onBeforeLeave={requestLeave}
         saveStatus={saveStatus} saveError={documentSaveError || autosave.state === "error"}
-        seatNavigation={seatNavigation?.(autosave.flush)}
+        seatNavigation={seatNavigation?.(autosave.flush) ?? (onAddSeat ? <SingleSeatNavigation flush={autosave.flush} snapshot={() => JSON.parse(JSON.stringify({ nodes, edges, prospects })) as SeatWorkflow} onAdd={onAddSeat} disabled={readOnlySteps || saving || !!generationBusy} /> : undefined)}
         activationReason={playbookStatus === "active" ? undefined : activationReason}
         onTab={setActiveTab}
         onRename={renameRecord}
@@ -3006,6 +3009,9 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
   const [saving, setSaving] = useState(false);
   const { user } = useUser();
   const lastSaveError = useRef<string | null>(null);
+  const [singleBusy, setSingleBusy] = useState(0);
+  const reportSingleBusy = useCallback((delta: number) => setSingleBusy(count => Math.max(0, count + delta)), []);
+  const [newSeatName, setNewSeatName] = useState<string>();
 
   const playbooksQuery = useQuery<PlaybookMeta[]>({
     queryKey: ["playbooks", user?.id],
@@ -3062,14 +3068,14 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
     <Shell>
       {readMultiContactDocument(seq.description) ? <MultiSeatBuilder
         key={`${user?.id}:${playbookId}:multi`} id={playbookId} status={seq.status}
-        initial={readMultiContactDocument(seq.description)!} primaryLaneId={PRIMARY_LANE_ID} persist={persistCanvas}
+        initial={readMultiContactDocument(seq.description)!} initialSeatName={newSeatName} primaryLaneId={PRIMARY_LANE_ID} persist={persistCanvas}
         render={seat => <CanvasInner key={`${user?.id}:${playbookId}:${seat.seatId}`} playbookId={playbookId} playbookName={seq.name}
           playbookStatus={seq.status} initialCanvas={JSON.stringify(seat.workflow)} enrollmentCount={seq.enrollmentCount}
           onBack={() => navigate("/playbooks")} onSave={(nodes, edges, prospects) => seat.save({ nodes, edges, prospects })} saving={saving}
           seatId={seat.seatId} seatNavigation={seat.navigation} multiActivationReason={seat.activationReason}
           documentSaveStatus={seat.saveStatus} documentSaveError={seat.saveError} onRetryDocument={seat.retry} onMultiContacts={seat.contacts} />}
       /> :
-        <CanvasInner
+        <PlaybookSeatBusy.Provider value={reportSingleBusy}><CanvasInner
           key={`${user?.id}:${playbookId}`}
           playbookId={playbookId}
           playbookName={seq.name}
@@ -3078,8 +3084,24 @@ function CanvasBuilder({ playbookId }: { playbookId: number }) {
           enrollmentCount={seq.enrollmentCount}
           onBack={() => navigate("/playbooks")}
           onSave={handleSave}
+          generationBusy={singleBusy > 0}
+          onAddSeat={async (workflow, name) => {
+            if (singleBusy || ["active", "archived", "completed"].includes(seq.status)) return false;
+            const primary = workflow.prospects.find(value => value && typeof value === "object" && (value as { isPrimary?: boolean }).isPrimary) as { contactId?: number } | undefined;
+            let lead: { id: number; companyId: number } | undefined;
+            if (typeof primary?.contactId === "number") {
+              const response = await apiFetch(`/api/contacts/${primary.contactId}`);
+              if (!response.ok) throw new Error("The existing contact could not be loaded. Your Single-Contact Playbook is unchanged.");
+              const contact = await response.json() as { id: number; companyId?: number | null };
+              if (contact.companyId) lead = { id: contact.id, companyId: contact.companyId };
+            }
+            setNewSeatName(name);
+            const ok = await persistCanvas(JSON.stringify(singleToMultiContact(workflow, name, lead)));
+            if (!ok) setNewSeatName(undefined);
+            return ok;
+          }}
           saving={saving}
-        />}
+        /></PlaybookSeatBusy.Provider>}
     </Shell>
   );
 }

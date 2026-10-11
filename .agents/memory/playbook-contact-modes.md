@@ -9,6 +9,10 @@ Each Buying Center seat has its own independent sequence, including its steps, t
 
 Default new Playbook setup to Business Champion and Economic Buyer, not all 15 hypothetical seats. Selecting a saved Buying Center variant should select its highlighted/configured seats, with Business Champion always included as the lead. Targeting 2–4 seats is the norm, not a hard maximum.
 
+Both Single and Multi builders should let users add an unselected Buying Center seat. Tabs show seat labels and corresponding HQ icons. Adding a seat to Single preserves its original sequence as Business Champion's and converts it to Multi; a new seat starts with a blank independent sequence rather than copying another recipient's messages.
+
+**Why:** The user requested an add-seat control in both modes. Preserving the existing sequence avoids loss of Single-Contact work during conversion; blank new sequences avoid assuming the same messaging fits every seat.
+
 **Why:** The user stated that targeting all or most hypothetical seats is not typical and specified these defaults and variant-selection behavior.
 
 **Why:** The user defined these as two dimensions of the Playbooks product, not separate applications, and explicitly chose separate sequences per seat.

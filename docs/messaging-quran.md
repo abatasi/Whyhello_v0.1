@@ -1192,6 +1192,8 @@ Single-Contact Playbooks keep the existing messaging and sequence flow. Multi-Co
 
 New setup starts with **Business Champion and Economic Buyer**, not all 15 hypothetical seats. Choosing a saved Buying Center selects its highlighted seats (those with seniority or department criteria), with Business Champion always retained as lead. Sellers can adjust this selection; targeting **2–4 seats is typical**, not a hard limit.
 
+Buying Center tabs show their seat names and corresponding HQ icons. Both Single-Contact and Multi-Contact builders offer **Add seat**, listing only seats not already included. Adding a seat to Single-Contact converts it to Multi-Contact while preserving the original sequence as Business Champion's, including its assigned contact/company when available. Each additional seat starts with a blank independent sequence and requires its own contact assignment; it does not inherit another seat's messages or trigger sending.
+
 Every selected seat has its **own independent sequence**: steps, timing, variants, additional context and previews are not shared or cascaded between seats. Seat tabs appear alongside the active sequence's step count and save status. Seat edits auto-save; switching seats waits for those edits to sync.
 
 Generation must use the contact assigned to the current seat, not a generic directory sample or a contact assigned to another seat. The assigned seat informs audience perspective and priorities, but does not establish unverified decision authority, interest or personal history. Email continues to follow **Hook → Bridge → Value → Proof → CTA**, with the selected length, saved HQ persona, grounded evidence, appropriately prefaced bold-and-quoted excerpts and supplied first-hand context preserved.

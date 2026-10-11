@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useUser } from "@clerk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
+import { buyingCenterIcon } from "./buying-center-icons";
+import { AddBuyingCenterSeat } from "./AddBuyingCenterSeat";
 import { PlaybookDialog } from "./PlaybookDialog";
 import { playbookRequest } from "./list-api";
-import { clearRecipientPreviews, readMultiContactDocument, updateSeatWorkflow, type MultiContactDocument, type SeatWorkflow } from "./contact-mode-model";
+import { BUYING_CENTER_SEATS, appendBuyingCenterSeat, clearRecipientPreviews, readMultiContactDocument, updateSeatWorkflow, type MultiContactDocument, type SeatWorkflow } from "./contact-mode-model";
 import { MultiContactAssignments } from "./MultiContactAssignments";
 import { PlaybookSeatBusy, PlaybookSeatRecipient } from "./PlaybookSeatContext";
 import { usePlaybookConfirm } from "./PlaybookConfirmProvider";
@@ -26,9 +28,9 @@ export type SeatBuilderProps = {
   save: (workflow: SeatWorkflow) => Promise<boolean>;
   activationReason?: string; saveStatus?: string; saveError: boolean; retry: () => void; contacts: () => void;
 };
-export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, render }: {
+export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, render, initialSeatName }: {
   id: number; status: string; initial: MultiContactDocument; primaryLaneId: string;
-  persist: (raw: string) => Promise<boolean>; render: (props: SeatBuilderProps) => ReactNode;
+  persist: (raw: string) => Promise<boolean>; render: (props: SeatBuilderProps) => ReactNode; initialSeatName?: string;
 }) {
   const { user } = useUser();
   const { toast } = useToast();
@@ -46,7 +48,8 @@ export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, 
   const latest = useRef(document);
   const tail = useRef<Promise<boolean>>(Promise.resolve(true));
   const flushRef = useRef<() => Promise<boolean>>(async () => true);
-  const [activeId, setActiveId] = useState(document.seatSequences[0].id);
+  const [activeId, setActiveId] = useState(document.seatSequences.find(seat => seat.name === initialSeatName)?.id ?? document.seatSequences[0].id);
+  const [addingSeat, setAddingSeat] = useState(false);
   const [editingContacts, setEditingContacts] = useState(false);
   const [pending, setPending] = useState(0);
   const [busy, setBusy] = useState(0);
@@ -133,15 +136,28 @@ export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, 
     flushRef.current = flush;
     return <div className="flex min-w-0 flex-1 items-center gap-2">
       <SeatTabList activeId={activeId}>
-        {document.seatSequences.map(item => <button key={item.id} type="button" role="tab" aria-selected={activeId === item.id} data-testid={`tab-bc-${item.id}`} onClick={() => void guarded(() => setActiveId(item.id))}
+        {document.seatSequences.map(item => { const Icon = buyingCenterIcon(item.name); return <button key={item.id} type="button" role="tab" aria-selected={activeId === item.id} data-testid={`tab-bc-${item.id}`} onClick={() => void guarded(() => setActiveId(item.id))}
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold ${activeId === item.id ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}>
-          {item.name === "Business Champion" && <Crown size={12} />} {item.name}{item.name === "Business Champion" && <span className="text-[10px] opacity-80">Lead</span>}
-        </button>)}
+          <Icon size={12} aria-hidden="true" />{item.name}{item.name === "Business Champion" && <span className="text-[10px] opacity-80">Lead</span>}
+        </button>; })}
       </SeatTabList>
+      <button type="button" aria-label="Add Buying Center seat" data-testid="button-add-bc-seat" disabled={readOnly || !!busy || !!pending || failed || BUYING_CENTER_SEATS.every(name => document.seatSequences.some(seat => seat.name === name))}
+        onClick={() => void guarded(() => setAddingSeat(true))} className="inline-flex shrink-0 items-center rounded-md border border-border p-2 disabled:opacity-45"><Plus size={14} /></button>
       <button type="button" aria-label="Company & contacts" data-testid="button-company-seats" onClick={() => setEditingContacts(true)} className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-2 text-xs font-semibold"><Users size={14} /><span className="hidden sm:inline">Company & contacts</span></button>
     </div>;
   };
   return <>
+    {addingSeat && <AddBuyingCenterSeat selectedSeats={document.seatSequences.map(seat => seat.name)} onClose={() => setAddingSeat(false)} onAdd={async name => {
+      let added = false;
+      await guarded(async () => {
+        if (readOnly) return;
+        const next = appendBuyingCenterSeat(latest.current, name);
+        await queue(next);
+        setActiveId(next.seatSequences[next.seatSequences.length - 1].id);
+        added = true;
+      });
+      return added;
+    }} />}
     <PlaybookSeatBusy.Provider value={reportBusy}><PlaybookSeatRecipient.Provider value={seat.contactId}>
       {render({ seatId: `${seat.id}:${seat.contactId ?? "unassigned"}:${document.companyId ?? "none"}`, workflow: seat.workflow, contactId: seat.contactId, navigation,
         save: workflow => queue(updateSeatWorkflow(latest.current, activeId, workflow)),

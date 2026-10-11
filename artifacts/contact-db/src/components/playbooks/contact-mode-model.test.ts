@@ -3,6 +3,33 @@ import assert from "node:assert/strict";
 import { createContactModeDocument, readMultiContactDocument, updateSeatWorkflow, clearRecipientPreviews, SINGLE_CONTACT } from "./contact-mode-model";
 import { duplicateDescription, type PlaybookRecord } from "./list-model";
 import { configuredBuyingCenterSeats, BUYING_CENTER_SEATS } from "./contact-mode-model";
+import { appendBuyingCenterSeat, singleToMultiContact } from "./contact-mode-model";
+test("adding a seat preserves saved sequences and assignments and starts an independent empty sequence", () => {
+  const original = singleToMultiContact(starter(), "Economic Buyer", { id: 42, companyId: 9 });
+  const before = JSON.stringify(original);
+  const next = appendBuyingCenterSeat(original, "Technical Buyer");
+  assert.equal(JSON.stringify(original), before);
+  assert.deepEqual(next.seatSequences.slice(0, 2), original.seatSequences);
+  assert.equal(next.companyId, 9);
+  assert.equal(next.seatSequences[0].contactId, 42);
+  assert.deepEqual(next.seatSequences[2].workflow, { nodes: [], edges: [], prospects: [] });
+  assert.equal(next.seatSequences[2].contactId, null);
+  assert.equal(new Set(next.seatSequences.map(seat => seat.id)).size, 3);
+  assert.throws(() => appendBuyingCenterSeat(next, "Economic Buyer"), /already included/);
+  assert.throws(() => appendBuyingCenterSeat(next, "Unknown"), /valid Buying Center/);
+});
+test("Single to Multi preserves the original workflow as Business Champion without copying it to the new seat", () => {
+  const source = { ...starter(), prospects: [{ isPrimary: true, contactId: 42, laneId: "primary" }] };
+  const multi = singleToMultiContact(source, "Technical Buyer", { id: 42, companyId: 9 });
+  assert.deepEqual(multi.seatSequences[0].workflow, source);
+  assert.equal(multi.seatSequences[0].name, "Business Champion");
+  assert.equal(multi.seatSequences[1].name, "Technical Buyer");
+  assert.equal(multi.seatSequences[1].workflow.nodes.length, 0);
+  assert.equal(readMultiContactDocument(JSON.stringify(multi))?.seatSequences.length, 2);
+  multi.seatSequences[0].workflow.nodes[0].data.label = "Changed";
+  assert.equal(source.nodes[0].data.label, "Email");
+  assert.throws(() => singleToMultiContact(source, "Business Champion"), /already included/);
+});
 test("saved Buying Centers select only highlighted seats, not all hypothetical seats", () => {
   const seats = BUYING_CENTER_SEATS.map(seat => ({
     seat, seniorities: seat === "Economic Buyer" ? ["Executive"] : [],

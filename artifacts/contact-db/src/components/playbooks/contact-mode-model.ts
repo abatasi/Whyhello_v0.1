@@ -22,6 +22,23 @@ export type MultiContactDocument = SeatWorkflow & {
   seatSequences: { id: string; name: string; contactId: number | null; workflow: SeatWorkflow }[];
 };
 
+export function appendBuyingCenterSeat(document: MultiContactDocument, name: string): MultiContactDocument {
+  if (!BUYING_CENTER_SEATS.includes(name as typeof BUYING_CENTER_SEATS[number])) throw new Error("Choose a valid Buying Center seat.");
+  if (document.seatSequences.some(seat => seat.name === name)) throw new Error("This Buying Center seat is already included.");
+  let index = document.seatSequences.length;
+  while (document.seatSequences.some(seat => seat.id === `seat-${index}`)) index++;
+  return { ...document, seatSequences: [...document.seatSequences, {
+    id: `seat-${index}`, name, contactId: null, workflow: { nodes: [], edges: [], prospects: [] },
+  }] };
+}
+
+export function singleToMultiContact(workflow: SeatWorkflow, name: string, lead?: { id: number; companyId: number }): MultiContactDocument {
+  const original = structuredClone(workflow);
+  return appendBuyingCenterSeat({ ...original, contactMode: "multi", companyId: lead?.companyId ?? null,
+    seatSequences: [{ id: "seat-0", name: "Business Champion", contactId: lead?.id ?? null, workflow: original }],
+  }, name);
+}
+
 export function createContactModeDocument(workflow: SeatWorkflow, choice: ContactModeChoice): SeatWorkflow | MultiContactDocument {
   if (choice.mode === "single") return workflow;
   const seats = [...new Set(["Business Champion", ...choice.seats])];
