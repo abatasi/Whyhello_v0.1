@@ -13,6 +13,7 @@
 - [Live audience semantics](live-audience-semantics.md) — only explicit per-user live selections power badges and rankings; editor/view tabs never activate drafts
 - [Interaction feedback](interaction-style.md) — stationary, subtle button hovers; hand cursors on enabled clickable elements
 - [Playbooks design direction](playbooks-design-direction.md) — dense operational tables, shared theme surfaces and accents; replace scratch creation without changing saved workflows.
+- [Playbook contact modes](playbook-contact-modes.md) — Single keeps the existing flow; Multi targets one company's Buying Center seats, led by Business Champion.
 - [Clerk browser test claims](clerk-testing-claims.md) — use normal programmatic login; do not require unsupported custom claim overrides when standard identity resolves ownership.
 - [Screenshot interaction verification](screenshot-verification.md) — require an explicit completion log before counting asynchronous UI smoke checks as passed.
 - [Playbook step modes](playbook-step-modes.md) — Manual Email is a seller-reviewed task, not an automatic send; keep Actions and Rules distinct.
