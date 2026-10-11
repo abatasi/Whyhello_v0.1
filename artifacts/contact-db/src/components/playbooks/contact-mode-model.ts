@@ -17,8 +17,10 @@ export const BUYING_CENTER_SEATS = ["Business Champion", "Economic Buyer", "Deci
 export type ContactModeChoice = { mode: "single" | "multi"; seats: string[]; buyingCenterId?: string };
 export const SINGLE_CONTACT: ContactModeChoice = { mode: "single", seats: [] };
 export type SeatWorkflow = { nodes: Node[]; edges: Edge[]; prospects: unknown[] };
+export type PlaybookSampleView = { companyId: number | null; contactIds: Record<string, number | null>; manualSeatIds: string[] };
 export type MultiContactDocument = SeatWorkflow & {
   contactMode: "multi"; buyingCenterId?: string; companyId: number | null;
+  sampleView?: PlaybookSampleView;
   seatSequences: { id: string; name: string; contactId: number | null; workflow: SeatWorkflow }[];
 };
 

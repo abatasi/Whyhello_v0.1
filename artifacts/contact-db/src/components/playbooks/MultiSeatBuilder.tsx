@@ -8,7 +8,10 @@ import { PlaybookDialog } from "./PlaybookDialog";
 import { playbookRequest } from "./list-api";
 import { BUYING_CENTER_SEATS, appendBuyingCenterSeats, clearRecipientPreviews, readMultiContactDocument, updateSeatWorkflow, type MultiContactDocument, type SeatWorkflow } from "./contact-mode-model";
 import { MultiContactAssignments } from "./MultiContactAssignments";
-import { PlaybookSeatBusy, PlaybookSeatRecipient } from "./PlaybookSeatContext";
+import { SampleCompanyContacts } from "./SampleCompanyContacts";
+import type { GetPlaybookSampleContacts200 } from "@workspace/api-client-react";
+import { chooseSampleCompany, chooseSampleContact, populateAddedSamples, sampleViewFor } from "./sample-view-model";
+import { PlaybookSeatBusy, PlaybookSeatRecipient, PlaybookSeatIdentity } from "./PlaybookSeatContext";
 import { usePlaybookConfirm } from "./PlaybookConfirmProvider";
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,11 +54,16 @@ export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, 
   const [activeId, setActiveId] = useState(document.seatSequences.find(seat => seat.name === initialSeatName)?.id ?? document.seatSequences[0].id);
   const [addingSeat, setAddingSeat] = useState(false);
   const [editingContacts, setEditingContacts] = useState(false);
+  const [editingSample, setEditingSample] = useState(false);
+  const [sampleLoading, setSampleLoading] = useState(false);
+  const [sampleError, setSampleError] = useState<string>();
   const [pending, setPending] = useState(0);
   const [busy, setBusy] = useState(0);
   const reportBusy = useCallback((delta: number) => setBusy(count => Math.max(0, count + delta)), []);
   const [failed, setFailed] = useState(JSON.stringify(document) !== baseline.current);
   const readOnly = ["active", "archived", "completed"].includes(status);
+  const sample = sampleViewFor(document);
+  const sampleContactId = sample.contactIds[activeId] ?? null;
   const companies = useQuery({
     queryKey: ["playbook-companies", user?.id], enabled: !!user,
     queryFn: async () => {
@@ -81,6 +89,12 @@ export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, 
       }
       return rows;
     },
+  });
+  const sampleContacts = useQuery({
+    queryKey: ["playbook-sample-contacts", user?.id, id, sample.companyId, document.buyingCenterId],
+    enabled: !!user && !!sample.companyId,
+    queryFn: () => playbookRequest<GetPlaybookSampleContacts200>(`/api/playbooks/${id}/sample-contacts/${sample.companyId}`),
+    staleTime: 30_000,
   });
   function queue(next: MultiContactDocument) {
     latest.current = next; setDocument(next); setPending(count => count + 1);
@@ -128,9 +142,7 @@ export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, 
       if (await queue(updateSeatWorkflow(next, seatId, target.workflow))) await queryClient.invalidateQueries({ predicate: query => query.queryKey.includes(id) });
     });
   }
-  const incomplete = !document.companyId ? "Choose a company and assign its contacts to Buying Center seats."
-    : document.seatSequences.some(item => !item.contactId) ? "Assign a company contact to every Buying Center seat."
-    : document.seatSequences.some(item => !item.workflow.nodes.some(node => !["placeholder", "prospect-added", "trigger-detected", "added-to-playbook"].includes(String(node.data.blockType)))) ? "Build a sequence for every selected Buying Center seat."
+  const incomplete = document.seatSequences.some(item => !item.workflow.nodes.some(node => !["placeholder", "prospect-added", "trigger-detected", "added-to-playbook"].includes(String(node.data.blockType)))) ? "Build a sequence for every selected Buying Center seat."
     : failed || pending ? "Wait for all company and seat changes to sync." : undefined;
   const navigation = (flush: () => Promise<boolean>) => {
     flushRef.current = flush;
@@ -143,7 +155,7 @@ export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, 
       <button type="button" aria-label="Add Buying Center seat" data-testid="button-add-bc-seat" disabled={readOnly || !!busy || !!pending || failed || BUYING_CENTER_SEATS.every(name => document.seatSequences.some(seat => seat.name === name))}
         onClick={() => void guarded(() => setAddingSeat(true))} className="inline-flex shrink-0 items-center rounded-md border border-border p-2 disabled:opacity-45"><Plus size={14} /></button>
       </SeatTabList>
-      <button type="button" aria-label="Company & contacts" data-testid="button-company-seats" onClick={() => setEditingContacts(true)} className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-2 text-xs font-semibold"><Users size={14} /><span className="hidden sm:inline">Company & contacts</span></button>
+      <button type="button" aria-label="Company & contacts" data-testid="button-company-seats" onClick={() => void guarded(() => setEditingSample(true))} className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-2 text-xs font-semibold"><Users size={14} /><span className="hidden sm:inline">Company & contacts</span></button>
     </div>;
   };
   return <>
@@ -152,20 +164,51 @@ export function MultiSeatBuilder({ id, status, initial, primaryLaneId, persist, 
       await guarded(async () => {
         if (readOnly) return;
         const firstAdded = latest.current.seatSequences.length;
-        const next = appendBuyingCenterSeats(latest.current, names);
+        const next = populateAddedSamples(appendBuyingCenterSeats(latest.current, names), sampleContacts.data?.contacts ?? []);
         await queue(next);
         setActiveId(next.seatSequences[firstAdded].id);
         added = true;
       });
       return added;
     }} />}
-    <PlaybookSeatBusy.Provider value={reportBusy}><PlaybookSeatRecipient.Provider value={seat.contactId}>
-      {render({ seatId: `${seat.id}:${seat.contactId ?? "unassigned"}:${document.companyId ?? "none"}`, workflow: seat.workflow, contactId: seat.contactId, navigation,
+    <PlaybookSeatBusy.Provider value={reportBusy}><PlaybookSeatIdentity.Provider value={seat.id}><PlaybookSeatRecipient.Provider value={sampleContactId}>
+      {render({ seatId: `${seat.id}:${sampleContactId ?? "unassigned"}:${sample.companyId ?? "none"}:${seat.contactId}:${document.companyId}`, workflow: seat.workflow, contactId: sampleContactId, navigation,
         save: workflow => queue(updateSeatWorkflow(latest.current, activeId, workflow)),
         activationReason: incomplete, saveStatus: failed ? "Company / seat changes not saved" : pending ? "Saving changes…" : undefined,
         saveError: failed, retry: () => { void queue(latest.current); }, contacts: () => setEditingContacts(true) })}
-    </PlaybookSeatRecipient.Provider></PlaybookSeatBusy.Provider>
-    {editingContacts && <PlaybookDialog title="Company & Buying Center contacts" description="Assign one contact from this company to each selected seat." onClose={() => setEditingContacts(false)} busy={pending > 0}>
+    </PlaybookSeatRecipient.Provider></PlaybookSeatIdentity.Provider></PlaybookSeatBusy.Provider>
+    {editingSample && <PlaybookDialog title="Company & Contacts" description="Choose preview samples for each seat. Changing samples clears older recipient-specific previews, not your steps, templates or context." busy={pending > 0 || sampleLoading} onClose={() => setEditingSample(false)}>
+      <SampleCompanyContacts companyId={sample.companyId} companies={companies.data ?? []} contacts={sampleContacts.data?.contacts ?? []}
+        seats={document.seatSequences} contactIds={sample.contactIds} manualSeatIds={sample.manualSeatIds}
+        criteriaName={sampleContacts.data?.criteriaName} readOnly={readOnly}
+        loading={companies.isLoading || sampleContacts.isLoading || sampleLoading} saving={pending > 0}
+        error={sampleError ?? (companies.error instanceof Error ? companies.error.message : sampleContacts.error instanceof Error ? sampleContacts.error.message : undefined)}
+        onCompany={companyId => void guarded(async () => {
+          if (readOnly) return;
+          setSampleLoading(true); setSampleError(undefined);
+          try {
+            const result = companyId === null ? { contacts: [], criteriaName: null } : await queryClient.fetchQuery({
+              queryKey: ["playbook-sample-contacts", user?.id, id, companyId, latest.current.buyingCenterId],
+              queryFn: () => playbookRequest<GetPlaybookSampleContacts200>(`/api/playbooks/${id}/sample-contacts/${companyId}`),
+              staleTime: 0,
+            });
+            if (await queue(chooseSampleCompany(latest.current, companyId, result.contacts)))
+              await queryClient.invalidateQueries({ predicate: query => query.queryKey.includes(id) });
+          } catch (error) { setSampleError(error instanceof Error ? error.message : "Sample contacts could not be loaded."); }
+          finally { setSampleLoading(false); }
+        })}
+        onContact={(seatId, contactId) => void guarded(async () => {
+          if (sampleViewFor(latest.current).companyId !== sample.companyId) {
+            toast({ title: "Sample company changed", description: "Choose a sample contact from the current company." }); return;
+          }
+          if (readOnly || !sample.companyId || (contactId !== null && !sampleContacts.data?.contacts.some(contact => contact.id === contactId && contact.companyId === sample.companyId))) return;
+          if (await queue(chooseSampleContact(latest.current, seatId, contactId)))
+            await queryClient.invalidateQueries({ predicate: query => query.queryKey.includes(id) });
+        })} />
+      {failed && <p role="alert" className="mx-5 mb-4 text-xs text-destructive">Sample settings haven't saved. <button type="button" className="underline" onClick={() => void queue(latest.current)}>Retry auto-save</button></p>}
+      {sampleContacts.isError && <button type="button" onClick={() => void sampleContacts.refetch()} className="mx-5 mb-4 rounded-md border border-border px-3 py-2 text-xs font-semibold">Retry loading sample contacts</button>}
+    </PlaybookDialog>}
+    {editingContacts && <PlaybookDialog title="Enroll company contacts" description="Actual outreach recipients, separate from sample-preview contacts. Assign one company contact to each seat." onClose={() => setEditingContacts(false)} busy={pending > 0}>
         <MultiContactAssignments companyId={document.companyId} companies={companies.data ?? []} contacts={contacts.data ?? []} seats={document.seatSequences} activeSeatId={activeId} readOnly={readOnly || pending > 0} loading={companies.isLoading || (!!document.companyId && contacts.isLoading)}
           error={companies.isError || contacts.isError ? "Company records couldn't be loaded. Close and reopen to retry." : undefined}
           onContact={(seatId, contactId) => void assignContact(seatId, contactId)}

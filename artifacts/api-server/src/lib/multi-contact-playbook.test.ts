@@ -17,9 +17,9 @@ test("an empty non-lead sequence prevents activation", () => {
   const value = document(); value.seatSequences[1].workflow.nodes = [];
   assert.match(multiContactActivationError(multiContactCanvas(JSON.stringify(value))!)!, /Economic Buyer/);
 });
-test("every seat must be assigned before activation", () => {
+test("preview samples and actual assignments do not determine sequence activation readiness", () => {
   const value = document(); value.seatSequences[1].contactId = null;
-  assert.match(multiContactActivationError(multiContactCanvas(JSON.stringify(value))!)!, /every Buying Center seat/);
+  assert.equal(multiContactActivationError(multiContactCanvas(JSON.stringify(value))!), undefined);
 });
 test("duplicate contacts and non-lead defaults are rejected", () => {
   const value = document(); value.seatSequences[1].contactId = 10;
@@ -32,4 +32,24 @@ test("preview context identifies the actual recipient's assigned seat", () => {
   assert.ok(multiRecipientContext(JSON.stringify(document()), 11, 99).error);
   assert.ok(multiRecipientContext(JSON.stringify(document()), 1000, 12).error);
   assert.deepEqual(multiRecipientContext(JSON.stringify({ nodes: [] }), 10, 12), {});
+});
+test("sample previews are separate from recipients and permit a shared fallback with explicit seat identity", () => {
+  const value = document();
+  value.sampleView = { companyId: 99, contactIds: { lead: 25, buyer: 25 }, manualSeatIds: ["buyer"] };
+  assert.ok(multiContactCanvas(JSON.stringify(value)));
+  assert.deepEqual(multiRecipientContext(JSON.stringify(value), 25, 99, "buyer"), { seat: "Economic Buyer" });
+  assert.deepEqual(multiRecipientContext(JSON.stringify(value), 25, 99, "lead"), { seat: "Business Champion" });
+  assert.ok(multiRecipientContext(JSON.stringify(value), 25, 99).error);
+  assert.ok(multiRecipientContext(JSON.stringify(value), 25, 12, "buyer").error);
+  assert.ok(multiRecipientContext(JSON.stringify(value), 11, 12, "buyer").error);
+  assert.equal(value.seatSequences[1].contactId, 11);
+});
+test("sample metadata rejects invalid company IDs, unknown seats and contact IDs", () => {
+  const value = document();
+  value.sampleView = { companyId: 99, contactIds: { fake: 25 }, manualSeatIds: [] };
+  assert.throws(() => multiContactCanvas(JSON.stringify(value)), /Multi-Contact/);
+  value.sampleView.contactIds = { lead: -1 };
+  assert.throws(() => multiContactCanvas(JSON.stringify(value)), /Multi-Contact/);
+  value.sampleView.contactIds = { lead: 25 }; value.sampleView.companyId = null;
+  assert.throws(() => multiContactCanvas(JSON.stringify(value)), /Multi-Contact/);
 });

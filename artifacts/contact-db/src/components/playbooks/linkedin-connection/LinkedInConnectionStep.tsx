@@ -16,7 +16,7 @@ import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
 import { timingSummary, type EmailTiming, type ManualEmailContext, type TimingUnit } from "../manual-email-model";
 import { ConnectionFields, fieldClass, labelClass, smallButton } from "./LinkedInConnectionFields";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
-import { useSeatScopedContext, useSeatWorkInFlight } from "../PlaybookSeatContext";
+import { useSeatScopedContext, useSeatWorkInFlight, usePlaybookSeatIdentity } from "../PlaybookSeatContext";
 
 function TimingEditor({ label, timing, onChange, readOnly }: {
   label: string; timing: EmailTiming; onChange: (next: EmailTiming) => void; readOnly: boolean;
@@ -53,9 +53,10 @@ function PreviewPanel({ playbookId, variant, contacts, selectedContactId, onCont
   const filtered = useMemo(() => contacts.filter(contact =>
     (scope === "all" || (scope === "enrolled" ? contact.enrolled : !contact.enrolled)) &&
     `${contact.name} ${contact.company}`.toLowerCase().includes(search.toLowerCase())), [contacts, scope, search]);
+  const seatId = usePlaybookSeatIdentity();
   const mutation = useMutation({
     mutationFn: (request: { variantId: string; variant: ConnectionVariant; contactId: number; reason: string }) =>
-      generateLinkedInConnectionPreview(playbookId, request.variant, request.contactId, request.reason),
+      generateLinkedInConnectionPreview(playbookId, request.variant, request.contactId, request.reason, seatId),
     onSuccess: (response, request) => {
       onPreviewChange(request.variantId, { ...response, contactId: request.contactId });
       setDirtyPreview(false);

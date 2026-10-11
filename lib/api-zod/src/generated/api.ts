@@ -46,6 +46,29 @@ export const GenerateContactChatBody = zod.object({
     .nullish(),
 });
 
+/**
+ * @summary List sample company contacts matched against the owner's selected Buying Center
+ */
+
+export const GetPlaybookSampleContactsParams = zod.object({
+  id: zod.coerce.number().min(1),
+  companyId: zod.coerce.number().min(1),
+});
+
+export const GetPlaybookSampleContactsResponse = zod.object({
+  criteriaName: zod.string().nullable(),
+  contacts: zod.array(
+    zod.object({
+      id: zod.number(),
+      companyId: zod.number().nullable(),
+      firstName: zod.string(),
+      lastName: zod.string(),
+      jobTitle: zod.string().nullable(),
+      matchingSeats: zod.array(zod.string()),
+    }),
+  ),
+});
+
 export const GeneratePhoneCallAudioParams = zod.object({
   id: zod.coerce.number(),
 });

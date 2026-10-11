@@ -22,3 +22,9 @@ The Add BC seat picker supports multi-select, saving all chosen seats together. 
 **Why:** The user defined these as two dimensions of the Playbooks product, not separate applications, and explicitly chose separate sequences per seat.
 
 **How to apply:** Offer Single versus Multi in the Create Playbook wizard after the user chooses how to build. In the sequence builder, put Buying Center seat tabs in the same row as the step count and saved/unsaved status. Preserve existing Single-Contact behavior and autosave guarantees.
+
+Company & Contacts is the sample-preview control, not enrollment. Auto-fill from the selected company's contacts using the chosen HQ Buying Center criteria; when no contact matches, let the user choose a fallback from that company. Sample contacts may be reused across seats and must not change actual recipient assignments or enroll contacts. Real outreach remains under Add Contacts.
+
+**Why:** The user asked to repurpose this tab to control the sample view and provide a manual fallback for missing seat matches. Preview experimentation must not change live recipients.
+
+**How to apply:** Keep preview selections independent from actual outreach metadata. Carry the active seat identity into generation even when multiple sample seats use the same contact, and never infer a person's real authority from a fallback sample.

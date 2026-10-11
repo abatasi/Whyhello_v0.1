@@ -31,6 +31,8 @@ export * from "./enrichmentResult";
 export * from "./errorResponse";
 export * from "./filterOptions";
 export * from "./getContactIndexingStatus200";
+export * from "./getPlaybookSampleContacts200";
+export * from "./getPlaybookSampleContacts200ContactsItem";
 export * from "./healthStatus";
 export * from "./hqAudienceInput";
 export * from "./hqAudienceResponse";

@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect } from "react";
 export const PlaybookSeatRecipient = createContext<number | null | undefined>(undefined);
+export const PlaybookSeatIdentity = createContext<string | undefined>(undefined);
+export const usePlaybookSeatIdentity = () => useContext(PlaybookSeatIdentity);
 export const PlaybookSeatBusy = createContext<(delta: number) => void>(() => {});
 export function useSeatWorkInFlight(pending: boolean) {
   const report = useContext(PlaybookSeatBusy);

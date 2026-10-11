@@ -697,6 +697,20 @@ export type GetContactIndexingStatus200 = {
   hqRevision: string;
 };
 
+export type GetPlaybookSampleContacts200ContactsItem = {
+  id: number;
+  companyId: number | null;
+  firstName: string;
+  lastName: string;
+  jobTitle: string | null;
+  matchingSeats: string[];
+};
+
+export type GetPlaybookSampleContacts200 = {
+  criteriaName: string | null;
+  contacts: GetPlaybookSampleContacts200ContactsItem[];
+};
+
 export type SendManualEmailPreviewTest200 = {
   success: boolean;
 };

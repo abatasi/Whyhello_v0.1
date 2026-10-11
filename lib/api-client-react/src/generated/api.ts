@@ -35,6 +35,7 @@ import type {
   ErrorResponse,
   FilterOptions,
   GetContactIndexingStatus200,
+  GetPlaybookSampleContacts200,
   HealthStatus,
   HqAudienceInput,
   HqAudienceResponse,
@@ -238,6 +239,112 @@ export const useGenerateContactChat = <
 > => {
   return useMutation(getGenerateContactChatMutationOptions(options));
 };
+
+/**
+ * @summary List sample company contacts matched against the owner's selected Buying Center
+ */
+export const getGetPlaybookSampleContactsUrl = (
+  id: number,
+  companyId: number,
+) => {
+  return `/api/playbooks/${id}/sample-contacts/${companyId}`;
+};
+
+export const getPlaybookSampleContacts = async (
+  id: number,
+  companyId: number,
+  options?: RequestInit,
+): Promise<GetPlaybookSampleContacts200> => {
+  return customFetch<GetPlaybookSampleContacts200>(
+    getGetPlaybookSampleContactsUrl(id, companyId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPlaybookSampleContactsQueryKey = (
+  id: number,
+  companyId: number,
+) => {
+  return [`/api/playbooks/${id}/sample-contacts/${companyId}`] as const;
+};
+
+export const getGetPlaybookSampleContactsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPlaybookSampleContacts>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  companyId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPlaybookSampleContacts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPlaybookSampleContactsQueryKey(id, companyId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPlaybookSampleContacts>>
+  > = ({ signal }) =>
+    getPlaybookSampleContacts(id, companyId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(id && companyId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPlaybookSampleContacts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPlaybookSampleContactsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPlaybookSampleContacts>>
+>;
+export type GetPlaybookSampleContactsQueryError = ErrorType<void>;
+
+/**
+ * @summary List sample company contacts matched against the owner's selected Buying Center
+ */
+
+export function useGetPlaybookSampleContacts<
+  TData = Awaited<ReturnType<typeof getPlaybookSampleContacts>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  companyId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPlaybookSampleContacts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPlaybookSampleContactsQueryOptions(
+    id,
+    companyId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 export const getGeneratePhoneCallAudioUrl = (id: number) => {
   return `/api/playbooks/${id}/phone-call/audio`;

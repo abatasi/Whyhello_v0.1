@@ -17,12 +17,15 @@ import {
   counterpartInsightsTable,
   dnaProfilesTable,
   insightQuotesTable,
+  rolesTable,
 } from "@workspace/db/schema";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts.js";
 import crypto from "node:crypto";
 import { multiContactCanvas, multiContactActivationError, storedPlaybookNodes, type MultiCanvas } from "../lib/multi-contact-playbook.js";
+import { matchingBuyingCenterSeats, parseDnaProfile, selectedBuyingCenter } from "../lib/live-audience";
+import { GetPlaybookSampleContactsParams, GetPlaybookSampleContactsResponse } from "@workspace/api-zod";
 import { manualEmailRouter, manualEmailConfigurationError } from "./playbook-manual-email.js";
 import { phoneCallRouter, phoneCallConfigurationError } from "./playbook-phone-call.js";
 import { linkedInConnectionRouter, linkedInConnectionActivationError } from "./playbook-linkedin-connection.js";
@@ -117,11 +120,46 @@ playbooksRouter.get("/", async (req: Request, res: Response) => {
 
 async function validateMultiCompany(canvas: MultiCanvas | null) {
   if (!canvas) return;
-  const ids = canvas.seatSequences.map(seat => seat.contactId).filter((id): id is number => id !== null);
-  if (!ids.length) return;
-  const rows = await db.select({ id: contactsTable.id, companyId: contactsTable.companyId }).from(contactsTable).where(inArray(contactsTable.id, ids));
-  if (rows.length !== ids.length || rows.some(contact => contact.companyId !== canvas.companyId)) throw new Error("Multi-Contact contacts must all belong to the selected company.");
+  const groups = [{ companyId: canvas.companyId, ids: canvas.seatSequences.map(seat => seat.contactId) },
+    ...(canvas.sampleView ? [{ companyId: canvas.sampleView.companyId, ids: Object.values(canvas.sampleView.contactIds) }] : [])];
+  for (const group of groups) {
+    const ids = [...new Set(group.ids.filter((id): id is number => id !== null))];
+    if (group.companyId) {
+      const [company] = await db.select({ id: companiesTable.id }).from(companiesTable).where(eq(companiesTable.id, group.companyId));
+      if (!company) throw new Error("Multi-Contact company could not be found.");
+    }
+    if (!ids.length) continue;
+    const rows = await db.select({ id: contactsTable.id, companyId: contactsTable.companyId }).from(contactsTable).where(inArray(contactsTable.id, ids));
+    if (rows.length !== ids.length || rows.some(contact => contact.companyId !== group.companyId)) throw new Error("Multi-Contact contacts must all belong to their selected company.");
+  }
 }
+
+playbooksRouter.get("/:id/sample-contacts/:companyId", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  const params = GetPlaybookSampleContactsParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: "Choose a valid playbook and sample company." }); return; }
+  const { id, companyId } = params.data;
+  if (!Number.isSafeInteger(id) || id <= 0 || !Number.isSafeInteger(companyId) || companyId <= 0) { res.status(400).json({ error: "Choose a valid playbook and sample company." }); return; }
+  try {
+    const [book] = await db.select({ description: sequencesTable.description }).from(sequencesTable).where(and(eq(sequencesTable.id, id), eq(sequencesTable.userId, userId)));
+    if (!book) { res.status(404).json({ error: "Playbook not found." }); return; }
+    const [company] = await db.select({ id: companiesTable.id }).from(companiesTable).where(eq(companiesTable.id, companyId));
+    if (!company) { res.status(404).json({ error: "Company not found." }); return; }
+    const [record] = await db.select({ data: dnaProfilesTable.data }).from(dnaProfilesTable).where(eq(dnaProfilesTable.userId, userId));
+    const profile = record ? parseDnaProfile(record.data) : null;
+    const canvas = multiContactCanvas(book.description);
+    const centers = Array.isArray(profile?.buyingCenters) ? profile.buyingCenters as Record<string, unknown>[] : [];
+    const center = canvas?.buyingCenterId
+      ? centers.find((center, index) => String(center.id ?? `saved-${index}`) === canvas.buyingCenterId) ?? (canvas.buyingCenterId === "default" && Array.isArray(profile?.buyingCenter) ? { name: "Default Buying Center", seats: profile.buyingCenter } : null)
+      : selectedBuyingCenter(profile);
+    const rows = await db.select({ id: contactsTable.id, companyId: contactsTable.companyId, firstName: contactsTable.firstName, lastName: contactsTable.lastName,
+      jobTitle: contactsTable.jobTitle, roleName: rolesTable.name, department: contactsTable.department, seniority: contactsTable.seniority })
+      .from(contactsTable).leftJoin(rolesTable, eq(contactsTable.roleId, rolesTable.id)).where(eq(contactsTable.companyId, companyId)).orderBy(contactsTable.id);
+    res.json(GetPlaybookSampleContactsResponse.parse({ contacts: rows.map(contact => ({ ...contact, firstName: contact.firstName ?? "", lastName: contact.lastName ?? "", matchingSeats: matchingBuyingCenterSeats(center ?? null, contact) })),
+      criteriaName: typeof center?.name === "string" ? center.name : null }));
+  } catch { res.status(500).json({ error: "Sample company contacts could not be loaded." }); }
+});
 playbooksRouter.post("/", async (req: Request, res: Response) => {
   const userId = getUserId(req);
   if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }

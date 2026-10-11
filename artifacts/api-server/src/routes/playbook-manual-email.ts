@@ -129,7 +129,8 @@ manualEmailRouter.get("/context", async (_req, res) => {
   try {
     const id = res.locals.playbook.id as number;
     const userId = res.locals.userId as string;
-    const assignedIds = multiContactCanvas(res.locals.playbook.description)?.seatSequences.map(seat => seat.contactId).filter((id): id is number => id !== null) ?? [];
+    const canvas = multiContactCanvas(res.locals.playbook.description);
+    const assignedIds = [...new Set((canvas?.sampleView ? Object.values(canvas.sampleView.contactIds) : canvas?.seatSequences.map(seat => seat.contactId) ?? []).filter((id): id is number => id !== null))];
     const assigned = assignedIds.length ? await db.select({ id: contactsTable.id, firstName: contactsTable.firstName, lastName: contactsTable.lastName, company: companiesTable.name })
       .from(contactsTable).leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id)).where(inArray(contactsTable.id, assignedIds)) : [];
     const [hq, enrolled, samples, mailboxes, templates] = await Promise.all([
@@ -215,7 +216,7 @@ export async function collectPlaybookEvidence(contact: typeof contactsTable.$inf
   return evidence;
 }
 manualEmailRouter.post("/preview", async (req, res) => {
-  const input = z.object({ variant: variantSchema, contactId: z.number().int().positive(), regeneration: z.string().max(1000).default("") }).safeParse(req.body);
+  const input = z.object({ variant: variantSchema, contactId: z.number().int().positive(), seatId: z.string().min(1).max(200).optional(), regeneration: z.string().max(1000).default("") }).safeParse(req.body);
   if (!input.success) { res.status(400).json({ error: "Check the email configuration and select a real preview contact." }); return; }
   try {
     const { variant: v, contactId, regeneration } = input.data;
@@ -223,7 +224,7 @@ manualEmailRouter.post("/preview", async (req, res) => {
     if (v.mode === "prompt" && !v.prompt.trim()) { res.status(400).json({ error: "Add email generation instructions." }); return; }
     const [contact] = await db.select().from(contactsTable).where(eq(contactsTable.id, contactId));
     if (!contact) { res.status(404).json({ error: "Contact not found." }); return; }
-    const audience = multiRecipientContext(res.locals.playbook.description, contactId, contact.companyId);
+    const audience = multiRecipientContext(res.locals.playbook.description, contactId, contact.companyId, input.data.seatId);
     if (audience.error) { res.status(400).json({ error: audience.error }); return; }
     const [company] = contact.companyId ? await db.select().from(companiesTable).where(eq(companiesTable.id, contact.companyId)) : [];
     if (v.mode === "template") {

@@ -68,6 +68,45 @@ paths:
         "400": { description: Invalid input or unavailable user-owned voice persona }
         "401": { description: Authentication required }
         "404": { description: Contact not found }
+  /playbooks/{id}/sample-contacts/{companyId}:
+    get:
+      operationId: getPlaybookSampleContacts
+      tags: [playbooks]
+      summary: List sample company contacts matched against the owner's selected Buying Center
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - name: companyId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Sample candidates only; does not assign or enroll outreach recipients
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [contacts, criteriaName]
+                properties:
+                  criteriaName: { type: string, nullable: true }
+                  contacts:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, companyId, firstName, lastName, jobTitle, matchingSeats]
+                      properties:
+                        id: { type: integer }
+                        companyId: { type: integer, nullable: true }
+                        firstName: { type: string }
+                        lastName: { type: string }
+                        jobTitle: { type: string, nullable: true }
+                        matchingSeats: { type: array, items: { type: string } }
+        "400": { description: Invalid playbook or company ID }
+        "401": { description: Authentication required }
+        "404": { description: Owned playbook or company not found }
   /playbooks/{id}/phone-call/audio:
     post:
       operationId: generatePhoneCallAudio

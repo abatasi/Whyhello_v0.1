@@ -79,7 +79,7 @@ phoneCallRouter.post("/audio", async (req, res) => {
 });
 phoneCallRouter.post("/preview", async (req, res) => {
   const contract = GeneratePhoneCallPreviewBody.safeParse(req.body);
-  const input = z.object({ variant: callVariantSchema, contactId: z.number().int().positive(), regeneration: z.string().max(1000).default("") }).safeParse(req.body);
+  const input = z.object({ variant: callVariantSchema, contactId: z.number().int().positive(), seatId: z.string().min(1).max(200).optional(), regeneration: z.string().max(1000).default("") }).safeParse(req.body);
   if (!contract.success || !input.success) { res.status(400).json({ error: "Check the call configuration and select a real preview contact." }); return; }
   try {
     const { variant: v, contactId, regeneration } = input.data;
@@ -87,7 +87,7 @@ phoneCallRouter.post("/preview", async (req, res) => {
     if (v.mode === "prompt" && !v.prompt.trim()) { res.status(400).json({ error: "Add call generation instructions." }); return; }
     const [contact] = await db.select().from(contactsTable).where(eq(contactsTable.id, contactId));
     if (!contact) { res.status(404).json({ error: "Contact not found." }); return; }
-    const audience = multiRecipientContext(res.locals.playbook.description, contactId, contact.companyId);
+    const audience = multiRecipientContext(res.locals.playbook.description, contactId, contact.companyId, input.data.seatId);
     if (audience.error) { res.status(400).json({ error: audience.error }); return; }
     const [company] = contact.companyId ? await db.select().from(companiesTable).where(eq(companiesTable.id, contact.companyId)) : [];
     if (v.mode === "template") {
