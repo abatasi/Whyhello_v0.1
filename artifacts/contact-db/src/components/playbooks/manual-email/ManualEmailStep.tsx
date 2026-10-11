@@ -14,7 +14,7 @@ import {
 } from "../manual-email-model";
 import { getManualEmailContext, generateManualEmailPreview, sendManualEmailTest } from "../manual-email-api";
 import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
-import { emailMarkdownToHtml } from "./email-markdown";
+import { emailMarkdownToHtml, emailPreviewLength } from "./email-markdown";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { TonePersonaPicker } from "../TonePersonaPicker";
 import { InsightCategorySelect } from "../InsightCategorySelect";
@@ -216,10 +216,14 @@ function PreviewPanel({ playbookId, variant, contactOptions, selectedContactId, 
   const selectedMailbox = context?.mailboxes.find(item => item.id === Number(mailboxId));
   const preview = variant.preview;
   const previewContact = contactOptions.find(item => item.id === preview?.contactId);
+  const selectedLength = variant.length ?? (variant.generationMode === "Detailed" ? "long" : variant.generationMode === "Concise" ? "short" : "medium");
+  const previewLength = preview && variant.mode !== "template" ? emailPreviewLength(preview.body, selectedLength) : null;
   const generationPending = previewMutation.isPending && previewMutation.variables?.variantId === variant.id;
   return <section className="flex min-w-0 flex-col">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 pb-3">
-      <div><h3 className="text-sm font-semibold">Email preview</h3><p className="mt-0.5 text-xs text-muted-foreground">Generate for an enrolled contact or a labeled sample.</p></div>
+      <div><h3 className="text-sm font-semibold">Email preview</h3><p className="mt-0.5 text-xs text-muted-foreground">Generate for an enrolled contact or a labeled sample.</p>
+        {previewLength && <p role="status" data-testid="text-email-preview-length" className="mt-1 text-xs text-muted-foreground">{previewLength.characters.toLocaleString()} visible characters · {selectedLength.charAt(0).toUpperCase() + selectedLength.slice(1)} guide: {previewLength.min}–{previewLength.max}{previewLength.oversized ? ". Longer than selected; the complete preview has been retained rather than failing generation." : ""}</p>}
+      </div>
       <div className="flex rounded-md border border-border p-0.5" aria-label="Preview device">
         <button type="button" aria-label="Desktop preview" data-testid="button-preview-desktop" onClick={() => setDevice("desktop")} className={`rounded p-1.5 ${device === "desktop" ? "bg-muted text-foreground" : "text-muted-foreground"}`}><Monitor size={15} /></button>
         <button type="button" aria-label="Mobile preview" data-testid="button-preview-mobile" onClick={() => setDevice("mobile")} className={`rounded p-1.5 ${device === "mobile" ? "bg-muted text-foreground" : "text-muted-foreground"}`}><Smartphone size={15} /></button>

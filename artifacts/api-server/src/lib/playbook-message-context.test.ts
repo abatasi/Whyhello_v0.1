@@ -1,12 +1,51 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { playbookMessageContext, PLAYBOOK_ADDITIONAL_CONTEXT_GUIDANCE } from "./playbook-message-context.js";
+import { firstHandMeetingContext, preserveFirstHandMeeting, playbookMessageContext, PLAYBOOK_ADDITIONAL_CONTEXT_GUIDANCE } from "./playbook-message-context.js";
+import { fitManualEmailLength } from "./manual-email-length-fit.js";
 import { manualEmailGuidance, emailAnatomySchema, emailBodyFromAnatomy } from "./manual-email-guidance.js";
 
 const event = "I just met these contacts at the ABC Tradeshow and they all came to our booth.";
 const sources = [{ id: "company", name: "Company", content: "Our company builds research tools." },
   { id: "customers", name: "Customers", content: "An unselected source." }];
+
+const tradeshowContext = "I just met these contacts at a tradeshow in Tampa Bay called IA Annual.";
+const anatomy = { hook: 'I came across your post: **"A verified insight"**.', bridge: "A buyer implication.", value: "A supported outcome.", proof: "A grounded proof point.", cta: "Compare notes?" };
+
+test("explicit tradeshow meeting keeps the supplied event and location without inventing a booth visit", () => {
+  const meeting = firstHandMeetingContext(tradeshowContext);
+  assert.deepEqual(meeting, { event: "IA Annual", location: "Tampa Bay", opener: "We met at IA Annual in Tampa Bay." });
+  const result = preserveFirstHandMeeting({ anatomy }, meeting);
+  assert.ok(result.anatomy.hook.startsWith("We met at IA Annual in Tampa Bay."));
+  assert.ok(result.anatomy.hook.includes(anatomy.hook));
+  assert.equal(emailBodyFromAnatomy(result.anatomy).split("\n\n").length, 5);
+  assert.doesNotMatch(result.anatomy.hook, /booth|discussed|interested|consent/i);
+});
+
+test("existing acknowledgement is not duplicated; missing location is restored", () => {
+  const meeting = firstHandMeetingContext(tradeshowContext);
+  const existing = { anatomy: { ...anatomy, hook: `Great meeting you at IA Annual in Tampa Bay. ${anatomy.hook}` } };
+  assert.equal(preserveFirstHandMeeting(existing, meeting), existing);
+  const missingCity = { anatomy: { ...anatomy, hook: `Great meeting you at IA Annual. ${anatomy.hook}` } };
+  assert.match(preserveFirstHandMeeting(missingCity, meeting).anatomy.hook, /IA Annual in Tampa Bay/);
+  assert.equal(firstHandMeetingContext("We may meet these contacts at IA Annual."), undefined);
+  assert.equal(firstHandMeetingContext("I have not met these contacts at IA Annual."), undefined);
+  assert.equal(firstHandMeetingContext(""), undefined);
+  assert.equal(firstHandMeetingContext(event)?.event, "ABC Tradeshow");
+  assert.equal(firstHandMeetingContext("I've just met these contacts at IA Annual in Tampa Bay.")?.location, "Tampa Bay");
+});
+
+test("a shortening pass cannot discard the supplied meeting, event or location", async () => {
+  const meeting = firstHandMeetingContext(tradeshowContext);
+  const original = preserveFirstHandMeeting({ anatomy: { ...anatomy, value: "Supported value. ".repeat(80) } }, meeting);
+  const result = await fitManualEmailLength(original, "medium", async instruction => {
+    assert.match(instruction, /first-hand meeting, event name and location/);
+    // Simulate an otherwise valid model edit that silently drops relationship facts.
+    return preserveFirstHandMeeting({ anatomy }, meeting);
+  });
+  assert.match(result.anatomy.hook, /We met at IA Annual in Tampa Bay/);
+  assert.equal(emailBodyFromAnatomy(result.anatomy).split("\n\n").length, 5);
+});
 
 test("context is included without selecting a legacy custom flag, without replacing HQ evidence", () => {
   const variant = { contextSources: ["company"], userContext: `  ${event}  ` };

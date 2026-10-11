@@ -3,17 +3,17 @@ name: Reusable email configuration
 description: User-defined relationship between Playbook Manual Email and the Single Message composer.
 ---
 
-Email length is an advisory depth preference, never a hard character-count acceptance gate.
+Email length must meaningfully control verbosity without becoming a hard character-count acceptance gate.
 
-**Why:** The user reported a rejected long Playbook preview and explicitly said generation should follow Hook → Bridge → Value → Proof → CTA rather than fail on character length.
+**Why:** The user rejected length-based generation failures, then reported Medium returning over 1,400 characters. Tighter writing guidance alone still overshot in a live sample, so honoring the selection needs a bounded, measured edit.
 
-**How to apply:** Preserve all five layers and factual safeguards. Do not reject or make extra AI calls solely to fit email character ranges. Keep real channel limits, such as the 200-character LinkedIn connection-note cap, separate.
+**How to apply:** Aim Medium near 750 within its 600–900 guide. Preserve all five layers and factual safeguards. Permit at most one best-effort tightening pass for oversized Playbook AI emails, never a quota rejection, repeated rewrites, filler expansion or literal-template rewrite. Retain a complete valid original if editing is unavailable or unsafe and show any remaining oversize. Keep real channel limits, such as LinkedIn's 200-character note cap, separate.
 
 Keep core Playbook message controls; replace advanced context-source and guideline editors with a single user-written Additional context field.
 
 **Why:** The user explicitly chose to keep core settings while asking for context such as meeting a recipient cohort at a tradeshow to inform messaging.
 
-**How to apply:** Persist context per variant and include it in AI generation whenever nonblank, independently of legacy custom-source selection. Weave only stated facts into existing anatomy; a meeting is not proof of interest or seller outcomes. Preserve saved settings and literal templates rather than rewriting them automatically.
+**How to apply:** Persist context per variant and include it in AI generation whenever nonblank, independently of legacy custom-source selection. Explicit first-hand meetings must be acknowledged in buyer-facing Hook/Bridge with their supplied event and location, including after shortening, not left only in metadata. Budget for these facts and restore an omitted acknowledgement without adding a sixth layer. A meeting is not proof of a booth visit, interest, consent or seller outcomes. Preserve saved settings and literal templates rather than rewriting them automatically.
 
 Manual Email configuration must mimic the parameters and approach already established for constructing a single message. Message anatomy takes its cues from the Messaging Quran. Since Playbooks genericize the message, users specify an insight-category focus rather than choosing seeded individual insights.
 

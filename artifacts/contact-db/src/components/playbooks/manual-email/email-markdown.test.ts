@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { emailMarkdownToHtml } from "./email-markdown";
+import { emailMarkdownToHtml, emailPreviewLength } from "./email-markdown";
 
 test("email Markdown renders paragraphs, bold, and inspectable safe source links", () => {
   const html = emailMarkdownToHtml("**Outcome**\n\nA [report](https://example.com/report).");
@@ -15,4 +15,13 @@ test("untrusted scripts, unsafe schemes and URL attribute injection remain inert
   assert.ok(!html.includes('href="javascript:'));
   assert.ok(!html.includes('" onmouseover="'));
   assert.match(html, /&quot; onmouseover=&quot;/);
+});
+
+test("preview length counts visible text and shows an honest Medium oversize", () => {
+  const measured = emailPreviewLength("**Outcome**\n\nA [report](https://example.com/hidden-url).", "medium");
+  assert.equal(measured.characters, "Outcome A report.".length);
+  assert.equal(measured.max, 900);
+  assert.equal(measured.oversized, false);
+  assert.equal(emailPreviewLength("a".repeat(1400), "medium").oversized, true);
+  assert.equal(emailPreviewLength("a".repeat(900), "medium").oversized, false);
 });

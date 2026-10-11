@@ -908,6 +908,8 @@ The only exception: if a quote is attributed to a colleague or counterpart (not 
 
 ### 5.0 Seller-provided relationship and cohort context
 
+Explicit first-hand meeting context is required buyer-facing content, not optional background or personalization metadata. Retain the supplied event name and location in a short Hook/Bridge acknowledgement alongside the selected insight and its contextual quote preface. Budget for this acknowledgement before composing or tightening; remove redundant prose rather than the relationship facts. For recognizable seller-reported meeting statements, restore a missing event/location acknowledgement inside Hook before returning a preview, including after the bounded length edit. This adds no sixth paragraph and does not infer a booth visit, discussion, interest, consent or follow-up promise. Avoid duplicating an acknowledgement already present; literal seller-authored templates remain unchanged.
+
 Whenever a generation flow receives additional user context, consider and incorporate its relevant facts naturally into the existing message anatomy. A statement such as “I just met these contacts at the ABC Tradeshow and they all came to our booth” supplies a first-hand meeting and booth-visit context for the recipients of that variant. It can frame the Hook/phone opener, support a callback in the Bridge and inform an appropriate CTA. It is not a sixth email layer or a separate personalization snippet.
 
 Keep email Hook → Bridge → Value → Proof → CTA, the phone script's required sections and the LinkedIn note's compact structure and **200-character cap**. Existing selected insight-category evidence and highest-scoring-usable-insight rules remain in force. Additional context supplements that evidence; it does not manufacture an insight, change categories or create a source URL.
@@ -1165,18 +1167,20 @@ Length controls the depth of each message layer, not just the total number of wo
 | Setting | Body target | Advisory body range | Approx. words | Intended feel |
 | --- | ---: | ---: | ---: | --- |
 | Short | 450 characters | 350–550 | 60–90 | Punchy and highly skimmable |
-| Medium | 750 characters | 600–900 | 100–145 | Conversational, enough room to develop an argument |
+| Medium | 750 characters | 600–900 | 95–120 | Compact and conversational, with one clear argument |
 | Long | 1,150 characters | 950–1,300 | 160–210 | Insight-rich, more context and proof |
 
 | Component | Short (~450) | Medium (~750) | Long (~1,150) |
 | --- | ---: | ---: | ---: |
-| HOOK | 70–100 | 100–140 | 130–180 |
+| HOOK | 70–100 | 140–180 | 130–180 |
 | BRIDGE | 50–70 | 80–110 | 110–150 |
-| VALUE | 120–150 | 190–240 | 280–350 |
-| PROOF | 70–100 | 120–160 | 180–240 |
-| CTA | 40–60 | 50–70 | 50–80 |
+| VALUE | 120–150 | 160–200 | 280–350 |
+| PROOF | 70–100 | 100–140 | 180–240 |
+| CTA | 40–60 | 40–60 | 50–80 |
 
-The component allocations and body ranges are approximate guides, not minimums or hard caps. **Complete HOOK → BRIDGE → VALUE → PROOF → CTA and supported facts take priority over character count.** Develop the value and proof (or grounded context when proof is limited) rather than adding filler or repeating the same email at greater length. Short still includes concise proof; medium develops the argument; long makes room for meaningful insight and evidence. Playbook previews and Single Message emails must not fail or undergo length-only rewrites because their complete body falls outside the guide. Required anatomy, subject/body completeness, evidence grounding, attribution and unresolved-placeholder checks remain in force. This does not relax LinkedIn's channel-specific 200-character connection-note cap.
+The component allocations and body ranges are approximate guides, not minimums or hard caps. **Complete HOOK → BRIDGE → VALUE → PROOF → CTA and supported facts take priority over character count.** The selected length must still meaningfully control verbosity: a 1,400-character preview is not the intended Medium experience. Medium aims near 750 visible characters, with one compact sentence per layer, one buyer implication, one supported value and one verified proof point; keep CTA brief and use a short exact quote excerpt with its contextual preface. Count any source P.S. within the body budget and keep it to one source pointer. Review brevity before returning the first draft.
+
+For an oversized Playbook AI email, allow at most one measured tightening pass using the same factual context, voice and anatomy, not repeated quota rewrites. Validate the revised structure, cited evidence, exact quoted excerpts, proof amounts and unresolved placeholders; never slice text or drop a layer. Use a valid shorter revision, otherwise retain the original complete preview. Show its visible character count and selected guide, making a remaining oversize explicit. Never fail generation solely on length, and do not expand undersized messages with filler. Literal Templates are unchanged. Single Message uses the same compact writing guidance without a new sizing retry. This does not relax LinkedIn's channel-specific 200-character connection-note cap.
 
 ---
 

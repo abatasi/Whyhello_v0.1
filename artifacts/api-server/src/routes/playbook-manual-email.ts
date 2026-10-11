@@ -12,8 +12,9 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { getValidAccessToken, sendViaGmail, sendViaOutlook } from "./email-accounts.js";
 import { assertFilledEmail, resolveEvidenceIds } from "../lib/manual-email-evidence.js";
 import { EMAIL_INSIGHT_CATEGORIES, emailAnatomySchema, emailBodyFromAnatomy, manualEmailGuidance, resolveEmailShape } from "../lib/manual-email-guidance.js";
-import { playbookMessageContext } from "../lib/playbook-message-context.js";
+import { firstHandMeetingContext, playbookMessageContext, preserveFirstHandMeeting } from "../lib/playbook-message-context.js";
 import { selectTopPlaybookInsight } from "../lib/playbook-insight-selection.js";
+import { assertEmailCompactionSafe, fitManualEmailLength } from "../lib/manual-email-length-fit.js";
 import { resolveActiveHqVoice, resolveOutputVoice, voicePersonaOptions, VoicePersonaSelectionError, type OutputVoiceSelection } from "../lib/voice-personas.js";
 
 export const timing = z.object({
@@ -245,6 +246,7 @@ manualEmailRouter.post("/preview", async (req, res) => {
       .filter(quote => evidence.some(item => Number(item.id.split(":").at(-1)) === quote.signalId))
       .map(quote => ({ quote: quote.quote, attribution: quote.attribution, attributionRole: quote.attributionRole, signalId: quote.signalId }));
     const { insideOut, additionalContext } = playbookMessageContext(hq.contextSources, v);
+    const requiredFirstHandContext = firstHandMeetingContext(additionalContext);
     if (!insideOut.length && !additionalContext) {
       res.status(422).json({ error: "Select available seller HQ context or add additional context to ground the email's value and proof. Your saved content has not been changed." });
       return;
@@ -256,7 +258,7 @@ manualEmailRouter.post("/preview", async (req, res) => {
           emailType: v.emailType, mode: v.mode, prompt: v.mode === "prompt" ? v.prompt : "",
           tone: hq.tone, hqVoice: hq.voice,
           guidelines: v.guidelines.map(g => g.text), length: shape.length, insightCategory: shape.insightCategory,
-           insideOut, additionalContext, evidence, quotes, regeneration,
+           insideOut, additionalContext, requiredFirstHandContext, evidence, quotes, regeneration,
         }) },
       ] as { role: "system" | "user" | "assistant"; content: string }[];
     const result = await openai.chat.completions.create({
@@ -269,8 +271,22 @@ manualEmailRouter.post("/preview", async (req, res) => {
       personalization: z.string().max(4000), insightIdsUsed: z.array(z.string()).min(1),
       postscript: z.string().max(2000).default(""),
     });
-    const generated = outputSchema.parse(JSON.parse(raw));
-    // Anatomy and factual grounding are required; length is an advisory depth preference.
+    const original = preserveFirstHandMeeting(outputSchema.parse(JSON.parse(raw)), requiredFirstHandContext);
+    resolveEvidenceIds(evidence, original.insightIdsUsed);
+    assertFilledEmail(original.subject, emailBodyFromAnatomy(original.anatomy, original.postscript));
+    const generated = await fitManualEmailLength(original, shape.length, async instruction => {
+      const edited = await openai.chat.completions.create({
+        model: "gpt-5-mini", response_format: { type: "json_object" },
+        messages: [...messages, { role: "assistant", content: JSON.stringify(original) }, { role: "user", content: instruction }],
+      }, { timeout: 60000, maxRetries: 0 });
+      const candidate = preserveFirstHandMeeting(outputSchema.parse(JSON.parse(edited.choices[0]?.message?.content ?? "")), requiredFirstHandContext);
+      resolveEvidenceIds(evidence, candidate.insightIdsUsed);
+      if (candidate.insightIdsUsed.some(id => !original.insightIdsUsed.includes(id))) throw new Error("Editing introduced a new evidence citation.");
+      assertEmailCompactionSafe(original, candidate, quotes.map(source => source.quote));
+      assertFilledEmail(candidate.subject, emailBodyFromAnatomy(candidate.anatomy, candidate.postscript));
+      return candidate;
+    });
+    // Required anatomy/evidence still apply; length alone never rejects a preview.
     const body = emailBodyFromAnatomy(generated.anatomy, generated.postscript);
     const insightsUsed = resolveEvidenceIds(evidence, generated.insightIdsUsed);
     assertFilledEmail(generated.subject, body);

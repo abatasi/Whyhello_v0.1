@@ -6,6 +6,7 @@ import { countEmailBodyCharacters } from "./email-length.js";
 
 test("explicit length and category override legacy research controls", () => {
   assert.deepEqual(resolveEmailShape({ length: "long", insightCategory: "role", generationMode: "Concise", researchSources: ["personal"] }), { length: "long", insightCategory: "role" });
+  assert.equal(resolveEmailShape({ length: "medium", generationMode: "Detailed", researchSources: ["personal"] }).length, "medium");
 });
 
 test("legacy drafts resolve deterministically without mutation", () => {
@@ -53,6 +54,19 @@ test("every email length is advisory and prioritizes all five layers over quotas
   }
 });
 
+test("Medium has a compact writing plan and same-generation brevity review, not an oversized-draft escape hatch", () => {
+  const prompt = manualEmailGuidance("personal", "medium", "postscript");
+  assert.match(prompt, /Aim near 750 visible characters in the 600–900 guide/);
+  assert.match(prompt, /one compact sentence per layer/);
+  assert.match(prompt, /one seller outcome and one verified proof point/);
+  assert.match(prompt, /1,400-character draft is not a Medium draft/);
+  assert.match(prompt, /budget includes all five paragraphs and any source P.S./);
+  assert.match(prompt, /about 8–12 words/);
+  assert.match(prompt, /in this same generation/);
+  assert.match(prompt, /amount, unit and frequency intact/);
+  assert.doesNotMatch(prompt, /outside the guide is preferable/);
+});
+
 test("complete anatomy accepts bodies below or above old ranges but not missing layers", () => {
   const minimal = { hook: "A supported hook.", bridge: "A buyer implication.", value: "A supplied outcome.", proof: "Grounded qualitative proof.", cta: "Compare notes?" };
   assert.ok(countEmailBodyCharacters(emailBodyFromAnatomy(emailAnatomySchema.parse(minimal))) < 350);
@@ -63,7 +77,7 @@ test("complete anatomy accepts bodies below or above old ranges but not missing 
   }
 });
 
-test("email generation routes contain no character-count gates or length-only rewrites", () => {
+test("email generation routes never reject complete drafts for character count", () => {
   for (const name of ["playbook-manual-email", "outreach-jobs"]) {
     const route = readFileSync(new URL(`../routes/${name}.ts`, import.meta.url), "utf8");
     assert.doesNotMatch(route, /countEmailBodyCharacters|emailLengthRevision|lengthValid|lengthSpec|Email length verification failed/);
@@ -71,6 +85,7 @@ test("email generation routes contain no character-count gates or length-only re
       assert.match(route, /anatomy: emailAnatomySchema/);
       assert.match(route, /assertFilledEmail\(generated.subject, body\)/);
       assert.match(route, /resolveEvidenceIds\(evidence, generated.insightIdsUsed\)/);
+      assert.match(route, /fitManualEmailLength\(original, shape.length/);
     } else {
       assert.match(route, /subject.trim\(\) && body.trim\(\)/);
     }
