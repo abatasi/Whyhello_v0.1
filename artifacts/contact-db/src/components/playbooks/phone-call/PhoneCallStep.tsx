@@ -77,7 +77,7 @@ function VariantFields({ variant, context, contextLoading, contextError, onUpdat
   const set = (patch: Partial<CallVariant>) => onUpdate({ ...variant, ...patch });
   return <div className="space-y-5">
     <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Call generation mode">
-      {(["assisted", "prompt", "template"] as const).map(mode => <button key={mode} type="button" role="tab" aria-selected={variant.mode === mode} disabled={readOnly}
+      {(["assisted", "template"] as const).map(mode => <button key={mode} type="button" role="tab" aria-selected={variant.mode === mode} disabled={readOnly}
         onClick={() => set({ mode })} className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${variant.mode === mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{mode}</button>)}
     </div>
     <section><label className={labelClass}>Call objective</label><div className="flex flex-wrap gap-2">{objectives.map(objective =>

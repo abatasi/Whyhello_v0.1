@@ -3,6 +3,12 @@ name: Playbook step modes
 description: Why Manual Email is distinct from automatic send actions, and how Actions differ from Rules.
 ---
 
+Playbook Configuration should not show the Prompt tab/tag.
+
+**Why:** The user requested “Remove Prompt tag from Configuration.”
+
+**How to apply:** Keep visible choices to Assisted and Template across message step editors. Preserve existing saved Prompt-mode content rather than treating a display change as permission to delete it.
+
 Manual Email is a seller-reviewed email task. AI may prepare its content, but the seller reviews and sends it. It must not silently reuse the legacy automatically sent email action.
 
 **Why:** The user's Add Step brief explicitly distinguishes Automatic Email from Manual Email; confusing them would change who controls sending.

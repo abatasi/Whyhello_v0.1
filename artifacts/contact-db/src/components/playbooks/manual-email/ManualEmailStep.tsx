@@ -58,7 +58,7 @@ function VariantFields({ variant, config, context, contextLoading, contextError,
   const template = context?.templates.find(item => item.id === variant.templateId);
   return <div className="space-y-5">
     <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Email generation mode">
-      {(["assisted", "prompt", "template"] as const).map(mode => <button key={mode} type="button" role="tab" aria-selected={variant.mode === mode} data-testid={`button-mode-${mode}`} disabled={readOnly} onClick={() => set({ mode })} className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize ${variant.mode === mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{mode}</button>)}
+      {(["assisted", "template"] as const).map(mode => <button key={mode} type="button" role="tab" aria-selected={variant.mode === mode} data-testid={`button-mode-${mode}`} disabled={readOnly} onClick={() => set({ mode })} className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize ${variant.mode === mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{mode}</button>)}
     </div>
 
     {variant.mode !== "template" && <>
