@@ -2,6 +2,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createContactModeDocument, readMultiContactDocument, updateSeatWorkflow, clearRecipientPreviews, SINGLE_CONTACT } from "./contact-mode-model";
 import { duplicateDescription, type PlaybookRecord } from "./list-model";
+import { configuredBuyingCenterSeats, BUYING_CENTER_SEATS } from "./contact-mode-model";
+test("saved Buying Centers select only highlighted seats, not all hypothetical seats", () => {
+  const seats = BUYING_CENTER_SEATS.map(seat => ({
+    seat, seniorities: seat === "Economic Buyer" ? ["Executive"] : [],
+    departments: seat === "Business Champion" ? ["Sales"] : [],
+  }));
+  assert.deepEqual(configuredBuyingCenterSeats(seats).sort(), ["Business Champion", "Economic Buyer"]);
+  const other = seats.map(seat => ({ ...seat, seniorities: [], departments: seat.seat === "Technical Buyer" ? ["Engineering"] : [] }));
+  assert.deepEqual(configuredBuyingCenterSeats(other), ["Technical Buyer"]);
+  assert.deepEqual(configuredBuyingCenterSeats(seats.map(seat => ({ ...seat, seniorities: [], departments: [] }))), []);
+  assert.deepEqual(configuredBuyingCenterSeats(["Economic Buyer", "Economic Buyer", "Unknown"]), ["Economic Buyer"]);
+});
 const starter = () => ({ nodes: [{ id: "email", position: { x: 0, y: 0 }, data: { label: "Email" } }], edges: [], prospects: [] });
 test("single contact retains its exact existing workflow", () => {
   const original = starter(); assert.equal(createContactModeDocument(original, SINGLE_CONTACT), original);

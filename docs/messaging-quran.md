@@ -1190,6 +1190,8 @@ For an oversized Playbook AI email, allow at most one measured tightening pass u
 
 Single-Contact Playbooks keep the existing messaging and sequence flow. Multi-Contact Playbooks target contacts within **one company**, each explicitly assigned by the seller to a selected Buying Center seat. **Business Champion is the default and lead seat.**
 
+New setup starts with **Business Champion and Economic Buyer**, not all 15 hypothetical seats. Choosing a saved Buying Center selects its highlighted seats (those with seniority or department criteria), with Business Champion always retained as lead. Sellers can adjust this selection; targeting **2–4 seats is typical**, not a hard limit.
+
 Every selected seat has its **own independent sequence**: steps, timing, variants, additional context and previews are not shared or cascaded between seats. Seat tabs appear alongside the active sequence's step count and save status. Seat edits auto-save; switching seats waits for those edits to sync.
 
 Generation must use the contact assigned to the current seat, not a generic directory sample or a contact assigned to another seat. The assigned seat informs audience perspective and priorities, but does not establish unverified decision authority, interest or personal history. Email continues to follow **Hook → Bridge → Value → Proof → CTA**, with the selected length, saved HQ persona, grounded evidence, appropriately prefaced bold-and-quoted excerpts and supplied first-hand context preserved.

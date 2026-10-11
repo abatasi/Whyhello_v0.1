@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useUser } from "@clerk/react";
 import { ArrowLeft, Check, LayoutTemplate, PencilRuler, Users } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
-import { BUYING_CENTER_SEATS, SINGLE_CONTACT, type ContactModeChoice } from "./contact-mode-model";
+import { BUYING_CENTER_SEATS, SINGLE_CONTACT, configuredBuyingCenterSeats, type ContactModeChoice } from "./contact-mode-model";
 import { PlaybookDialog } from "./PlaybookDialog";
 
 type BuildMethod = "scratch" | "template";
@@ -14,16 +14,6 @@ type HqProfile = {
   liveBuyingCenterId?: string | null;
 };
 
-function centerSeats(values: unknown[] | undefined): string[] {
-  if (!Array.isArray(values)) return [];
-  return values.map(value => typeof value === "string"
-    ? value
-    : value && typeof value === "object"
-      ? String(("name" in value ? (value as { name: unknown }).name : "seat" in value ? (value as { seat: unknown }).seat : "") ?? "")
-      : "")
-    .filter((name): name is typeof BUYING_CENTER_SEATS[number] => BUYING_CENTER_SEATS.includes(name as typeof BUYING_CENTER_SEATS[number]));
-}
-
 export function PlaybookCreationChoice({ onScratch, onTemplate, onClose }: {
   onScratch: (choice: ContactModeChoice) => void;
   onTemplate: (choice: ContactModeChoice) => void;
@@ -32,7 +22,7 @@ export function PlaybookCreationChoice({ onScratch, onTemplate, onClose }: {
   const { user, isLoaded } = useUser();
   const [method, setMethod] = useState<BuildMethod | null>(null);
   const [stage, setStage] = useState<"method" | "mode" | "seats">("method");
-  const [selectedSeats, setSelectedSeats] = useState<string[]>([...BUYING_CENTER_SEATS.slice(1)]);
+  const [selectedSeats, setSelectedSeats] = useState<string[]>(["Economic Buyer"]);
   const [selectedCenterId, setSelectedCenterId] = useState("standard");
   const profileQuery = useQuery({
     queryKey: ["hq-profile", user?.id],
@@ -49,10 +39,10 @@ export function PlaybookCreationChoice({ onScratch, onTemplate, onClose }: {
         ? profile.buyingCenters.map((center, index) => ({
             id: String(center.id ?? `saved-${index}`),
             name: String(center.name ?? `Buying Center ${index + 1}`),
-            seats: centerSeats(center.seats),
-          })).filter(center => center.seats.length > 0)
+            seats: configuredBuyingCenterSeats(center.seats),
+          }))
         : profile.buyingCenter?.length
-          ? [{ id: "default", name: "Default Buying Center", seats: centerSeats(profile.buyingCenter) }]
+          ? [{ id: "default", name: "Default Buying Center", seats: configuredBuyingCenterSeats(profile.buyingCenter) }]
           : [];
       return { centers, liveId: profile.liveBuyingCenterId ?? null };
     },
@@ -63,15 +53,6 @@ export function PlaybookCreationChoice({ onScratch, onTemplate, onClose }: {
   const liveCenter = centers.find(center => center.id === profileQuery.data?.liveId);
   const chosenCenter = centers.find(center => center.id === selectedCenterId);
   const selectedMethodTitle = method === "scratch" ? "Build from scratch" : "Use a template";
-
-  useEffect(() => {
-    if (!profileQuery.data) return;
-    const initial = profileQuery.data.centers.find(center => center.id === profileQuery.data?.liveId);
-    if (initial) {
-      setSelectedCenterId(initial.id);
-      setSelectedSeats(initial.seats.filter(seat => seat !== "Business Champion"));
-    }
-  }, [profileQuery.data]);
 
   const onChoose = (choice: ContactModeChoice) => {
     if (method === "scratch") onScratch(choice);
@@ -84,7 +65,7 @@ export function PlaybookCreationChoice({ onScratch, onTemplate, onClose }: {
   const selectCenter = (id: string) => {
     setSelectedCenterId(id);
     const center = centers.find(item => item.id === id);
-    setSelectedSeats(center ? center.seats.filter(seat => seat !== "Business Champion") : [...BUYING_CENTER_SEATS.slice(1)]);
+    setSelectedSeats(center ? center.seats.filter(seat => seat !== "Business Champion") : ["Economic Buyer"]);
   };
   const back = () => setStage(current => current === "seats" ? "mode" : "method");
 
@@ -129,9 +110,9 @@ export function PlaybookCreationChoice({ onScratch, onTemplate, onClose }: {
         {profileLoading ? <div className="h-9 animate-pulse rounded-md bg-secondary" aria-label="Loading Buying Center" /> :
           <select id="playbook-buying-center" data-testid="select-playbook-buying-center" disabled={profileLoading} value={selectedCenterId} onChange={event => selectCenter(event.target.value)} className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60">
             <option value="standard">Standard seat list</option>
-            {centers.map(center => <option key={center.id} value={center.id}>{center.name}{center.id === liveCenter?.id ? " (live default)" : ""}</option>)}
+            {centers.map(center => <option key={center.id} value={center.id}>{center.name}{center.id === liveCenter?.id ? " (live)" : ""}</option>)}
           </select>}
-        <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">{chosenCenter ? "Using this saved Buying Center configuration; this will not change your live default." : "Choose seats from the standard list. Your live Buying Center is preselected when one exists."}</p>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">{chosenCenter ? "Highlighted seats from this saved Buying Center are selected. Business Champion remains the lead; your live default is unchanged." : "Start with Business Champion and Economic Buyer, or choose a saved Buying Center. Most playbooks target 2–4 seats."}</p>
       </section>
 
       {profileQuery.isError && <div role="alert" className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-xs text-foreground">

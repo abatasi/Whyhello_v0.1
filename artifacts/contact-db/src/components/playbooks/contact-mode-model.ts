@@ -1,4 +1,18 @@
 import type { Node, Edge } from "@xyflow/react";
+
+/** HQ highlights a seat when at least one seniority or department criterion is set. */
+export function configuredBuyingCenterSeats(values: unknown[] | undefined): string[] {
+  if (!Array.isArray(values)) return [];
+  const selected = values.flatMap(value => {
+    if (typeof value === "string") return [value];
+    if (!value || typeof value !== "object") return [];
+    const seat = value as { seat?: unknown; name?: unknown; seniorities?: unknown; departments?: unknown };
+    const highlighted = (Array.isArray(seat.seniorities) && seat.seniorities.length > 0)
+      || (Array.isArray(seat.departments) && seat.departments.length > 0);
+    return highlighted && typeof (seat.seat ?? seat.name) === "string" ? [String(seat.seat ?? seat.name)] : [];
+  });
+  return [...new Set(selected)].filter(name => BUYING_CENTER_SEATS.includes(name as typeof BUYING_CENTER_SEATS[number]));
+}
 export const BUYING_CENTER_SEATS = ["Business Champion", "Economic Buyer", "Decision Maker", "Executive Sponsor", "Business Owner", "Technical Buyer", "Security or Compliance Reviewer", "Procurement", "Legal", "Finance", "End User", "Implementer", "Influencer", "Blocker", "Coach"] as const;
 export type ContactModeChoice = { mode: "single" | "multi"; seats: string[]; buyingCenterId?: string };
 export const SINGLE_CONTACT: ContactModeChoice = { mode: "single", seats: [] };
