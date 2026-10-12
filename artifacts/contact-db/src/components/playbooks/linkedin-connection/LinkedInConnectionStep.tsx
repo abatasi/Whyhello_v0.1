@@ -11,6 +11,12 @@ import {
   type ConnectionPreview, type ConnectionVariant, type LinkedInConnectionConfiguration,
 } from "../linkedin-connection-model";
 import { generateLinkedInConnectionPreview } from "../linkedin-connection-api";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getManualEmailContext } from "../manual-email-api";
 import { playbookContextQueryKey } from "@/lib/hq-voice-query-model";
 import { timingSummary, type EmailTiming, type ManualEmailContext, type TimingUnit } from "../manual-email-model";
@@ -203,17 +209,20 @@ export function LinkedInConnectionStep({ playbookId, stepId, stepNumber, config:
         <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{variant?.objective ?? "Connect"}</span><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusStyle}`}>{status}</span>
       </div><p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"><Clock3 size={12} />Create {timingSummary(config.createTiming)} · due {timingSummary(config.dueTiming)}</p></div>
       <button type="button" className={smallButton} disabled={readOnly} onClick={e => { e.stopPropagation(); setTimingOpen(!timingOpen); }}><Clock3 size={13} />Timing</button>
-      <details className="relative" onClick={e => e.stopPropagation()}><summary aria-label="Step actions" className="grid size-8 cursor-pointer list-none place-items-center rounded-md text-muted-foreground hover:bg-muted"><MoreHorizontal size={17} /></summary>
-        <div className="absolute right-0 z-20 mt-1 w-48 rounded-md border border-border bg-popover p-1 shadow-lg">
-          <button type="button" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted" disabled={readOnly} onClick={onInsertBefore}><Plus size={13} />Insert before</button>
-          <button type="button" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted" disabled={readOnly} onClick={onInsertAfter}><Plus size={13} />Insert after</button>
-          <button type="button" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted" disabled={readOnly || !canMoveUp} onClick={onMoveUp}><ArrowUp size={13} />Move up</button>
-          <button type="button" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted" disabled={readOnly || !canMoveDown} onClick={onMoveDown}><ArrowDown size={13} />Move down</button>
-          <button type="button" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted" disabled={readOnly} onClick={onDuplicate}>Duplicate step</button>
-          <button type="button" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted" disabled={readOnly} onClick={() => update({ ...config, enabled: !config.enabled })}>{config.enabled ? "Disable" : "Enable"} step</button>
-          <button type="button" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-destructive hover:bg-muted" disabled={readOnly} onClick={onDelete}><Trash2 size={13} />Delete step</button>
-        </div>
-      </details>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" aria-label="Step actions" data-testid={`button-step-actions-${stepId}`} className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground hover:bg-muted"><MoreHorizontal size={17} /></button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" side="bottom" sideOffset={4} data-testid={`menu-step-actions-${stepId}`} className="z-[250] w-48" onClick={e => e.stopPropagation()}>
+          <DropdownMenuItem className="cursor-pointer text-xs" disabled={readOnly} onSelect={onInsertBefore}><Plus size={13} />Insert before</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer text-xs" disabled={readOnly} onSelect={onInsertAfter}><Plus size={13} />Insert after</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer text-xs" disabled={readOnly || !canMoveUp} onSelect={onMoveUp}><ArrowUp size={13} />Move up</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer text-xs" disabled={readOnly || !canMoveDown} onSelect={onMoveDown}><ArrowDown size={13} />Move down</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer text-xs" disabled={readOnly} onSelect={onDuplicate}>Duplicate step</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer text-xs" disabled={readOnly} onSelect={() => update({ ...config, enabled: !config.enabled })}>{config.enabled ? "Disable" : "Enable"} step</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer text-xs text-destructive focus:text-destructive" disabled={readOnly} onSelect={onDelete}><Trash2 size={13} />Delete step</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
     {selected && <div className="px-4 py-4 sm:px-5">
       {timingOpen && <div className="mb-5 grid gap-3 md:grid-cols-2"><TimingEditor label="Create task" timing={config.createTiming} onChange={next => updateTiming("createTiming", next)} readOnly={readOnly} /><TimingEditor label="Task due" timing={config.dueTiming} onChange={next => updateTiming("dueTiming", next)} readOnly={readOnly} /></div>}
