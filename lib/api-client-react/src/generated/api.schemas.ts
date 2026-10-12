@@ -687,6 +687,59 @@ export interface PlaybookProposal {
   steps: PlaybookProposedStep[];
 }
 
+export type ImportJobTableKey =
+  (typeof ImportJobTableKey)[keyof typeof ImportJobTableKey];
+
+export const ImportJobTableKey = {
+  industries: "industries",
+  roles: "roles",
+  companies: "companies",
+  contacts: "contacts",
+  contact_insights: "contact_insights",
+  company_insights: "company_insights",
+  industry_insights: "industry_insights",
+  role_insights: "role_insights",
+} as const;
+
+export type ImportJobStatus =
+  (typeof ImportJobStatus)[keyof typeof ImportJobStatus];
+
+export const ImportJobStatus = {
+  running: "running",
+  completed: "completed",
+  partial: "partial",
+  failed: "failed",
+} as const;
+
+export interface ImportJobError {
+  /** @minimum 0 */
+  row: number;
+  reason: string;
+}
+
+export interface ImportJob {
+  id: number;
+  tableKey: ImportJobTableKey;
+  tableLabel: string;
+  filename: string;
+  status: ImportJobStatus;
+  /** @minimum 0 */
+  totalRows: number;
+  /** @minimum 0 */
+  inserted: number;
+  /** @minimum 0 */
+  skipped: number;
+  /** @minimum 0 */
+  errorCount: number;
+  errorsTruncated: boolean;
+  errors: ImportJobError[];
+  createdAt: string;
+  /** @nullable */
+  finishedAt: string | null;
+}
+
+export type ListBulkImportJobsResponse = ImportJob[];
+
 export type GetContactIndexingStatus200 = {
   quotesNeedRefresh: boolean;
   scoresNeedRefresh: boolean;

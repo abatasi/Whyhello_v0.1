@@ -1,8 +1,12 @@
 import { apiFetch } from "@/lib/apiFetch";
 import { useEffect, useRef, useState } from "react";
 import { Upload, Download, CheckCircle2, AlertCircle, XCircle, FileText, ChevronRight, Loader2, Info } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getGetBulkUploadJobsQueryKey } from "@workspace/api-client-react";
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/Button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ImportJobsPanel from "@/components/import/ImportJobsPanel";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -232,7 +236,9 @@ function ResultBanner({ result }: { result: ImportResult }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Import() {
+  const queryClient = useQueryClient();
   const [templates, setTemplates] = useState<TemplateConfig[]>([]);
+  const [activeTab, setActiveTab] = useState<"upload" | "jobs">("upload");
   const [selectedKey, setSelectedKey] = useState<string>("companies");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<PreviewData | null>(null);
@@ -279,6 +285,7 @@ export default function Import() {
       fd.append("file", file);
       const res = await apiFetch(`/api/bulk-upload/${selectedKey}`, { method: "POST", body: fd });
       const data = await res.json();
+      void queryClient.invalidateQueries({ queryKey: getGetBulkUploadJobsQueryKey() });
       if (!res.ok) throw new Error(data.error ?? "Import failed");
       setResult(data);
     } catch (err) {
@@ -306,7 +313,17 @@ export default function Import() {
           </p>
         </div>
 
-        <div className="flex gap-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={value => setActiveTab(value as "upload" | "jobs")}
+          className="w-full"
+        >
+          <TabsList aria-label="Data Import sections" className="mb-5 w-full justify-start sm:w-auto">
+            <TabsTrigger value="upload">Upload</TabsTrigger>
+            <TabsTrigger value="jobs">Jobs</TabsTrigger>
+          </TabsList>
+          <TabsContent value="upload" className="mt-0">
+          <div className="flex gap-6">
           {/* Sidebar */}
           <aside className="w-52 flex-shrink-0 space-y-1">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-3">Tables</p>
@@ -435,7 +452,12 @@ export default function Import() {
               Loading…
             </div>
           )}
-        </div>
+          </div>
+          </TabsContent>
+          <TabsContent value="jobs" className="mt-0">
+            <ImportJobsPanel />
+          </TabsContent>
+        </Tabs>
       </div>
     </Shell>
   );

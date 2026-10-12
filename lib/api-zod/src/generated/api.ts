@@ -8,6 +8,52 @@
 import * as zod from "zod";
 
 /**
+ * @summary List the current user's CSV import jobs
+ */
+export const getBulkUploadJobsResponseTotalRowsMin = 0;
+
+export const getBulkUploadJobsResponseInsertedMin = 0;
+
+export const getBulkUploadJobsResponseSkippedMin = 0;
+
+export const getBulkUploadJobsResponseErrorCountMin = 0;
+
+export const getBulkUploadJobsResponseErrorsItemRowMin = 0;
+
+export const GetBulkUploadJobsResponseItem = zod.object({
+  id: zod.number(),
+  tableKey: zod.enum([
+    "industries",
+    "roles",
+    "companies",
+    "contacts",
+    "contact_insights",
+    "company_insights",
+    "industry_insights",
+    "role_insights",
+  ]),
+  tableLabel: zod.string(),
+  filename: zod.string(),
+  status: zod.enum(["running", "completed", "partial", "failed"]),
+  totalRows: zod.number().min(getBulkUploadJobsResponseTotalRowsMin),
+  inserted: zod.number().min(getBulkUploadJobsResponseInsertedMin),
+  skipped: zod.number().min(getBulkUploadJobsResponseSkippedMin),
+  errorCount: zod.number().min(getBulkUploadJobsResponseErrorCountMin),
+  errorsTruncated: zod.boolean(),
+  errors: zod.array(
+    zod.object({
+      row: zod.number().min(getBulkUploadJobsResponseErrorsItemRowMin),
+      reason: zod.string(),
+    }),
+  ),
+  createdAt: zod.date(),
+  finishedAt: zod.date().nullable(),
+});
+export const GetBulkUploadJobsResponse = zod.array(
+  GetBulkUploadJobsResponseItem,
+);
+
+/**
  * Account-owned successful quote and score indexing is reused for seven days unless HQ changes. Empty successful results are indexed too.
  */
 export const GetContactIndexingStatusParams = zod.object({

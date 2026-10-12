@@ -42,6 +42,7 @@ import type {
   IndustryInsight,
   LinkedInConnectionPreview,
   LinkedInConnectionPreviewInput,
+  ListBulkImportJobsResponse,
   ListCompaniesParams,
   ListContactsParams,
   ManualEmailEditorContext,
@@ -67,6 +68,81 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary List the current user's CSV import jobs
+ */
+export const getGetBulkUploadJobsUrl = () => {
+  return `/api/bulk-upload/jobs`;
+};
+
+export const getBulkUploadJobs = async (
+  options?: RequestInit,
+): Promise<ListBulkImportJobsResponse> => {
+  return customFetch<ListBulkImportJobsResponse>(getGetBulkUploadJobsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBulkUploadJobsQueryKey = () => {
+  return [`/api/bulk-upload/jobs`] as const;
+};
+
+export const getGetBulkUploadJobsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBulkUploadJobs>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBulkUploadJobs>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBulkUploadJobsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBulkUploadJobs>>
+  > = ({ signal }) => getBulkUploadJobs({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBulkUploadJobs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBulkUploadJobsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBulkUploadJobs>>
+>;
+export type GetBulkUploadJobsQueryError = ErrorType<void>;
+
+/**
+ * @summary List the current user's CSV import jobs
+ */
+
+export function useGetBulkUploadJobs<
+  TData = Awaited<ReturnType<typeof getBulkUploadJobs>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBulkUploadJobs>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBulkUploadJobsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Account-owned successful quote and score indexing is reused for seven days unless HQ changes. Empty successful results are indexed too.

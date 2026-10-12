@@ -1,19 +1,41 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import multer from "multer";
+import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import {
   companiesTable,
   contactsTable,
   contactInsightsTable,
   companyInsightsTable,
+  importJobsTable,
   industriesTable,
   rolesTable,
   industryInsightsTable,
   roleInsightsTable,
 } from "@workspace/db/schema";
-import { and, eq, ilike } from "drizzle-orm";
+import { and, desc, eq, ilike } from "drizzle-orm";
+import { GetBulkUploadJobsResponse } from "@workspace/api-zod";
+import type { ImportJobError } from "@workspace/db/schema";
 
 const router: IRouter = Router();
+const MAX_STORED_JOB_ERRORS = 200;
+
+function getUserId(req: Request): string | null {
+  const auth = getAuth(req);
+  return (auth?.sessionClaims?.userId as string | undefined) ?? auth?.userId ?? null;
+}
+
+function importStatus(inserted: number, errorCount: number): "completed" | "partial" | "failed" {
+  if (errorCount === 0) return "completed";
+  return inserted > 0 ? "partial" : "failed";
+}
+
+function storedErrors(errors: ImportJobError[]) {
+  return {
+    errors: errors.slice(0, MAX_STORED_JOB_ERRORS),
+    errorsTruncated: errors.length > MAX_STORED_JOB_ERRORS,
+  };
+}
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -216,6 +238,28 @@ router.get("/templates", (_req, res) => {
   res.json(TEMPLATES);
 });
 
+router.get("/jobs", async (req, res): Promise<void> => {
+  const userId = getUserId(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  try {
+    const jobs = await db.select().from(importJobsTable)
+      .where(eq(importJobsTable.userId, userId))
+      .orderBy(desc(importJobsTable.createdAt));
+    res.json(GetBulkUploadJobsResponse.parse(jobs.map(job => ({
+      ...job,
+      createdAt: job.createdAt.toISOString(),
+      finishedAt: job.finishedAt?.toISOString() ?? null,
+    }))));
+  } catch (error) {
+    console.error("Failed to list bulk import jobs", error);
+    res.status(500).json({ error: "Failed to list import jobs" });
+  }
+});
+
 router.get("/template/:table", (req, res) => {
   const tpl = TEMPLATES.find(t => t.key === req.params.table);
   if (!tpl) { res.status(404).json({ error: "Unknown table" }); return; }
@@ -240,14 +284,36 @@ router.post("/:table/preview", upload.single("file"), (req, res) => {
   res.json({ headers, rows: rows.slice(0, 5), total: rows.length });
 });
 
-router.post("/:table", upload.single("file"), async (req, res) => {
+router.post("/:table", upload.single("file"), async (req, res): Promise<void> => {
+  const userId = getUserId(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
   const tableKey = req.params.table;
   const tpl = TEMPLATES.find(t => t.key === tableKey);
   if (!tpl) { res.status(404).json({ error: "Unknown table" }); return; }
   if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
 
   const rows = parseCSV(req.file.buffer);
-  if (rows.length === 0) { res.status(400).json({ error: "File has no data rows" }); return; }
+  const emptyFileError = { row: 0, reason: "File has no data rows" };
+  const [job] = await db.insert(importJobsTable).values({
+    userId,
+    tableKey,
+    tableLabel: tpl.label,
+    filename: req.file.originalname.slice(0, 300),
+    status: rows.length === 0 ? "failed" : "running",
+    totalRows: rows.length,
+    errorCount: rows.length === 0 ? 1 : 0,
+    errors: rows.length === 0 ? [emptyFileError] : [],
+    finishedAt: rows.length === 0 ? new Date() : null,
+  }).returning({ id: importJobsTable.id });
+
+  if (rows.length === 0) {
+    res.status(400).json({ error: "File has no data rows", jobId: job.id });
+    return;
+  }
 
   const results = { inserted: 0, skipped: 0, errors: [] as { row: number; reason: string }[] };
   // Shared across contact and insight import branches.
@@ -256,6 +322,7 @@ router.post("/:table", upload.single("file"), async (req, res) => {
     return /^(n\/a|-+|none|null|undefined)$/i.test(s) ? null : s || null;
   };
 
+  try {
   if (tableKey === "companies") {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
@@ -480,7 +547,37 @@ router.post("/:table", upload.single("file"), async (req, res) => {
     }
   }
 
-  res.json(results);
+  } catch (error) {
+    const errors = [...results.errors, { row: 0, reason: "Import stopped because of an unexpected server error." }];
+    const archived = storedErrors(errors);
+    const status = importStatus(results.inserted, errors.length);
+    await db.update(importJobsTable).set({
+      status,
+      inserted: results.inserted,
+      skipped: results.skipped,
+      errorCount: errors.length,
+      errors: archived.errors,
+      errorsTruncated: archived.errorsTruncated,
+      finishedAt: new Date(),
+    }).where(and(eq(importJobsTable.id, job.id), eq(importJobsTable.userId, userId)));
+    console.error("Bulk import job failed", { importJobId: job.id, error });
+    res.status(500).json({ error: "Import stopped because of an unexpected server error.", jobId: job.id, status });
+    return;
+  }
+
+  const status = importStatus(results.inserted, results.errors.length);
+  const archived = storedErrors(results.errors);
+  await db.update(importJobsTable).set({
+    status,
+    inserted: results.inserted,
+    skipped: results.skipped,
+    errorCount: results.errors.length,
+    errors: archived.errors,
+    errorsTruncated: archived.errorsTruncated,
+    finishedAt: new Date(),
+  }).where(and(eq(importJobsTable.id, job.id), eq(importJobsTable.userId, userId)));
+
+  res.json({ ...results, jobId: job.id, status });
 });
 
 export default router;

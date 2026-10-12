@@ -15,8 +15,24 @@ tags:
     description: Company operations
   - name: hq
     description: HQ profile operations
+  - name: imports
+    description: CSV data imports and their processing history
 
 paths:
+  /bulk-upload/jobs:
+    get:
+      operationId: getBulkUploadJobs
+      tags: [imports]
+      summary: List the current user's CSV import jobs
+      responses:
+        "200":
+          description: Recent import jobs, newest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListBulkImportJobsResponse"
+        "401":
+          description: Authentication required
   /contacts/{contactId}/insights/indexing-status:
     get:
       operationId: getContactIndexingStatus
@@ -1913,3 +1929,36 @@ components:
           type: integer
           minimum: 1
           maximum: 365
+
+    ListBulkImportJobsResponse:
+      type: array
+      items: { $ref: "#/components/schemas/ImportJob" }
+
+    ImportJob:
+      type: object
+      required: [id, tableKey, tableLabel, filename, status, totalRows, inserted, skipped, errorCount, errors, errorsTruncated, createdAt, finishedAt]
+      properties:
+        id: { type: integer }
+        tableKey:
+          type: string
+          enum: [industries, roles, companies, contacts, contact_insights, company_insights, industry_insights, role_insights]
+        tableLabel: { type: string }
+        filename: { type: string }
+        status: { type: string, enum: [running, completed, partial, failed] }
+        totalRows: { type: integer, minimum: 0 }
+        inserted: { type: integer, minimum: 0 }
+        skipped: { type: integer, minimum: 0 }
+        errorCount: { type: integer, minimum: 0 }
+        errorsTruncated: { type: boolean }
+        errors:
+          type: array
+          items: { $ref: "#/components/schemas/ImportJobError" }
+        createdAt: { type: string, format: date-time }
+        finishedAt: { type: ["string", "null"], format: date-time }
+
+    ImportJobError:
+      type: object
+      required: [row, reason]
+      properties:
+        row: { type: integer, minimum: 0 }
+        reason: { type: string }
