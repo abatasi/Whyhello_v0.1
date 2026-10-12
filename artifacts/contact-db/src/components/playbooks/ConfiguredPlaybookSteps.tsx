@@ -75,7 +75,6 @@ export function ConfiguredPlaybookSteps(props: ConfiguredPlaybookStepsProps) {
   useEffect(() => {
     if (selectedStepId) {
       setCollapseAll(false);
-      requestAnimationFrame(() => document.getElementById(`configured-step-${selectedStepId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
     }
   }, [selectedStepId]);
   const selected = (id: string) => selectedStepId === id && !collapseAll;
