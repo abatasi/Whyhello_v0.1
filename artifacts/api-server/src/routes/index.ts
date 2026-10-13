@@ -36,6 +36,7 @@ import { playbooksRouter } from "./playbooks";
 import { playbookProposalRouter } from "./playbook-proposal";
 import { callsRouter, contactCallsRouter } from "./calls";
 import homeRouter from "./home";
+import footerAssistantRouter from "./footer-assistant";
 
 const router: IRouter = Router();
 
@@ -59,6 +60,7 @@ router.use("/contacts/:contactId/role-insights", requireAuth, roleInsightsRouter
 router.use("/contacts/:contactId/colleague-insights", requireAuth, colleagueInsightsRouter);
 router.use("/contacts/:contactId/counterpart-insights", requireAuth, counterpartInsightsRouter);
 router.use("/contacts/:contactId/chat", requireAuth, contactChatRouter);
+router.use("/assistant/chat", requireAuth, footerAssistantRouter);
 router.use("/companies/:companyId/insights", requireAuth, companyInsightsRouter);
 router.use("/saved-searches", requireAuth, savedSearchesRouter);
 router.use("/lists", requireAuth, listsRouter);
