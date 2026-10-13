@@ -24,6 +24,7 @@ import {
 import {
   Dialog, DialogContent, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import "./hq-presentation.css";
 
 // ── Persistence ──────────────────────────────────────────────────────────────
 
@@ -700,17 +701,17 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
-      <div className="w-full flex items-center gap-4 px-6 py-5 text-left">
-        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border flex-shrink-0", accentBg, accentBorder)}>
+    <div className="hq-section-card overflow-hidden rounded-[10px] border border-border bg-card">
+      <div className="hq-section-heading flex w-full items-center gap-3 px-5 text-left">
+        <div className={cn("hq-section-icon flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border", accentBg, accentBorder)}>
           <Icon className={cn("h-5 w-5", accentColor)} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-foreground">{title}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+          <p className="text-[14px] font-semibold tracking-tight text-foreground">{title}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
         </div>
       </div>
-      <div className="border-t border-border/40 px-6 py-6 flex flex-col gap-6">
+      <div className="hq-section-body flex flex-col gap-5 border-t border-border px-5 py-5">
         {children}
       </div>
     </div>
@@ -2619,23 +2620,23 @@ export default function HQ() {
 
   return (
     <Shell>
-      <div className="w-full max-w-[1400px] mx-auto py-8 px-4 sm:px-8 flex-1 min-h-0 overflow-y-auto flex flex-col gap-6">
+      <div className="hq-approved-design flex w-full flex-1 min-h-0 flex-col gap-6 overflow-y-auto px-6 pb-10 pt-8 md:px-[42px]">
 
         {/* Page header */}
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="hq-page-header flex flex-wrap items-start justify-between gap-3 border-b border-border pb-[18px]">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <Landmark className="h-6 w-6 text-primary" />
+            <div className="hq-page-mark flex h-9 w-9 items-center justify-center rounded-md border border-primary/20 bg-primary/10">
+              <Landmark className="h-[18px] w-[18px] text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground tracking-tight">HQ</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <h1 className="text-[24px] font-bold leading-[1.2] tracking-[-0.035em] text-foreground">HQ</h1>
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 Your training ground — voice, products, and company context for every AI interaction.
               </p>
             </div>
           </div>
           <div className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-semibold border transition-all duration-300",
+            "hq-save-status flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-semibold transition-colors",
             saveError || profileLoadError
               ? "text-destructive bg-destructive/10 border-destructive/30"
               : saved
@@ -2650,14 +2651,14 @@ export default function HQ() {
         {/* Two-column body */}
         <div className="flex flex-col gap-6 items-stretch lg:flex-row lg:items-start" inert={!profileLoaded || profileLoadError} aria-busy={!profileLoaded}>
 
-          <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-border/60 bg-background p-3 lg:hidden">
+          <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-md border border-border bg-card p-3 lg:hidden">
             <label className="min-w-0 text-xs font-semibold text-muted-foreground">
               HQ section
               <select
                 aria-label="HQ section"
                 value={activeSection}
                 onChange={event => setActiveSection(event.target.value as SectionId)}
-                className="mt-1 block h-10 w-full min-w-0 rounded-lg border border-border bg-background px-2 text-sm text-foreground"
+                className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border bg-background px-2 text-sm text-foreground"
               >
                 {HQ_NAV.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
               </select>
@@ -2668,7 +2669,7 @@ export default function HQ() {
                 aria-label="HQ mode"
                 value={wartime ? "wartime" : "peacetime"}
                 onChange={event => { if ((event.target.value === "wartime") !== wartime) toggleMode(); }}
-                className="mt-1 block h-10 rounded-lg border border-border bg-background px-2 text-sm text-foreground"
+                className="mt-1 block h-10 rounded-md border border-border bg-background px-2 text-sm text-foreground"
               >
                 <option value="peacetime">Peacetime</option>
                 <option value="wartime">Wartime</option>
@@ -2677,20 +2678,20 @@ export default function HQ() {
           </div>
 
           {/* Left sidebar nav */}
-          <nav className="hidden w-56 flex-shrink-0 sticky top-0 lg:flex flex-col gap-0.5 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
+          <nav className="hq-section-nav sticky top-0 hidden w-56 flex-shrink-0 flex-col gap-0.5 rounded-md border border-border bg-card p-1.5 lg:flex">
             {HQ_NAV.map(item => (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
                 className={cn(
-                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all",
+                  "flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2 text-left transition-colors",
                   activeSection === item.id
-                    ? cn(item.activeBg, "border", item.activeBorder)
+                    ? cn(item.activeBg, item.activeBorder)
                     : "hover:bg-secondary/60 border border-transparent"
                 )}
               >
                 <div className={cn(
-                  "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border",
+                  "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border",
                   activeSection === item.id ? cn(item.iconBg, item.activeBorder) : "bg-secondary/60 border-border/50"
                 )}>
                   <item.icon className={cn("h-4 w-4", activeSection === item.id ? item.activeText : "text-muted-foreground")} />
@@ -2703,19 +2704,19 @@ export default function HQ() {
             ))}
 
             {/* Mode selector */}
-            <div className="mt-2 pt-2 border-t border-border/60">
+            <div className="mt-2 border-t border-border pt-2">
               <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mode</p>
               <button
                 onClick={() => { if (wartime) toggleMode(); }}
                 className={cn(
-                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all border",
+                  "flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2 text-left transition-colors",
                   !wartime
                     ? "bg-primary/8 border-primary/20"
                     : "border-transparent hover:bg-secondary/60"
                 )}
               >
                 <div className={cn(
-                  "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border",
+                  "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border",
                   !wartime ? "bg-primary/10 border-primary/20" : "bg-secondary/60 border-border/50"
                 )}>
                   <ShieldCheck className={cn("h-4 w-4", !wartime ? "text-primary" : "text-muted-foreground")} />
@@ -2729,14 +2730,14 @@ export default function HQ() {
               <button
                 onClick={() => { if (!wartime) toggleMode(); }}
                 className={cn(
-                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all border",
+                  "flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2 text-left transition-colors",
                   wartime
                     ? "bg-[#F4E2D8] border-[#DDB99E] dark:bg-[#3d1c12] dark:border-[#5a2c1d]"
                     : "border-transparent hover:bg-secondary/60"
                 )}
               >
                 <div className={cn(
-                  "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border",
+                  "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border",
                   wartime ? "bg-[#E8C4B0] border-[#DDB99E] dark:bg-[#5a2c1d] dark:border-[#7c3e2a]" : "bg-secondary/60 border-border/50"
                 )}>
                   <Flame className={cn("h-4 w-4", wartime ? "text-[#7C3E2A] dark:text-[#edd4c6]" : "text-muted-foreground")} />
@@ -2751,7 +2752,7 @@ export default function HQ() {
           </nav>
 
           {/* Right content pane */}
-          <div className="flex-1 min-w-0 flex flex-col gap-8">
+          <div className="flex min-w-0 flex-1 flex-col gap-5">
 
         {/* ── Voice & Tone ── */}
         {activeSection === "voice" && (
