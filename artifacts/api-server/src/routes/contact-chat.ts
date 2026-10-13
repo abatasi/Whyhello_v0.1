@@ -1,6 +1,4 @@
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
-import { z } from "zod";
 import { db } from "@workspace/db";
 import {
   contactsTable,
@@ -11,12 +9,10 @@ import {
   roleInsightsTable,
   insightRelevanceScoresTable,
   insightQuotesTable,
-  dnaProfilesTable,
 } from "@workspace/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { loadRelationshipInsights, type RelationshipKind, type RelationshipSourceContact } from "../lib/relationship-insights.js";
-import { resolveOutputVoice, VoicePersonaSelectionError } from "../lib/voice-personas.js";
 
 const router: IRouter = Router({ mergeParams: true });
 
@@ -148,25 +144,6 @@ router.post("/", async (req, res) => {
       return;
     }
     const selectedIds = parseSelectedIds(req.body);
-    const selection = z.object({
-      tone: z.string().trim().min(1).max(2000).optional(),
-      voicePersonaId: z.string().trim().min(1).max(100).nullable().optional(),
-    }).safeParse(req.body);
-    if (!selection.success) { res.status(400).json({ error: "Choose a valid tone or saved voice persona." }); return; }
-    let styleInstructions = "";
-    if (selection.data.tone || selection.data.voicePersonaId) {
-      const auth = getAuth(req);
-      const userId = (auth.sessionClaims as { userId?: string } | null)?.userId ?? auth.userId;
-      if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-      const needsHq = !!selection.data.voicePersonaId || selection.data.tone === "my_voice_profile";
-      const [profile] = needsHq
-        ? await db.select().from(dnaProfilesTable).where(eq(dnaProfilesTable.userId, userId))
-        : [];
-      const voice = resolveOutputVoice(profile ? JSON.parse(profile.data) : {}, selection.data);
-      styleInstructions = `\n\nOUTPUT STYLE FOR THIS RESPONSE ONLY:
-${voice.hqVoice ? `Follow this selected HQ voice definition: ${voice.hqVoice}` : `Tone: ${voice.tone}`}
-Voice controls wording and register only, not identity or facts. Never copy factual claims from style examples, imply the persona name is the sender, or let style override source attribution, relationship safeguards, citations, or the requested output structure. Do not rewrite earlier messages.`;
-    }
 
     const [contact] = await db.select().from(contactsTable).where(eq(contactsTable.id, contactId)).limit(1);
     if (!contact) {
@@ -329,7 +306,7 @@ Replace N, M, ... with the reference numbers (shown in [brackets] above) of the 
 
     const stream = await openai.chat.completions.create({
       model: "gpt-5-mini",
-      messages: [{ role: "system", content: systemPrompt + styleInstructions }, ...messages],
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
       stream: true,
     });
 
@@ -354,7 +331,6 @@ Replace N, M, ... with the reference numbers (shown in [brackets] above) of the 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
   } catch (err) {
-    if (err instanceof VoicePersonaSelectionError && !res.headersSent) { res.status(400).json({ error: err.message }); return; }
     console.error("Contact chat error:", err);
     if (!res.headersSent) {
       res.status(500).json({ error: "Internal server error" });

@@ -3637,15 +3637,12 @@ function ContactChat({
   const { data: savedMessages = [], isLoading: historyLoading } = useListChatMessages(id);
   const persistMessage = useCreateChatMessage();
   const clearMutation = useClearChatMessages();
-  const profileQuery = useHqVoiceProfile();
-  const voicePickerContext = toVoicePickerContext(profileQuery.data);
 
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [useOnlyHighlighted, setUseOnlyHighlighted] = useState(false);
-  const { tone, setTone, voicePersonaId, setVoicePersonaId } = useHqToneSelection(profileQuery.data);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -3663,7 +3660,6 @@ function ContactChat({
     }
     return Array.from(checkedIds).filter(id => currentIds.has(id));
   })();
-  const selectedPersonaMissing = !!voicePersonaId && !profileQuery.data?.voicePersonas?.some(persona => persona.id === voicePersonaId);
 
   // Hydrate from DB on first load
   useEffect(() => {
@@ -3679,7 +3675,7 @@ function ContactChat({
 
   async function sendMessage(content: string) {
     const text = content.trim();
-    if (!text || isStreaming || profileQuery.isLoading || selectedPersonaMissing) return;
+    if (!text || isStreaming) return;
 
     const userMsg: ChatMessage = { role: "user", content: text };
     const history = [...localMessages, userMsg];
@@ -3701,8 +3697,6 @@ function ContactChat({
         body: JSON.stringify({
           messages: history,
           selectedIds: effectiveIds,
-          tone: voicePersonaId || tone === "my_voice_profile" ? "my_voice_profile" : tone,
-          voicePersonaId,
         }),
       });
 
@@ -3895,17 +3889,8 @@ function ContactChat({
         </div>
       )}
 
-      {/* Input and reply voice */}
+      {/* Strategy chat input */}
       <div className={cn("flex flex-shrink-0 flex-col gap-2 bg-card p-3", !highlightedInsight && "border-t border-border/40")}>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Reply voice</span>
-          <TonePersonaPicker tones={["Professional", "Friendly", "Direct", "Warm", "Authoritative"]} tone={tone} voicePersonaId={voicePersonaId}
-            inheritHqTone={tone === "my_voice_profile"} context={voicePickerContext} loading={profileQuery.isLoading} error={profileQuery.isError}
-            disabled={profileQuery.isLoading || isStreaming} onTone={selected => { setTone(selected.toLowerCase()); setVoicePersonaId(null); }}
-            onPersona={id => { setTone("professional"); setVoicePersonaId(id); }}
-            onHqVoice={() => { setTone("my_voice_profile"); setVoicePersonaId(null); }} />
-          {profileQuery.isError && <button type="button" className="text-[10px] text-primary underline" onClick={() => profileQuery.refetch()}>Retry</button>}
-        </div>
         <div className="flex gap-2">
           <textarea
             ref={textareaRef}
@@ -3930,13 +3915,12 @@ function ContactChat({
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={!input.trim() || isStreaming || profileQuery.isLoading || selectedPersonaMissing}
+            disabled={!input.trim() || isStreaming}
             className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Send className="h-3.5 w-3.5" />
           </button>
         </div>
-        {selectedPersonaMissing && <p role="status" className="text-[10px] text-amber-700 dark:text-amber-300">This saved voice is no longer available. Choose another voice before sending.</p>}
       </div>
     </>
   );
