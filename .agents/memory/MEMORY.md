@@ -23,3 +23,4 @@
 - [Reusable email configuration](reusable-email-configuration.md) — Manual Email mirrors Single Message and the Messaging Quran; reusable variants choose an insight category, not individual insights.
 - [HQ voice personas](hq-voice-personas.md) — named voices as output-specific tone choices; HQ activation stays separate, and summaries remain account- and persona-owned.
 - [Dark-mode filled buttons](dark-filled-buttons.md) — solid button fills with white text and standard icons; keep unfilled controls and dark-card surfaces distinct.
+- [Master footer AI preview](master-footer-ai-preview.md) — keep the footer global and the initial assistant explicitly local-only until AI integration is requested.
