@@ -180,6 +180,7 @@ export default function CompanyProfile() {
 
   return (
     <Shell>
+      <div className="min-h-0 w-full flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto px-4 py-8">
         <Link href="/directory/companies" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -370,8 +371,10 @@ export default function CompanyProfile() {
               {/* Contacts Table */}
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">Key Contacts</h2>
-                  <Badge variant="outline">{company.contacts?.length || 0} employees found</Badge>
+                  <h2 className="text-xl font-bold">Contacts</h2>
+                  <Badge variant="outline">
+                    {company.contacts?.length || 0} {company.contacts?.length === 1 ? "contact" : "contacts"}
+                  </Badge>
                 </div>
                 
                 <div className="bg-card dark:bg-background border border-border rounded-xl overflow-hidden shadow-sm">
@@ -415,6 +418,7 @@ export default function CompanyProfile() {
               </div>
            </div>
         </div>
+      </div>
       </div>
     </Shell>
   );
