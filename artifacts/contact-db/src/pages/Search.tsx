@@ -1604,7 +1604,7 @@ function FilterCategory({
           >
             <div className={cn(
               "rounded-md border border-border",
-              nested ? "mx-2 mb-2 p-2" : "mx-5 mb-3 p-3",
+              nested ? "mx-2 mt-2 mb-2 p-2" : "mx-5 mt-3 mb-3 p-3",
             )}>{children}</div>
           </motion.div>
         )}
