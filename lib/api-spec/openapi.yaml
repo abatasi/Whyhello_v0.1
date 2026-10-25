@@ -1718,6 +1718,18 @@ components:
           type: array
           items:
             type: string
+        managementLevels:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              count:
+                type: integer
+            required:
+              - value
+              - count
         companySizes:
           type: array
           items:
@@ -1734,6 +1746,7 @@ components:
         - industries
         - departments
         - seniorities
+        - managementLevels
         - companySizes
         - countries
         - locations

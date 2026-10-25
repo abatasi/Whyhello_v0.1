@@ -81,6 +81,18 @@ function savedFilterValues(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
+function normalizeManagementLevels(values: string[]): string[] {
+  const aliases: Record<string, string> = {
+    "c-suite": "C suite",
+    "c suite": "C suite",
+    executive: "C suite",
+    vp: "Vp",
+    "vice president": "Vp",
+    "individual contributor": "Senior",
+  };
+  return values.map(value => aliases[value.trim().toLowerCase()] ?? value);
+}
+
 type SortConfig = {
   column: string;
   direction: "asc" | "desc";
@@ -399,7 +411,7 @@ export default function Search({ directory }: { directory: Tab }) {
   const [filters, setFilters] = useState<Filters>({
     industry: parseArrayParam(searchParams.get("industry")),
     department: directory === "contacts" ? parseArrayParam(searchParams.get("department")) : [],
-    seniority: directory === "contacts" ? parseArrayParam(searchParams.get("seniority")) : [],
+    seniority: directory === "contacts" ? normalizeManagementLevels(parseArrayParam(searchParams.get("seniority"))) : [],
     companySize: parseArrayParam(searchParams.get("companySize")),
     location: parseArrayParam(searchParams.get("location")),
   });
@@ -572,7 +584,7 @@ export default function Search({ directory }: { directory: Tab }) {
     const nextFilters: Filters = {
       industry: savedFilterValues(s.filters.industry),
       department: targetTab === "contacts" ? savedFilterValues(s.filters.department) : [],
-      seniority: targetTab === "contacts" ? savedFilterValues(s.filters.seniority) : [],
+      seniority: targetTab === "contacts" ? normalizeManagementLevels(savedFilterValues(s.filters.seniority)) : [],
       companySize: savedFilterValues(s.filters.companySize),
       location: savedFilterValues(s.filters.location),
     };
@@ -893,22 +905,31 @@ export default function Search({ directory }: { directory: Tab }) {
               onChange={(v) => handleFilterChange("industry", v)}
             />
             {activeTab === "contacts" && (
-              <>
-                <MultiSelectFilter
-                  title="Department"
-                  icon={BriefcaseBusiness}
-                  options={filterOptions?.departments || []}
-                  selected={filters.department}
-                  onChange={(v) => handleFilterChange("department", v)}
-                />
-                <FilterSection
-                  title="Seniority"
-                  icon={TrendingUp}
-                  options={filterOptions?.seniorities || []}
-                  selected={filters.seniority}
-                  onChange={(v) => handleFilterChange("seniority", v)}
-                />
-              </>
+              <FilterCategory
+                title="Role"
+                icon={BriefcaseBusiness}
+                activeCount={filters.seniority.length + filters.department.length}
+              >
+                <div className="space-y-1">
+                  <MultiSelectFilter
+                    nested
+                    title="Management Level"
+                    icon={TrendingUp}
+                    options={filterOptions?.managementLevels?.map(level => level.value) || []}
+                    optionCounts={Object.fromEntries((filterOptions?.managementLevels ?? []).map(level => [level.value, level.count]))}
+                    selected={filters.seniority}
+                    onChange={(v) => handleFilterChange("seniority", v)}
+                  />
+                  <MultiSelectFilter
+                    nested
+                    title="Departments & Job Function"
+                    icon={BriefcaseBusiness}
+                    options={filterOptions?.departments || []}
+                    selected={filters.department}
+                    onChange={(v) => handleFilterChange("department", v)}
+                  />
+                </div>
+              </FilterCategory>
             )}
             <FilterSection
               title="Company Size"
@@ -1529,24 +1550,30 @@ export default function Search({ directory }: { directory: Tab }) {
 }
 
 function FilterCategory({
-  title, icon: Icon, activeCount = 0, children,
+  title, icon: Icon, activeCount = 0, children, nested = false,
 }: {
   title: string;
   icon: LucideIcon;
   activeCount?: number;
   children: ReactNode;
+  nested?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const contentId = useId();
+  const testId = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   return (
-    <div className="border-b border-border/60">
+    <div className={cn("border-b border-border/60", nested && "last:border-b-0")}>
       <button
         type="button"
+        data-testid={`filter-category-${testId}`}
         aria-expanded={expanded}
         aria-controls={contentId}
         onClick={() => setExpanded((value) => !value)}
-        className="flex w-full items-center gap-2.5 px-5 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+        className={cn(
+          "flex w-full items-center gap-2.5 text-left text-sm font-semibold text-foreground hover:bg-muted/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
+          nested ? "px-2.5 py-2 text-xs" : "px-5 py-3",
+        )}
       >
         <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span className="flex-1">{title}</span>
@@ -1571,7 +1598,10 @@ function FilterCategory({
             transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}
           >
-            <div className="mx-5 mb-3 rounded-md border border-border p-3">{children}</div>
+            <div className={cn(
+              "rounded-md border border-border",
+              nested ? "mx-2 mb-2 p-2" : "mx-5 mb-3 p-3",
+            )}>{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1640,16 +1670,21 @@ function MultiSelectFilter({
   options,
   selected,
   onChange,
+  optionCounts,
+  nested = false,
 }: {
   title: string;
   icon: LucideIcon;
   options: string[];
   selected: string[];
   onChange: (v: string) => void;
+  optionCounts?: Record<string, number>;
+  nested?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const testId = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   const filtered = options.filter((opt) =>
     opt.toLowerCase().includes(search.toLowerCase()),
@@ -1658,103 +1693,116 @@ function MultiSelectFilter({
   const showChecklist = isFocused || search.length > 0;
 
   return (
-    <FilterCategory title={title} icon={icon} activeCount={selected.length}>
+    <FilterCategory title={title} icon={icon} activeCount={selected.length} nested={nested}>
       {options.length === 0 && selected.length === 0 ? (
         <p className="text-xs text-muted-foreground">No options available.</p>
       ) : (
-            <div className="space-y-2">
-              {/* Active selections — always visible */}
-              {selected.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {selected.map((s) => (
-                    <button
-                      key={s}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => onChange(s)}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
-                    >
-                      <span className="max-w-[120px] truncate">{s}</span>
-                      <X className="h-3 w-3 flex-shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Search input — always visible */}
-              <div className="relative">
-                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder={isFocused ? "Type to filter…" : "Click to browse…"}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  className="w-full pl-8 pr-7 py-1.5 text-xs rounded-md border border-input bg-background outline-none focus:border-primary/60 placeholder:text-muted-foreground transition-colors"
-                />
-                {search && (
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => { setSearch(""); inputRef.current?.focus(); }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-
-              {/* Checklist — only visible when input is focused or a search query is active */}
-              <AnimatePresence initial={false}>
-                {showChecklist && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.15, ease: "easeInOut" }}
-                    style={{ overflow: "hidden" }}
-                  >
-                    <div
-                      className="max-h-48 overflow-y-auto space-y-1.5 pr-1"
-                      onMouseDown={(e) => e.preventDefault()}
-                    >
-                      {filtered.length === 0 ? (
-                        <p className="text-xs text-muted-foreground py-2 text-center">No options found</p>
-                      ) : (
-                        filtered.map((opt) => {
-                          const isSelected = selected.includes(opt);
-                          return (
-                            <label
-                              key={opt}
-                              className="flex items-center gap-2 cursor-pointer group"
-                              onClick={() => onChange(opt)}
-                            >
-                              <div className={cn(
-                                "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
-                                isSelected
-                                  ? "bg-primary border-primary"
-                                  : "border-input bg-background group-hover:border-primary/50",
-                              )}>
-                                {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
-                              </div>
-                              <span className={cn(
-                                "text-sm transition-colors",
-                                isSelected
-                                  ? "text-foreground font-medium"
-                                  : "text-muted-foreground group-hover:text-foreground",
-                              )}>
-                                {opt}
-                              </span>
-                            </label>
-                          );
-                        })
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+        <div className="space-y-2">
+          {/* Active selections — always visible */}
+          {selected.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {selected.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  data-testid={`remove-filter-${testId}-${s.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => onChange(s)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                >
+                  <span className="max-w-[120px] truncate">{s}</span>
+                  <X className="h-3 w-3 flex-shrink-0" />
+                </button>
+              ))}
             </div>
+          )}
+
+          {/* Search input — always visible */}
+          <div className="relative">
+            <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              ref={inputRef}
+              data-testid={`search-filter-${testId}`}
+              type="text"
+              placeholder={isFocused ? "Type to filter…" : "Click to browse…"}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className="w-full pl-8 pr-7 py-1.5 text-xs rounded-md border border-input bg-background outline-none focus:border-primary/60 placeholder:text-muted-foreground transition-colors"
+            />
+            {search && (
+              <button
+                type="button"
+                data-testid={`clear-filter-search-${testId}`}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { setSearch(""); inputRef.current?.focus(); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Checklist — only visible when input is focused or a search query is active */}
+          <AnimatePresence initial={false}>
+            {showChecklist && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.15, ease: "easeInOut" }}
+                style={{ overflow: "hidden" }}
+              >
+                <div
+                  className="max-h-48 overflow-y-auto space-y-1.5 pr-1"
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  {filtered.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2 text-center">No options found</p>
+                  ) : (
+                    filtered.map((opt) => {
+                      const isSelected = selected.includes(opt);
+                      return (
+                        <button
+                          type="button"
+                          key={opt}
+                          data-testid={`filter-option-${testId}-${opt.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                          aria-pressed={isSelected}
+                          className="flex w-full items-center gap-2 cursor-pointer group text-left"
+                          onClick={() => onChange(opt)}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0",
+                            isSelected
+                              ? "bg-primary border-primary"
+                              : "border-input bg-background group-hover:border-primary/50",
+                          )}>
+                            {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
+                          </div>
+                          <span className={cn(
+                            "text-sm transition-colors",
+                            isSelected
+                              ? "text-foreground font-medium"
+                              : "text-muted-foreground group-hover:text-foreground",
+                          )}>
+                            {opt}
+                          </span>
+                          {optionCounts?.[opt] !== undefined && (
+                            <span className="ml-auto text-xs tabular-nums text-muted-foreground/70">
+                              ({new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(optionCounts[opt])})
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
     </FilterCategory>
   );

@@ -5,11 +5,13 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+import type { FilterOptionsManagementLevelsItem } from "./filterOptionsManagementLevelsItem";
 
 export interface FilterOptions {
   industries: string[];
   departments: string[];
   seniorities: string[];
+  managementLevels: FilterOptionsManagementLevelsItem[];
   companySizes: string[];
   countries: string[];
   locations: string[];

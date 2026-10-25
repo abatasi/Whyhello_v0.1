@@ -5,6 +5,7 @@ import { contactsTable, companiesTable, contactInsightsTable, contactMetaScoresT
 import { GetContactParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL, asc, desc } from "drizzle-orm";
 import { matchingBuyingCenterSeats, parseDnaProfile, selectedBuyingCenter } from "../lib/live-audience";
+import { managementLevelExpression, normalizeManagementLevel } from "../lib/contact-management-levels.js";
 
 const router: IRouter = Router();
 
@@ -29,7 +30,7 @@ router.get("/", async (req, res) => {
 
     const industries = splitParam(raw.industry);
     const departments = splitParam(raw.department);
-    const seniorities = splitParam(raw.seniority);
+    const seniorities = splitParam(raw.seniority).map(normalizeManagementLevel);
     const companySizes = splitParam(raw.companySize);
     const locations = splitParam(raw.location);
 
@@ -52,10 +53,8 @@ router.get("/", async (req, res) => {
         and(sql`${contactsTable.roleId} IS NULL`, inArray(contactsTable.department, departments)),
       )!);
     }
-    if (seniorities.length === 1) {
-      conditions.push(eq(contactsTable.seniority, seniorities[0]));
-    } else if (seniorities.length > 1) {
-      conditions.push(inArray(contactsTable.seniority, seniorities));
+    if (seniorities.length > 0) {
+      conditions.push(inArray(managementLevelExpression(), seniorities));
     }
     if (industries.length === 1) {
       conditions.push(eq(companiesTable.industry, industries[0]));

@@ -30,6 +30,7 @@ export * from "./enrichmentPreviewInputType";
 export * from "./enrichmentResult";
 export * from "./errorResponse";
 export * from "./filterOptions";
+export * from "./filterOptionsManagementLevelsItem";
 export * from "./getContactIndexingStatus200";
 export * from "./getPlaybookSampleContacts200";
 export * from "./getPlaybookSampleContacts200ContactsItem";

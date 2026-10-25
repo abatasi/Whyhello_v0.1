@@ -531,10 +531,16 @@ export interface CompanyListResponse {
   totalPages: number;
 }
 
+export type FilterOptionsManagementLevelsItem = {
+  value: string;
+  count: number;
+};
+
 export interface FilterOptions {
   industries: string[];
   departments: string[];
   seniorities: string[];
+  managementLevels: FilterOptionsManagementLevelsItem[];
   companySizes: string[];
   countries: string[];
   locations: string[];

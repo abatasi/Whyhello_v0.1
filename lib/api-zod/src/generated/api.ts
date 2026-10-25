@@ -920,6 +920,12 @@ export const GetFilterOptionsResponse = zod.object({
   industries: zod.array(zod.string()),
   departments: zod.array(zod.string()),
   seniorities: zod.array(zod.string()),
+  managementLevels: zod.array(
+    zod.object({
+      value: zod.string(),
+      count: zod.number(),
+    }),
+  ),
   companySizes: zod.array(zod.string()),
   countries: zod.array(zod.string()),
   locations: zod.array(zod.string()),
