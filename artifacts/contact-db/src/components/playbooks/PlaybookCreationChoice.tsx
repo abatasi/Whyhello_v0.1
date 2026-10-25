@@ -142,7 +142,7 @@ export function PlaybookCreationChoice({ onScratch, onTemplate, onClose }: {
       </div>
       <div className="flex items-center justify-between gap-3 pt-1">
         <p className="text-xs text-muted-foreground" aria-live="polite">{selectedSeats.length === 0 ? "Select at least one seat beyond the Business Champion." : `${selectedSeats.length + 1} separate sequences will be set up.`}</p>
-        <button type="button" data-testid="button-continue-multi-contact" disabled={profileLoading || selectedSeats.length < 1} onClick={() => onChoose({ mode: "multi", seats: selectedSeats, ...(selectedCenterId !== "standard" ? { buyingCenterId: selectedCenterId } : {}) })} className="inline-flex shrink-0 items-center gap-2 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+        <button type="button" data-testid="button-continue-multi-contact" disabled={profileLoading || selectedSeats.length < 1} onClick={() => onChoose({ mode: "multi", seats: selectedSeats, ...(selectedCenterId !== "standard" ? { buyingCenterId: selectedCenterId } : {}) })} className="inline-flex shrink-0 items-center gap-2 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground dark:bg-indigo-700 dark:border-indigo-700 dark:text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
           Continue <ArrowLeft size={13} className="rotate-180" aria-hidden="true" />
         </button>
       </div>

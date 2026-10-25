@@ -1,10 +1,16 @@
 ---
-name: Dark-mode filled buttons
-description: The user's solid-fill and white-foreground requirement for dark-mode buttons.
+name: Dark-mode controls and tags
+description: The user's contrast requirement for dark-mode buttons, labels and tags.
 ---
 
-In dark mode, all button fill colors should be solid, with white text and standard icons rather than pale fills with colored foregrounds.
+In dark mode, buttons, labels and tags must use either no background fill with light text, or a solid background dark enough to contrast with white text and icons. Target at least 4.5:1 contrast for normal-sized labels, including selected and hover states.
 
-**Why:** The user said the dark-mode background/text/icon combination looked awkward and requested solid fills accompanied by white text.
+**Why:** The user repeatedly reported low-contrast dark-mode buttons and explicitly requested either unfilled buttons with light text or contrasting solid fills with white text. They then explicitly extended the same rule to labels and tags after showing the Competitor and High badges.
 
-**How to apply:** Apply this across shared and hand-styled buttons, including category choices, hover fills, and disabled states. Keep unfilled controls unfilled, and preserve the established neutral dark-card surfaces and colorful Whyhello brand animation.
+**How to apply:** Apply this across shared and hand-styled buttons, labels and tags, including category choices, hover fills, and disabled states. Keep unfilled controls unfilled, and preserve the established neutral dark-card surfaces and colorful Whyhello brand animation.
+
+Contrast checks must include descendant labels and icon tiles, not only the button's own computed foreground/background.
+
+**Why:** A template-card button can pass a root-level contrast check while a nested pastel badge inherits white text and becomes unreadable.
+
+**How to apply:** Inspect nested badges in selectable cards and compare their own effective backgrounds. Standalone badges follow the same contrast policy; preserve their status meaning and keep brand images unchanged.

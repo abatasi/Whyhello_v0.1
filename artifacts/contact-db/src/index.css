@@ -2,6 +2,7 @@
 @layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
 @import "./styles/dark-filled-buttons.css";
+@import "./styles/dark-label-tags.css";
 @import "./components/ThinkingIndicator.css";
 @custom-variant dark (&:where(.dark, .dark *));
 

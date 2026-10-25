@@ -453,6 +453,12 @@ export interface ContactSummary {
   insightCount?: number;
   /** @nullable */
   relevanceScore?: number | null;
+  /**
+   * Profile similarity from 0 to 100, independent of HQ buyer relevance.
+   * @nullable
+   */
+  lookalikeScore?: number | null;
+  lookalikeReasons?: string[];
 }
 
 export interface CompanySummary {
@@ -839,6 +845,11 @@ export type SendManualEmailPreviewTest200 = {
 };
 
 export type ListContactsParams = {
+  /**
+   * Reference contact for existing-contact similarity ranking; excludes the reference and combines with other filters.
+   * @minimum 1
+   */
+  lookalikeContactId?: number;
   segment?: ListContactsSegment;
   search?: string;
   jobTitle?: string;

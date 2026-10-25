@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
   ExternalLink, Bookmark, Trash2, BookmarkPlus, Check, LayoutList, X,
   Mail, Phone, Clock, Factory, BriefcaseBusiness, TrendingUp, MapPin,
-  Sparkles, ClipboardList, Download, type LucideIcon,
+  Sparkles, ClipboardList, UsersRound, Download, type LucideIcon,
 } from "lucide-react";
 import {
   getRecentContactVisits,
@@ -31,6 +31,7 @@ import {
   useEnrichRecords,
 } from "@workspace/api-client-react";
 import { DepartmentTaxonomyFilter } from "@/components/filters/DepartmentTaxonomyFilter";
+import { LookalikesFilter } from "@/components/filters/LookalikesFilter";
 import { LocationFilter } from "@/components/filters/LocationFilter";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
@@ -72,6 +73,7 @@ type Filters = {
   excludedLocation: string[];
   headOfficeLocation: string[];
   excludedHeadOfficeLocation: string[];
+  lookalikeContactId: string[];
 };
 
 const EMPTY_FILTERS: Filters = {
@@ -83,6 +85,7 @@ const EMPTY_FILTERS: Filters = {
   excludedLocation: [],
   headOfficeLocation: [],
   excludedHeadOfficeLocation: [],
+  lookalikeContactId: [],
 };
 
 function savedFilterValues(value: unknown): string[] {
@@ -425,6 +428,7 @@ export default function Search({ directory }: { directory: Tab }) {
     excludedLocation: parseArrayParam(searchParams.get("excludedLocation")),
     headOfficeLocation: directory === "contacts" ? parseArrayParam(searchParams.get("headOfficeLocation")) : [],
     excludedHeadOfficeLocation: directory === "contacts" ? parseArrayParam(searchParams.get("excludedHeadOfficeLocation")) : [],
+    lookalikeContactId: directory === "contacts" ? parseArrayParam(searchParams.get("lookalikeContactId")).slice(0, 1) : [],
   });
 
   const competitorIds = useCompetitorIds();
@@ -550,6 +554,7 @@ export default function Search({ directory }: { directory: Tab }) {
           excludedLocation: filters.excludedLocation,
           headOfficeLocation: filters.headOfficeLocation,
           excludedHeadOfficeLocation: filters.excludedHeadOfficeLocation,
+          lookalikeContactId: filters.lookalikeContactId,
           segment,
         },
       },
@@ -604,6 +609,7 @@ export default function Search({ directory }: { directory: Tab }) {
       excludedLocation: savedFilterValues(s.filters.excludedLocation),
       headOfficeLocation: targetTab === "contacts" ? savedFilterValues(s.filters.headOfficeLocation) : [],
       excludedHeadOfficeLocation: targetTab === "contacts" ? savedFilterValues(s.filters.excludedHeadOfficeLocation) : [],
+      lookalikeContactId: targetTab === "contacts" ? savedFilterValues(s.filters.lookalikeContactId).slice(0, 1) : [],
     };
     if (targetTab !== activeTab) {
       const params = new URLSearchParams();
@@ -653,6 +659,9 @@ export default function Search({ directory }: { directory: Tab }) {
 
   const { data: filterOptions } = useGetFilterOptions();
 
+  const lookalikeRaw = filters.lookalikeContactId[0];
+  const lookalikeId = lookalikeRaw && /^[1-9]\d*$/.test(lookalikeRaw) ? Number(lookalikeRaw) : undefined;
+  const lookalikeActive = activeTab === "contacts" && lookalikeId !== undefined;
   const contactParams = {
     search: debouncedSearch || undefined,
     segment,
@@ -666,11 +675,12 @@ export default function Search({ directory }: { directory: Tab }) {
     excludedLocation: joinParam(filters.excludedLocation),
     headOfficeLocation: joinParam(filters.headOfficeLocation),
     excludedHeadOfficeLocation: joinParam(filters.excludedHeadOfficeLocation),
+    lookalikeContactId: lookalikeId,
     listId: selectedListId ?? undefined,
     sortBy: contactSort?.column,
     sortOrder: contactSort?.direction,
   };
-  const { data: contactsData, isLoading: isContactsLoading } = useListContacts(
+  const { data: contactsData, isLoading: isContactsLoading, error: contactsError, refetch: retryContacts } = useListContacts(
     contactParams,
     { query: {
       queryKey: getListContactsQueryKey(contactParams),
@@ -759,6 +769,7 @@ export default function Search({ directory }: { directory: Tab }) {
               <Badge variant="secondary" className="px-1.5 text-xs">{activeFilterCount}</Badge>
             )}
           </Button>
+          {lookalikeActive && <span className="text-[11px] text-muted-foreground" data-testid="text-similarity-sort">Sorted by similarity</span>}
           {activeFilterCount > 0 && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
               Clear All
@@ -962,6 +973,14 @@ export default function Search({ directory }: { directory: Tab }) {
               selected={filters.companySize}
               onChange={(v) => handleFilterChange("companySize", v)}
             />
+            {activeTab === "contacts" && (
+              <FilterCategory title="Lookalikes" icon={UsersRound} activeCount={filters.lookalikeContactId.length}>
+                <LookalikesFilter
+                  value={filters.lookalikeContactId[0]}
+                  onChange={(v) => setFilters((prev) => ({ ...prev, lookalikeContactId: v ? [v] : [] }))}
+                />
+              </FilterCategory>
+            )}
             <FilterCategory
               title="Location"
               icon={MapPin}
@@ -1059,6 +1078,14 @@ export default function Search({ directory }: { directory: Tab }) {
                 >
                   {isContactsLoading ? (
                     <TableSkeleton cols={8} rows={8} />
+                  ) : lookalikeActive && contactsError ? (
+                    <div role="alert" className="m-4 space-y-3 rounded-lg border border-border p-5 text-sm">
+                      <p>{contactsError.message || "Couldn't find lookalikes. Please try again."}</p>
+                      <div className="flex gap-3">
+                        <button type="button" onClick={() => retryContacts()} className="text-primary underline">Retry</button>
+                        <button type="button" onClick={() => setFilters(prev => ({ ...prev, lookalikeContactId: [] }))} className="text-muted-foreground underline">Remove Lookalikes filter</button>
+                      </div>
+                    </div>
                   ) : !contactsData?.data.length ? (
                     <EmptyState />
                   ) : (
@@ -1156,9 +1183,16 @@ export default function Search({ directory }: { directory: Tab }) {
                                             <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
                                               {getInitials(`${contact.firstName} ${contact.lastName}`)}
                                             </div>
-                                            <span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
+                                            <div className="min-w-0"><span className="min-w-0 truncate font-normal text-foreground underline decoration-foreground/40 underline-offset-2 transition-colors group-hover:text-primary">
                                               {contact.firstName} {contact.lastName}
                                             </span>
+                                            {lookalikeActive && contact.lookalikeScore != null && (
+                                              <span className="block text-[11px] text-muted-foreground" title={contact.lookalikeReasons?.join(", ")} data-testid={`lookalike-score-${contact.id}`}>
+                                                {Math.round(contact.lookalikeScore)}% similar
+                                                {contact.lookalikeReasons?.length ? ` · ${contact.lookalikeReasons.join(", ")}` : ""}
+                                              </span>
+                                            )}
+</div>
                                           </div>
                                         </td>
                                       );

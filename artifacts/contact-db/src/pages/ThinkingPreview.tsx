@@ -42,7 +42,7 @@ export default function ThinkingPreview() {
 
           <section className="rounded-xl border border-border bg-background p-5">
             <h2 className="mb-4 text-sm font-semibold">Generation button</h2>
-            <button type="button" disabled className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed">
+            <button type="button" disabled className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground dark:bg-indigo-700 dark:border-indigo-700 dark:text-white disabled:cursor-not-allowed">
               {thinking ? <ThinkingIndicator decorative className="h-3.5 w-5" /> : <Sparkles size={14} />}
               {thinking ? "Generating…" : "Generate preview"}
             </button>

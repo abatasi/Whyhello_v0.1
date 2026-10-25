@@ -12,20 +12,20 @@ const buttonVariants = cva(
       variant: {
         default:
            // @replit: no hover, and add primary border
-           "bg-primary text-primary-foreground border border-primary-border",
+           "bg-primary text-primary-foreground border border-primary-border dark:bg-indigo-700 dark:text-white dark:hover:bg-indigo-800",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm border-destructive-border",
+          "bg-destructive text-destructive-foreground shadow-sm border-destructive-border dark:bg-red-700 dark:text-white dark:hover:bg-red-800",
         outline:
           // @replit Shows the background color of whatever card / sidebar / accent background it is inside of.
           // Inherits the current text color. Uses shadow-xs. no shadow on active
           // No hover state
-          " border [border-color:var(--button-outline)] shadow-xs active:shadow-none ",
+          " border [border-color:var(--button-outline)] shadow-xs active:shadow-none dark:bg-transparent dark:text-slate-100 dark:hover:bg-slate-800 dark:hover:text-white ",
         secondary:
           // @replit border, no hover, no shadow, secondary border.
-          "border bg-secondary text-secondary-foreground border border-secondary-border ",
+          "border bg-secondary text-secondary-foreground border border-secondary-border dark:bg-slate-700 dark:text-white dark:hover:bg-slate-800 ",
         // @replit no hover, transparent border
-        ghost: "border border-transparent",
-        link: "text-primary underline-offset-4 hover:underline",
+        ghost: "border border-transparent dark:text-slate-100 dark:hover:bg-slate-800 dark:hover:text-white",
+        link: "text-primary underline-offset-4 hover:underline dark:text-slate-100 dark:hover:text-white",
       },
       size: {
         // @replit changed sizes
@@ -53,6 +53,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button"
     return (
       <Comp
+        data-slot="button"
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}

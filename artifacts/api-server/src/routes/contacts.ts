@@ -8,6 +8,8 @@ import { matchingBuyingCenterSeats, parseDnaProfile, selectedBuyingCenter } from
 import { managementLevelExpression, normalizeManagementLevel } from "../lib/contact-management-levels.js";
 import { departmentFilterCondition } from "../lib/department-taxonomy";
 import { locationFilterCondition } from "../lib/location-filters.js";
+import { buildLookalikeRanking, getLookalikeReference, LookalikeInputError } from "../lib/contact-lookalikes.js";
+import { contactTextSearchCondition } from "../lib/contact-text-search.js";
 
 const router: IRouter = Router();
 
@@ -37,13 +39,18 @@ router.get("/", async (req, res) => {
     const locations = splitParam(raw.location);
 
     const conditions: SQL[] = [];
-
-    if (raw.search) {
-      const s = `%${raw.search}%`;
-      conditions.push(
-        sql`(${contactsTable.firstName} ilike ${s} OR ${contactsTable.lastName} ilike ${s} OR ${contactsTable.email} ilike ${s} OR ${contactsTable.jobTitle} ilike ${s} OR ${companiesTable.name} ilike ${s})`
-      );
+    let lookalike: ReturnType<typeof buildLookalikeRanking> | undefined;
+    if (raw.lookalikeContactId !== undefined) {
+      if (!/^[1-9]\d*$/.test(raw.lookalikeContactId) || !Number.isSafeInteger(Number(raw.lookalikeContactId)) || Number(raw.lookalikeContactId) > 2147483647) {
+        res.status(400).json({ error: "Choose a valid reference contact." });
+        return;
+      }
+      lookalike = buildLookalikeRanking(await getLookalikeReference(Number(raw.lookalikeContactId)));
+      conditions.push(lookalike.condition);
     }
+
+    const textSearch = contactTextSearchCondition(raw.search, true);
+    if (textSearch) conditions.push(textSearch);
     if (raw.jobTitle) {
       conditions.push(ilike(contactsTable.jobTitle, `%${raw.jobTitle}%`));
     }
@@ -112,6 +119,7 @@ router.get("/", async (req, res) => {
     const insightCountExpr = sql`(SELECT count(*)::int FROM contact_insights WHERE contact_id = ${contactsTable.id})`;
 
     const orderByClause: SQL[] = [];
+    if (lookalike) orderByClause.push(sql`${lookalike.score} DESC`);
     switch (raw.sortBy) {
       case "name":
         orderByClause.push(sql`${contactsTable.firstName} ${sql.raw(sortDir)} NULLS LAST`);
@@ -170,6 +178,8 @@ router.get("/", async (req, res) => {
           companySize: companiesTable.size,
           insightCount: sql<number>`(SELECT count(*)::int FROM contact_insights WHERE contact_id = ${contactsTable.id})`,
           relevanceScore: contactMetaScoresTable.metaScore,
+          lookalikeScore: lookalike?.score ?? sql<null>`null`,
+          lookalikeReasons: lookalike?.reasons ?? sql<string[]>`ARRAY[]::text[]`,
         })
         .from(contactsTable)
         .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
@@ -210,6 +220,10 @@ router.get("/", async (req, res) => {
       totalPages: Math.ceil(total / limit),
     });
   } catch (err) {
+    if (err instanceof LookalikeInputError) {
+      res.status(err.status).json({ error: err.message });
+      return;
+    }
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }

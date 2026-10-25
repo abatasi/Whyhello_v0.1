@@ -27,4 +27,10 @@ export interface ContactSummary {
   insightCount?: number;
   /** @nullable */
   relevanceScore?: number | null;
+  /**
+   * Profile similarity from 0 to 100, independent of HQ buyer relevance.
+   * @nullable
+   */
+  lookalikeScore?: number | null;
+  lookalikeReasons?: string[];
 }

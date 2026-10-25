@@ -652,10 +652,18 @@ export const EnrichRecordsResponse = zod.object({
 /**
  * @summary List contacts with filters
  */
+
 export const listContactsQueryPageDefault = 1;
 export const listContactsQueryLimitDefault = 20;
 
 export const ListContactsQueryParams = zod.object({
+  lookalikeContactId: zod.coerce
+    .number()
+    .min(1)
+    .optional()
+    .describe(
+      "Reference contact for existing-contact similarity ranking; excludes the reference and combines with other filters.",
+    ),
   segment: zod.enum(["all", "netNew", "enriched"]).optional(),
   search: zod.coerce.string().optional(),
   jobTitle: zod.coerce.string().optional(),
@@ -702,6 +710,13 @@ export const ListContactsResponse = zod.object({
       companySize: zod.string().optional(),
       insightCount: zod.number().optional(),
       relevanceScore: zod.number().nullish(),
+      lookalikeScore: zod
+        .number()
+        .nullish()
+        .describe(
+          "Profile similarity from 0 to 100, independent of HQ buyer relevance.",
+        ),
+      lookalikeReasons: zod.array(zod.string()).optional(),
     }),
   ),
   total: zod.number(),
@@ -1008,6 +1023,13 @@ export const GetCompanyResponse = zod.object({
         companySize: zod.string().optional(),
         insightCount: zod.number().optional(),
         relevanceScore: zod.number().nullish(),
+        lookalikeScore: zod
+          .number()
+          .nullish()
+          .describe(
+            "Profile similarity from 0 to 100, independent of HQ buyer relevance.",
+          ),
+        lookalikeReasons: zod.array(zod.string()).optional(),
       }),
     )
     .optional(),

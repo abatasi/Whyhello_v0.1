@@ -1,0 +1,54 @@
+/* Labels/tags follow the same contrast policy as buttons. Shared badges are
+   semantic; the span/list-item fallback covers legacy custom pills without recoloring
+   cards, inputs, avatar fallbacks, empty status dots or brand images. */
+.dark :is(
+  [data-slot="badge"],
+  [data-ui="tag"],
+  :is(span, li).rounded, :is(span, li).rounded-sm, :is(span, li).rounded-md,
+  :is(span, li).rounded-lg, :is(span, li).rounded-full,
+  div.inline-flex.rounded-full
+):not(:empty):not(:has(img, video, canvas)):not(:is(
+  [data-slot="avatar"], [data-slot="avatar-fallback"], [role="img"]
+)) {
+  --solid-tag-color: #334155;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: #f1f5f9 !important;
+
+  & :is(span, svg, i, strong, small, b) {
+    color: inherit !important;
+  }
+
+  /* Explicitly unfilled tags remain unfilled with readable light text. */
+  &:is(
+    [class^="bg-"], [class*=" bg-"], [class^="dark:bg-"], [class*=" dark:bg-"],
+    [style*="background"]
+  ):not(:is(
+    [class~="dark:bg-transparent"], [class~="dark:bg-background"], [class~="dark:bg-card"], [class~="dark:bg-inherit"]
+  )):not(:is(
+    [class~="bg-transparent"], [class~="bg-background"], [class~="bg-card"], [class~="bg-inherit"]
+  ):not(:is([class^="dark:bg-"], [class*=" dark:bg-"]))) {
+    background-color: var(--solid-tag-color) !important;
+    color: #ffffff !important;
+  }
+
+  &:is([class*="bg-primary"]) { --solid-tag-color: #4338ca; }
+  &:is([class*="bg-destructive"]) { --solid-tag-color: #b91c1c; }
+  &:is([class*="bg-violet-"]) { --solid-tag-color: #6d28d9; }
+  &:is([class*="bg-purple-"]) { --solid-tag-color: #7e22ce; }
+  &:is([class*="bg-indigo-"]) { --solid-tag-color: #4338ca; }
+  &:is([class*="bg-blue-"]) { --solid-tag-color: #1d4ed8; }
+  &:is([class*="bg-sky-"]) { --solid-tag-color: #0369a1; }
+  &:is([class*="bg-cyan-"]) { --solid-tag-color: #0e7490; }
+  &:is([class*="bg-teal-"]) { --solid-tag-color: #0f766e; }
+  &:is([class*="bg-emerald-"]) { --solid-tag-color: #047857; }
+  &:is([class*="bg-green-"]) { --solid-tag-color: #15803d; }
+  &:is([class*="bg-lime-"]) { --solid-tag-color: #3f6212; }
+  &:is([class*="bg-amber-"]) { --solid-tag-color: #b45309; }
+  &:is([class*="bg-yellow-"]) { --solid-tag-color: #a16207; }
+  &:is([class*="bg-orange-"]) { --solid-tag-color: #c2410c; }
+  &:is([class*="bg-red-"]) { --solid-tag-color: #b91c1c; }
+  &:is([class*="bg-rose-"]) { --solid-tag-color: #be123c; }
+  &:is([class*="bg-pink-"]) { --solid-tag-color: #be185d; }
+  &:is([class*="bg-fuchsia-"]) { --solid-tag-color: #a21caf; }
+}

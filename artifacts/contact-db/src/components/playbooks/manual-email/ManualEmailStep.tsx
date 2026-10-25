@@ -141,7 +141,7 @@ function VariantFields({ variant, config, context, contextLoading, contextError,
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
       {variant.mode === "template" && <span className="text-xs text-muted-foreground">Templates keep their authored subject and body.</span>}
       {validation && !variant.preview && <span className="text-xs text-muted-foreground">Complete required fields to generate.</span>}
-      <button type="button" data-testid="button-generate-preview" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50" disabled={readOnly || busy || !(context && (context.aiAvailable || variant.mode === "template"))} onClick={onPreview}>
+      <button type="button" data-testid="button-generate-preview" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground dark:bg-indigo-700 dark:border-indigo-700 dark:text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50" disabled={readOnly || busy || !(context && (context.aiAvailable || variant.mode === "template"))} onClick={onPreview}>
         {busy ? <ThinkingIndicator decorative className="h-3.5 w-5" /> : <Sparkles size={14} />}{busy ? "Generating…" : variant.preview ? "Generate new preview" : "Generate preview"}
       </button>
       {!context?.aiAvailable && variant.mode !== "template" && <span className="w-full text-xs text-muted-foreground">AI preview generation is unavailable for this workspace.</span>}

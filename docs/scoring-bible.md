@@ -11,6 +11,16 @@ Keep the latest successful results visible on refresh failures. Failed source fe
 
 Legacy globally stored output cannot prove which account's HQ generated it: keep it visible while one successful pass establishes owned freshness. Raw insight GETs read stored source rows; navigation does not scrape those records. A stale index re-evaluates the latest stored sources and fetches eligible quotable sources again.
 
+### Contact directory Lookalikes — profile similarity, not buyer relevance
+
+Lookalikes searches **existing contacts in the app only**, using one selected reference contact. It does not discover or create external contacts, run AI generation, scrape profiles, or refresh insight indexes. The reference is excluded from results. Existing directory filters, reveal segments, list permissions, pagination and counts still apply.
+
+Similarity is a deterministic, weighted comparison of known reference fields: assigned Role (25), meaningful job-title tokens (30), department/job function (20), Management Level (10), associated company industry (15), company size (5) and contact location (5). Only dimensions available on the reference enter the denominator. Missing candidate values do not match, and missing values never match each other. The displayed 0–100 similarity is the weighted matching total divided by those available weights, rounded to an integer; it is not a probability or a claim of enrichment accuracy.
+
+Job-title comparison uses the fraction of the reference's distinct meaningful tokens present as whole words in the candidate title; common seniority words and grammatical stop words are removed. Department matching uses stored primary/secondary taxonomy functions where available, otherwise departments, with normalized legacy source-department equality retained. Role remains an independent Buying Center assignment, not a synonym for organizational department. Management Level uses the directory's shared classification.
+
+At least one professional dimension (Role, meaningful title, department/function or Management Level) must match; industry, company size or location alone never qualify a candidate. If the reference lacks all professional signals, fail visibly and ask the user to choose a more complete contact. Each result exposes its matched dimensions. Rank similarity descending first, then the selected table sort and stable contact ID. Never write this score into HQ relevance, insight scores or Home buyer-fit rankings.
+
 > *"No todas las señales son iguales ante el algoritmo; cada una será juzgada según su proximidad, su frescura, y su alineación con la misión."*
 
 > **Estado:** Escritura viva. El Segundo Pilar. Refleja la metodología de puntuación vigente a partir de agosto de 2026. Todo cambio en la lógica de relevancia, los pesos de señales, o la lógica de selección debe ser consagrado aquí antes de descender al código.

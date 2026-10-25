@@ -4,8 +4,8 @@ import { orderedHqVoicePersonas } from "@/lib/hq-voice-profile-model";
 import { OUTPUT_TONE_DESCRIPTIONS } from "@/lib/output-tone-descriptions";
 
 const chip = "inline-flex min-w-0 max-w-full cursor-pointer items-center whitespace-normal break-words rounded-full border px-3 py-1.5 text-left text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
-const selectedChip = "border-primary bg-primary text-primary-foreground";
-const idleChip = "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground";
+const selectedChip = "border-primary bg-primary text-primary-foreground dark:bg-indigo-700 dark:border-indigo-700 dark:text-white";
+const idleChip = "border-border bg-background dark:bg-transparent dark:text-slate-200 text-muted-foreground hover:bg-muted hover:text-foreground";
 
 export function TonePersonaPicker({ tones, tone, voicePersonaId, inheritHqTone, context, loading, error, disabled, showHqVoice = true, showVoiceDescription = true, showGenericDescription = false, getDescription, onTone, onPersona, onHqVoice }: {
   tones: readonly string[];

@@ -1,14 +1,45 @@
-/* Dark-mode button policy. Match actual fill utilities, not hover-only classes.
-   Cards, badges, unfilled controls, and the branded loader are not recolored. */
-.dark :is(button, [role="button"], a.inline-flex, input[type="button"], input[type="submit"]):is(
-  [class^="bg-"], [class*=" bg-"], [class^="dark:bg-"], [class*=" dark:bg-"]
-):not(:is(
-  [class~="bg-transparent"], [class~="dark:bg-transparent"],
-  [class~="bg-background"], [class~="dark:bg-background"],
-  [class~="bg-card"], [class~="dark:bg-card"],
-  [class~="bg-inherit"], [class~="dark:bg-inherit"],
+/* Dark-mode button policy: unfilled + light text, or opaque fill + white text.
+   Scope to controls, never cards, images, or the brand loader.
+   Standalone badges follow the separate dark-label-tags policy.
+   A shared baseline also covers custom controls without background utilities. */
+.dark :is(button, [role="button"], [role="tab"], a[data-slot="button"], a.inline-flex, input[type="button"], input[type="submit"], input[type="reset"]):not(:is(
   [role="switch"], [role="checkbox"], [role="radio"]
 )) {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: #f1f5f9 !important;
+
+  /* A label or icon must not retain a light-mode text color on a dark button. */
+  & :is(span, div, p, svg, i, a, strong, small, b, em, h2, h3, h4) {
+    color: inherit !important;
+  }
+
+  /* White icons cannot sit on light-mode pastel icon tiles. */
+  & :is(span, div):has(> svg) {
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  &:disabled, &[aria-disabled="true"] {
+    color: #cbd5e1 !important;
+    opacity: 1 !important;
+  }
+}
+
+/* Match actual fill utilities (including arbitrary colors), not hover-only
+   classes. Explicit dark background/card/transparent overrides remain unfilled. */
+.dark :is(button, [role="button"], [role="tab"], a[data-slot="button"], a.inline-flex, input[type="button"], input[type="submit"], input[type="reset"]):is(
+  [class^="bg-"], [class*=" bg-"], [class^="dark:bg-"], [class*=" dark:bg-"],
+  [style*="background"]
+):not(:is(
+  [class~="dark:bg-transparent"], [class~="dark:bg-background"],
+  [class~="dark:bg-card"], [class~="dark:bg-inherit"],
+  [role="switch"], [role="checkbox"], [role="radio"]
+)):not(:is(
+  [class~="bg-transparent"], [class~="bg-background"],
+  [class~="bg-card"], [class~="bg-inherit"]
+):not(:is([class^="dark:bg-"], [class*=" dark:bg-"]))
+) {
   --solid-button-color: #334155;
   background-color: var(--solid-button-color) !important;
   background-image: none !important;
@@ -76,7 +107,7 @@
     --solid-button-color: #7c3e2a;
   }
 
-  & :is(span, div, p, svg, i, a) {
+  & :is(span, div, p, svg, i, a, strong, small, b, em, h2, h3, h4) {
     color: #ffffff !important;
   }
 
@@ -97,7 +128,7 @@
 }
 
 /* Ghost/outline controls stay unfilled at rest; their hover fill is also opaque. */
-.dark :is(button, [role="button"], a.inline-flex):is(
+.dark :is(button, [role="button"], [role="tab"], a[data-slot="button"], a.inline-flex):is(
   [class^="hover:bg-"], [class*=" hover:bg-"],
   [class^="dark:hover:bg-"], [class*=" dark:hover:bg-"]
 ):hover:not(:disabled):not([aria-disabled="true"]):not(:is(
@@ -107,7 +138,41 @@
   background-image: none !important;
   color: #ffffff !important;
 
-  & :is(span, div, p, svg, i, a) {
+  & :is(span, div, p, svg, i, a, strong, small, b, em, h2, h3, h4) {
     color: #ffffff !important;
   }
+}
+
+/* Removing light-mode fills must not hide the selected tab/toggle state. */
+.dark :is(button, [role="tab"]):is(
+  [aria-selected="true"], [aria-pressed="true"], [data-state="active"]
+):not(:is([role="switch"], [role="checkbox"], [role="radio"])) {
+  background-color: var(--solid-button-color, #334155) !important;
+  color: #ffffff !important;
+}
+
+/* Portalled menu actions are often divs rather than native buttons. */
+.dark :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]) {
+  color: #f1f5f9 !important;
+
+  & :is(span, div, p, svg, i, strong, small) {
+    color: inherit !important;
+  }
+}
+
+/* A badge/label embedded in a button must not keep a pale background after
+   inheriting its light foreground. Standalone badges and empty status dots
+   are untouched; icon tiles already use the transparent treatment above. */
+.dark :is(button, [role="button"], [role="tab"], a[data-slot="button"], a.inline-flex)
+:is(span, div):is(
+  [class^="bg-"], [class*=" bg-"], [class^="dark:bg-"], [class*=" dark:bg-"]
+):not(:empty):not(:has(> svg)):not(:is(
+  [class~="bg-transparent"], [class~="dark:bg-transparent"],
+  [class~="bg-background"], [class~="dark:bg-background"],
+  [class~="bg-card"], [class~="dark:bg-card"],
+  [class~="bg-inherit"], [class~="dark:bg-inherit"]
+)) {
+  background-color: #334155 !important;
+  background-image: none !important;
+  color: #ffffff !important;
 }

@@ -9,6 +9,11 @@ import type { ListContactsSegment } from "./listContactsSegment";
 import type { ListContactsSortOrder } from "./listContactsSortOrder";
 
 export type ListContactsParams = {
+  /**
+   * Reference contact for existing-contact similarity ranking; excludes the reference and combines with other filters.
+   * @minimum 1
+   */
+  lookalikeContactId?: number;
   segment?: ListContactsSegment;
   search?: string;
   jobTitle?: string;

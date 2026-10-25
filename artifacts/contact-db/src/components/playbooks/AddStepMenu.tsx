@@ -14,7 +14,7 @@ export function AddStepMenu({ onSelect, disabled = false, testId = "button-add-s
   const selected = useRef(false);
   return <DropdownMenu>
     <DropdownMenuTrigger asChild>
-      <button type="button" data-testid={testId} disabled={disabled} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
+      <button type="button" data-testid={testId} disabled={disabled} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground dark:bg-indigo-700 dark:border-indigo-700 dark:text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
         <Plus size={16} />Add a step
       </button>
     </DropdownMenuTrigger>

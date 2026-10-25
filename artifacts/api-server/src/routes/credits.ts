@@ -1,4 +1,5 @@
 import { Router, type IRouter, type Request } from "express";
+import { contactTextSearchCondition } from "../lib/contact-text-search.js";
 import { db } from "@workspace/db";
 import { usersTable, contactRevealsTable, companyRevealsTable, contactsTable, companiesTable } from "@workspace/db/schema";
 import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
@@ -308,12 +309,10 @@ router.get("/revealed-contacts", async (req, res) => {
       .innerJoin(contactsTable, eq(contactRevealsTable.contactId, contactsTable.id))
       .leftJoin(companiesTable, eq(contactsTable.companyId, companiesTable.id))
       .where(
-        search
-          ? and(
-              eq(contactRevealsTable.userId, userId),
-              sql`(${contactsTable.firstName} ilike ${`%${search}%`} OR ${contactsTable.lastName} ilike ${`%${search}%`} OR ${contactsTable.email} ilike ${`%${search}%`})`
-            )
-          : eq(contactRevealsTable.userId, userId)
+        and(
+          eq(contactRevealsTable.userId, userId),
+          contactTextSearchCondition(search),
+        )
       )
       .orderBy(contactsTable.firstName, contactsTable.lastName)
       .limit(50);
