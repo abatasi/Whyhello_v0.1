@@ -63,7 +63,7 @@ router.get("/options", async (_req, res) => {
           .select({ value: managementLevel, count: sql<number>`count(*)::int` })
           .from(contactsTable)
           .where(sql`${managementLevel} is not null`)
-          .groupBy(managementLevel),
+          .groupBy(sql`1`),
       ]);
 
     const STATIC_DEPARTMENTS = ["Investment Advisor"];

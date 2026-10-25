@@ -9,6 +9,7 @@
 - [Theme selector alignment](theme-selector-alignment.md) — Tailwind v4 dark utilities default to system preference; align them with next-themes class switching
 - [Dark card surfaces](dark-card-surfaces.md) — dark-mode cards share the page background; use borders for category distinction, not tinted fills
 - [Drizzle correlated SQL qualifiers](drizzle-correlated-sql.md) — table-column interpolation in aggregate SELECT fragments may lose its table qualifier
+- [Drizzle parameterized grouping](drizzle-parameterized-grouping.md) — group computed parameterized expressions by selected alias or ordinal, not repeated interpolation.
 - [Buying Center Role identity](buying-center-role-identity.md) — seat criteria use Role names in saved HQ profiles; renaming a Role requires migrating those saved selections
 - [Live audience semantics](live-audience-semantics.md) — only explicit per-user live selections power badges and rankings; editor/view tabs never activate drafts
 - [Interaction feedback](interaction-style.md) — stationary, subtle button hovers; hand cursors on enabled clickable elements
