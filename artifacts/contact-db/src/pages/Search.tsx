@@ -30,6 +30,7 @@ import {
   usePreviewEnrichment,
   useEnrichRecords,
 } from "@workspace/api-client-react";
+import { DepartmentTaxonomyFilter } from "@/components/filters/DepartmentTaxonomyFilter";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
 import { OverallScorePill } from "@/components/OverallScorePill";
@@ -920,14 +921,17 @@ export default function Search({ directory }: { directory: Tab }) {
                     selected={filters.seniority}
                     onChange={(v) => handleFilterChange("seniority", v)}
                   />
-                  <MultiSelectFilter
+                  <FilterCategory
                     nested
                     title="Departments & Job Function"
                     icon={BriefcaseBusiness}
-                    options={filterOptions?.departments || []}
-                    selected={filters.department}
-                    onChange={(v) => handleFilterChange("department", v)}
-                  />
+                    activeCount={filters.department.length}
+                  >
+                    <DepartmentTaxonomyFilter
+                      selected={filters.department}
+                      onToggleValue={(v) => handleFilterChange("department", v)}
+                    />
+                  </FilterCategory>
                 </div>
               </FilterCategory>
             )}

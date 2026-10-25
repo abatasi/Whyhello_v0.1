@@ -3,6 +3,7 @@ import { seedIfEmpty, seedInsightsIfEmpty, seedCompanyInsightsIfEmpty, seedCateg
 import { seedProductionContactsIfNeeded } from "./lib/seed-contacts";
 import { seedProductionContactInsightsIfNeeded } from "./lib/seed-contact-insights";
 import { seedFaisalKarmali } from "./lib/seed-faisal";
+import { ensureDepartmentTaxonomy } from "./lib/department-taxonomy";
 
 const rawPort = process.env["PORT"];
 
@@ -53,6 +54,7 @@ app.listen(port, () => {
     .then(() => seedProductionContactsIfNeeded())
     .then(() => seedProductionContactInsightsIfNeeded())
     .then(() => seedFaisalKarmali())
+    .then(() => ensureDepartmentTaxonomy())
     .catch((err) => {
       console.error("Seed failed:", err);
     });

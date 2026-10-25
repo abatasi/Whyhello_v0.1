@@ -26,3 +26,4 @@ export * from "./calls";
 export * from "./contact-meta-scores";
 export * from "./contact-index-cache";
 export * from "./import-jobs";
+export * from "./department-taxonomy";

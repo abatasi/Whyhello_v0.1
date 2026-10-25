@@ -4,6 +4,9 @@
   "files": [],
   "references": [
     {
+      "path": "./lib/department-taxonomy"
+    },
+    {
       "path": "./lib/db"
     },
     {

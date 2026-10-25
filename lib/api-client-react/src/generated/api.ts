@@ -23,18 +23,21 @@ import type {
   CompanyListResponse,
   ContactChatInput,
   ContactChatMessage,
+  ContactDepartmentClassification,
   ContactDetail,
   ContactInsight,
   ContactListResponse,
   CounterpartInsight,
   CreateChatMessageRequest,
   CreateOutreachJobRequest,
+  DepartmentTaxonomyNode,
   EnrichmentPreview,
   EnrichmentPreviewInput,
   EnrichmentResult,
   ErrorResponse,
   FilterOptions,
   GetContactIndexingStatus200,
+  GetDepartmentTaxonomyParams,
   GetPlaybookSampleContacts200,
   HealthStatus,
   HqAudienceInput,
@@ -68,6 +71,292 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary Retrieve normalized classifications, original values and review status
+ */
+export const getGetContactDepartmentsUrl = (contactId: number) => {
+  return `/api/contacts/${contactId}/departments`;
+};
+
+export const getContactDepartments = async (
+  contactId: number,
+  options?: RequestInit,
+): Promise<ContactDepartmentClassification> => {
+  return customFetch<ContactDepartmentClassification>(
+    getGetContactDepartmentsUrl(contactId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetContactDepartmentsQueryKey = (contactId: number) => {
+  return [`/api/contacts/${contactId}/departments`] as const;
+};
+
+export const getGetContactDepartmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getContactDepartments>>,
+  TError = ErrorType<void>,
+>(
+  contactId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactDepartments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContactDepartmentsQueryKey(contactId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContactDepartments>>
+  > = ({ signal }) =>
+    getContactDepartments(contactId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!contactId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContactDepartments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetContactDepartmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContactDepartments>>
+>;
+export type GetContactDepartmentsQueryError = ErrorType<void>;
+
+/**
+ * @summary Retrieve normalized classifications, original values and review status
+ */
+
+export function useGetContactDepartments<
+  TData = Awaited<ReturnType<typeof getContactDepartments>>,
+  TError = ErrorType<void>,
+>(
+  contactId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContactDepartments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetContactDepartmentsQueryOptions(contactId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Validate and save department, function and specialization assignments
+ */
+export const getUpdateContactDepartmentsUrl = (contactId: number) => {
+  return `/api/contacts/${contactId}/departments`;
+};
+
+export const updateContactDepartments = async (
+  contactId: number,
+  contactDepartmentClassification: ContactDepartmentClassification,
+  options?: RequestInit,
+): Promise<ContactDepartmentClassification> => {
+  return customFetch<ContactDepartmentClassification>(
+    getUpdateContactDepartmentsUrl(contactId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(contactDepartmentClassification),
+    },
+  );
+};
+
+export const getUpdateContactDepartmentsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateContactDepartments>>,
+    TError,
+    { contactId: number; data: BodyType<ContactDepartmentClassification> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateContactDepartments>>,
+  TError,
+  { contactId: number; data: BodyType<ContactDepartmentClassification> },
+  TContext
+> => {
+  const mutationKey = ["updateContactDepartments"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateContactDepartments>>,
+    { contactId: number; data: BodyType<ContactDepartmentClassification> }
+  > = (props) => {
+    const { contactId, data } = props ?? {};
+
+    return updateContactDepartments(contactId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateContactDepartmentsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateContactDepartments>>
+>;
+export type UpdateContactDepartmentsMutationBody =
+  BodyType<ContactDepartmentClassification>;
+export type UpdateContactDepartmentsMutationError = ErrorType<void>;
+
+/**
+ * @summary Validate and save department, function and specialization assignments
+ */
+export const useUpdateContactDepartments = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateContactDepartments>>,
+    TError,
+    { contactId: number; data: BodyType<ContactDepartmentClassification> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateContactDepartments>>,
+  TError,
+  { contactId: number; data: BodyType<ContactDepartmentClassification> },
+  TContext
+> => {
+  return useMutation(getUpdateContactDepartmentsMutationOptions(options));
+};
+
+/**
+ * @summary Retrieve the reusable department and job function hierarchy
+ */
+export const getGetDepartmentTaxonomyUrl = (
+  params?: GetDepartmentTaxonomyParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/department-taxonomy?${stringifiedParams}`
+    : `/api/department-taxonomy`;
+};
+
+export const getDepartmentTaxonomy = async (
+  params?: GetDepartmentTaxonomyParams,
+  options?: RequestInit,
+): Promise<DepartmentTaxonomyNode[]> => {
+  return customFetch<DepartmentTaxonomyNode[]>(
+    getGetDepartmentTaxonomyUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDepartmentTaxonomyQueryKey = (
+  params?: GetDepartmentTaxonomyParams,
+) => {
+  return [`/api/department-taxonomy`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetDepartmentTaxonomyQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDepartmentTaxonomy>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDepartmentTaxonomyParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDepartmentTaxonomy>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDepartmentTaxonomyQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDepartmentTaxonomy>>
+  > = ({ signal }) =>
+    getDepartmentTaxonomy(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDepartmentTaxonomy>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDepartmentTaxonomyQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDepartmentTaxonomy>>
+>;
+export type GetDepartmentTaxonomyQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Retrieve the reusable department and job function hierarchy
+ */
+
+export function useGetDepartmentTaxonomy<
+  TData = Awaited<ReturnType<typeof getDepartmentTaxonomy>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDepartmentTaxonomyParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDepartmentTaxonomy>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDepartmentTaxonomyQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List the current user's CSV import jobs

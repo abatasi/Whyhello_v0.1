@@ -14,3 +14,9 @@ Selecting every available seniority level in a Buying Center seat means no senio
 **Why:** Contacts can have a valid assigned Role while lacking any seniority value; treating "all levels" as a strict list hides those valid Role matches.
 
 **How to apply:** Keep the preview query and live seat matching aligned whenever seniority options or matching logic change. Do not conflate a missing seniority with a known level when only some levels are selected.
+
+The Contact directory's organizational department/function taxonomy is independent of Buying Center Role identities and Management Level. Do not replace HQ's saved Role-name criteria with organizational taxonomy nodes.
+
+**Why:** A department such as Sales describes an organizational function, while a Buying Center Role describes a buying seat. Conflating them would invalidate existing seat criteria and historical Role-based searches.
+
+**How to apply:** Keep normalized department selections separate from Role assignments. Preserve source department/title values and existing Role-based matching when extending classification or migrating saved filters.

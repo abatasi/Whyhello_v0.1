@@ -16,6 +16,7 @@ import {
 import { and, desc, eq, ilike } from "drizzle-orm";
 import { GetBulkUploadJobsResponse } from "@workspace/api-zod";
 import type { ImportJobError } from "@workspace/db/schema";
+import { classifyImportedContact } from "../lib/department-taxonomy";
 
 const router: IRouter = Router();
 const MAX_STORED_JOB_ERRORS = 200;
@@ -161,7 +162,13 @@ const TEMPLATES: TemplateConfig[] = [
       { name: "roleId",        required: false, type: "number", example: "2",                   notes: "Numeric ID of an existing Role — links this contact to their role" },
       { name: "industryId",    required: false, type: "number", example: "1",                   notes: "Numeric ID of an existing Industry — links this contact to their industry" },
       { name: "jobTitle",      required: false, type: "text",   example: "VP of Sales",         notes: "" },
-      { name: "department",    required: false, type: "text",   example: "Sales",               notes: "e.g. Sales, Marketing, Engineering" },
+      { name: "department",    required: false, type: "text",   example: "Sales",               notes: "Original source department; preserved alongside normalized taxonomy" },
+      { name: "primaryDepartment", required: false, type: "text", example: "Sales", notes: "Taxonomy ID, department name or recognized alias" },
+      { name: "primaryFunction", required: false, type: "text", example: "Enterprise Sales", notes: "Function within the primary department" },
+      { name: "primarySpecialization", required: false, type: "text", example: "", notes: "Optional configured Level 3 specialization" },
+      { name: "secondaryDepartments", required: false, type: "text", example: "Marketing;Business Development & Partnerships", notes: "Separate multiple taxonomy values with semicolons" },
+      { name: "secondaryFunctions", required: false, type: "text", example: "Strategic Partnerships", notes: "Semicolon-separated functions" },
+      { name: "secondarySpecializations", required: false, type: "text", example: "", notes: "Semicolon-separated configured specializations" },
       { name: "seniority",     required: false, type: "text",   example: "VP",                  notes: "C-Suite, VP, Director, Manager, IC" },
       { name: "email",         required: false, type: "email",  example: "jane@acme.com",       notes: "Used to detect duplicates" },
       { name: "phone",         required: false, type: "text",   example: "+1 415 555 0100",     notes: "" },
@@ -378,21 +385,33 @@ router.post("/:table", upload.single("file"), async (req, res): Promise<void> =>
             .where(eq(contactsTable.email, email)).limit(1);
           if (existing.length > 0) { results.skipped++; continue; }
         }
-        await db.insert(contactsTable).values({
-          firstName, lastName,
-          roleId:     fkInt(r.roleId, validRoleIds),
-          industryId: fkInt(r.industryId, validIndustryIds),
-          companyId:  fkInt(r.companyId, validCompanyIds),
-          jobTitle:      val(r.jobTitle),
-          department:    val(r.department),
-          seniority:     val(r.seniority),
-          email,
-          phone:         val(r.phone),
-          location:      val(r.location),
-          country:       val(r.country),
-          linkedinUrl:   val(r.linkedinUrl),
-          twitterHandle: val(r.twitterHandle),
-          bio:           val(r.bio),
+        await db.transaction(async tx => {
+          const [importedContact] = await tx.insert(contactsTable).values({
+            firstName, lastName,
+            roleId:     fkInt(r.roleId, validRoleIds),
+            industryId: fkInt(r.industryId, validIndustryIds),
+            companyId:  fkInt(r.companyId, validCompanyIds),
+            jobTitle:      val(r.jobTitle),
+            department:    val(r.department),
+            seniority:     val(r.seniority),
+            email,
+            phone:         val(r.phone),
+            location:      val(r.location),
+            country:       val(r.country),
+            linkedinUrl:   val(r.linkedinUrl),
+            twitterHandle: val(r.twitterHandle),
+            bio:           val(r.bio),
+          }).returning({ id: contactsTable.id });
+          await classifyImportedContact(importedContact.id, {
+            department: val(r.primaryDepartment) ?? val(r.department),
+            jobTitle: val(r.jobTitle),
+            primaryFunction: val(r.primaryFunction),
+            primarySpecialization: val(r.primarySpecialization),
+            additionalValues: [
+              val(r.department), val(r.primaryFunction), val(r.primarySpecialization),
+              ...[r.secondaryDepartments, r.secondaryFunctions, r.secondarySpecializations].flatMap(v => (v ?? "").split(";").map(val)),
+            ].filter((v): v is string => !!v),
+          }, tx);
         });
         results.inserted++;
       } catch (err: any) {

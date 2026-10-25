@@ -5,6 +5,48 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+export interface ContactDepartmentClassification {
+  /** @nullable */
+  primaryDepartment: string | null;
+  /** @nullable */
+  primaryFunction: string | null;
+  /** @nullable */
+  primarySpecialization: string | null;
+  secondaryDepartments: string[];
+  secondaryFunctions: string[];
+  secondarySpecializations: string[];
+  /**
+   * @minimum 0
+   * @maximum 1
+   * @nullable
+   */
+  classificationConfidence: number | null;
+  needsReview: boolean;
+  rawValues: string[];
+}
+
+export type DepartmentTaxonomyNodeLevel =
+  (typeof DepartmentTaxonomyNodeLevel)[keyof typeof DepartmentTaxonomyNodeLevel];
+
+export const DepartmentTaxonomyNodeLevel = {
+  NUMBER_1: 1,
+  NUMBER_2: 2,
+  NUMBER_3: 3,
+} as const;
+
+export interface DepartmentTaxonomyNode {
+  id: string;
+  name: string;
+  slug: string;
+  /** @nullable */
+  parentId: string | null;
+  level: DepartmentTaxonomyNodeLevel;
+  aliases: string[];
+  relatedNodeIds?: string[];
+  isActive: boolean;
+  sortOrder: number;
+}
+
 export type ContactChatTurnRole =
   (typeof ContactChatTurnRole)[keyof typeof ContactChatTurnRole];
 
@@ -745,6 +787,13 @@ export interface ImportJob {
 }
 
 export type ListBulkImportJobsResponse = ImportJob[];
+
+export type GetDepartmentTaxonomyParams = {
+  q?: string;
+  parentId?: string;
+  id?: string;
+  descendants?: boolean;
+};
 
 export type GetContactIndexingStatus200 = {
   quotesNeedRefresh: boolean;

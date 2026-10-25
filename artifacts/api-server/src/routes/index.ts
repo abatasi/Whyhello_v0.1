@@ -37,6 +37,8 @@ import { playbookProposalRouter } from "./playbook-proposal";
 import { callsRouter, contactCallsRouter } from "./calls";
 import homeRouter from "./home";
 import footerAssistantRouter from "./footer-assistant";
+import departmentTaxonomyRouter from "./department-taxonomy";
+import contactDepartmentsRouter from "./contact-departments";
 
 const router: IRouter = Router();
 
@@ -50,11 +52,13 @@ router.use("/contacts", contactsRouter);
 router.use("/companies", companiesRouter);
 // Reference data — filters are read-only and publicly accessible
 router.use("/filters", filtersRouter);
+router.use("/department-taxonomy", departmentTaxonomyRouter);
 // Proxy for external requests (no sensitive data)
 router.use("/proxy", proxyRouter);
 
 // ── Private routes (requireAuth enforces Clerk session + JIT provisioning) ───
 router.use("/contacts/:contactId/insights", requireAuth, insightsRouter);
+router.use("/contacts/:contactId/departments", requireAuth, contactDepartmentsRouter);
 router.use("/contacts/:contactId/industry-insights", requireAuth, industryInsightsRouter);
 router.use("/contacts/:contactId/role-insights", requireAuth, roleInsightsRouter);
 router.use("/contacts/:contactId/colleague-insights", requireAuth, colleagueInsightsRouter);

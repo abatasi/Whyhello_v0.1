@@ -8,6 +8,102 @@
 import * as zod from "zod";
 
 /**
+ * @summary Retrieve normalized classifications, original values and review status
+ */
+export const GetContactDepartmentsParams = zod.object({
+  contactId: zod.coerce.number(),
+});
+
+export const getContactDepartmentsResponseClassificationConfidenceMin = 0;
+export const getContactDepartmentsResponseClassificationConfidenceMax = 1;
+
+export const GetContactDepartmentsResponse = zod.object({
+  primaryDepartment: zod.string().nullable(),
+  primaryFunction: zod.string().nullable(),
+  primarySpecialization: zod.string().nullable(),
+  secondaryDepartments: zod.array(zod.string()),
+  secondaryFunctions: zod.array(zod.string()),
+  secondarySpecializations: zod.array(zod.string()),
+  classificationConfidence: zod
+    .number()
+    .min(getContactDepartmentsResponseClassificationConfidenceMin)
+    .max(getContactDepartmentsResponseClassificationConfidenceMax)
+    .nullable(),
+  needsReview: zod.boolean(),
+  rawValues: zod.array(zod.string()),
+});
+
+/**
+ * @summary Validate and save department, function and specialization assignments
+ */
+export const UpdateContactDepartmentsParams = zod.object({
+  contactId: zod.coerce.number(),
+});
+
+export const updateContactDepartmentsBodyClassificationConfidenceMin = 0;
+export const updateContactDepartmentsBodyClassificationConfidenceMax = 1;
+
+export const UpdateContactDepartmentsBody = zod.object({
+  primaryDepartment: zod.string().nullable(),
+  primaryFunction: zod.string().nullable(),
+  primarySpecialization: zod.string().nullable(),
+  secondaryDepartments: zod.array(zod.string()),
+  secondaryFunctions: zod.array(zod.string()),
+  secondarySpecializations: zod.array(zod.string()),
+  classificationConfidence: zod
+    .number()
+    .min(updateContactDepartmentsBodyClassificationConfidenceMin)
+    .max(updateContactDepartmentsBodyClassificationConfidenceMax)
+    .nullable(),
+  needsReview: zod.boolean(),
+  rawValues: zod.array(zod.string()),
+});
+
+export const updateContactDepartmentsResponseClassificationConfidenceMin = 0;
+export const updateContactDepartmentsResponseClassificationConfidenceMax = 1;
+
+export const UpdateContactDepartmentsResponse = zod.object({
+  primaryDepartment: zod.string().nullable(),
+  primaryFunction: zod.string().nullable(),
+  primarySpecialization: zod.string().nullable(),
+  secondaryDepartments: zod.array(zod.string()),
+  secondaryFunctions: zod.array(zod.string()),
+  secondarySpecializations: zod.array(zod.string()),
+  classificationConfidence: zod
+    .number()
+    .min(updateContactDepartmentsResponseClassificationConfidenceMin)
+    .max(updateContactDepartmentsResponseClassificationConfidenceMax)
+    .nullable(),
+  needsReview: zod.boolean(),
+  rawValues: zod.array(zod.string()),
+});
+
+/**
+ * @summary Retrieve the reusable department and job function hierarchy
+ */
+export const GetDepartmentTaxonomyQueryParams = zod.object({
+  q: zod.coerce.string().optional(),
+  parentId: zod.coerce.string().optional(),
+  id: zod.coerce.string().optional(),
+  descendants: zod.coerce.boolean().optional(),
+});
+
+export const GetDepartmentTaxonomyResponseItem = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  slug: zod.string(),
+  parentId: zod.string().nullable(),
+  level: zod.union([zod.literal(1), zod.literal(2), zod.literal(3)]),
+  aliases: zod.array(zod.string()),
+  relatedNodeIds: zod.array(zod.string()).optional(),
+  isActive: zod.boolean(),
+  sortOrder: zod.number(),
+});
+export const GetDepartmentTaxonomyResponse = zod.array(
+  GetDepartmentTaxonomyResponseItem,
+);
+
+/**
  * @summary List the current user's CSV import jobs
  */
 export const getBulkUploadJobsResponseTotalRowsMin = 0;

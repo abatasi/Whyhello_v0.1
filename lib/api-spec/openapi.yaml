@@ -19,6 +19,59 @@ tags:
     description: CSV data imports and their processing history
 
 paths:
+  /contacts/{contactId}/departments:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getContactDepartments
+      tags: [contacts]
+      summary: Retrieve normalized classifications, original values and review status
+      responses:
+        "200":
+          description: Department classification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactDepartmentClassification" }
+        "404": { description: Contact not found }
+    put:
+      operationId: updateContactDepartments
+      tags: [contacts]
+      summary: Validate and save department, function and specialization assignments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContactDepartmentClassification" }
+      responses:
+        "200":
+          description: Saved classification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactDepartmentClassification" }
+        "400": { description: Invalid hierarchy or classification }
+        "404": { description: Contact not found }
+  /department-taxonomy:
+    get:
+      operationId: getDepartmentTaxonomy
+      tags: [contacts]
+      summary: Retrieve the reusable department and job function hierarchy
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: parentId, in: query, schema: { type: string } }
+        - { name: id, in: query, schema: { type: string } }
+        - { name: descendants, in: query, schema: { type: boolean } }
+      responses:
+        "200":
+          description: Flat normalized nodes with stable identifiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepartmentTaxonomyNode"
   /bulk-upload/jobs:
     get:
       operationId: getBulkUploadJobs
@@ -883,6 +936,36 @@ paths:
 
 components:
   schemas:
+    ContactDepartmentClassification:
+      type: object
+      required: [primaryDepartment, primaryFunction, primarySpecialization, secondaryDepartments, secondaryFunctions, secondarySpecializations, classificationConfidence, needsReview, rawValues]
+      properties:
+        primaryDepartment: { type: [string, "null"] }
+        primaryFunction: { type: [string, "null"] }
+        primarySpecialization: { type: [string, "null"] }
+        secondaryDepartments: { type: array, items: { type: string } }
+        secondaryFunctions: { type: array, items: { type: string } }
+        secondarySpecializations: { type: array, items: { type: string } }
+        classificationConfidence: { type: [number, "null"], minimum: 0, maximum: 1 }
+        needsReview: { type: boolean }
+        rawValues: { type: array, items: { type: string } }
+    DepartmentTaxonomyNode:
+      type: object
+      required: [id, name, slug, parentId, level, aliases, isActive, sortOrder]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        parentId: { type: [string, "null"] }
+        level: { type: integer, enum: [1, 2, 3] }
+        aliases:
+          type: array
+          items: { type: string }
+        relatedNodeIds:
+          type: array
+          items: { type: string }
+        isActive: { type: boolean }
+        sortOrder: { type: integer }
     ContactChatTurn:
       type: object
       required: [role, content]

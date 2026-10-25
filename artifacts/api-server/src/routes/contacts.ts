@@ -6,6 +6,7 @@ import { GetContactParams } from "@workspace/api-zod";
 import { eq, ilike, and, inArray, or, sql, SQL, asc, desc } from "drizzle-orm";
 import { matchingBuyingCenterSeats, parseDnaProfile, selectedBuyingCenter } from "../lib/live-audience";
 import { managementLevelExpression, normalizeManagementLevel } from "../lib/contact-management-levels.js";
+import { departmentFilterCondition } from "../lib/department-taxonomy";
 
 const router: IRouter = Router();
 
@@ -46,12 +47,7 @@ router.get("/", async (req, res) => {
       conditions.push(ilike(contactsTable.jobTitle, `%${raw.jobTitle}%`));
     }
     if (departments.length > 0) {
-      // Buying Center selections use Role names, while older contacts without
-      // a Role can still be found through their stored department.
-      conditions.push(or(
-        inArray(contactsTable.roleId, db.select({ id: rolesTable.id }).from(rolesTable).where(inArray(rolesTable.name, departments))),
-        and(sql`${contactsTable.roleId} IS NULL`, inArray(contactsTable.department, departments)),
-      )!);
+      conditions.push((await departmentFilterCondition(departments))!);
     }
     if (seniorities.length > 0) {
       conditions.push(inArray(managementLevelExpression(), seniorities));
