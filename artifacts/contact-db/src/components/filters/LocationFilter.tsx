@@ -20,8 +20,8 @@ interface Props {
   onClear: (keys: LocationKey[]) => void;
 }
 
-function Picker({ id, label, selected, onToggle, onClear }: {
-  id: string; label: string; selected: string[]; onToggle: (v: string) => void; onClear: () => void;
+function Picker({ id, label, selected, onToggle, onClear, secondaryLabel = false }: {
+  id: string; label: string; selected: string[]; onToggle: (v: string) => void; onClear: () => void; secondaryLabel?: boolean;
 }) {
   const [q, setQ] = useState("");
   const [dq] = useDebounce(q.trim(), 300);
@@ -34,7 +34,7 @@ function Picker({ id, label, selected, onToggle, onClear }: {
   return (
     <div className="space-y-2" data-testid={`location-picker-${id}`}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-foreground">{label}</span>
+        <span className={secondaryLabel ? "text-[11px] font-normal text-muted-foreground" : "text-xs font-semibold text-foreground"}>{label}</span>
         {selected.length > 0 && (
           <button type="button" onClick={onClear} data-testid={`location-clear-${id}`}
             className="text-[11px] text-muted-foreground underline hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
@@ -135,7 +135,7 @@ export function LocationFilter({ mode, values, onToggle, onClear }: Props) {
         {showExcl ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
       </button>
       {showExcl && (
-        <Picker key={exc} id={exc} label="Exclude" selected={values[exc]}
+        <Picker key={exc} id={exc} label="Locations to Exclude" secondaryLabel selected={values[exc]}
           onToggle={(v) => onToggle(exc, v)} onClear={() => onClear([exc])} />
       )}
     </div>
