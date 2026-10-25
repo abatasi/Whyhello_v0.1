@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { locationFilterCondition } from "../lib/location-filters.js";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import { contactsTable, companiesTable, listsTable, rolesTable, dnaProfilesTable } from "@workspace/db/schema";
@@ -50,11 +51,8 @@ router.get("/", async (req, res) => {
     } else if (sizes.length > 1) {
       conditions.push(inArray(companiesTable.size, sizes));
     }
-    if (locations.length === 1) {
-      conditions.push(ilike(companiesTable.location, `%${locations[0]}%`));
-    } else if (locations.length > 1) {
-      conditions.push(or(...locations.map((l) => ilike(companiesTable.location, `%${l}%`)))!);
-    }
+    const locationCondition = locationFilterCondition(companiesTable.location, companiesTable.country, locations, splitParam(raw.excludedLocation));
+    if (locationCondition) conditions.push(locationCondition);
     if (raw.country) {
       conditions.push(eq(companiesTable.country, raw.country));
     }

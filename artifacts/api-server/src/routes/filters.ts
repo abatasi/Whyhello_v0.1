@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { contactsTable, companiesTable, rolesTable } from "@workspace/db/schema";
 import { sql } from "drizzle-orm";
 import { MANAGEMENT_LEVELS, managementLevelExpression } from "../lib/contact-management-levels.js";
+import { searchLocations } from "../lib/location-filters.js";
 
 const COMPANY_SIZE_ORDER = ["11-50", "51-200", "201-500", "500-1000", "1000+"];
 
@@ -18,6 +19,15 @@ function sortCompanySizes(sizes: string[]): string[] {
 }
 
 const router: IRouter = Router();
+
+router.get("/locations", (req, res) => {
+  if (req.query.q !== undefined && typeof req.query.q !== "string") {
+    res.status(400).json({ error: "Invalid location search" });
+    return;
+  }
+  res.setHeader("Cache-Control", "private, max-age=3600");
+  res.json(searchLocations(req.query.q ?? ""));
+});
 
 router.get("/options", async (_req, res) => {
   try {

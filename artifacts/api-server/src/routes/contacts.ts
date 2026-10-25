@@ -7,6 +7,7 @@ import { eq, ilike, and, inArray, or, sql, SQL, asc, desc } from "drizzle-orm";
 import { matchingBuyingCenterSeats, parseDnaProfile, selectedBuyingCenter } from "../lib/live-audience";
 import { managementLevelExpression, normalizeManagementLevel } from "../lib/contact-management-levels.js";
 import { departmentFilterCondition } from "../lib/department-taxonomy";
+import { locationFilterCondition } from "../lib/location-filters.js";
 
 const router: IRouter = Router();
 
@@ -62,11 +63,10 @@ router.get("/", async (req, res) => {
     } else if (companySizes.length > 1) {
       conditions.push(inArray(companiesTable.size, companySizes));
     }
-    if (locations.length === 1) {
-      conditions.push(ilike(contactsTable.location, `%${locations[0]}%`));
-    } else if (locations.length > 1) {
-      conditions.push(or(...locations.map((l) => ilike(contactsTable.location, `%${l}%`)))!);
-    }
+    const contactLocation = locationFilterCondition(contactsTable.location, contactsTable.country, locations, splitParam(raw.excludedLocation));
+    const headOfficeLocation = locationFilterCondition(companiesTable.location, companiesTable.country, splitParam(raw.headOfficeLocation), splitParam(raw.excludedHeadOfficeLocation));
+    if (contactLocation) conditions.push(contactLocation);
+    if (headOfficeLocation) conditions.push(headOfficeLocation);
     if (raw.country) {
       conditions.push(eq(contactsTable.country, raw.country));
     }

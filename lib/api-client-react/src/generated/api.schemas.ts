@@ -573,6 +573,21 @@ export interface CompanyListResponse {
   totalPages: number;
 }
 
+export type LocationOptionKind =
+  (typeof LocationOptionKind)[keyof typeof LocationOptionKind];
+
+export const LocationOptionKind = {
+  city: "city",
+  state: "state",
+  country: "country",
+} as const;
+
+export interface LocationOption {
+  value: string;
+  label: string;
+  kind: LocationOptionKind;
+}
+
 export type FilterOptionsManagementLevelsItem = {
   value: string;
   count: number;
@@ -835,6 +850,9 @@ export type ListContactsParams = {
   industry?: string;
   companySize?: string;
   location?: string;
+  excludedLocation?: string;
+  headOfficeLocation?: string;
+  excludedHeadOfficeLocation?: string;
   country?: string;
   companyId?: number;
   listId?: number;
@@ -867,6 +885,7 @@ export type ListCompaniesParams = {
   industry?: string;
   size?: string;
   location?: string;
+  excludedLocation?: string;
   country?: string;
   listId?: number;
   sortBy?: string;
@@ -891,3 +910,10 @@ export const ListCompaniesSortOrder = {
   asc: "asc",
   desc: "desc",
 } as const;
+
+export type SearchLocationsParams = {
+  /**
+   * @maxLength 150
+   */
+  q?: string;
+};

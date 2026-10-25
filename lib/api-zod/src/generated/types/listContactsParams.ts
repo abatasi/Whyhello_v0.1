@@ -20,6 +20,9 @@ export type ListContactsParams = {
   industry?: string;
   companySize?: string;
   location?: string;
+  excludedLocation?: string;
+  headOfficeLocation?: string;
+  excludedHeadOfficeLocation?: string;
   country?: string;
   companyId?: number;
   listId?: number;

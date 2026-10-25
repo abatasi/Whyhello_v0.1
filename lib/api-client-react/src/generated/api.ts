@@ -48,6 +48,7 @@ import type {
   ListBulkImportJobsResponse,
   ListCompaniesParams,
   ListContactsParams,
+  LocationOption,
   ManualEmailEditorContext,
   ManualEmailPreview,
   ManualEmailPreviewInput,
@@ -59,6 +60,7 @@ import type {
   PlaybookProposal,
   PlaybookProposalInput,
   RoleInsight,
+  SearchLocationsParams,
   SendManualEmailPreviewTest200,
   UpdateOutreachJobRequest,
 } from "./api.schemas";
@@ -2525,6 +2527,100 @@ export function useGetCompany<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetCompanyQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Search the city, state and country library
+ */
+export const getSearchLocationsUrl = (params?: SearchLocationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/filters/locations?${stringifiedParams}`
+    : `/api/filters/locations`;
+};
+
+export const searchLocations = async (
+  params?: SearchLocationsParams,
+  options?: RequestInit,
+): Promise<LocationOption[]> => {
+  return customFetch<LocationOption[]>(getSearchLocationsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getSearchLocationsQueryKey = (params?: SearchLocationsParams) => {
+  return [`/api/filters/locations`, ...(params ? [params] : [])] as const;
+};
+
+export const getSearchLocationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof searchLocations>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: SearchLocationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof searchLocations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSearchLocationsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof searchLocations>>> = ({
+    signal,
+  }) => searchLocations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof searchLocations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type SearchLocationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof searchLocations>>
+>;
+export type SearchLocationsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Search the city, state and country library
+ */
+
+export function useSearchLocations<
+  TData = Awaited<ReturnType<typeof searchLocations>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: SearchLocationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof searchLocations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getSearchLocationsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

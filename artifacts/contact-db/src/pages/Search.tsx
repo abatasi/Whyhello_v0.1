@@ -31,6 +31,7 @@ import {
   useEnrichRecords,
 } from "@workspace/api-client-react";
 import { DepartmentTaxonomyFilter } from "@/components/filters/DepartmentTaxonomyFilter";
+import { LocationFilter } from "@/components/filters/LocationFilter";
 import { Shell } from "@/components/layout/Shell";
 import { CompetitorBadge, useCompetitorIds } from "@/components/CompetitorBadge";
 import { OverallScorePill } from "@/components/OverallScorePill";
@@ -68,6 +69,9 @@ type Filters = {
   seniority: string[];
   companySize: string[];
   location: string[];
+  excludedLocation: string[];
+  headOfficeLocation: string[];
+  excludedHeadOfficeLocation: string[];
 };
 
 const EMPTY_FILTERS: Filters = {
@@ -76,6 +80,9 @@ const EMPTY_FILTERS: Filters = {
   seniority: [],
   companySize: [],
   location: [],
+  excludedLocation: [],
+  headOfficeLocation: [],
+  excludedHeadOfficeLocation: [],
 };
 
 function savedFilterValues(value: unknown): string[] {
@@ -415,6 +422,9 @@ export default function Search({ directory }: { directory: Tab }) {
     seniority: directory === "contacts" ? normalizeManagementLevels(parseArrayParam(searchParams.get("seniority"))) : [],
     companySize: parseArrayParam(searchParams.get("companySize")),
     location: parseArrayParam(searchParams.get("location")),
+    excludedLocation: parseArrayParam(searchParams.get("excludedLocation")),
+    headOfficeLocation: directory === "contacts" ? parseArrayParam(searchParams.get("headOfficeLocation")) : [],
+    excludedHeadOfficeLocation: directory === "contacts" ? parseArrayParam(searchParams.get("excludedHeadOfficeLocation")) : [],
   });
 
   const competitorIds = useCompetitorIds();
@@ -537,6 +547,9 @@ export default function Search({ directory }: { directory: Tab }) {
           seniority: filters.seniority,
           companySize: filters.companySize,
           location: filters.location,
+          excludedLocation: filters.excludedLocation,
+          headOfficeLocation: filters.headOfficeLocation,
+          excludedHeadOfficeLocation: filters.excludedHeadOfficeLocation,
           segment,
         },
       },
@@ -588,6 +601,9 @@ export default function Search({ directory }: { directory: Tab }) {
       seniority: targetTab === "contacts" ? normalizeManagementLevels(savedFilterValues(s.filters.seniority)) : [],
       companySize: savedFilterValues(s.filters.companySize),
       location: savedFilterValues(s.filters.location),
+      excludedLocation: savedFilterValues(s.filters.excludedLocation),
+      headOfficeLocation: targetTab === "contacts" ? savedFilterValues(s.filters.headOfficeLocation) : [],
+      excludedHeadOfficeLocation: targetTab === "contacts" ? savedFilterValues(s.filters.excludedHeadOfficeLocation) : [],
     };
     if (targetTab !== activeTab) {
       const params = new URLSearchParams();
@@ -647,6 +663,9 @@ export default function Search({ directory }: { directory: Tab }) {
     seniority: joinParam(filters.seniority),
     companySize: joinParam(filters.companySize),
     location: joinParam(filters.location),
+    excludedLocation: joinParam(filters.excludedLocation),
+    headOfficeLocation: joinParam(filters.headOfficeLocation),
+    excludedHeadOfficeLocation: joinParam(filters.excludedHeadOfficeLocation),
     listId: selectedListId ?? undefined,
     sortBy: contactSort?.column,
     sortOrder: contactSort?.direction,
@@ -670,6 +689,7 @@ export default function Search({ directory }: { directory: Tab }) {
       industry: joinParam(filters.industry),
       size: joinParam(filters.companySize),
       location: joinParam(filters.location),
+      excludedLocation: joinParam(filters.excludedLocation),
       listId: selectedListId ?? undefined,
       sortBy: companySort?.column,
       sortOrder: companySort?.direction,
@@ -942,13 +962,20 @@ export default function Search({ directory }: { directory: Tab }) {
               selected={filters.companySize}
               onChange={(v) => handleFilterChange("companySize", v)}
             />
-            <MultiSelectFilter
+            <FilterCategory
               title="Location"
               icon={MapPin}
-              options={filterOptions?.locations || []}
-              selected={filters.location}
-              onChange={(v) => handleFilterChange("location", v)}
-            />
+              activeCount={activeTab === "contacts"
+                ? filters.location.length + filters.excludedLocation.length + filters.headOfficeLocation.length + filters.excludedHeadOfficeLocation.length
+                : filters.location.length + filters.excludedLocation.length}
+            >
+              <LocationFilter
+                mode={activeTab}
+                values={filters}
+                onToggle={(k, v) => handleFilterChange(k, v)}
+                onClear={(keys) => setFilters((prev) => ({ ...prev, ...Object.fromEntries(keys.map((k) => [k, []])) }))}
+              />
+            </FilterCategory>
 
             {/* Recent Visits */}
             {activeTab === "contacts" && recentContacts.length > 0 && (

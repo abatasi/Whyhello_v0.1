@@ -14,6 +14,7 @@ export type ListCompaniesParams = {
   industry?: string;
   size?: string;
   location?: string;
+  excludedLocation?: string;
   country?: string;
   listId?: number;
   sortBy?: string;

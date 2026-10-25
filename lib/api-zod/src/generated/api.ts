@@ -669,6 +669,9 @@ export const ListContactsQueryParams = zod.object({
   industry: zod.coerce.string().optional(),
   companySize: zod.coerce.string().optional(),
   location: zod.coerce.string().optional(),
+  excludedLocation: zod.coerce.string().optional(),
+  headOfficeLocation: zod.coerce.string().optional(),
+  excludedHeadOfficeLocation: zod.coerce.string().optional(),
   country: zod.coerce.string().optional(),
   companyId: zod.coerce.number().optional(),
   listId: zod.coerce.number().optional(),
@@ -901,6 +904,7 @@ export const ListCompaniesQueryParams = zod.object({
   industry: zod.coerce.string().optional(),
   size: zod.coerce.string().optional(),
   location: zod.coerce.string().optional(),
+  excludedLocation: zod.coerce.string().optional(),
   country: zod.coerce.string().optional(),
   listId: zod.coerce.number().optional(),
   sortBy: zod.coerce.string().optional(),
@@ -1008,6 +1012,22 @@ export const GetCompanyResponse = zod.object({
     )
     .optional(),
 });
+
+/**
+ * @summary Search the city, state and country library
+ */
+export const searchLocationsQueryQMax = 150;
+
+export const SearchLocationsQueryParams = zod.object({
+  q: zod.coerce.string().max(searchLocationsQueryQMax).optional(),
+});
+
+export const SearchLocationsResponseItem = zod.object({
+  value: zod.string(),
+  label: zod.string(),
+  kind: zod.enum(["city", "state", "country"]),
+});
+export const SearchLocationsResponse = zod.array(SearchLocationsResponseItem);
 
 /**
  * @summary Get available filter option values
