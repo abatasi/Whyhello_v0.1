@@ -18,7 +18,6 @@ import { OverallScorePill } from "@/components/OverallScorePill";
 import {
   useListExports,
   downloadExportFile,
-  useCreditsStatus,
   useGetContactMetaScore,
   useTopBuyers,
 } from "@workspace/api-client-react";
@@ -31,6 +30,7 @@ import {
   type RecentContactVisit,
   type RecentCompanyVisit,
 } from "@/lib/recentVisits";
+import { CreditTracker } from "./CreditTracker";
 import "./sidebar-navigation.css";
 
 function formatRelative(iso: string): string {
@@ -53,50 +53,6 @@ function themeLabel(theme: string | undefined): string {
   if (theme === "light") return "Light";
   if (theme === "dark") return "Dark";
   return "System";
-}
-
-function CreditTracker({ wartime }: { wartime: boolean }) {
-  const { data: status } = useCreditsStatus();
-  if (!status) return null;
-
-  const { tier, creditsUsed, creditsTotal, isUnlimited } = status;
-  const remaining = isUnlimited ? null : (creditsTotal ?? 0) - creditsUsed;
-  const pct = isUnlimited ? 0 : creditsUsed / (creditsTotal ?? 1);
-
-  const tierLabel =
-    tier === "enterprise" ? "Enterprise" : tier === "professional" ? "Pro" : "Free";
-
-  const colorClass = wartime
-    ? "text-[#7C3E2A] dark:text-[#E0BBA8]"
-    : isUnlimited
-    ? "text-[#6F5BAF] dark:text-primary"
-    : pct >= 0.9
-    ? "text-destructive"
-    : pct >= 0.7
-    ? "text-amber-600 dark:text-amber-500"
-    : "text-[#6F5BAF] dark:text-primary";
-
-  const usageText = isUnlimited
-    ? "∞"
-    : `${creditsUsed.toLocaleString()} / ${(creditsTotal ?? 0).toLocaleString()}`;
-
-  const title = isUnlimited
-    ? "Unlimited credits (Enterprise)"
-    : `${remaining?.toLocaleString()} credits remaining this month`;
-
-  return (
-    <div
-      title={title}
-      className={cn(
-        "flex items-center gap-1 px-1.5 py-1 text-[11px] font-bold select-none",
-        colorClass,
-      )}
-    >
-      <Zap className="h-3 w-3 flex-shrink-0" />
-      <span>{usageText}</span>
-      <span className="hidden sm:inline text-muted-foreground/80 font-normal">{tierLabel === "Free" ? "credits" : `· ${tierLabel}`}</span>
-    </div>
-  );
 }
 
 interface ContactResult {
@@ -1172,10 +1128,11 @@ export function Navbar() {
         )}
       >
       {/* ── Desktop bar (md+) — navigation left, utilities right ── */}
-      <div className="hidden h-11 w-full grid-cols-[minmax(0,1fr)_minmax(360px,560px)_minmax(0,1fr)] items-center gap-[18px] px-[18px] pl-[18px] md:grid">
-        <div />
-        <GlobalSearch wartime={wartime} focusMode={searchFocusMode} onCloseFocusMode={() => setSearchFocusMode(false)} />
-        <div className="flex min-w-0 items-center justify-end gap-3">
+      <div className="hidden h-11 w-full items-center gap-[18px] px-[18px] md:flex">
+        <div className="min-w-0 max-w-[560px] flex-1">
+          <GlobalSearch wartime={wartime} focusMode={searchFocusMode} onCloseFocusMode={() => setSearchFocusMode(false)} />
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-3">
           <CreditTracker wartime={wartime} />
           <HQPill wartime={wartime} />
         </div>
@@ -1197,7 +1154,7 @@ export function Navbar() {
 
         <div className="flex-1" />
 
-        {/* HQ pill */}
+        <CreditTracker wartime={wartime} />
         <HQPill wartime={wartime} />
 
         {/* Hamburger / close */}
@@ -1305,7 +1262,7 @@ export function Navbar() {
               <p className={cn("text-sm font-semibold truncate", wartime ? "text-[#5C2E22] dark:text-[#f4e2d8]" : "text-foreground")}>{displayName}</p>
               <p className="text-xs text-muted-foreground">Profile &amp; settings</p>
             </div>
-            <CreditTracker wartime={wartime} />
+            <CreditTracker wartime={wartime} staticOnly />
           </Link>
 
           <div className={cn("h-px mx-4 my-2", wartime ? "bg-[#e8c9b8] dark:bg-[#5a2c1d]" : "bg-border/60")} />

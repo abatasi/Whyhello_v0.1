@@ -5,6 +5,24 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+export type CreditUsageEventRecordType =
+  (typeof CreditUsageEventRecordType)[keyof typeof CreditUsageEventRecordType];
+
+export const CreditUsageEventRecordType = {
+  contact: "contact",
+  company: "company",
+} as const;
+
+export interface CreditUsageEvent {
+  id: string;
+  recordType: CreditUsageEventRecordType;
+  /** @nullable */
+  recordId: number | null;
+  recordName: string;
+  creditsUsed: number;
+  createdAt: string;
+}
+
 export interface ContactDepartmentClassification {
   /** @nullable */
   primaryDepartment: string | null;

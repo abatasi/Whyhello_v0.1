@@ -30,6 +30,7 @@ import type {
   CounterpartInsight,
   CreateChatMessageRequest,
   CreateOutreachJobRequest,
+  CreditUsageEvent,
   DepartmentTaxonomyNode,
   EnrichmentPreview,
   EnrichmentPreviewInput,
@@ -1369,6 +1370,81 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List the signed-in user's 20 most recent credit-consuming reveals
+ */
+export const getListCreditUsageUrl = () => {
+  return `/api/credits/usage`;
+};
+
+export const listCreditUsage = async (
+  options?: RequestInit,
+): Promise<CreditUsageEvent[]> => {
+  return customFetch<CreditUsageEvent[]>(getListCreditUsageUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCreditUsageQueryKey = () => {
+  return [`/api/credits/usage`] as const;
+};
+
+export const getListCreditUsageQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCreditUsage>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCreditUsage>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCreditUsageQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCreditUsage>>> = ({
+    signal,
+  }) => listCreditUsage({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCreditUsage>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCreditUsageQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCreditUsage>>
+>;
+export type ListCreditUsageQueryError = ErrorType<void>;
+
+/**
+ * @summary List the signed-in user's 20 most recent credit-consuming reveals
+ */
+
+export function useListCreditUsage<
+  TData = Awaited<ReturnType<typeof listCreditUsage>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCreditUsage>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCreditUsageQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

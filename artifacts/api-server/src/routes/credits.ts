@@ -2,7 +2,7 @@ import { Router, type IRouter, type Request } from "express";
 import { contactTextSearchCondition } from "../lib/contact-text-search.js";
 import { db } from "@workspace/db";
 import { usersTable, contactRevealsTable, companyRevealsTable, contactsTable, companiesTable } from "@workspace/db/schema";
-import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { EnrichRecordsBody, PreviewEnrichmentBody } from "@workspace/api-zod";
 
@@ -107,6 +107,50 @@ async function commitEnrichment(userId: string, type: "contacts" | "companies", 
 }
 
 const router: IRouter = Router();
+
+// Read the same reveal records that power the balance; never expose another
+// user's activity or write new reveals merely by opening the usage panel.
+router.get("/usage", async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  try {
+    const [contacts, companies] = await Promise.all([
+      db.select({
+        id: contactRevealsTable.id,
+        recordId: contactsTable.id,
+        recordName: sql<string>`coalesce(nullif(trim(concat_ws(' ', ${contactsTable.firstName}, ${contactsTable.lastName})), ''), 'Contact')`,
+        revealedAt: contactRevealsTable.revealedAt,
+      }).from(contactRevealsTable)
+        .leftJoin(contactsTable, eq(contactRevealsTable.contactId, contactsTable.id))
+        .where(eq(contactRevealsTable.userId, userId))
+        .orderBy(desc(contactRevealsTable.revealedAt), desc(contactRevealsTable.id)).limit(20),
+      db.select({
+        id: companyRevealsTable.id,
+        recordId: companiesTable.id,
+        recordName: sql<string>`coalesce(${companiesTable.name}, 'Company')`,
+        revealedAt: companyRevealsTable.revealedAt,
+      }).from(companyRevealsTable)
+        .leftJoin(companiesTable, eq(companyRevealsTable.companyId, companiesTable.id))
+        .where(eq(companyRevealsTable.userId, userId))
+        .orderBy(desc(companyRevealsTable.revealedAt), desc(companyRevealsTable.id)).limit(20),
+    ]);
+    const events = [
+      ...contacts.map(row => ({ ...row, recordType: "contact" as const })),
+      ...companies.map(row => ({ ...row, recordType: "company" as const })),
+    ].sort((a, b) => b.revealedAt.getTime() - a.revealedAt.getTime() || b.id - a.id);
+    res.json(events.slice(0, 20).map(row => ({
+      id: `${row.recordType}-${row.id}`,
+      recordType: row.recordType,
+      recordId: row.recordId,
+      recordName: row.recordName,
+      creditsUsed: CREDITS_PER_RECORD,
+      createdAt: row.revealedAt.toISOString(),
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch credit usage" });
+  }
+});
 
 // Read-only estimate; revealing records and spending credits happen through separate routes.
 router.post("/enrichment-preview", async (req, res) => {

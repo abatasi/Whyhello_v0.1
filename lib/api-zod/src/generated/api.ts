@@ -579,6 +579,19 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary List the signed-in user's 20 most recent credit-consuming reveals
+ */
+export const ListCreditUsageResponseItem = zod.object({
+  id: zod.string(),
+  recordType: zod.enum(["contact", "company"]),
+  recordId: zod.number().nullable(),
+  recordName: zod.string(),
+  creditsUsed: zod.number(),
+  createdAt: zod.date(),
+});
+export const ListCreditUsageResponse = zod.array(ListCreditUsageResponseItem);
+
+/**
  * @summary Preview credit usage for selected records without revealing them
  */
 

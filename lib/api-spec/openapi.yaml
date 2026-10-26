@@ -355,6 +355,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /credits/usage:
+    get:
+      operationId: listCreditUsage
+      tags: [credits]
+      summary: List the signed-in user's 20 most recent credit-consuming reveals
+      responses:
+        "200":
+          description: Recent usage, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditUsageEvent"
+        "401":
+          description: Authentication required
+
   /credits/enrichment-preview:
     post:
       operationId: previewEnrichment
@@ -979,6 +996,24 @@ paths:
 
 components:
   schemas:
+    CreditUsageEvent:
+      type: object
+      required: [id, recordType, recordId, recordName, creditsUsed, createdAt]
+      properties:
+        id:
+          type: string
+        recordType:
+          type: string
+          enum: [contact, company]
+        recordId:
+          type: [integer, "null"]
+        recordName:
+          type: string
+        creditsUsed:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
     ContactDepartmentClassification:
       type: object
       required: [primaryDepartment, primaryFunction, primarySpecialization, secondaryDepartments, secondaryFunctions, secondarySpecializations, classificationConfidence, needsReview, rawValues]

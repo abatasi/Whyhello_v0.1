@@ -24,6 +24,8 @@ export * from "./contactSummary";
 export * from "./counterpartInsight";
 export * from "./createChatMessageRequest";
 export * from "./createOutreachJobRequest";
+export * from "./creditUsageEvent";
+export * from "./creditUsageEventRecordType";
 export * from "./departmentTaxonomyNode";
 export * from "./departmentTaxonomyNodeLevel";
 export * from "./directoryCounts";
