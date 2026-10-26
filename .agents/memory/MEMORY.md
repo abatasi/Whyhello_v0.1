@@ -23,6 +23,7 @@
 - [Spoken phone messaging](spoken-phone-messaging.md) — phone scripts need a separate conversational library; retain natural pronouns rather than written-outreach fragments.
 - [Reusable email configuration](reusable-email-configuration.md) — Manual Email mirrors Single Message and the Messaging Quran; reusable variants choose an insight category, not individual insights.
 - [HQ voice personas](hq-voice-personas.md) — named voices as output-specific tone choices; HQ activation stays separate, and summaries remain account- and persona-owned.
+- [Master-owned HQ configurations](master-hq-configurations.md) — master-only named HQs; explicit activation publishes one live account context, with ID-scoped saves.
 - [Dark-mode controls and tags](dark-filled-buttons.md) — buttons, labels and tags use solid fills with white text or no fill with light text; preserve neutral card surfaces.
 - [Master footer AI preview](master-footer-ai-preview.md) — keep the footer global and the initial assistant explicitly local-only until AI integration is requested.
 - [Contact Lookalikes scope](contact-lookalikes-scope.md) — find similar existing contacts; external discovery is outside this flow.

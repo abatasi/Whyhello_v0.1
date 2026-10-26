@@ -621,7 +621,7 @@ const COLOR_MAP: Record<string, {
 
 // ── Auto-save hook ───────────────────────────────────────────────────────────
 
-function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<string>) {
+function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<string>, profileUrl: string, live: boolean) {
   const queryClient = useQueryClient();
   const { user } = useUser();
   const currentUserId = useRef(user?.id);
@@ -650,7 +650,7 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
       saveQueue.current = saveQueue.current.then(async () => {
         try {
           const saveOwnerId = currentUserId.current;
-          const response = await apiFetch(API_PROFILE_URL, {
+          const response = await apiFetch(profileUrl, {
             method: "PUT",
             headers: { "Content-Type": "application/json", "X-Profile-Revision": revision.current ?? "new" },
             body: JSON.stringify({ data }),
@@ -663,6 +663,7 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
           const result: { revision: string } = await response.json();
           revision.current = result.revision;
           if (version !== saveVersion.current) return;
+          if (!live) { setSaveError(""); setSaved(true); return; }
           saveDNA(data);
           setSaveError("");
           setSaved(true);
@@ -680,7 +681,7 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
       });
     }, 600);
     return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [data, ready, queryClient, revision]);
+  }, [data, ready, queryClient, revision, profileUrl, live]);
 
   return { saved, saveError };
 }
@@ -2091,7 +2092,12 @@ const HQ_NAV: {
 
 // ── Main page ────────────────────────────────────────────────────────────────
 
-export default function HQ() {
+export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStateChange, toolbar }: {
+  profileUrl?: string;
+  live?: boolean;
+  onSaveStateChange?: (s: { loaded: boolean; saved: boolean; saveError: string; loadError: boolean }) => void;
+  toolbar?: React.ReactNode;
+}) {
   const { mode, toggleMode } = useAppMode();
   const { names: roleOptions, loading: rolesLoading, error: rolesError } = useBuyingCenterRoles();
   const wartime = mode === "wartime";
@@ -2100,12 +2106,17 @@ export default function HQ() {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [profileLoadError, setProfileLoadError] = useState(false);
   const profileRevision = useRef("new");
-  const { saved, saveError } = useAutoSave(data, profileLoaded && !profileLoadError, profileRevision);
+  const { saved, saveError } = useAutoSave(data, profileLoaded && !profileLoadError, profileRevision, profileUrl, live);
+  const saveStateCb = useRef(onSaveStateChange);
+  saveStateCb.current = onSaveStateChange;
+  useEffect(() => {
+    saveStateCb.current?.({ loaded: profileLoaded, saved, saveError, loadError: profileLoadError });
+  }, [profileLoaded, saved, saveError, profileLoadError]);
 
   // Load the account-scoped profile on mount; do not expose a browser-global startup cache.
   useEffect(() => {
     let cancelled = false;
-    apiFetch(API_PROFILE_URL)
+    apiFetch(profileUrl)
       .then(r => {
         if (!r.ok) throw new Error("Could not load HQ profile");
         return r.json();
@@ -2113,12 +2124,12 @@ export default function HQ() {
       .then((json: { data: StoredDNA | null; revision: string }) => {
         if (!cancelled) {
           profileRevision.current = json.revision;
-          if (!json?.data) {
+          if (live && !json?.data) {
             try { localStorage.removeItem(STORAGE_KEY); } catch { /* server is authoritative */ }
           }
           const hydratedData = mergeDNA(json?.data ?? defaultDNA());
           setData(hydratedData);
-          saveDNA(hydratedData);
+          if (live) saveDNA(hydratedData);
           setProfileLoaded(true);
         }
       })
@@ -2647,6 +2658,7 @@ export default function HQ() {
             {profileLoadError ? "Profile unavailable — reload to retry" : !profileLoaded ? "Loading HQ…" : saveError || (saved ? "Saved" : "Auto-saving")}
           </div>
         </div>
+        {toolbar}
 
         {/* Two-column body */}
         <div className="flex flex-col gap-6 items-stretch lg:flex-row lg:items-start" inert={!profileLoaded || profileLoadError} aria-busy={!profileLoaded}>

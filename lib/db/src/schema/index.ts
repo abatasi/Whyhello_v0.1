@@ -18,6 +18,7 @@ export * from "./insight-drops";
 export * from "./outreach-jobs";
 export * from "./contact-chat-messages";
 export * from "./dna-profiles";
+export * from "./hq-configurations";
 export * from "./user-email-accounts";
 export * from "./insight-relevance-scores";
 export * from "./insight-quotes";

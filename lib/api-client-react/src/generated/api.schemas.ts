@@ -5,6 +5,49 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+export interface HqConfigurationSummary {
+  id: string;
+  name: string;
+  isLive: boolean;
+  updatedAt: string;
+  revision: string;
+}
+
+export interface HqConfigurationWorkspace {
+  canManage: boolean;
+  /** @nullable */
+  liveId: string | null;
+  items: HqConfigurationSummary[];
+}
+
+export interface HqConfigurationInput {
+  /**
+   * @minLength 1
+   * @maxLength 80
+   */
+  name: string;
+  copyFromId?: string;
+}
+
+export interface HqActivationInput {
+  expectedLiveId: string;
+}
+
+export type HqProfileInputData = { [key: string]: unknown };
+
+export interface HqProfileInput {
+  data: HqProfileInputData;
+}
+
+export type HqProfileSnapshot = HqProfileInput & {
+  revision: string;
+};
+
+export interface HqProfileSaveResult {
+  ok: boolean;
+  revision: string;
+}
+
 export type CreditUsageEventRecordType =
   (typeof CreditUsageEventRecordType)[keyof typeof CreditUsageEventRecordType];
 
@@ -826,6 +869,11 @@ export interface ImportJob {
 }
 
 export type ListBulkImportJobsResponse = ImportJob[];
+
+/**
+ * Master HQ configurations
+ */
+export type HqWorkspaceResponseResponse = HqConfigurationWorkspace;
 
 export type GetDepartmentTaxonomyParams = {
   q?: string;

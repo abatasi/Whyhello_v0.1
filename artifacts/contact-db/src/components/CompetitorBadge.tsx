@@ -7,19 +7,25 @@ import { cn } from "@/lib/utils";
 // One lightweight fetch per app session; cleared when the module re-initialises.
 let _cache: Set<number> | null = null;
 let _inflight: Promise<Set<number>> | null = null;
+let _generation = 0;
+const HQ_CONTEXT_CHANGED = "whyhello:hq-context-changed";
 
 async function loadCompetitorIds(): Promise<Set<number>> {
   if (_cache) return _cache;
   if (_inflight) return _inflight;
+  const generation = _generation;
   _inflight = apiFetch("/api/hq/competitor-ids")
     .then(r => (r.ok ? r.json() : { ids: [] }))
     .then((data: { ids?: number[] }) => {
-      _cache = new Set(data.ids ?? []);
-      _inflight = null;
-      return _cache;
+      const ids = new Set(data.ids ?? []);
+      if (generation === _generation) {
+        _cache = ids;
+        _inflight = null;
+      }
+      return ids;
     })
     .catch(() => {
-      _inflight = null;
+      if (generation === _generation) _inflight = null;
       return new Set<number>();
     });
   return _inflight;
@@ -28,12 +34,27 @@ async function loadCompetitorIds(): Promise<Set<number>> {
 /** Invalidate the cache (call after saving the HQ/DNA profile). */
 export function invalidateCompetitorCache() {
   _cache = null;
+  _inflight = null;
+  _generation++;
+  window.dispatchEvent(new Event(HQ_CONTEXT_CHANGED));
 }
 
 /** Returns the Set of company IDs that are tagged as competitors in the DNA profile. */
 export function useCompetitorIds(): Set<number> {
   const [ids, setIds] = useState<Set<number>>(_cache ?? new Set());
-  useEffect(() => { loadCompetitorIds().then(setIds); }, []);
+  useEffect(() => {
+    let request = 0;
+    let mounted = true;
+    const refresh = () => {
+      const version = ++request;
+      void loadCompetitorIds().then(ids => {
+        if (mounted && version === request) setIds(ids);
+      });
+    };
+    refresh();
+    window.addEventListener(HQ_CONTEXT_CHANGED, refresh);
+    return () => { mounted = false; window.removeEventListener(HQ_CONTEXT_CHANGED, refresh); };
+  }, []);
   return ids;
 }
 

@@ -355,6 +355,109 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /hq/configurations:
+    get:
+      operationId: listHqConfigurations
+      tags: [hq]
+      summary: Get named HQs for the master, or a disabled capability for other users
+      responses:
+        "200":
+          $ref: "#/components/responses/HqWorkspaceResponse"
+    post:
+      operationId: createHqConfiguration
+      tags: [hq]
+      summary: Create a master-owned HQ without making it live
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HqConfigurationInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/HqWorkspaceResponse"
+        "403":
+          description: Master access required
+  /hq/configurations/{id}:
+    parameters:
+      - $ref: "#/components/parameters/HqConfigurationId"
+    patch:
+      operationId: renameHqConfiguration
+      tags: [hq]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HqConfigurationInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/HqWorkspaceResponse"
+    delete:
+      operationId: deleteHqConfiguration
+      tags: [hq]
+      summary: Delete an inactive HQ; live HQ deletion is rejected
+      responses:
+        "200":
+          $ref: "#/components/responses/HqWorkspaceResponse"
+        "409":
+          description: Cannot delete the live HQ
+  /hq/configurations/{id}/activate:
+    parameters:
+      - $ref: "#/components/parameters/HqConfigurationId"
+    post:
+      operationId: activateHqConfiguration
+      tags: [hq]
+      summary: Atomically make one master-owned HQ live
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HqActivationInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/HqWorkspaceResponse"
+        "409":
+          description: Live HQ changed since the caller loaded it
+  /hq/configurations/{id}/profile:
+    parameters:
+      - $ref: "#/components/parameters/HqConfigurationId"
+    get:
+      operationId: getHqConfigurationProfile
+      tags: [hq]
+      responses:
+        "200":
+          description: Selected HQ content, not implicitly the live platform context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HqProfileSnapshot"
+    put:
+      operationId: saveHqConfigurationProfile
+      tags: [hq]
+      parameters:
+        - in: header
+          name: X-Profile-Revision
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HqProfileInput"
+      responses:
+        "200":
+          description: Saved without changing which HQ is live
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HqProfileSaveResult"
+        "409":
+          description: Stale profile revision
+
   /credits/usage:
     get:
       operationId: listCreditUsage
@@ -995,7 +1098,87 @@ paths:
           description: Deleted
 
 components:
+  parameters:
+    HqConfigurationId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+  responses:
+    HqWorkspaceResponse:
+      description: Master HQ configurations
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/HqConfigurationWorkspace"
   schemas:
+    HqConfigurationWorkspace:
+      type: object
+      required: [canManage, liveId, items]
+      properties:
+        canManage:
+          type: boolean
+        liveId:
+          type: [string, "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HqConfigurationSummary"
+    HqConfigurationSummary:
+      type: object
+      required: [id, name, isLive, updatedAt, revision]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        isLive:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+        revision:
+          type: string
+    HqConfigurationInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        copyFromId:
+          type: string
+    HqActivationInput:
+      type: object
+      required: [expectedLiveId]
+      properties:
+        expectedLiveId:
+          type: string
+    HqProfileInput:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+    HqProfileSnapshot:
+      allOf:
+        - $ref: "#/components/schemas/HqProfileInput"
+        - type: object
+          required: [revision]
+          properties:
+            revision:
+              type: string
+    HqProfileSaveResult:
+      type: object
+      required: [ok, revision]
+      properties:
+        ok:
+          type: boolean
+        revision:
+          type: string
     CreditUsageEvent:
       type: object
       required: [id, recordType, recordId, recordName, creditsUsed, createdAt]

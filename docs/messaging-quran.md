@@ -1,6 +1,14 @@
 # ☪ The Messaging Quran
 ## Whyhello Messaging Logic — Master Reference
 
+### Live HQ context — applies to every messaging flow
+
+The server-verified master account may create and edit multiple named HQ configurations, but exactly one is live for that account. Preserve the existing HQ as the initial live configuration. Inactive HQs are independent drafts: opening, copying, renaming or saving them never activates their positioning, products, audiences, competitors or voice personas.
+
+Only an explicit **Make Live** action changes platform-wide HQ context for that account. Activation atomically snapshots the previous live profile and publishes the selected saved profile as the authoritative HQ read by messaging, Playbooks, voice-persona options and strategy context. Refresh client context caches on activation. Existing per-output choices remain explicit; resolve HQ-derived options against the live HQ rather than pulling archived draft personas or mixing two HQs. Another account's HQ must never change as a result.
+
+The editor clearly distinguishes the HQ being edited from the live HQ. Wait for successful autosave before changing configurations; reject stale revisions instead of overwriting newer edits. Normal users retain the existing single-HQ experience, and configuration management is protected server-side, not merely hidden in the interface.
+
 > بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
 > *In the name of relevance, the compassionate, the specific.*
 

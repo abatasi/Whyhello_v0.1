@@ -1,6 +1,14 @@
 # ⚜ The Scoring Bible
 ## Whyhello Relevance Scoring Logic — Master Reference
 
+### Master-owned HQ configurations and live context
+
+Only the server-verified master identity may maintain multiple named HQs. Each configuration owns its positioning, competitors, products, audiences, voice personas and live-audience selections. Opening or saving an inactive HQ edits that configuration only; it must not affect scoring, ranking, matching, targeting or another account.
+
+Exactly one HQ is live per master account. Existing HQ content is preserved as the initial live configuration. Making another HQ live is an explicit, atomic action: snapshot the previous live document, activate the selected saved configuration, and publish only its content to the account's existing authoritative HQ profile. The live projection remains the input for all existing scoring consumers. Changes to the live content naturally change the account-owned indexing fingerprint; inactive saves must not invalidate or regenerate those results. Browser query caches and competitor badges refresh on activation. Never switch a different user's HQ or merge contexts across configurations.
+
+Normal accounts retain their single-HQ behavior. Reject unauthorized configuration management, stale profile revisions, stale live selections and deletion of the currently live HQ.
+
 ### Contact-profile indexing freshness
 
 Reuse successful contact indexing for **seven days**, unless the account's HQ content changes. Revisits, loading placeholders, low scores, and successful zero-quote results must not trigger another model run. Exactly seven days is still fresh.

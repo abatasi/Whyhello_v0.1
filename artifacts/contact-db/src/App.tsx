@@ -34,7 +34,7 @@ import Lists from "@/pages/Lists";
 import ListDetail from "@/pages/ListDetail";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
-import HQ from "@/pages/HQ";
+import HQ from "@/pages/HQConfigurations";
 import MultiThreading from "@/pages/MultiThreading";
 import Settings from "@/pages/Settings";
 import Import from "@/pages/Import";

@@ -579,6 +579,149 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Get named HQs for the master, or a disabled capability for other users
+ */
+export const ListHqConfigurationsResponse = zod.object({
+  canManage: zod.boolean(),
+  liveId: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      isLive: zod.boolean(),
+      updatedAt: zod.date(),
+      revision: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Create a master-owned HQ without making it live
+ */
+export const createHqConfigurationBodyNameMax = 80;
+
+export const CreateHqConfigurationBody = zod.object({
+  name: zod.string().min(1).max(createHqConfigurationBodyNameMax),
+  copyFromId: zod.string().optional(),
+});
+
+export const CreateHqConfigurationResponse = zod.object({
+  canManage: zod.boolean(),
+  liveId: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      isLive: zod.boolean(),
+      updatedAt: zod.date(),
+      revision: zod.string(),
+    }),
+  ),
+});
+
+export const RenameHqConfigurationParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const renameHqConfigurationBodyNameMax = 80;
+
+export const RenameHqConfigurationBody = zod.object({
+  name: zod.string().min(1).max(renameHqConfigurationBodyNameMax),
+  copyFromId: zod.string().optional(),
+});
+
+export const RenameHqConfigurationResponse = zod.object({
+  canManage: zod.boolean(),
+  liveId: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      isLive: zod.boolean(),
+      updatedAt: zod.date(),
+      revision: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Delete an inactive HQ; live HQ deletion is rejected
+ */
+export const DeleteHqConfigurationParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DeleteHqConfigurationResponse = zod.object({
+  canManage: zod.boolean(),
+  liveId: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      isLive: zod.boolean(),
+      updatedAt: zod.date(),
+      revision: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Atomically make one master-owned HQ live
+ */
+export const ActivateHqConfigurationParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ActivateHqConfigurationBody = zod.object({
+  expectedLiveId: zod.string(),
+});
+
+export const ActivateHqConfigurationResponse = zod.object({
+  canManage: zod.boolean(),
+  liveId: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      isLive: zod.boolean(),
+      updatedAt: zod.date(),
+      revision: zod.string(),
+    }),
+  ),
+});
+
+export const GetHqConfigurationProfileParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetHqConfigurationProfileResponse = zod
+  .object({
+    data: zod.record(zod.string(), zod.unknown()),
+  })
+  .and(
+    zod.object({
+      revision: zod.string(),
+    }),
+  );
+
+export const SaveHqConfigurationProfileParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const SaveHqConfigurationProfileHeader = zod.object({
+  "X-Profile-Revision": zod.string(),
+});
+
+export const SaveHqConfigurationProfileBody = zod.object({
+  data: zod.record(zod.string(), zod.unknown()),
+});
+
+export const SaveHqConfigurationProfileResponse = zod.object({
+  ok: zod.boolean(),
+  revision: zod.string(),
+});
+
+/**
  * @summary List the signed-in user's 20 most recent credit-consuming reveals
  */
 export const ListCreditUsageResponseItem = zod.object({

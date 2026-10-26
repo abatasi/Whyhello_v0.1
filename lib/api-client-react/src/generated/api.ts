@@ -41,8 +41,14 @@ import type {
   GetDepartmentTaxonomyParams,
   GetPlaybookSampleContacts200,
   HealthStatus,
+  HqActivationInput,
   HqAudienceInput,
   HqAudienceResponse,
+  HqConfigurationInput,
+  HqProfileInput,
+  HqProfileSaveResult,
+  HqProfileSnapshot,
+  HqWorkspaceResponseResponse,
   IndustryInsight,
   LinkedInConnectionPreview,
   LinkedInConnectionPreviewInput,
@@ -1377,6 +1383,600 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get named HQs for the master, or a disabled capability for other users
+ */
+export const getListHqConfigurationsUrl = () => {
+  return `/api/hq/configurations`;
+};
+
+export const listHqConfigurations = async (
+  options?: RequestInit,
+): Promise<HqWorkspaceResponseResponse> => {
+  return customFetch<HqWorkspaceResponseResponse>(
+    getListHqConfigurationsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListHqConfigurationsQueryKey = () => {
+  return [`/api/hq/configurations`] as const;
+};
+
+export const getListHqConfigurationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listHqConfigurations>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listHqConfigurations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListHqConfigurationsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listHqConfigurations>>
+  > = ({ signal }) => listHqConfigurations({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listHqConfigurations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListHqConfigurationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listHqConfigurations>>
+>;
+export type ListHqConfigurationsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get named HQs for the master, or a disabled capability for other users
+ */
+
+export function useListHqConfigurations<
+  TData = Awaited<ReturnType<typeof listHqConfigurations>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listHqConfigurations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListHqConfigurationsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a master-owned HQ without making it live
+ */
+export const getCreateHqConfigurationUrl = () => {
+  return `/api/hq/configurations`;
+};
+
+export const createHqConfiguration = async (
+  hqConfigurationInput: HqConfigurationInput,
+  options?: RequestInit,
+): Promise<HqWorkspaceResponseResponse> => {
+  return customFetch<HqWorkspaceResponseResponse>(
+    getCreateHqConfigurationUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(hqConfigurationInput),
+    },
+  );
+};
+
+export const getCreateHqConfigurationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHqConfiguration>>,
+    TError,
+    { data: BodyType<HqConfigurationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createHqConfiguration>>,
+  TError,
+  { data: BodyType<HqConfigurationInput> },
+  TContext
+> => {
+  const mutationKey = ["createHqConfiguration"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createHqConfiguration>>,
+    { data: BodyType<HqConfigurationInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createHqConfiguration(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateHqConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createHqConfiguration>>
+>;
+export type CreateHqConfigurationMutationBody = BodyType<HqConfigurationInput>;
+export type CreateHqConfigurationMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a master-owned HQ without making it live
+ */
+export const useCreateHqConfiguration = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHqConfiguration>>,
+    TError,
+    { data: BodyType<HqConfigurationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createHqConfiguration>>,
+  TError,
+  { data: BodyType<HqConfigurationInput> },
+  TContext
+> => {
+  return useMutation(getCreateHqConfigurationMutationOptions(options));
+};
+
+export const getRenameHqConfigurationUrl = (id: string) => {
+  return `/api/hq/configurations/${id}`;
+};
+
+export const renameHqConfiguration = async (
+  id: string,
+  hqConfigurationInput: HqConfigurationInput,
+  options?: RequestInit,
+): Promise<HqWorkspaceResponseResponse> => {
+  return customFetch<HqWorkspaceResponseResponse>(
+    getRenameHqConfigurationUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(hqConfigurationInput),
+    },
+  );
+};
+
+export const getRenameHqConfigurationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof renameHqConfiguration>>,
+    TError,
+    { id: string; data: BodyType<HqConfigurationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof renameHqConfiguration>>,
+  TError,
+  { id: string; data: BodyType<HqConfigurationInput> },
+  TContext
+> => {
+  const mutationKey = ["renameHqConfiguration"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof renameHqConfiguration>>,
+    { id: string; data: BodyType<HqConfigurationInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return renameHqConfiguration(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RenameHqConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof renameHqConfiguration>>
+>;
+export type RenameHqConfigurationMutationBody = BodyType<HqConfigurationInput>;
+export type RenameHqConfigurationMutationError = ErrorType<unknown>;
+
+export const useRenameHqConfiguration = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof renameHqConfiguration>>,
+    TError,
+    { id: string; data: BodyType<HqConfigurationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof renameHqConfiguration>>,
+  TError,
+  { id: string; data: BodyType<HqConfigurationInput> },
+  TContext
+> => {
+  return useMutation(getRenameHqConfigurationMutationOptions(options));
+};
+
+/**
+ * @summary Delete an inactive HQ; live HQ deletion is rejected
+ */
+export const getDeleteHqConfigurationUrl = (id: string) => {
+  return `/api/hq/configurations/${id}`;
+};
+
+export const deleteHqConfiguration = async (
+  id: string,
+  options?: RequestInit,
+): Promise<HqWorkspaceResponseResponse> => {
+  return customFetch<HqWorkspaceResponseResponse>(
+    getDeleteHqConfigurationUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteHqConfigurationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteHqConfiguration>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteHqConfiguration>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteHqConfiguration"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteHqConfiguration>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteHqConfiguration(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteHqConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteHqConfiguration>>
+>;
+
+export type DeleteHqConfigurationMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete an inactive HQ; live HQ deletion is rejected
+ */
+export const useDeleteHqConfiguration = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteHqConfiguration>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteHqConfiguration>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteHqConfigurationMutationOptions(options));
+};
+
+/**
+ * @summary Atomically make one master-owned HQ live
+ */
+export const getActivateHqConfigurationUrl = (id: string) => {
+  return `/api/hq/configurations/${id}/activate`;
+};
+
+export const activateHqConfiguration = async (
+  id: string,
+  hqActivationInput: HqActivationInput,
+  options?: RequestInit,
+): Promise<HqWorkspaceResponseResponse> => {
+  return customFetch<HqWorkspaceResponseResponse>(
+    getActivateHqConfigurationUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(hqActivationInput),
+    },
+  );
+};
+
+export const getActivateHqConfigurationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateHqConfiguration>>,
+    TError,
+    { id: string; data: BodyType<HqActivationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof activateHqConfiguration>>,
+  TError,
+  { id: string; data: BodyType<HqActivationInput> },
+  TContext
+> => {
+  const mutationKey = ["activateHqConfiguration"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof activateHqConfiguration>>,
+    { id: string; data: BodyType<HqActivationInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return activateHqConfiguration(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ActivateHqConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof activateHqConfiguration>>
+>;
+export type ActivateHqConfigurationMutationBody = BodyType<HqActivationInput>;
+export type ActivateHqConfigurationMutationError = ErrorType<void>;
+
+/**
+ * @summary Atomically make one master-owned HQ live
+ */
+export const useActivateHqConfiguration = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateHqConfiguration>>,
+    TError,
+    { id: string; data: BodyType<HqActivationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof activateHqConfiguration>>,
+  TError,
+  { id: string; data: BodyType<HqActivationInput> },
+  TContext
+> => {
+  return useMutation(getActivateHqConfigurationMutationOptions(options));
+};
+
+export const getGetHqConfigurationProfileUrl = (id: string) => {
+  return `/api/hq/configurations/${id}/profile`;
+};
+
+export const getHqConfigurationProfile = async (
+  id: string,
+  options?: RequestInit,
+): Promise<HqProfileSnapshot> => {
+  return customFetch<HqProfileSnapshot>(getGetHqConfigurationProfileUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetHqConfigurationProfileQueryKey = (id: string) => {
+  return [`/api/hq/configurations/${id}/profile`] as const;
+};
+
+export const getGetHqConfigurationProfileQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHqConfigurationProfile>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHqConfigurationProfile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetHqConfigurationProfileQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getHqConfigurationProfile>>
+  > = ({ signal }) =>
+    getHqConfigurationProfile(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHqConfigurationProfile>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHqConfigurationProfileQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHqConfigurationProfile>>
+>;
+export type GetHqConfigurationProfileQueryError = ErrorType<unknown>;
+
+export function useGetHqConfigurationProfile<
+  TData = Awaited<ReturnType<typeof getHqConfigurationProfile>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHqConfigurationProfile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHqConfigurationProfileQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getSaveHqConfigurationProfileUrl = (id: string) => {
+  return `/api/hq/configurations/${id}/profile`;
+};
+
+export const saveHqConfigurationProfile = async (
+  id: string,
+  hqProfileInput: HqProfileInput,
+  options?: RequestInit,
+): Promise<HqProfileSaveResult> => {
+  return customFetch<HqProfileSaveResult>(
+    getSaveHqConfigurationProfileUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(hqProfileInput),
+    },
+  );
+};
+
+export const getSaveHqConfigurationProfileMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveHqConfigurationProfile>>,
+    TError,
+    { id: string; data: BodyType<HqProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveHqConfigurationProfile>>,
+  TError,
+  { id: string; data: BodyType<HqProfileInput> },
+  TContext
+> => {
+  const mutationKey = ["saveHqConfigurationProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveHqConfigurationProfile>>,
+    { id: string; data: BodyType<HqProfileInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return saveHqConfigurationProfile(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveHqConfigurationProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveHqConfigurationProfile>>
+>;
+export type SaveHqConfigurationProfileMutationBody = BodyType<HqProfileInput>;
+export type SaveHqConfigurationProfileMutationError = ErrorType<void>;
+
+export const useSaveHqConfigurationProfile = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveHqConfigurationProfile>>,
+    TError,
+    { id: string; data: BodyType<HqProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveHqConfigurationProfile>>,
+  TError,
+  { id: string; data: BodyType<HqProfileInput> },
+  TContext
+> => {
+  return useMutation(getSaveHqConfigurationProfileMutationOptions(options));
+};
 
 /**
  * @summary List the signed-in user's 20 most recent credit-consuming reveals
