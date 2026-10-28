@@ -205,7 +205,7 @@ export function LocalAiChat() {
       )}
 
       <footer
-        className="flex h-8 shrink-0 items-center justify-end border-t border-white/[0.08] bg-[#111211] px-2 text-white"
+        className="flex h-8 shrink-0 items-center justify-end border-t border-white/[0.08] bg-[#252726] px-2 text-white"
         aria-label="Workspace utilities"
         data-testid="workspace-footer-belt"
       >
