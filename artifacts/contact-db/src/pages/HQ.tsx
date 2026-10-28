@@ -1665,7 +1665,6 @@ function DeptSelector({ selected, options, loading, error, onChange }: {
 function BuyingCenterTile({ seat, onClick }: { seat: BuyingCenterSeat; onClick: () => void }) {
   const def = BUYING_CENTER_SEATS.find(s => s.seat === seat.seat)!;
   const isConfigured = seat.seniorities.length > 0 || seat.departments.length > 0;
-  const colors = COLOR_MAP[def.color] ?? COLOR_MAP.slate;
   const Icon = def.icon;
 
   return (
@@ -1674,7 +1673,7 @@ function BuyingCenterTile({ seat, onClick }: { seat: BuyingCenterSeat; onClick: 
       className={cn(
         "group flex flex-col gap-3 p-4 rounded-xl border text-left transition-all hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
         isConfigured
-          ? cn(colors.bg, colors.border)
+          ? "bg-indigo-700 border-indigo-600 text-white hover:bg-indigo-800"
           : "bg-card border-border/60 hover:border-indigo-200 hover:bg-indigo-50/30"
       )}
     >
@@ -1682,12 +1681,12 @@ function BuyingCenterTile({ seat, onClick }: { seat: BuyingCenterSeat; onClick: 
       <div className={cn(
         "h-9 w-9 rounded-lg flex items-center justify-center border transition-colors",
         isConfigured
-          ? cn(colors.iconBg, colors.border)
+          ? "bg-indigo-800 border-white/20"
           : "bg-secondary/50 border-border/40 group-hover:bg-indigo-50 group-hover:border-indigo-200"
       )}>
         <Icon className={cn(
           "h-4 w-4 transition-colors",
-          isConfigured ? colors.iconColor : "text-muted-foreground/50 group-hover:text-indigo-500"
+          isConfigured ? "text-white" : "text-muted-foreground/50 group-hover:text-indigo-500"
         )} />
       </div>
 
@@ -1695,17 +1694,17 @@ function BuyingCenterTile({ seat, onClick }: { seat: BuyingCenterSeat; onClick: 
       <div className="flex-1 min-w-0">
         <p className={cn(
           "text-xs font-bold leading-snug",
-          isConfigured ? "text-foreground" : "text-muted-foreground/70 group-hover:text-foreground transition-colors"
+          isConfigured ? "text-white" : "text-muted-foreground/70 group-hover:text-foreground transition-colors"
         )}>
           {seat.seat}
         </p>
-        <p className="text-[10px] text-muted-foreground/70 leading-relaxed mt-0.5 line-clamp-2">
+        <p className={cn("text-[10px] leading-relaxed mt-0.5 line-clamp-2", isConfigured ? "text-white/85" : "text-muted-foreground/70")}>
           {def.role}
         </p>
       </div>
 
       {/* Status footer */}
-      <div className="border-t border-black/5 pt-2.5 min-h-[2rem]">
+      <div className={cn("border-t pt-2.5 min-h-[2rem]", isConfigured ? "border-white/20" : "border-black/5")}>
         {isConfigured ? (
           <div className="flex flex-col gap-1">
             {seat.seniorities.length > 0 && (
@@ -1713,7 +1712,7 @@ function BuyingCenterTile({ seat, onClick }: { seat: BuyingCenterSeat; onClick: 
                 {seat.seniorities.slice(0, 2).map(s => (
                   <span key={s} className={cn(
                     "px-1.5 py-0.5 rounded text-[9px] font-bold border",
-                    colors.chipBg, colors.chipBorder, colors.chipText
+                    "bg-indigo-800 border-white/20 text-white"
                   )}>
                     {s === "Individual Contributor" ? "IC" : s}
                   </span>
@@ -1721,7 +1720,7 @@ function BuyingCenterTile({ seat, onClick }: { seat: BuyingCenterSeat; onClick: 
                 {seat.seniorities.length > 2 && (
                   <span className={cn(
                     "px-1.5 py-0.5 rounded text-[9px] font-bold border",
-                    colors.chipBg, colors.chipBorder, colors.chipText
+                    "bg-indigo-800 border-white/20 text-white"
                   )}>
                     +{seat.seniorities.length - 2}
                   </span>
@@ -1729,7 +1728,7 @@ function BuyingCenterTile({ seat, onClick }: { seat: BuyingCenterSeat; onClick: 
               </div>
             )}
             {seat.departments.length > 0 && (
-              <p className="text-[10px] text-muted-foreground/60 truncate leading-tight">
+              <p className="text-[10px] text-white/85 truncate leading-tight">
                 {seat.departments.slice(0, 2).join(", ")}{seat.departments.length > 2 ? ` +${seat.departments.length - 2}` : ""}
               </p>
             )}
@@ -3549,7 +3548,7 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
                     className={cn(
                       "group flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition-all",
                       activeBuyingCenterId === bc.id
-                        ? "bg-indigo-100 border-indigo-300"
+                        ? "bg-indigo-700 border-indigo-600 text-white"
                         : "bg-secondary/50 border-border/60 hover:bg-secondary cursor-pointer"
                     )}
                   >
@@ -3563,7 +3562,7 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
                           value={renameBcValue}
                           onChange={e => setRenameBcValue(e.target.value)}
                           onBlur={() => { renameBuyingCenter(bc.id, renameBcValue); setRenamingBcId(null); }}
-                          className="bg-transparent outline-none text-sm font-semibold w-32 text-indigo-700"
+                          className={cn("bg-transparent outline-none text-sm font-semibold w-32", activeBuyingCenterId === bc.id ? "text-white placeholder:text-white/70" : "text-foreground")}
                           placeholder="Name this buying center…"
                         />
                       </form>
@@ -3573,19 +3572,19 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
                         onDoubleClick={() => { setRenamingBcId(bc.id); setRenameBcValue(bc.name); }}
                         className={cn(
                           "text-sm font-semibold",
-                          activeBuyingCenterId === bc.id ? "text-indigo-700" : "text-muted-foreground"
+                          activeBuyingCenterId === bc.id ? "text-white" : "text-muted-foreground"
                         )}
                       >
                         {bc.name}
                       </button>
                     )}
                     {data.liveBuyingCenterId === bc.id && (
-                      <span className="rounded-full bg-indigo-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Live</span>
+                      <span className="rounded-full border border-white/30 bg-indigo-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Live</span>
                     )}
                     {data.buyingCenters.length > 1 && !renamingBcId && (
                       <button
                         onClick={e => { e.stopPropagation(); removeBuyingCenter(bc.id); }}
-                        className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all"
+                        className={cn("opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all", activeBuyingCenterId === bc.id ? "text-white/80 hover:text-white" : "text-muted-foreground/50 hover:text-destructive")}
                       >
                         <X className="h-3 w-3" />
                       </button>
