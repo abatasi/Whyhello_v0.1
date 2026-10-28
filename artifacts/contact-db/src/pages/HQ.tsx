@@ -3698,7 +3698,7 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
                   className={cn(
                     "group flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition-all",
                     activeTargetMarketId === tm.id
-                      ? "bg-teal-100 border-teal-300"
+                      ? "bg-teal-700 border-teal-600 text-white"
                       : "bg-secondary/50 border-border/60 hover:bg-secondary cursor-pointer"
                   )}
                 >
@@ -3719,7 +3719,7 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
                           }
                           setRenamingTmId(null);
                         }}
-                        className="bg-transparent outline-none text-sm font-semibold w-36 text-teal-700 placeholder:text-teal-400"
+                        className={cn("bg-transparent outline-none text-sm font-semibold w-36", activeTargetMarketId === tm.id ? "text-white placeholder:text-white/70" : "text-foreground placeholder:text-muted-foreground")}
                         placeholder="Name this market…"
                       />
                     </form>
@@ -3729,19 +3729,19 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
                       onDoubleClick={() => { setRenamingTmId(tm.id); setRenameTmValue(tm.name); }}
                       className={cn(
                         "text-sm font-semibold",
-                        activeTargetMarketId === tm.id ? "text-teal-700" : "text-muted-foreground"
+                        activeTargetMarketId === tm.id ? "text-white" : "text-muted-foreground"
                       )}
                     >
                       {tm.name}
                     </button>
                   )}
                   {data.liveTargetMarketId === tm.id && (
-                    <span className="rounded-full bg-teal-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Live</span>
+                    <span className="rounded-full border border-white/30 bg-teal-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Live</span>
                   )}
                   {data.targetMarkets.length > 1 && !renamingTmId && (
                     <button
                       onClick={e => { e.stopPropagation(); removeTargetMarket(tm.id); }}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all"
+                      className={cn("opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all", activeTargetMarketId === tm.id ? "text-white/80 hover:text-white" : "text-muted-foreground/50 hover:text-destructive")}
                     >
                       <X className="h-3 w-3" />
                     </button>
