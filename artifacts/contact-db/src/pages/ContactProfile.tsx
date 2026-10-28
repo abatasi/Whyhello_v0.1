@@ -1497,7 +1497,7 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
             {/* ══════════════════════════════════════════════════════════════
                 CENTER COLUMN — Contact Hub
             ═══════════════════════════════════════════════════════════════ */}
-            <main className="order-1 md:order-none flex flex-col min-h-0 gap-4 md:gap-5">
+            <main className="order-1 md:order-none flex min-w-0 flex-col min-h-0 gap-4 md:gap-5 overflow-visible md:overflow-y-auto md:overscroll-contain scroll-thin md:pr-1">
 
               <div className="md:hidden flex items-center gap-2 px-1 pt-1">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact profile</span>
@@ -3561,7 +3561,7 @@ function ContactCenterHub({
   const [activeTab, setActiveTab] = useState<"assistant" | "activity">("assistant");
 
   return (
-    <div className="flex flex-col flex-none md:flex-1 min-h-[520px] md:min-h-0 rounded-2xl border border-border/60 shadow-sm bg-card dark:bg-background overflow-hidden">
+    <div className="flex flex-col flex-none md:flex-1 min-h-[520px] rounded-2xl border border-border/60 shadow-sm bg-card dark:bg-background overflow-hidden">
       {/* Tab toggle header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 flex-shrink-0">
         <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary border border-border/50">
