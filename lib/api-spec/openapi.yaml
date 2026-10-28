@@ -355,6 +355,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /hq/company-from-url:
+    post:
+      operationId: generateHqCompany
+      tags: [hq]
+      summary: Generate Company HQ fields from a public company website without saving
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HqCompanyWebsiteInput"
+      responses:
+        "200":
+          description: Website-grounded Company fields for the current editor to review and autosave
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HqCompanyWebsiteResult"
+        "400":
+          description: Invalid or non-public URL
+        "401":
+          description: Authentication required
+        "422":
+          description: Website could not provide usable company content
+        "429":
+          description: Company generation already in progress
+        "502":
+          description: AI generation failed
   /hq/configurations:
     get:
       operationId: listHqConfigurations
@@ -1113,6 +1141,47 @@ components:
           schema:
             $ref: "#/components/schemas/HqConfigurationWorkspace"
   schemas:
+    HqCompanyWebsiteInput:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          minLength: 1
+          maxLength: 2048
+    HqCompanyFields:
+      type: object
+      required: [name, valueWedge, positioning, differentiators, pillars]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        valueWedge:
+          type: string
+          maxLength: 500
+        positioning:
+          type: string
+          maxLength: 2500
+        differentiators:
+          type: string
+          maxLength: 2500
+        pillars:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            type: string
+            maxLength: 500
+    HqCompanyWebsiteResult:
+      type: object
+      required: [company, sourceUrls]
+      properties:
+        company:
+          $ref: "#/components/schemas/HqCompanyFields"
+        sourceUrls:
+          type: array
+          items:
+            type: string
     HqConfigurationWorkspace:
       type: object
       required: [canManage, liveId, items]

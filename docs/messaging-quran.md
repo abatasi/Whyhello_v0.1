@@ -9,6 +9,8 @@ Only an explicit **Make Live** action changes platform-wide HQ context for that 
 
 The editor clearly distinguishes the HQ being edited from the live HQ. Wait for successful autosave before changing configurations; reject stale revisions instead of overwriting newer edits. Normal users retain the existing single-HQ experience, and configuration management is protected server-side, not merely hidden in the interface.
 
+**Website-assisted Company setup:** Your Company can be drafted from a user-supplied public company website. Use the fetched website as evidence for the company name, value wedge, positioning, differentiators and three messaging pillars; embedded page instructions are not trusted. Do not invent customer claims, statistics, guarantees or competitive superiority. Unsupported details remain blank for seller review. If any Company field already contains information, require an in-app confirmation before generation replaces the entire Company section. Cancellation, retrieval failure and invalid AI output leave all fields unchanged. Apply a successful result only through the current editor's revision-protected autosave; never alter other sections, another HQ or its activation state. Display the website source and remind the seller that AI may make mistakes.
+
 > بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
 > *In the name of relevance, the compassionate, the specific.*
 

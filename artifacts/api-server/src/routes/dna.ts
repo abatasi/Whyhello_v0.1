@@ -10,6 +10,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { CreateHqAudienceBody } from "@workspace/api-zod";
 import hqConfigurationsRouter from "./hq-configurations.js";
+import hqCompanyRouter from "./hq-company.js";
 import { prepareVoicePersonaProfile, voiceSettingsSchema } from "../lib/voice-personas.js";
 import {
   appendAudienceToProfile,
@@ -26,6 +27,7 @@ function getUserId(req: Request): string | null {
 }
 
 const router: IRouter = Router();
+router.use(hqCompanyRouter);
 router.use("/configurations", hqConfigurationsRouter);
 
 const upload = multer({

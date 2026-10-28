@@ -579,6 +579,46 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Generate Company HQ fields from a public company website without saving
+ */
+export const generateHqCompanyBodyUrlMax = 2048;
+
+export const GenerateHqCompanyBody = zod.object({
+  url: zod.string().min(1).max(generateHqCompanyBodyUrlMax),
+});
+
+export const generateHqCompanyResponseCompanyNameMax = 200;
+
+export const generateHqCompanyResponseCompanyValueWedgeMax = 500;
+
+export const generateHqCompanyResponseCompanyPositioningMax = 2500;
+
+export const generateHqCompanyResponseCompanyDifferentiatorsMax = 2500;
+
+export const generateHqCompanyResponseCompanyPillarsItemMax = 500;
+
+export const generateHqCompanyResponseCompanyPillarsMin = 3;
+export const generateHqCompanyResponseCompanyPillarsMax = 3;
+
+export const GenerateHqCompanyResponse = zod.object({
+  company: zod.object({
+    name: zod.string().max(generateHqCompanyResponseCompanyNameMax),
+    valueWedge: zod.string().max(generateHqCompanyResponseCompanyValueWedgeMax),
+    positioning: zod
+      .string()
+      .max(generateHqCompanyResponseCompanyPositioningMax),
+    differentiators: zod
+      .string()
+      .max(generateHqCompanyResponseCompanyDifferentiatorsMax),
+    pillars: zod
+      .array(zod.string().max(generateHqCompanyResponseCompanyPillarsItemMax))
+      .min(generateHqCompanyResponseCompanyPillarsMin)
+      .max(generateHqCompanyResponseCompanyPillarsMax),
+  }),
+  sourceUrls: zod.array(zod.string()),
+});
+
+/**
  * @summary Get named HQs for the master, or a disabled capability for other users
  */
 export const ListHqConfigurationsResponse = zod.object({

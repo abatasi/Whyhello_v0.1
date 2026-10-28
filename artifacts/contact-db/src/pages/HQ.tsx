@@ -6,6 +6,7 @@ import { useUser } from "@clerk/react";
 import { isHqVoiceQueryForUser } from "@/lib/hq-voice-query-model";
 import { Shell } from "@/components/layout/Shell";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
+import { CompanyAiFill } from "@/components/hq/CompanyAiFill";
 import { cn } from "@/lib/utils";
 import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown, Copy,
@@ -691,7 +692,7 @@ function useAutoSave(data: DNAData, ready: boolean, revision: React.RefObject<st
 function Section({
   icon: Icon, title, subtitle,
   accentBg, accentBorder, accentColor,
-  children,
+  children, actions,
 }: {
   icon: React.ElementType;
   title: string;
@@ -700,6 +701,7 @@ function Section({
   accentBorder: string;
   accentColor: string;
   children: React.ReactNode;
+  actions?: React.ReactNode;
 }) {
   return (
     <div className="hq-section-card overflow-hidden rounded-[10px] border border-border bg-card">
@@ -711,6 +713,7 @@ function Section({
           <p className="text-[14px] font-semibold tracking-tight text-foreground">{title}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
         </div>
+        {actions}
       </div>
       <div className="hq-section-body flex flex-col gap-5 border-t border-border px-5 py-5">
         {children}
@@ -2104,13 +2107,14 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
   const [data, setData] = useState<DNAData>(defaultDNA);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [profileLoadError, setProfileLoadError] = useState(false);
+  const [companyAiBusy, setCompanyAiBusy] = useState(false);
   const profileRevision = useRef("new");
   const { saved, saveError } = useAutoSave(data, profileLoaded && !profileLoadError, profileRevision, profileUrl, live);
   const saveStateCb = useRef(onSaveStateChange);
   saveStateCb.current = onSaveStateChange;
   useEffect(() => {
-    saveStateCb.current?.({ loaded: profileLoaded, saved, saveError, loadError: profileLoadError });
-  }, [profileLoaded, saved, saveError, profileLoadError]);
+    saveStateCb.current?.({ loaded: profileLoaded, saved: saved && !companyAiBusy, saveError, loadError: profileLoadError });
+  }, [profileLoaded, saved, saveError, profileLoadError, companyAiBusy]);
 
   // Load the account-scoped profile on mount; do not expose a browser-global startup cache.
   useEffect(() => {
@@ -3922,7 +3926,14 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
           accentBg="bg-emerald-50"
           accentBorder="border-emerald-200"
           accentColor="text-emerald-600"
+          actions={<CompanyAiFill
+            company={data.company}
+            disabled={!profileLoaded || profileLoadError}
+            onBusyChange={setCompanyAiBusy}
+            onApply={company => setData(current => ({ ...current, company: { ...company, pillars: [company.pillars[0], company.pillars[1], company.pillars[2]] } }))}
+          />}
         >
+          <fieldset disabled={companyAiBusy || !profileLoaded || profileLoadError} className="flex min-w-0 flex-col gap-5 disabled:opacity-70">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Company name">
               <Input
@@ -3978,6 +3989,7 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
               ))}
             </div>
           </Field>
+          </fieldset>
         </Section>
         )}
 

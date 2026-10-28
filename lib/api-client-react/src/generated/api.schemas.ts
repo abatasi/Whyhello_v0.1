@@ -5,6 +5,35 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+export interface HqCompanyWebsiteInput {
+  /**
+   * @minLength 1
+   * @maxLength 2048
+   */
+  url: string;
+}
+
+export interface HqCompanyFields {
+  /** @maxLength 200 */
+  name: string;
+  /** @maxLength 500 */
+  valueWedge: string;
+  /** @maxLength 2500 */
+  positioning: string;
+  /** @maxLength 2500 */
+  differentiators: string;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  pillars: string[];
+}
+
+export interface HqCompanyWebsiteResult {
+  company: HqCompanyFields;
+  sourceUrls: string[];
+}
+
 export interface HqConfigurationSummary {
   id: string;
   name: string;

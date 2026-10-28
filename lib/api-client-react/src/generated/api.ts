@@ -44,6 +44,8 @@ import type {
   HqActivationInput,
   HqAudienceInput,
   HqAudienceResponse,
+  HqCompanyWebsiteInput,
+  HqCompanyWebsiteResult,
   HqConfigurationInput,
   HqProfileInput,
   HqProfileSaveResult,
@@ -1383,6 +1385,92 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Generate Company HQ fields from a public company website without saving
+ */
+export const getGenerateHqCompanyUrl = () => {
+  return `/api/hq/company-from-url`;
+};
+
+export const generateHqCompany = async (
+  hqCompanyWebsiteInput: HqCompanyWebsiteInput,
+  options?: RequestInit,
+): Promise<HqCompanyWebsiteResult> => {
+  return customFetch<HqCompanyWebsiteResult>(getGenerateHqCompanyUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(hqCompanyWebsiteInput),
+  });
+};
+
+export const getGenerateHqCompanyMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateHqCompany>>,
+    TError,
+    { data: BodyType<HqCompanyWebsiteInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateHqCompany>>,
+  TError,
+  { data: BodyType<HqCompanyWebsiteInput> },
+  TContext
+> => {
+  const mutationKey = ["generateHqCompany"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateHqCompany>>,
+    { data: BodyType<HqCompanyWebsiteInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateHqCompany(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateHqCompanyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateHqCompany>>
+>;
+export type GenerateHqCompanyMutationBody = BodyType<HqCompanyWebsiteInput>;
+export type GenerateHqCompanyMutationError = ErrorType<void>;
+
+/**
+ * @summary Generate Company HQ fields from a public company website without saving
+ */
+export const useGenerateHqCompany = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateHqCompany>>,
+    TError,
+    { data: BodyType<HqCompanyWebsiteInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateHqCompany>>,
+  TError,
+  { data: BodyType<HqCompanyWebsiteInput> },
+  TContext
+> => {
+  return useMutation(getGenerateHqCompanyMutationOptions(options));
+};
 
 /**
  * @summary Get named HQs for the master, or a disabled capability for other users
