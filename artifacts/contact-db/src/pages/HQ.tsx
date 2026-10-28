@@ -887,8 +887,8 @@ function VoiceProfileCard({
           : "border-violet-200 bg-violet-50/60 dark:bg-background dark:border-violet-500/30"
     )}>
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-violet-200/60 dark:border-violet-500/30">
-        <div className="h-6 w-6 rounded-full bg-violet-100 border border-violet-200 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="h-3.5 w-3.5 text-violet-600" />
+        <div className="h-6 w-6 rounded-full bg-violet-100 border border-violet-200 dark:bg-background dark:border-violet-500/40 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="h-3.5 w-3.5 text-violet-600 dark:text-violet-300" />
         </div>
         <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700 dark:text-violet-300 flex-1">Your Voice Profile</span>
         {!isEditing && textDirty && summary && !loading && (
@@ -928,7 +928,7 @@ function VoiceProfileCard({
               value={draft}
               onChange={e => setDraft(e.target.value)}
               rows={4}
-              className="w-full resize-none rounded-lg border border-violet-300 bg-background px-3 py-2 text-sm text-violet-900 dark:text-violet-100 placeholder:text-violet-300 dark:placeholder:text-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-400 leading-relaxed"
+              className="w-full resize-none rounded-lg border border-violet-300 dark:border-violet-500/40 bg-background px-3 py-2 text-sm text-violet-900 dark:text-foreground placeholder:text-violet-300 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-400 leading-relaxed"
             />
             <div className="flex items-center justify-end gap-2">
               <button
@@ -947,7 +947,7 @@ function VoiceProfileCard({
             </div>
           </div>
         ) : (
-          <p className="text-sm text-violet-900/80 leading-relaxed">{summary}</p>
+          <p className="text-sm text-violet-900/80 dark:text-foreground leading-relaxed">{summary}</p>
         )}
       </div>
     </div>
