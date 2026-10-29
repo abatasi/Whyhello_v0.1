@@ -1504,12 +1504,13 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                 <div className="h-px flex-1 bg-border/60" />
               </div>
 
-              {/* ── Merged Identity + Contact Details card ── */}
-              <div className="bg-card dark:bg-background rounded-2xl border border-border/60 shadow-sm overflow-hidden flex-shrink-0">
-                <div className="h-20 bg-slate-800 dark:bg-slate-700" />
-                <div className="px-4 sm:px-6 pb-5">
-                  <div className="flex items-end gap-4 -mt-10 mb-3">
-                    <div className="h-18 w-18 rounded-full border-4 border-card bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center text-xl font-bold shadow-md flex-shrink-0 overflow-hidden" style={{ height: "4.5rem", width: "4.5rem" }}>
+              {/* Identity stays at the top of this column while its details scroll. */}
+              <header
+                data-testid="contact-sticky-identity"
+                className="sticky top-0 z-20 flex-shrink-0 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm dark:bg-background sm:px-6"
+              >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-12 w-12 rounded-full border-2 border-border bg-indigo-100 text-indigo-900 dark:bg-indigo-800 dark:text-indigo-100 flex items-center justify-center text-lg font-bold flex-shrink-0 overflow-hidden">
                       {getContactProfileImage(contact.id) ? (
                         <img
                           src={getContactProfileImage(contact.id)}
@@ -1574,7 +1575,11 @@ export function ContactProfileView({ contactId, embedded, seatContext }: { conta
                       </>
                     )}
                   </div>
+              </header>
 
+              {/* ── Contact details ── */}
+              <div className="bg-card dark:bg-background rounded-2xl border border-border/60 shadow-sm overflow-hidden flex-shrink-0">
+                <div className="px-4 sm:px-6 pb-5">
                   {/* ── Buying Center seat badge (embedded only) ── */}
                   {embedded && seatContext && (() => {
                     const colors = SEAT_COLOR_MAP[seatContext.colorKey] ?? SEAT_COLOR_MAP.slate;
