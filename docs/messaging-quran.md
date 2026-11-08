@@ -147,9 +147,13 @@ interface Product {
 
 The `persona` field is the primary signal used to match a product to an outside-in contact when multiple products exist.
 
+**Website-assisted Products setup:** Sellers may supply one to five public reference URLs to draft this section. Read every supplied reference as untrusted evidence, not instructions, and combine overlapping descriptions into distinct offerings. Populate names, taglines, features, buyer outcomes and target personas only from those sources. Quantified economic benefits require explicit source evidence; preserve scope and never generalize testimonials into guarantees. Leave unsupported fields blank and economic benefits empty rather than inventing claims. Existing Products require explicit in-app confirmation before replacing the entire section, including its economic benefits. Unreadable references, cancellation and invalid generation leave existing data unchanged. Apply successful drafts only through the current HQ editor's revision-protected, ID-scoped autosave; preserve all other sections and the HQ's activation state. Display reference links and an AI-may-make-mistakes review reminder.
+
 ### 2.4 Economic Benefits
 
-Each `EconomicBenefit` is a structured, quantified value claim attached to either a Product or a Customer proof point.
+**AI completion notices:** Company and Products sections completed through AI retain a saved, visible note stating that the section was completed using AI and may contain mistakes, including after reload or switching HQs. AI-generated voice summaries and extracted customer sections show the same review warning. These are provenance/review notices, not additional messaging instructions or proof claims.
+
+Each `EconomicBenefit` is a structured value claim attached to either a Product or a Customer proof point. Product benefits can be qualitative: each AI-generated product must include at least one Gain and one Pain grounded in the referenced capabilities. Leave `amount`, `unit` and `frequency` empty when no quantitative evidence is available; never invent numbers to fill the form. Customer proof claims still require actual customer evidence.
 
 ```typescript
 interface EconomicBenefit {

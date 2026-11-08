@@ -579,6 +579,105 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Draft Products from public reference URLs without saving
+ */
+export const generateHqProductsBodyUrlsItemMax = 2048;
+
+export const generateHqProductsBodyUrlsMax = 5;
+
+export const GenerateHqProductsBody = zod.object({
+  urls: zod
+    .array(zod.string().min(1).max(generateHqProductsBodyUrlsItemMax))
+    .min(1)
+    .max(generateHqProductsBodyUrlsMax),
+});
+
+export const generateHqProductsResponseProductsItemNameMax = 200;
+
+export const generateHqProductsResponseProductsItemTaglineMax = 500;
+
+export const generateHqProductsResponseProductsItemFeaturesMax = 4000;
+
+export const generateHqProductsResponseProductsItemOutcomesMax = 4000;
+
+export const generateHqProductsResponseProductsItemPersonaMax = 1000;
+
+export const generateHqProductsResponseProductsItemEconomicBenefitsItemLabelMax = 200;
+
+export const generateHqProductsResponseProductsItemEconomicBenefitsItemDescriptionMax = 1000;
+
+export const generateHqProductsResponseProductsItemEconomicBenefitsItemAmountMax = 200;
+
+export const generateHqProductsResponseProductsItemEconomicBenefitsItemUnitMax = 500;
+
+export const generateHqProductsResponseProductsItemEconomicBenefitsMax = 10;
+
+export const generateHqProductsResponseProductsMax = 12;
+
+export const GenerateHqProductsResponse = zod.object({
+  products: zod
+    .array(
+      zod.object({
+        name: zod
+          .string()
+          .min(1)
+          .max(generateHqProductsResponseProductsItemNameMax),
+        tagline: zod
+          .string()
+          .max(generateHqProductsResponseProductsItemTaglineMax),
+        features: zod
+          .string()
+          .max(generateHqProductsResponseProductsItemFeaturesMax),
+        outcomes: zod
+          .string()
+          .max(generateHqProductsResponseProductsItemOutcomesMax),
+        persona: zod
+          .string()
+          .max(generateHqProductsResponseProductsItemPersonaMax),
+        economicBenefits: zod
+          .array(
+            zod.object({
+              type: zod.enum(["pain", "gain"]),
+              label: zod
+                .string()
+                .max(
+                  generateHqProductsResponseProductsItemEconomicBenefitsItemLabelMax,
+                ),
+              description: zod
+                .string()
+                .max(
+                  generateHqProductsResponseProductsItemEconomicBenefitsItemDescriptionMax,
+                ),
+              amount: zod
+                .string()
+                .max(
+                  generateHqProductsResponseProductsItemEconomicBenefitsItemAmountMax,
+                ),
+              unit: zod
+                .string()
+                .max(
+                  generateHqProductsResponseProductsItemEconomicBenefitsItemUnitMax,
+                ),
+              frequency: zod.enum([
+                "",
+                "monthly",
+                "annually",
+                "quarterly",
+                "weekly",
+                "one-time",
+                "per-transaction",
+              ]),
+            }),
+          )
+          .max(generateHqProductsResponseProductsItemEconomicBenefitsMax),
+      }),
+    )
+    .min(1)
+    .max(generateHqProductsResponseProductsMax),
+  sourceUrls: zod.array(zod.string()),
+});
+
+/**
  * @summary Generate Company HQ fields from a public company website without saving
  */
 export const generateHqCompanyBodyUrlMax = 2048;

@@ -47,6 +47,8 @@ import type {
   HqCompanyWebsiteInput,
   HqCompanyWebsiteResult,
   HqConfigurationInput,
+  HqProductsWebsiteInput,
+  HqProductsWebsiteResult,
   HqProfileInput,
   HqProfileSaveResult,
   HqProfileSnapshot,
@@ -1385,6 +1387,92 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Draft Products from public reference URLs without saving
+ */
+export const getGenerateHqProductsUrl = () => {
+  return `/api/hq/products-from-urls`;
+};
+
+export const generateHqProducts = async (
+  hqProductsWebsiteInput: HqProductsWebsiteInput,
+  options?: RequestInit,
+): Promise<HqProductsWebsiteResult> => {
+  return customFetch<HqProductsWebsiteResult>(getGenerateHqProductsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(hqProductsWebsiteInput),
+  });
+};
+
+export const getGenerateHqProductsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateHqProducts>>,
+    TError,
+    { data: BodyType<HqProductsWebsiteInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateHqProducts>>,
+  TError,
+  { data: BodyType<HqProductsWebsiteInput> },
+  TContext
+> => {
+  const mutationKey = ["generateHqProducts"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateHqProducts>>,
+    { data: BodyType<HqProductsWebsiteInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateHqProducts(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateHqProductsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateHqProducts>>
+>;
+export type GenerateHqProductsMutationBody = BodyType<HqProductsWebsiteInput>;
+export type GenerateHqProductsMutationError = ErrorType<void>;
+
+/**
+ * @summary Draft Products from public reference URLs without saving
+ */
+export const useGenerateHqProducts = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateHqProducts>>,
+    TError,
+    { data: BodyType<HqProductsWebsiteInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateHqProducts>>,
+  TError,
+  { data: BodyType<HqProductsWebsiteInput> },
+  TContext
+> => {
+  return useMutation(getGenerateHqProductsMutationOptions(options));
+};
 
 /**
  * @summary Generate Company HQ fields from a public company website without saving

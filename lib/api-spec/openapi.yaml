@@ -355,6 +355,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /hq/products-from-urls:
+    post:
+      operationId: generateHqProducts
+      tags: [hq]
+      summary: Draft Products from public reference URLs without saving
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HqProductsWebsiteInput"
+      responses:
+        "200":
+          description: Grounded product drafts for the current HQ editor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HqProductsWebsiteResult"
+        "400":
+          description: Invalid or non-public URL
+        "401":
+          description: Authentication required
+        "422":
+          description: Reference pages could not be read
+        "429":
+          description: HQ generation already running
+        "502":
+          description: AI generation failed
   /hq/company-from-url:
     post:
       operationId: generateHqCompany
@@ -1141,6 +1169,77 @@ components:
           schema:
             $ref: "#/components/schemas/HqConfigurationWorkspace"
   schemas:
+    HqProductsWebsiteInput:
+      type: object
+      required: [urls]
+      properties:
+        urls:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: string
+            minLength: 1
+            maxLength: 2048
+    HqProductDraft:
+      type: object
+      required: [name, tagline, features, outcomes, persona, economicBenefits]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        tagline:
+          type: string
+          maxLength: 500
+        features:
+          type: string
+          maxLength: 4000
+        outcomes:
+          type: string
+          maxLength: 4000
+        persona:
+          type: string
+          maxLength: 1000
+        economicBenefits:
+          type: array
+          maxItems: 10
+          items:
+            type: object
+            required: [type, label, description, amount, unit, frequency]
+            properties:
+              type:
+                type: string
+                enum: [pain, gain]
+              label:
+                type: string
+                maxLength: 200
+              description:
+                type: string
+                maxLength: 1000
+              amount:
+                type: string
+                maxLength: 200
+              unit:
+                type: string
+                maxLength: 500
+              frequency:
+                type: string
+                enum: ["", monthly, annually, quarterly, weekly, one-time, per-transaction]
+    HqProductsWebsiteResult:
+      type: object
+      required: [products, sourceUrls]
+      properties:
+        products:
+          type: array
+          minItems: 1
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/HqProductDraft"
+        sourceUrls:
+          type: array
+          items:
+            type: string
     HqCompanyWebsiteInput:
       type: object
       required: [url]

@@ -5,6 +5,75 @@
  * Contact Database API
  * OpenAPI spec version: 0.1.0
  */
+export interface HqProductsWebsiteInput {
+  /**
+   * @minItems 1
+   * @maxItems 5
+   */
+  urls: string[];
+}
+
+export type HqProductDraftEconomicBenefitsItemType =
+  (typeof HqProductDraftEconomicBenefitsItemType)[keyof typeof HqProductDraftEconomicBenefitsItemType];
+
+export const HqProductDraftEconomicBenefitsItemType = {
+  pain: "pain",
+  gain: "gain",
+} as const;
+
+export type HqProductDraftEconomicBenefitsItemFrequency =
+  (typeof HqProductDraftEconomicBenefitsItemFrequency)[keyof typeof HqProductDraftEconomicBenefitsItemFrequency];
+
+export const HqProductDraftEconomicBenefitsItemFrequency = {
+  "": "",
+  monthly: "monthly",
+  annually: "annually",
+  quarterly: "quarterly",
+  weekly: "weekly",
+  "one-time": "one-time",
+  "per-transaction": "per-transaction",
+} as const;
+
+export type HqProductDraftEconomicBenefitsItem = {
+  type: HqProductDraftEconomicBenefitsItemType;
+  /** @maxLength 200 */
+  label: string;
+  /** @maxLength 1000 */
+  description: string;
+  /** @maxLength 200 */
+  amount: string;
+  /** @maxLength 500 */
+  unit: string;
+  frequency: HqProductDraftEconomicBenefitsItemFrequency;
+};
+
+export interface HqProductDraft {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /** @maxLength 500 */
+  tagline: string;
+  /** @maxLength 4000 */
+  features: string;
+  /** @maxLength 4000 */
+  outcomes: string;
+  /** @maxLength 1000 */
+  persona: string;
+  /** @maxItems 10 */
+  economicBenefits: HqProductDraftEconomicBenefitsItem[];
+}
+
+export interface HqProductsWebsiteResult {
+  /**
+   * @minItems 1
+   * @maxItems 12
+   */
+  products: HqProductDraft[];
+  sourceUrls: string[];
+}
+
 export interface HqCompanyWebsiteInput {
   /**
    * @minLength 1

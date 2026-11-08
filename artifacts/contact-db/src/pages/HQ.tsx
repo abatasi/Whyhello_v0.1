@@ -7,6 +7,7 @@ import { isHqVoiceQueryForUser } from "@/lib/hq-voice-query-model";
 import { Shell } from "@/components/layout/Shell";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { CompanyAiFill } from "@/components/hq/CompanyAiFill";
+import { ProductsAiFill } from "@/components/hq/ProductsAiFill";
 import { cn } from "@/lib/utils";
 import {
   Mic2, Package, Building2, Plus, Trash2, ChevronDown, Copy,
@@ -125,7 +126,9 @@ function saveDNA(data: DNAData) {
 
 function frequencyPhrase(freq: string): string {
   switch (freq) {
+    case "annually":
     case "yearly":          return "yearly";
+    case "quarterly":       return "quarterly";
     case "monthly":         return "monthly";
     case "weekly":          return "weekly";
     case "one-time":        return "one-time";
@@ -261,6 +264,10 @@ function descriptionToVerbPhrase(rawDesc: string, tense: "present" | "past"): st
 
   const firstLower = words[0].toLowerCase();
   const rest = words.slice(1).map(w => w.toLowerCase()).join(" ");
+  // Preserve cautious AI phrasing instead of moving a later verb before "helps".
+  if (["help", "helps", "helped", "helping"].includes(firstLower)) {
+    return `${tense === "present" ? "helps" : "helped"}${rest ? ` ${rest}` : ""}`;
+  }
 
   // Case 1 & 2: verb (in any form) is the first word
   if (VERB_FORMS[firstLower]) {
@@ -372,6 +379,7 @@ interface Product {
 }
 
 interface Customer {
+  aiCompleted?: boolean;
   id: string;
   rawTestimonial: string;
   customerProfile: string;
@@ -486,6 +494,7 @@ type StoredDNA = Partial<DNAData> & {
 };
 
 interface DNAData {
+  aiCompletedSections?: Partial<Record<"company" | "products", boolean>>;
   liveBuyingCenterId: string | null;
   liveTargetMarketId: string | null;
   voicePersonas: VoicePersona[];
@@ -953,6 +962,7 @@ function VoiceProfileCard({
           <p className="text-sm text-violet-900/80 dark:text-foreground leading-relaxed">{summary}</p>
         )}
       </div>
+      {summary && <p role="note" className="border-t border-border px-4 py-2 text-xs text-muted-foreground">This voice profile was completed using AI and may contain mistakes. Review it before using it.</p>}
     </div>
   );
 }
@@ -982,7 +992,9 @@ function CustomerCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: customer.rawTestimonial }),
       });
+      if (!resp.ok) throw new Error("Customer extraction failed");
       const extracted = await resp.json() as Partial<Customer>;
+      extracted.aiCompleted = true;
       const extractedCompanyName = extracted.companyName?.trim();
 
       if (extractedCompanyName) {
@@ -1041,6 +1053,7 @@ function CustomerCard({
       </div>
 
       <div className="p-4 flex flex-col gap-4">
+        {customer.aiCompleted && <p role="note" className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground">This customer section was completed using AI and may contain mistakes. Review the extracted details and claims before using them.</p>}
         {/* Source */}
         <div className="rounded-xl border border-border/40 overflow-hidden">
           <button
@@ -1256,7 +1269,10 @@ function CustomerCard({
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Frequency</label>
                     <select value={eb.frequency} onChange={e => onUpdateEB(eb.id, { frequency: e.target.value })} className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors">
+                      <option value="">Not specified</option>
                       <option value="yearly">Yearly</option>
+                      <option value="annually">Annually</option>
+                      <option value="quarterly">Quarterly</option>
                       <option value="monthly">Monthly</option>
                       <option value="weekly">Weekly</option>
                       <option value="one-time">One-time</option>
@@ -2108,13 +2124,14 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [profileLoadError, setProfileLoadError] = useState(false);
   const [companyAiBusy, setCompanyAiBusy] = useState(false);
+  const [productsAiBusy, setProductsAiBusy] = useState(false);
   const profileRevision = useRef("new");
   const { saved, saveError } = useAutoSave(data, profileLoaded && !profileLoadError, profileRevision, profileUrl, live);
   const saveStateCb = useRef(onSaveStateChange);
   saveStateCb.current = onSaveStateChange;
   useEffect(() => {
-    saveStateCb.current?.({ loaded: profileLoaded, saved: saved && !companyAiBusy, saveError, loadError: profileLoadError });
-  }, [profileLoaded, saved, saveError, profileLoadError, companyAiBusy]);
+    saveStateCb.current?.({ loaded: profileLoaded, saved: saved && !companyAiBusy && !productsAiBusy, saveError, loadError: profileLoadError });
+  }, [profileLoaded, saved, saveError, profileLoadError, companyAiBusy, productsAiBusy]);
 
   // Load the account-scoped profile on mount; do not expose a browser-global startup cache.
   useEffect(() => {
@@ -3133,10 +3150,23 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
           icon={Package}
           title="Your Products"
           subtitle="Features, benefits, and key outcomes — one card per product or offering"
+          actions={<ProductsAiFill
+            hasProducts={data.products.length > 0}
+            disabled={!profileLoaded || profileLoadError || companyAiBusy}
+            onBusyChange={setProductsAiBusy}
+            onApply={products => setData(current => ({ ...current,
+              aiCompletedSections: { ...current.aiCompletedSections, products: true },
+              products: products.map(product => ({
+              ...product, id: crypto.randomUUID(),
+              economicBenefits: product.economicBenefits.map(benefit => ({ ...benefit, id: crypto.randomUUID() })),
+            })) }))}
+          />}
           accentBg="bg-blue-50"
           accentBorder="border-blue-200"
           accentColor="text-blue-600"
         >
+          {data.aiCompletedSections?.products && <p role="note" className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground">This section was completed using AI and may contain mistakes. Review all product details, Gains and Pains before using them.</p>}
+          <fieldset disabled={productsAiBusy || !profileLoaded || profileLoadError} className="flex min-w-0 flex-col gap-5 disabled:opacity-70">
           {data.products.length === 0 && (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <div className="h-12 w-12 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center">
@@ -3325,7 +3355,10 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
                               onChange={e => updateEconomicBenefit(product.id, eb.id, { frequency: e.target.value })}
                               className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/30 transition-colors"
                             >
+                              <option value="">Not specified</option>
                               <option value="yearly">Yearly</option>
+                              <option value="annually">Annually</option>
+                              <option value="quarterly">Quarterly</option>
                               <option value="monthly">Monthly</option>
                               <option value="weekly">Weekly</option>
                               <option value="one-time">One-time</option>
@@ -3369,6 +3402,7 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
             <Plus className="h-4 w-4" />
             Add product
           </button>
+          </fieldset>
         </Section>
         )}
 
@@ -3930,10 +3964,13 @@ export function HQEditor({ profileUrl = API_PROFILE_URL, live = true, onSaveStat
             company={data.company}
             disabled={!profileLoaded || profileLoadError}
             onBusyChange={setCompanyAiBusy}
-            onApply={company => setData(current => ({ ...current, company: { ...company, pillars: [company.pillars[0], company.pillars[1], company.pillars[2]] } }))}
+            onApply={company => setData(current => ({ ...current,
+              aiCompletedSections: { ...current.aiCompletedSections, company: true },
+              company: { ...company, pillars: [company.pillars[0], company.pillars[1], company.pillars[2]] } }))}
           />}
         >
           <fieldset disabled={companyAiBusy || !profileLoaded || profileLoadError} className="flex min-w-0 flex-col gap-5 disabled:opacity-70">
+          {data.aiCompletedSections?.company && <p role="note" className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground">This section was completed using AI and may contain mistakes. Review the company details before using them.</p>}
           <div className="grid grid-cols-2 gap-4">
             <Field label="Company name">
               <Input
