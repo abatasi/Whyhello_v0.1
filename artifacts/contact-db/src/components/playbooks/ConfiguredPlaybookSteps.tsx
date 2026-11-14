@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { AlertCircle, ArrowDown, ArrowUp, ChevronDown, ChevronRight, GripVertical } from "lucide-react";
 import { AddStepMenu } from "./AddStepMenu";
 import { getStepDefinition, type StepDefinition } from "./step-definitions";
@@ -27,20 +28,22 @@ export type ConfiguredPlaybookStepsProps = {
   saveStatus?: string;
   saveError?: boolean;
   readOnly?: boolean;
+  renderLegacyStep?: (step: ConfiguredStep) => ReactNode;
 };
 
-function StepSummary({ id, number, step, selected, onSelect, onDuplicate, onDelete, onMove, onInsert, canMoveUp, canMoveDown, readOnly }: {
+function StepSummary({ id, number, step, selected, onSelect, onDuplicate, onDelete, onMove, onInsert, canMoveUp, canMoveDown, readOnly, editor }: {
   id: string; number: number; step: ConfiguredStep; selected: boolean; onSelect: () => void;
   onDuplicate: () => void; onDelete: () => void; onMove: (direction: -1 | 1) => void;
   onInsert: () => void; canMoveUp: boolean; canMoveDown: boolean; readOnly: boolean;
+  editor?: ReactNode;
 }) {
   const definition = getStepDefinition(String(step.data.blockType));
-  const title = definition?.name ?? String(step.data.label || step.data.blockType || "Saved action").replaceAll("-", " ");
+  const title = String(step.data.label || definition?.name || step.data.blockType || "Saved action").replaceAll("-", " ");
   const Icon = definition?.icon;
   const isManual = step.data.blockType === "manual-email";
   const config = isManual ? readManualEmailConfiguration(step.data.configuration) : null;
   const error = config ? validateManualEmailConfiguration(config) : null;
-  const status = config?.enabled === false ? "Disabled" : error ? "Needs setup" : "Read-only";
+  const status = readOnly ? "Read-only" : config?.enabled === false ? "Disabled" : error ? "Needs setup" : editor ? "Editable" : "Read-only";
   return <article className={`rounded-xl border bg-card ${selected ? "border-primary/40" : "border-border"}`}>
     <header className="flex flex-wrap items-center gap-3 p-4">
       <button type="button" draggable={!readOnly} aria-label={`Drag to reorder step ${number}`} data-testid={`handle-reorder-step-${id}-${number}`} className="grid size-8 shrink-0 cursor-grab place-items-center rounded-lg bg-muted text-muted-foreground active:cursor-grabbing" onClick={e => e.stopPropagation()} onDragStart={e => { e.dataTransfer.setData("text/plain", id); e.dataTransfer.effectAllowed = "move"; }}><GripVertical size={15} /></button>
@@ -49,7 +52,7 @@ function StepSummary({ id, number, step, selected, onSelect, onDuplicate, onDele
         <span className="text-xs font-semibold text-muted-foreground">Step {number}</span>
         <span className="ml-2 text-sm font-semibold">{title}</span>
         <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">{status}</span>
-        <span className="mt-1 block text-xs text-muted-foreground">{config ? `Manual Email · ${config.variants[0]?.emailType ?? "Outreach"} · executes ${timingSummary(config.createTiming)}` : "This step is preserved as a legacy, read-only action."}</span>
+        <span className="mt-1 block text-xs text-muted-foreground">{config ? `Manual Email · ${config.variants[0]?.emailType ?? "Outreach"} · executes ${timingSummary(config.createTiming)}` : editor ? "Expand to review and edit this step." : "This step is preserved as a legacy, read-only action."}</span>
       </button>
       <button type="button" aria-label={`Move step ${number} up`} className="rounded p-1.5 text-muted-foreground hover:bg-muted disabled:opacity-40" disabled={readOnly || !canMoveUp} onClick={() => onMove(-1)}><ArrowUp size={15} /></button>
       <button type="button" aria-label={`Move step ${number} down`} className="rounded p-1.5 text-muted-foreground hover:bg-muted disabled:opacity-40" disabled={readOnly || !canMoveDown} onClick={() => onMove(1)}><ArrowDown size={15} /></button>
@@ -58,8 +61,10 @@ function StepSummary({ id, number, step, selected, onSelect, onDuplicate, onDele
       <button type="button" aria-label={selected ? "Collapse step" : "Expand step"} className="rounded p-1.5 text-muted-foreground hover:bg-muted" onClick={onSelect}>{selected ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
     </header>
     {selected && <div className="border-t border-border/70 p-4 text-xs text-muted-foreground">
+      {editor ?? <>
       <p>{title} is preserved as a legacy action. This editor configures Manual Email, Phone Call and LinkedIn connection-request steps.</p>
       <button type="button" className="mt-3 rounded-md border border-border px-2.5 py-1.5 hover:bg-muted" onClick={onInsert}>Insert a Manual Email before this step</button>
+      </>}
     </div>}
   </article>;
 }
@@ -67,7 +72,7 @@ function StepSummary({ id, number, step, selected, onSelect, onDuplicate, onDele
 export function ConfiguredPlaybookSteps(props: ConfiguredPlaybookStepsProps) {
   const {
     playbookId, steps, selectedStepId, onSelect, onConfigure, onInsert, onDuplicate,
-    onDelete, onReorder, onSave, dirty, saving, saveStatus, saveError = false, readOnly = false,
+    onDelete, onReorder, onSave, dirty, saving, saveStatus, saveError = false, readOnly = false, renderLegacyStep,
   } = props;
   const [collapseAll, setCollapseAll] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -150,7 +155,7 @@ export function ConfiguredPlaybookSteps(props: ConfiguredPlaybookStepsProps) {
               onMoveDown={() => reorderBy(step.id, 1)}
               canMoveUp={index > 0}
               canMoveDown={index < steps.length - 1}
-            /> : <StepSummary id={step.id} number={index + 1} step={step} selected={selected(step.id)} onSelect={() => choose(step.id)} onDuplicate={() => onDuplicate(step.id)} onDelete={() => onDelete(step.id)} onMove={direction => reorderBy(step.id, direction)} onInsert={() => insertBefore(index)} canMoveUp={index > 0} canMoveDown={index < steps.length - 1} readOnly={readOnly} />}
+            /> : <StepSummary id={step.id} number={index + 1} step={step} selected={selected(step.id)} onSelect={() => choose(step.id)} onDuplicate={() => onDuplicate(step.id)} onDelete={() => onDelete(step.id)} onMove={direction => reorderBy(step.id, direction)} onInsert={() => insertBefore(index)} canMoveUp={index > 0} canMoveDown={index < steps.length - 1} readOnly={readOnly} editor={renderLegacyStep?.(step)} />}
           </div>
           <div className="flex flex-col items-center py-2"><span className="h-4 w-px bg-border" /><AddStepMenu onSelect={definition => onInsert(step.id, definition)} disabled={readOnly} testId={`button-add-step-after-${step.id}-${index}`} /><span className="h-4 w-px bg-border" /></div>
         </div>;

@@ -35,6 +35,7 @@ import { BuilderHeader, StructurePanel, type PlaybookTab } from "@/components/pl
 import { AiProposalDialog, ContactEnrollDialog, type Proposal } from "@/components/playbooks/BuilderDialogs";
 import { ConfiguredPlaybookSteps } from "@/components/playbooks/ConfiguredPlaybookSteps";
 import { readStoredWorkflow } from "@/components/playbooks/playbook-workflow-storage";
+import { editableTemplateNodes } from "@/components/playbooks/template-workflow";
 import { AddStepMenu } from "@/components/playbooks/AddStepMenu";
 import { createManualEmailConfiguration, readManualEmailConfiguration, validateManualEmailConfiguration, type ManualEmailConfiguration } from "@/components/playbooks/manual-email-model";
 import { createPhoneCallConfiguration, readPhoneCallConfiguration, validatePhoneCallConfiguration, type PhoneCallConfiguration } from "@/components/playbooks/phone-call-model";
@@ -1200,6 +1201,7 @@ function ConfigDrawer({
   onDuplicate,
   prospects,
   allNodes,
+  embedded = false,
 }: {
   node: Node<PlaybookNodeData> | null;
   onClose: () => void;
@@ -1208,6 +1210,7 @@ function ConfigDrawer({
   onDuplicate: (id: string) => void;
   prospects: ProspectEntry[];
   allNodes: Node<PlaybookNodeData>[];
+  embedded?: boolean;
 }) {
   const { toast } = useToast();
   const [generating, setGenerating] = useState(false);
@@ -1262,7 +1265,7 @@ function ConfigDrawer({
   return (
     <div className="flex flex-col h-full">
       {/* Drawer header */}
-      <div className={cn("flex items-center gap-3 px-4 py-3 border-b border-border/60 flex-shrink-0", cat.headerBg)}>
+      {!embedded && <div className={cn("flex items-center gap-3 px-4 py-3 border-b border-border/60 flex-shrink-0", cat.headerBg)}>
         <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border", cat.iconBg, cat.border)}>
           <Icon className={cn("h-4 w-4", cat.iconText)} />
         </div>
@@ -1281,7 +1284,7 @@ function ConfigDrawer({
             <X className="h-4 w-4" />
           </button>
         </div>
-      </div>
+      </div>}
 
       {/* Drawer body */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-5">
@@ -1376,14 +1379,15 @@ function ConfigDrawer({
           <Field label="Send timing">
             <TextInput value={data.sendTiming ?? ""} onChange={v => upd({ sendTiming: v })} placeholder="e.g. Tuesday 9–11 AM" />
           </Field>
-          <button onClick={handleGenerate} disabled={generating} className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all", cat.border, cat.text, cat.bg, "hover:opacity-80 disabled:opacity-50")}>
+          {!embedded && <button onClick={handleGenerate} disabled={generating} className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all", cat.border, cat.text, cat.bg, "hover:opacity-80 disabled:opacity-50")}>
             {generating ? <ThinkingIndicator decorative className="h-4 w-6" /> : <Wand2 className="h-4 w-4" />}
             Generate with Whyhello
-          </button>
+          </button>}
         </>)}
 
         {/* ── Send LinkedIn ── */}
         {data.blockType === "send-linkedin" && (<>
+          {embedded && <p className="text-xs text-muted-foreground">Edit this LinkedIn message manually. Nothing is sent automatically.</p>}
           <Field label="LinkedIn action">
             <SelectField value={data.linkedinAction ?? "Send Connection Request"} onChange={v => upd({ linkedinAction: v })} options={LINKEDIN_ACTIONS} />
           </Field>
@@ -1396,10 +1400,10 @@ function ConfigDrawer({
           <Field label="Message" hint={`${(data.linkedinBody ?? "").length}/300 characters`}>
             <TextInput value={data.linkedinBody ?? ""} onChange={v => upd({ linkedinBody: v })} placeholder="LinkedIn message…" multiline />
           </Field>
-          <button onClick={handleGenerate} disabled={generating} className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all", cat.border, cat.text, cat.bg, "hover:opacity-80 disabled:opacity-50")}>
+          {!embedded && <button onClick={handleGenerate} disabled={generating} className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all", cat.border, cat.text, cat.bg, "hover:opacity-80 disabled:opacity-50")}>
             {generating ? <ThinkingIndicator decorative className="h-4 w-6" /> : <Wand2 className="h-4 w-4" />}
             Generate with Whyhello
-          </button>
+          </button>}
         </>)}
 
         {/* ── Make Call ── */}
@@ -1419,10 +1423,10 @@ function ConfigDrawer({
           <Field label="Voicemail script">
             <TextInput value={data.voicemail ?? ""} onChange={v => upd({ voicemail: v })} placeholder="Short voicemail if no answer…" multiline />
           </Field>
-          <button onClick={handleGenerate} disabled={generating} className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all", cat.border, cat.text, cat.bg, "hover:opacity-80 disabled:opacity-50")}>
+          {!embedded && <button onClick={handleGenerate} disabled={generating} className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all", cat.border, cat.text, cat.bg, "hover:opacity-80 disabled:opacity-50")}>
             {generating ? <ThinkingIndicator decorative className="h-4 w-6" /> : <Wand2 className="h-4 w-4" />}
             Generate with Whyhello
-          </button>
+          </button>}
         </>)}
 
         {/* ── Time Delay ── */}
@@ -2169,7 +2173,7 @@ function CanvasInner({
   const recoveryRef = useRef<CanvasState | null>(null);
 
   // Load initial state — v3 key (fall back to legacy key and migrate); sanitize & migrate older cached canvases
-  const initialState = useMemo<CanvasState>(() => {
+  const storedInitialState = useMemo<CanvasState>(() => {
     try {
       // Try v3 first; if absent, try legacy key and promote to v3
       const legacyKey = `playbook_canvas_v3_${playbookId}`;
@@ -2213,6 +2217,11 @@ function CanvasInner({
     return buildStarterCanvas();
   }, [storageKey, initialCanvas, playbookName, playbookStatus]);
 
+  const initialState = useMemo(() => ["active", "archived", "completed"].includes(playbookStatus)
+    ? storedInitialState
+    : { ...storedInitialState, nodes: editableTemplateNodes(storedInitialState.nodes) },
+  [storedInitialState, playbookStatus]);
+
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<PlaybookNodeData>>(initialState.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
   const [prospects, setProspects] = useState<ProspectEntry[]>(initialState.prospects ?? []);
@@ -2223,7 +2232,7 @@ function CanvasInner({
     void confirm({ title: "Recover a local Playbook draft?", description: "A draft in this browser differs from the saved Playbook. Recovering it will replace the saved workflow and auto-save it. You can keep the saved version instead.", confirmLabel: "Recover draft", cancelLabel: "Keep saved version" }).then(recover => {
       if (cancelled) return;
       if (recover && recoveryRef.current) {
-        setNodes(recoveryRef.current.nodes); setEdges(recoveryRef.current.edges); setProspects(recoveryRef.current.prospects ?? []);
+        setNodes(editableTemplateNodes(recoveryRef.current.nodes)); setEdges(recoveryRef.current.edges); setProspects(recoveryRef.current.prospects ?? []);
       }
       try {
         localStorage.removeItem(`playbook_canvas_v3_${playbookId}`);
@@ -2647,12 +2656,21 @@ function CanvasInner({
   }
 
   // Canned playbook
-  function applyCanned(canned: CannedPlaybook) {
-    const state = canned.build();
+  async function applyCanned(canned: CannedPlaybook) {
+    if (readOnlySteps) return;
+    if (stepNodes.length && !await confirm({
+      title: "Replace this sequence with a template?",
+      description: "This replaces the current seat's steps and messages with the chosen template. The replacement will auto-save.",
+      confirmLabel: "Replace steps", destructive: true,
+    })) return;
+    const original = canned.build();
+    const state = { ...original, nodes: editableTemplateNodes(original.nodes, voiceProfileQuery.data ?? undefined) };
     setNodes(state.nodes);
     setEdges(state.edges);
     setProspects(state.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }]);
     commitToHistory(state.nodes, state.edges, state.prospects ?? [{ laneId: PRIMARY_LANE_ID, isPrimary: true, cascadeEnabled: true }]);
+    setManualEmailStepId(state.nodes.find(node => ["manual-email", "phone-call", "linkedin-connection-request"].includes(node.data.blockType))?.id ?? null);
+    setActiveTab("editor");
   }
 
   // Save
@@ -2948,7 +2966,12 @@ function CanvasInner({
               selectedStepId={manualEmailStepId} onSelect={setManualEmailStepId}
               onConfigure={changeManualConfiguration} onInsert={(afterId, definition) => addManualStep(definition, afterId)}
               onDuplicate={duplicateConfiguredStep} onDelete={deleteConfiguredStep} onReorder={reorderConfiguredSteps}
-              onSave={save} dirty={hasUnsavedChanges} saving={saving} saveStatus={saveStatus} saveError={autosave.state === "error"} readOnly={readOnlySteps} /></div>}
+              onSave={save} dirty={hasUnsavedChanges} saving={saving} saveStatus={saveStatus} saveError={autosave.state === "error"} readOnly={readOnlySteps}
+              renderLegacyStep={step => BLOCK_BY_ID[String(step.data.blockType)] ? <fieldset disabled={readOnlySteps} className="min-w-0">
+                <ConfigDrawer embedded node={step as Node<PlaybookNodeData>} onClose={() => setManualEmailStepId(null)}
+                  onUpdate={(id, patch) => { if (!readOnlySteps) updateNode(id, patch); }}
+                  onDelete={deleteConfiguredStep} onDuplicate={duplicateConfiguredStep} prospects={prospects} allNodes={nodes} />
+              </fieldset> : null} /></div>}
       </div> : <StructurePanel
         tab={activeTab}
         playbookId={playbookId}
@@ -3123,7 +3146,8 @@ function PlaybooksListPage() {
       if (templateBusy.current) return;
       templateBusy.current = true;
       try {
-        const workflow = template.build();
+        const original = template.build();
+        const workflow = { ...original, nodes: editableTemplateNodes(original.nodes) };
         const playbook = await createPlaybookRecord(template.name, JSON.stringify(createContactModeDocument({ ...workflow, prospects: workflow.prospects ?? [] }, templateChoice)));
         await qc.invalidateQueries({ queryKey: ["playbooks"] });
         navigate(`/playbooks/${playbook.id}`);
