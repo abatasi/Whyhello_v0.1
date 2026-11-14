@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight, Building2, Search, SlidersHorizontal, Users } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 
-const imageUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/business-conversation.jpg`;
+const imageUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/business-collaboration.jpg`;
 
 const benefits = [
   {
@@ -70,7 +70,7 @@ export default function Landing() {
           </div>
 
           <div className="relative min-h-[460px] overflow-hidden bg-[#26343a] sm:min-h-[550px] lg:min-h-full">
-            <img src={imageUrl} alt="Two professionals having a thoughtful business conversation across a meeting table" className="absolute inset-0 h-full w-full object-cover object-center" />
+            <img src={imageUrl} alt="Business colleagues collaborating around a meeting table" className="absolute inset-0 h-full w-full object-cover object-center" />
             <div className="absolute bottom-5 left-5 right-5 max-w-[385px] rounded-xl border border-white/15 bg-[#172b34]/95 p-5 text-[#f7f7f2] shadow-[0_24px_60px_-30px_rgba(0,0,0,0.7)] sm:bottom-9 sm:left-9 sm:p-6 lg:bottom-12 lg:left-12">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#b9d3dc]">The right connection</span>
